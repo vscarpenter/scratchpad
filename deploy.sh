@@ -19,8 +19,9 @@ Usage: ./deploy.sh [--dry-run]
 
 Deploys Scratchpad:
   1. Syncs public/ to s3://$S3_BUCKET/public/ with a 5-minute cache.
-  2. Uploads index.html, privacy.html, terms.html, and service-worker.js with short caches.
-  3. Creates a CloudFront invalidation for "/", "/index.html", "/privacy.html", "/terms.html", and "/service-worker.js".
+  2. Re-uploads manifest and service-worker assets with explicit content headers.
+  3. Uploads index.html, privacy.html, terms.html, and service-worker.js with short caches.
+  4. Creates a CloudFront invalidation for changed shell entry points.
 
 Required variables (in .env.local):
   S3_BUCKET                   bucket name, no "s3://" prefix
@@ -91,7 +92,33 @@ aws s3 sync public/ "s3://$S3_BUCKET/public/" \
   $DRY
 echo
 
-# ---------- 2. HTML and root worker last (short cache, must-revalidate) ----------
+# ---------- 2. Explicit app-shell asset metadata ----------
+MANIFEST_CACHE="public, max-age=300, must-revalidate"
+PUBLIC_WORKER_CACHE="no-cache, no-store, must-revalidate"
+
+if [ -f public/manifest.webmanifest ]; then
+  echo "==> Uploading web app manifest (Cache-Control: $MANIFEST_CACHE)"
+  aws s3 cp public/manifest.webmanifest "s3://$S3_BUCKET/public/manifest.webmanifest" \
+    --cache-control "$MANIFEST_CACHE" \
+    --content-type "application/manifest+json; charset=utf-8" \
+    $DRY
+  echo
+else
+  echo "WARN: public/manifest.webmanifest missing, skipping" >&2
+fi
+
+if [ -f public/service-worker.js ]; then
+  echo "==> Uploading public service worker logic (Cache-Control: $PUBLIC_WORKER_CACHE)"
+  aws s3 cp public/service-worker.js "s3://$S3_BUCKET/public/service-worker.js" \
+    --cache-control "$PUBLIC_WORKER_CACHE" \
+    --content-type "application/javascript; charset=utf-8" \
+    $DRY
+  echo
+else
+  echo "WARN: public/service-worker.js missing, skipping" >&2
+fi
+
+# ---------- 3. HTML and root worker last (short cache, must-revalidate) ----------
 HTML_CACHE="public, max-age=60, must-revalidate"
 WORKER_CACHE="no-cache, no-store, must-revalidate"
 
@@ -115,8 +142,16 @@ aws s3 cp service-worker.js "s3://$S3_BUCKET/service-worker.js" \
   $DRY
 echo
 
-# ---------- 3. CloudFront invalidation ----------
-INVALIDATION_PATHS=("/" "/index.html" "/privacy.html" "/terms.html" "/service-worker.js")
+# ---------- 4. CloudFront invalidation ----------
+INVALIDATION_PATHS=(
+  "/"
+  "/index.html"
+  "/privacy.html"
+  "/terms.html"
+  "/service-worker.js"
+  "/public/manifest.webmanifest"
+  "/public/service-worker.js*"
+)
 
 INVALIDATION_DISPLAY=$( IFS=' '; echo "${INVALIDATION_PATHS[*]}" )
 

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  window.SCRATCHPAD_VERSION = '1.2.0';
+  window.SCRATCHPAD_VERSION = '1.3.0';
   window.SCRATCHPAD_BUILD_DATE = '2026-05-16';
 
   function apply() {

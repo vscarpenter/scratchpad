@@ -14,7 +14,7 @@ function handler(event) {
     var headers = response.headers;
 
     headers['content-security-policy'] = {
-        value: "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' 'sha256-r1R/ruozP4Z6nw+BW6YtAVTEk8XQaf9Ctb6MfgfpJqA=' 'sha256-vDmdL+Cz3w4FloW65uXC82DALsAR0WVW33MMO+89nx4='; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        value: "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' 'sha256-r1R/ruozP4Z6nw+BW6YtAVTEk8XQaf9Ctb6MfgfpJqA=' 'sha256-vDmdL+Cz3w4FloW65uXC82DALsAR0WVW33MMO+89nx4=' 'sha256-3TGInlul3ZC86Fo4jG0ZzRDsxNWzG/U3dWJUkd0pork='; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
     };
     headers['strict-transport-security'] = {
         value: 'max-age=63072000; includeSubDomains; preload'

@@ -63,7 +63,14 @@
 
     if (!APP_SHELL_SET.has(url.pathname)) return;
     event.respondWith(
-      caches.match(url.pathname).then((cached) => cached || fetch(req))
+      caches.open(CACHE_NAME).then((cache) =>
+        fetch(req)
+          .then((res) => {
+            if (res && res.ok) cache.put(url.pathname, res.clone());
+            return res;
+          })
+          .catch(() => caches.match(url.pathname))
+      )
     );
   });
 })();

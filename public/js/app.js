@@ -36,8 +36,14 @@
     newNote: $('new-note'),
     emptyNewNote: $('empty-new-note'),
     noteList: $('note-list'),
+    noteCount: $('note-count'),
     backToList: $('back-to-list'),
+    breadcrumb: $('note-breadcrumb'),
+    titleDisplay: $('note-title-display'),
     titleInput: $('note-title-input'),
+    noteEyebrow: $('note-eyebrow'),
+    noteByline: $('note-byline'),
+    editorDocHead: $('editor-doc-head'),
     pinToggle: $('pin-toggle'),
     pinIcon: $('pin-icon'),
     editBtn: $('edit-btn'),
@@ -46,18 +52,26 @@
     restoreBtn: $('restore-btn'),
     permanentDeleteBtn: $('permanent-delete-btn'),
     deleteBtn: $('delete-btn'),
+    overflowBtn: $('overflow-btn'),
+    overflowMenu: $('overflow-menu'),
+    exportOverflowBtn: $('export-overflow-btn'),
+    discardOverflowBtn: $('discard-overflow-btn'),
     dirtyIndicator: $('dirty-indicator'),
-    tagBar: document.querySelector('.tag-bar'),
+    tagBar: $('tag-bar'),
     tagPills: $('tag-pills'),
     tagInput: $('tag-input'),
+    tagAddEmpty: $('tag-add-empty'),
+    tagAddPlus: $('tag-add-plus'),
     rendered: $('note-rendered'),
     editor: $('note-editor'),
+    editorEmptyState: $('editor-empty-state'),
     editorView: $('editor-view'),
     emptyNoNotes: $('empty-no-notes'),
     emptyNoResults: $('empty-no-results'),
     emptyPickOne: $('empty-pick-one'),
     emptyTrash: $('empty-trash'),
     clearSearchBtn: $('clear-search-btn'),
+    emptyImportNotes: $('empty-import-notes'),
     deleteDialog: $('delete-dialog'),
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
@@ -175,10 +189,128 @@
     });
   }
 
+  // Sidebar row date format: today → "2:08p", yesterday → "Yest",
+  // last 7 days → "Thu", this year → "May 15", older → "May '24".
+  function formatRelativeDay(ms) {
+    const d = new Date(ms || now());
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+
+    if (ms >= todayStart) {
+      let hour = d.getHours();
+      const period = hour >= 12 ? 'p' : 'a';
+      if (hour === 0) hour = 12;
+      else if (hour > 12) hour -= 12;
+      return hour + ':' + String(d.getMinutes()).padStart(2, '0') + period;
+    }
+    if (ms >= yesterdayStart) return 'Yest';
+    if (ms >= weekStart) {
+      return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+    }
+    if (d.getFullYear() === today.getFullYear()) {
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+    return d.toLocaleDateString([], { month: 'short' }) + " '" + String(d.getFullYear()).slice(-2);
+  }
+
+  function wordCount(text) {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function formatReadTime(words) {
+    const seconds = Math.ceil((words / 200) * 60);
+    if (seconds < 60) return seconds + 's';
+    return Math.ceil(seconds / 60) + 'm';
+  }
+
+  // Buckets active-view notes for the sidebar: Pinned, Today, Yesterday,
+  // This week, Earlier. Sort within buckets is already done by caller.
+  function bucketizeNotes(notes) {
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+
+    const pinned = [];
+    const todayBucket = [];
+    const yesterdayBucket = [];
+    const thisWeek = [];
+    const earlier = [];
+
+    for (const note of notes) {
+      if (note.pinned && !isTrashed(note)) {
+        pinned.push(note);
+        continue;
+      }
+      const ts = isTrashed(note) ? note.deletedAt : note.updatedAt;
+      if (ts >= todayStart) todayBucket.push(note);
+      else if (ts >= yesterdayStart) yesterdayBucket.push(note);
+      else if (ts >= weekStart) thisWeek.push(note);
+      else earlier.push(note);
+    }
+    return [
+      { label: 'Pinned', notes: pinned, isPinnedSection: true },
+      { label: 'Today', notes: todayBucket },
+      { label: 'Yesterday', notes: yesterdayBucket },
+      { label: 'This week', notes: thisWeek },
+      { label: 'Earlier', notes: earlier },
+    ];
+  }
+
+  // Post-render decorator: tag first paragraph as a lede, first non-lede
+  // body paragraph as dropcap target, and short single-paragraph blockquotes
+  // as pullquotes. Selectors stay simple because the JS does the picking.
+  function decorateRendered(root) {
+    const firstP = root.querySelector(':scope > p');
+    if (firstP && firstP.textContent.length > 60) firstP.classList.add('is-lede');
+
+    const bodyText = root.textContent || '';
+    if (bodyText.length > 200) {
+      const paragraphs = root.querySelectorAll(':scope > p');
+      for (const p of paragraphs) {
+        if (p.classList.contains('is-lede')) continue;
+        p.classList.add('has-dropcap-target');
+        break;
+      }
+    }
+
+    for (const bq of root.querySelectorAll('blockquote')) {
+      const ps = bq.querySelectorAll('p');
+      if (ps.length === 1 && ps[0].textContent.length < 200) {
+        bq.classList.add('is-pullquote');
+      }
+    }
+  }
+
   function truncate(text, n) {
     if (!text) return '';
     text = text.replace(/\s+/g, ' ').trim();
     return text.length > n ? text.slice(0, n - 1) + '…' : text;
+  }
+
+  function noteExcerpt(note) {
+    const title = deriveTitle(note).toLowerCase();
+    const lines = (note.body || '').split(/\r?\n/);
+    for (const raw of lines) {
+      let line = raw.trim();
+      if (!line) continue;
+      line = line
+        .replace(/^#{1,6}\s+/, '')
+        .replace(/^>\s?/, '')
+        .replace(/^[-*+]\s+/, '')
+        .replace(/^\d+\.\s+/, '')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/[*_~#]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!line || line.toLowerCase() === title) continue;
+      return truncate(line, 112);
+    }
+    return '';
   }
 
   function normalizeTag(t) {
@@ -265,6 +397,7 @@
     }
     for (const pre of frag.querySelectorAll('pre')) pre.classList.add('code-block');
     container.appendChild(frag);
+    decorateRendered(container);
   }
 
   function renderEmptyBody(container) {
@@ -307,66 +440,153 @@
 
   function renderSidebar() {
     const filtered = filteredNotes();
-    const pinned = sortNotes(filtered.filter((n) => n.pinned && !isTrashed(n)));
-    const others = sortNotes(filtered.filter((n) => !n.pinned || isTrashed(n)));
+    const sorted = sortNotes(filtered);
     const children = [];
 
-    if (state.view === 'trash' && trashedNotes().length) {
-      children.push(el('div', {
-        class: 'trash-tools',
-        children: [
-          el('button', {
-            class: 'btn btn-danger btn-sm',
-            text: 'Empty Trash',
-            attrs: { type: 'button' },
-            on: { click: () => openDialog(els.emptyTrashDialog) },
-          }),
-        ],
-      }));
+    if (state.view === 'trash') {
+      if (trashedNotes().length) {
+        children.push(el('div', {
+          class: 'trash-tools',
+          children: [
+            el('button', {
+              class: 'btn btn-danger btn-sm',
+              text: 'Empty Trash',
+              attrs: { type: 'button' },
+              on: { click: () => openDialog(els.emptyTrashDialog) },
+            }),
+          ],
+        }));
+      }
+      if (sorted.length) children.push(renderSection('Trash', sorted));
+    } else {
+      const buckets = bucketizeNotes(sorted);
+      for (const bucket of buckets) {
+        if (!bucket.notes.length) continue;
+        children.push(renderSection(bucket.label, bucket.notes, bucket.isPinnedSection));
+      }
     }
 
-    if (pinned.length) children.push(renderSection('Pinned', pinned));
-    if (others.length) children.push(renderSection(state.view === 'trash' ? 'Trash' : 'Notes', others));
+    if (!children.length || (state.view === 'trash' && !sorted.length)) {
+      children.push(renderSidebarEmptyState());
+    }
     els.noteList.replaceChildren(...children);
     renderViewSwitch();
   }
 
-  function renderSection(label, notes) {
-    const heading = el('div', { class: 'eyebrow note-section-head', text: label });
+  function renderSidebarEmptyState() {
+    const hasActiveNotes = activeNotes().length > 0;
+    const hasTrash = trashedNotes().length > 0;
+    const searching = !!state.search.trim() || !!state.tagFilter;
+
+    if (state.view === 'trash' && !hasTrash) {
+      return el('div', {
+        class: 'sidebar-empty',
+        children: [
+          el('p', { class: 'sidebar-empty-title', text: 'Trash is empty' }),
+          el('p', { class: 'sidebar-empty-copy', text: 'Deleted notes will appear here.' }),
+        ],
+      });
+    }
+
+    if (hasActiveNotes && searching) {
+      return el('div', {
+        class: 'sidebar-empty',
+        children: [
+          el('p', { class: 'sidebar-empty-title', text: 'No matches' }),
+          el('p', { class: 'sidebar-empty-copy', text: 'Try a different search or clear the active filters.' }),
+          el('button', {
+            class: 'btn btn-secondary btn-sm',
+            text: 'Clear filters',
+            attrs: { type: 'button' },
+            on: { click: clearAllFilters },
+          }),
+        ],
+      });
+    }
+
+    return el('div', {
+      class: 'sidebar-empty',
+      children: [
+        el('p', { class: 'sidebar-empty-title', text: 'No notes yet' }),
+        el('p', { class: 'sidebar-empty-copy', text: 'Create a note or import a backup to begin.' }),
+        el('div', {
+          class: 'sidebar-empty-actions',
+          children: [
+            el('button', {
+              class: 'btn btn-primary btn-sm',
+              text: 'New note',
+              attrs: { type: 'button' },
+              on: { click: createNote },
+            }),
+            el('button', {
+              class: 'btn btn-secondary btn-sm',
+              text: 'Import',
+              attrs: { type: 'button' },
+              on: { click: () => els.importFile.click() },
+            }),
+          ],
+        }),
+      ],
+    });
+  }
+
+  function renderSection(label, notes, isPinnedSection) {
+    const headingClass = 'eyebrow note-section-head' + (isPinnedSection ? ' is-pinned' : '');
+    const heading = el('div', { class: headingClass, text: label });
     const rows = notes.map(renderRow);
     return el('div', { class: 'note-section', children: [heading, ...rows] });
   }
 
   function renderRow(note) {
-    const title = el('div', { class: 'note-row-title', text: truncate(deriveTitle(note), 64) });
-    const time = isTrashed(note) ? note.deletedAt : note.updatedAt;
-    const metaChildren = [el('span', { class: 'note-row-time', text: formatTimestamp(time) })];
-    if (note.pinned && !isTrashed(note)) {
-      const pin = el('span', { class: 'note-row-pin', attrs: { 'aria-label': 'Pinned' } });
-      pin.appendChild(clonePinIcon());
-      metaChildren.push(pin);
+    const trashed = isTrashed(note);
+    const pinned = !!(note.pinned && !trashed);
+    const time = trashed ? note.deletedAt : note.updatedAt;
+    const excerpt = noteExcerpt(note);
+
+    const children = [
+      el('span', { class: 'note-row-title', text: truncate(deriveTitle(note), 64) }),
+    ];
+
+    if (pinned) {
+      const pinCorner = el('span', {
+        class: 'note-row-pin-corner',
+        attrs: { 'aria-label': 'Pinned' },
+      });
+      pinCorner.appendChild(clonePinIcon());
+      children.push(pinCorner);
+    } else {
+      children.push(el('span', { class: 'note-row-when', text: formatRelativeDay(time) }));
     }
-    const meta = el('div', { class: 'note-row-meta', children: metaChildren });
-    const children = [title, meta];
+
+    if (excerpt) {
+      children.push(el('span', { class: 'note-row-excerpt', text: excerpt }));
+    }
+
+    if (pinned) {
+      children.push(el('span', { class: 'note-row-when', text: formatRelativeDay(time) }));
+    }
 
     if (note.tags && note.tags.length) {
-      const tagPills = note.tags.slice(0, 4).map((t) =>
+      const tagButtons = note.tags.slice(0, 4).map((t) =>
         el('button', {
-          class: 'badge badge-accent tag-pill-link',
-          text: '#' + t,
+          class: 'note-row-tag',
+          text: t,
           attrs: { type: 'button', 'data-tag': t },
         })
       );
-      children.push(el('div', { class: 'note-row-tags', children: tagPills }));
+      children.push(el('span', { class: 'note-row-tags', children: tagButtons }));
     }
 
     return el('button', {
-      class: 'note-row' + (note.id === state.selectedId ? ' is-active' : '') + (isTrashed(note) ? ' is-trashed' : ''),
+      class: 'note-row' +
+        (note.id === state.selectedId ? ' is-active' : '') +
+        (trashed ? ' is-trashed' : '') +
+        (pinned ? ' is-pinned' : ''),
       attrs: { type: 'button', 'data-id': note.id },
       children,
       on: {
         click: (e) => {
-          const tagBtn = e.target.closest('.tag-pill-link');
+          const tagBtn = e.target.closest('.note-row-tag');
           if (tagBtn && state.view !== 'trash') {
             e.stopPropagation();
             setTagFilter(tagBtn.dataset.tag);
@@ -394,10 +614,13 @@
     els.emptyTrash.hidden = true;
   }
 
+  let lastRenderedNoteId = null;
+
   function renderEditor() {
     const note = getNote(state.selectedId);
     if (!note) {
       els.editorView.hidden = true;
+      lastRenderedNoteId = null;
       return;
     }
 
@@ -406,9 +629,14 @@
     hideAllEmpties();
     els.editorView.hidden = false;
     els.titleInput.disabled = trashed;
-    els.tagInput.disabled = trashed;
-    els.tagInput.hidden = trashed;
     els.tagBar.classList.toggle('is-readonly', trashed);
+
+    if (lastRenderedNoteId !== note.id) {
+      els.tagInput.value = '';
+      els.tagInput.hidden = true;
+      closeOverflowMenu();
+    }
+    lastRenderedNoteId = note.id;
 
     const preserveDraftInputs = state.editing && state.dirty && !trashed;
     if (!preserveDraftInputs && document.activeElement !== els.titleInput) {
@@ -416,15 +644,30 @@
     }
     els.titleInput.placeholder = deriveTitle({ ...note, title: '' }) || 'Untitled note';
 
+    const showInput = state.editing && !trashed;
+    els.titleDisplay.hidden = showInput;
+    els.titleInput.hidden = !showInput;
+    els.titleDisplay.textContent = deriveTitle(note);
+
+    renderBreadcrumb(note);
+    renderEyebrow(note);
+    renderByline(note);
     renderPinButton(note);
-    renderTagPills(note, !trashed);
+    renderTagBar(note, !trashed);
 
     els.pinToggle.hidden = trashed;
     els.shareBtn.hidden = trashed;
-    els.historyBtn.hidden = trashed;
     els.deleteBtn.hidden = trashed;
     els.restoreBtn.hidden = !trashed;
     els.permanentDeleteBtn.hidden = !trashed;
+    els.overflowBtn.hidden = trashed;
+    els.discardOverflowBtn.hidden = !(state.editing && state.dirty);
+
+    const bodyEmpty = !(note.body || '').trim();
+    const showEmptyState = bodyEmpty && !state.editing && !trashed;
+    els.editorEmptyState.hidden = !showEmptyState;
+    els.editorDocHead.hidden = showEmptyState;
+    els.tagBar.hidden = showEmptyState;
 
     if (state.editing && !trashed) {
       els.editor.hidden = false;
@@ -436,14 +679,78 @@
       els.saveBtn.hidden = false;
     } else {
       els.editor.hidden = true;
-      els.rendered.hidden = false;
-      if ((note.body || '').trim()) renderMarkdownInto(els.rendered, note.body || '');
-      else renderEmptyBody(els.rendered);
+      if (showEmptyState) {
+        els.rendered.hidden = true;
+      } else if (bodyEmpty) {
+        els.rendered.hidden = false;
+        renderEmptyBody(els.rendered);
+      } else {
+        els.rendered.hidden = false;
+        renderMarkdownInto(els.rendered, note.body || '');
+      }
       els.editBtn.hidden = trashed;
       els.saveBtn.hidden = true;
     }
 
     els.dirtyIndicator.hidden = !state.dirty || trashed;
+  }
+
+  function renderBreadcrumb(note) {
+    const trashed = isTrashed(note);
+    const pinned = note.pinned && !trashed;
+    let primary;
+    let secondary;
+    if (trashed) {
+      primary = 'trash';
+      secondary = truncate(deriveTitle(note), 32);
+    } else if (pinned) {
+      primary = 'notes';
+      secondary = 'pinned';
+    } else {
+      primary = 'notes';
+      secondary = (note.title || '').trim() || (note.body || '').trim() ? 'note' : 'draft';
+    }
+    els.breadcrumb.replaceChildren(
+      document.createTextNode(primary),
+      el('span', { class: 'crumb-sep', text: '/' }),
+      document.createTextNode(secondary),
+    );
+  }
+
+  function renderEyebrow(note) {
+    const trashed = isTrashed(note);
+    const pinned = note.pinned && !trashed;
+    let label;
+    if (trashed) label = 'Note · trashed';
+    else if (pinned) label = 'Note · pinned';
+    else label = 'Note · draft';
+    els.noteEyebrow.textContent = label;
+  }
+
+  function renderByline(note) {
+    const words = wordCount(note.body || '');
+    const created = formatBylineDate(note.createdAt);
+    const updated = formatBylineDate(note.updatedAt);
+    const wordLabel = words + ' word' + (words === 1 ? '' : 's');
+    const parts = [
+      'Created ' + created,
+      'Updated ' + updated,
+      wordLabel,
+      formatReadTime(words) + ' read',
+    ];
+    els.noteByline.textContent = parts.join(' · ');
+  }
+
+  function formatBylineDate(ms) {
+    const d = new Date(ms || now());
+    const today = new Date();
+    const sameDay =
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate();
+    if (sameDay) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const sameYear = d.getFullYear() === today.getFullYear();
+    return d.toLocaleDateString([], sameYear ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   function renderPinButton(note) {
@@ -476,6 +783,50 @@
     els.tagPills.replaceChildren(...items);
   }
 
+  // Collapsible tag bar state: empty (just a "+ Add tag" pill), pills with
+  // a "+" affordance, or an open input. Preserves input focus during renders.
+  function renderTagBar(note, canEdit) {
+    renderTagPills(note, canEdit);
+    const tags = note.tags || [];
+    const inputOpen = !els.tagInput.hidden;
+
+    if (!canEdit) {
+      els.tagAddEmpty.hidden = true;
+      els.tagAddPlus.hidden = true;
+      els.tagInput.hidden = true;
+      els.tagInput.disabled = true;
+      return;
+    }
+    els.tagInput.disabled = false;
+
+    if (inputOpen) {
+      els.tagAddEmpty.hidden = true;
+      els.tagAddPlus.hidden = true;
+      return;
+    }
+
+    if (tags.length === 0) {
+      els.tagAddEmpty.hidden = false;
+      els.tagAddPlus.hidden = true;
+    } else {
+      els.tagAddEmpty.hidden = true;
+      els.tagAddPlus.hidden = false;
+    }
+  }
+
+  function openTagInput() {
+    els.tagAddEmpty.hidden = true;
+    els.tagAddPlus.hidden = true;
+    els.tagInput.hidden = false;
+    setTimeout(() => els.tagInput.focus(), 0);
+  }
+
+  function collapseTagInput() {
+    els.tagInput.hidden = true;
+    const note = getNote(state.selectedId);
+    if (note && !isTrashed(note)) renderTagBar(note, true);
+  }
+
   // -------- Active filter chip --------
   function renderActiveFilter() {
     if (state.tagFilter) {
@@ -505,10 +856,51 @@
     state.selectedId = next ? next.id : null;
   }
 
+  function updateNoteCount() {
+    if (!els.noteCount) return;
+    els.noteCount.textContent = String(activeNotes().length);
+  }
+
+  // -------- Overflow menu (#6) --------
+  function openOverflowMenu() {
+    if (!els.overflowMenu.hidden) return;
+    els.overflowMenu.hidden = false;
+    els.overflowBtn.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', onOverflowOutsideClick, true);
+    document.addEventListener('keydown', onOverflowKey, true);
+  }
+
+  function closeOverflowMenu() {
+    if (els.overflowMenu.hidden) return;
+    els.overflowMenu.hidden = true;
+    els.overflowBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onOverflowOutsideClick, true);
+    document.removeEventListener('keydown', onOverflowKey, true);
+  }
+
+  function toggleOverflowMenu() {
+    if (els.overflowMenu.hidden) openOverflowMenu();
+    else closeOverflowMenu();
+  }
+
+  function onOverflowOutsideClick(e) {
+    if (els.overflowMenu.contains(e.target) || els.overflowBtn.contains(e.target)) return;
+    closeOverflowMenu();
+  }
+
+  function onOverflowKey(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeOverflowMenu();
+      els.overflowBtn.focus();
+    }
+  }
+
   function renderAll() {
     ensureSelectionForView();
     renderSidebar();
     renderActiveFilter();
+    updateNoteCount();
 
     const base = currentBaseNotes();
     if (state.view === 'trash' && base.length === 0) {
@@ -1384,6 +1776,7 @@
 
     els.newNote.addEventListener('click', createNote);
     els.emptyNewNote.addEventListener('click', createNote);
+    els.emptyImportNotes.addEventListener('click', () => els.importFile.click());
 
     els.titleInput.addEventListener('input', handleTitleInput);
     els.titleInput.addEventListener('blur', async () => {
@@ -1458,10 +1851,44 @@
       if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
         addTagFromInput();
+        els.tagInput.focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        els.tagInput.value = '';
+        collapseTagInput();
       }
     });
     els.tagInput.addEventListener('blur', () => {
       if (els.tagInput.value.trim()) addTagFromInput();
+      setTimeout(() => {
+        if (document.activeElement !== els.tagInput) collapseTagInput();
+      }, 0);
+    });
+    els.tagAddEmpty.addEventListener('click', openTagInput);
+    els.tagAddPlus.addEventListener('click', openTagInput);
+
+    els.overflowBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleOverflowMenu();
+    });
+    els.overflowMenu.addEventListener('click', (e) => {
+      if (e.target.closest('[role="menuitem"]')) closeOverflowMenu();
+    });
+    els.exportOverflowBtn.addEventListener('click', () => {
+      closeOverflowMenu();
+      exportMarkdownZip();
+    });
+    els.discardOverflowBtn.addEventListener('click', async () => {
+      closeOverflowMenu();
+      if (!state.editing) return;
+      if (state.dirty) {
+        const ok = await confirmDiscard();
+        if (!ok) return;
+        await discardCurrentDraft();
+      }
+      state.editing = false;
+      state.dirty = false;
+      renderEditor();
     });
 
     els.openAbout.addEventListener('click', () => openDialog(els.aboutDialog));

@@ -54,15 +54,21 @@ What it does:
 1. `aws s3 sync public/ → s3://$S3_BUCKET/public/` with
    `Cache-Control: public, max-age=300` (5 min). `--delete` removes any
    orphaned files from older deploys.
-2. `aws s3 cp index.html / privacy.html / terms.html → s3://$S3_BUCKET/` with
+2. `aws s3 cp public/manifest.webmanifest` with
+   `Content-Type: application/manifest+json` and a short revalidating cache.
+   `aws s3 cp public/service-worker.js` with `Cache-Control: no-cache,
+   no-store, must-revalidate` so the imported service-worker logic is never
+   stuck behind the generic asset cache.
+3. `aws s3 cp index.html / privacy.html / terms.html → s3://$S3_BUCKET/` with
    `Cache-Control: public, max-age=60, must-revalidate` so new HTML reaches
    users within a minute.
-3. `aws s3 cp service-worker.js → s3://$S3_BUCKET/service-worker.js` with
+4. `aws s3 cp service-worker.js → s3://$S3_BUCKET/service-worker.js` with
    `Cache-Control: no-cache, no-store, must-revalidate` so installed copies
    see the newest app-shell cache quickly.
-4. `aws cloudfront create-invalidation` for `/`, `/index.html`,
-   `/privacy.html`, `/terms.html`, and `/service-worker.js` so the edge cache
-   flips immediately.
+5. `aws cloudfront create-invalidation` for `/`, `/index.html`,
+   `/privacy.html`, `/terms.html`, `/service-worker.js`,
+   `/public/manifest.webmanifest`, and `/public/service-worker.js*` so the
+   edge cache flips immediately.
 
 Assets are uploaded **before** HTML on purpose: the new HTML never refers
 to assets that haven't landed yet.
