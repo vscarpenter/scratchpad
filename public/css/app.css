@@ -2,7 +2,6 @@
 
 [hidden] { display: none !important; }
 
-html, body { height: 100%; }
 body {
   margin: 0;
   background: var(--ivory);
@@ -16,10 +15,19 @@ body {
   overflow: hidden;
 }
 
+/* App page: cap body at viewport height so inner scroll regions (sidebar
+   note list, editor card) have a definite size to scroll within. Privacy
+   page opts out via .page-privacy below. */
+body:not(.page-privacy) {
+  height: 100vh;
+  height: 100dvh;
+}
+
 /* ---------- App shell ---------- */
 .app-shell {
   display: grid;
   grid-template-columns: 300px 1fr;
+  grid-template-rows: 1fr;
   flex: 1;
   min-height: 0;
 }
@@ -28,6 +36,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   border-right: var(--border);
   background: var(--paper);
 }
@@ -58,10 +67,27 @@ body {
 }
 
 .brand-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font: 600 18px/1.2 var(--serif);
   letter-spacing: -0.01em;
   color: var(--slate);
+}
+
+.brand-mark {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: block;
+}
+.brand-mark-bg { fill: var(--accent); }
+.brand-mark-lines {
+  stroke: var(--paper);
+  stroke-width: 2;
+  stroke-linecap: round;
+  fill: none;
 }
 
 .btn-sm {
@@ -82,6 +108,23 @@ body {
 }
 
 .sidebar-actions .btn-primary { flex: 1; }
+
+.sidebar-view-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sidebar-view-switch .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-tint);
+}
 
 .active-filter {
   display: flex;
@@ -111,6 +154,13 @@ body {
   flex-direction: column;
   gap: 4px;
 }
+
+.trash-tools {
+  display: flex;
+  padding: 8px 8px 2px;
+}
+
+.trash-tools .btn { width: 100%; }
 
 .note-section {
   display: flex;
@@ -155,6 +205,10 @@ body {
   width: 3px;
   background: var(--accent);
   border-radius: var(--r-pill);
+}
+
+.note-row.is-trashed .note-row-title {
+  color: var(--gray-700);
 }
 
 .note-row-title {
@@ -338,6 +392,10 @@ body {
   padding: 4px 10px;
 }
 
+.tag-bar.is-readonly .tag-pill {
+  padding-right: 10px;
+}
+
 /* ---------- Editor card ---------- */
 .editor-card {
   flex: 1;
@@ -478,6 +536,136 @@ body {
   color: var(--gray-700);
 }
 
+/* ---------- History / import / tag dialogs ---------- */
+.history-dialog,
+.import-preview-dialog,
+.tag-manager-dialog {
+  max-width: 620px;
+}
+
+.history-list,
+.tag-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-row,
+.tag-manager-row {
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  padding: 10px;
+  background: var(--paper);
+}
+
+.history-title {
+  font: 600 14px/1.3 var(--sans);
+  color: var(--slate);
+  margin-bottom: 4px;
+}
+
+.history-meta,
+.muted-copy,
+.tag-count {
+  color: var(--gray-700);
+  font-size: 13px;
+}
+
+.history-details {
+  margin: 8px 0;
+}
+
+.history-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.history-preview {
+  margin: 8px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: 400 12px/1.5 var(--mono);
+  color: var(--slate);
+  background: var(--gray-100);
+  border-radius: var(--r-sm);
+  padding: 10px;
+}
+
+.import-counts {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto;
+  gap: 8px 16px;
+  margin: 0 0 16px;
+}
+
+.import-counts dt {
+  color: var(--gray-700);
+}
+
+.import-counts dd {
+  margin: 0;
+  font-family: var(--mono);
+  color: var(--slate);
+}
+
+.import-options {
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-options legend {
+  color: var(--gray-700);
+  padding: 0 4px;
+}
+
+.import-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-manager-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-rename-input {
+  min-width: 0;
+  height: 32px;
+}
+
+/* ---------- Share dialog ---------- */
+.share-dialog { max-width: 460px; }
+.share-dialog .dialog-body p { margin: 0 0 12px; line-height: 1.5; }
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+.share-warning {
+  color: var(--gray-700);
+  font-size: 13px;
+  padding: 8px 10px;
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  background: var(--gray-100);
+}
+.share-status {
+  font: 500 12px/1 var(--mono);
+  color: var(--accent);
+  margin: 8px 0 0;
+  min-height: 1em;
+}
+
 /* ---------- Footer (shared across pages) ---------- */
 .app-footer {
   flex-shrink: 0;
@@ -510,8 +698,10 @@ body {
 .footer-sep { color: var(--gray-300); }
 
 /* ---------- Privacy page ---------- */
+/* Document-flow layout: body grows with content, window handles scrolling.
+   Overrides the app's viewport-locked overflow: hidden. */
 .page-privacy {
-  overflow: auto;
+  overflow: visible;
 }
 
 .privacy-header {
@@ -538,8 +728,7 @@ body {
 .brand-title-inline { font: inherit; }
 
 .privacy-main {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
   padding: 32px 24px 48px;
 }
 
@@ -623,4 +812,11 @@ body {
   .editor-view { padding: 14px 16px 20px; }
   .title-input { font-size: 18px; }
   .editor-card { padding: 14px 16px; }
+  .tag-manager-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .tag-manager-row .btn {
+    justify-content: center;
+  }
 }

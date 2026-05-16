@@ -54,11 +54,15 @@ What it does:
 1. `aws s3 sync public/ → s3://$S3_BUCKET/public/` with
    `Cache-Control: public, max-age=300` (5 min). `--delete` removes any
    orphaned files from older deploys.
-2. `aws s3 cp index.html / privacy.html → s3://$S3_BUCKET/` with
+2. `aws s3 cp index.html / privacy.html / terms.html → s3://$S3_BUCKET/` with
    `Cache-Control: public, max-age=60, must-revalidate` so new HTML reaches
    users within a minute.
-3. `aws cloudfront create-invalidation` for `/`, `/index.html`, and
-   `/privacy.html` so the edge cache flips immediately.
+3. `aws s3 cp service-worker.js → s3://$S3_BUCKET/service-worker.js` with
+   `Cache-Control: no-cache, no-store, must-revalidate` so installed copies
+   see the newest app-shell cache quickly.
+4. `aws cloudfront create-invalidation` for `/`, `/index.html`,
+   `/privacy.html`, `/terms.html`, and `/service-worker.js` so the edge cache
+   flips immediately.
 
 Assets are uploaded **before** HTML on purpose: the new HTML never refers
 to assets that haven't landed yet.
@@ -94,8 +98,15 @@ inline scripts into a separate file, you can tighten this to remove
 
 ## How data is stored
 
-- All notes live in `IndexedDB` under the database name `scratchpad`, in an
-  object store called `notes`.
+- All saved notes live in `IndexedDB` under the database name `scratchpad`, in
+  an object store called `notes`.
+- Unsaved edit recovery uses a `drafts` object store keyed by note id. Drafts
+  stay local, are removed after save or discard, and are not included in
+  normal exports.
+- Saved-note history uses a `revisions` object store and keeps the last 10
+  saved snapshots per note.
+- Deleted notes are kept in Trash by setting `deletedAt` on the note. They are
+  removed permanently only when you choose delete forever or empty Trash.
 - The theme preference uses `localStorage` under the key `theme-preview`.
 - Nothing is sent off-device. There are no analytics, no error reporting,
   no font loaders. If you open DevTools → Network and disable cache, you
@@ -106,9 +117,29 @@ remove the `scratchpad` IndexedDB database manually.
 
 ### Backups
 
-Use **About → Export all notes (JSON)** for a portable backup file. The
-export includes id, title, body, tags, pinned state, and timestamps. Use
-**Import notes (JSON)** to restore.
+Use **About → Export backup (JSON)** for the full-fidelity restore format. The
+backup includes metadata (`app`, `version`, `schemaVersion`, `exportedAt`),
+active notes, trashed notes, and revision snapshots. Drafts are intentionally
+excluded.
+
+Use **About → Export Markdown ZIP** for readable `.md` copies of active notes.
+Each file includes frontmatter with title, tags, pinned state, and timestamps.
+
+Importing JSON always shows a preview before writing anything. The default is
+to import conflicts as duplicates; you can also replace matching ids or skip
+conflicts.
+
+## Offline install
+
+Scratchpad registers a service worker when served over HTTP(S). It caches only
+the static app shell: the root pages, CSS, JavaScript, vendored libraries,
+manifest, local icons, and local Open Graph assets. It does not cache exports,
+note content outside IndexedDB, or external resources.
+
+The service-worker cache name is tied to `SCRATCHPAD_VERSION`. After a deploy,
+users can force-refresh an installed/offline copy by reloading once while
+online; if the old shell persists, close all Scratchpad tabs and open it again
+so the new worker can activate.
 
 ## Keyboard shortcuts
 
@@ -141,6 +172,9 @@ public/
     vendor/
       marked.min.js        # Markdown parser
       purify.min.js        # DOMPurify HTML sanitizer
+  manifest.webmanifest     # PWA install metadata
+  service-worker.js        # App-shell cache logic
+service-worker.js          # Root shim for full-app service-worker scope
 README.md
 ScratchPad-PRD.md
 ```

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Scratchpad OG image (1200x630) - consumed by social scrapers.
+  Brand colors mirror the favicon and the Inkwell accent / ivory / slate tokens.
+  Regenerate the PNG with:
+      rsvg-convert -w 1200 -h 630 public/og-image.svg -o public/og-image.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <!-- Cool ivory paper background -->
+  <rect width="1200" height="630" fill="#F4F4F0"/>
+
+  <!-- Accent stripe down the left edge -->
+  <rect x="0" y="0" width="14" height="630" fill="#3B4A8C"/>
+
+  <!-- Brand mark: navy rounded square + three ivory rule lines -->
+  <g transform="translate(96 110)">
+    <rect width="120" height="120" rx="22" fill="#3B4A8C"/>
+    <g stroke="#F4F4F0" stroke-width="10" stroke-linecap="round" fill="none">
+      <line x1="28" y1="40" x2="92" y2="40"/>
+      <line x1="28" y1="62" x2="78" y2="62"/>
+      <line x1="28" y1="84" x2="86" y2="84"/>
+    </g>
+  </g>
+
+  <!-- Wordmark + tagline -->
+  <text x="96" y="320" fill="#13141B"
+        font-family="'Iowan Old Style','Apple Garamond','Palatino', 'Times New Roman', Georgia, serif"
+        font-weight="600" font-size="120" letter-spacing="-2">Scratchpad</text>
+
+  <text x="96" y="395" fill="#13141B" opacity="0.78"
+        font-weight="500" font-size="40" letter-spacing="-0.5">Private notes that never leave your browser.</text>
+
+  <!-- Three feature pills -->
+  <g transform="translate(96 460)" font-size="22" font-weight="500">
+    <g>
+      <rect x="0" y="0" width="200" height="44" rx="22" fill="#3B4A8C" fill-opacity="0.12" stroke="#3B4A8C" stroke-opacity="0.5" stroke-width="1.5"/>
+      <text x="100" y="29" text-anchor="middle" fill="#3B4A8C">Local-only</text>
+    </g>
+    <g transform="translate(220 0)">
+      <rect x="0" y="0" width="200" height="44" rx="22" fill="#3B4A8C" fill-opacity="0.12" stroke="#3B4A8C" stroke-opacity="0.5" stroke-width="1.5"/>
+      <text x="100" y="29" text-anchor="middle" fill="#3B4A8C">No tracking</text>
+    </g>
+    <g transform="translate(440 0)">
+      <rect x="0" y="0" width="200" height="44" rx="22" fill="#3B4A8C" fill-opacity="0.12" stroke="#3B4A8C" stroke-opacity="0.5" stroke-width="1.5"/>
+      <text x="100" y="29" text-anchor="middle" fill="#3B4A8C">Markdown</text>
+    </g>
+  </g>
+
+  <!-- Bottom-right URL -->
+  <text x="1104" y="585" text-anchor="end" fill="#13141B" opacity="0.55"
+        font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace"
+        font-size="22">notes.vinny.dev</text>
+</svg>

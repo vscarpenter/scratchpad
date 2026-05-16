@@ -19,8 +19,8 @@ Usage: ./deploy.sh [--dry-run]
 
 Deploys Scratchpad:
   1. Syncs public/ to s3://$S3_BUCKET/public/ with a 5-minute cache.
-  2. Uploads index.html and privacy.html with a 60-second cache.
-  3. Creates a CloudFront invalidation for "/", "/index.html", "/privacy.html".
+  2. Uploads index.html, privacy.html, terms.html, and service-worker.js with short caches.
+  3. Creates a CloudFront invalidation for "/", "/index.html", "/privacy.html", "/terms.html", and "/service-worker.js".
 
 Required variables (in .env.local):
   S3_BUCKET                   bucket name, no "s3://" prefix
@@ -91,11 +91,12 @@ aws s3 sync public/ "s3://$S3_BUCKET/public/" \
   $DRY
 echo
 
-# ---------- 2. HTML last (short cache, must-revalidate) ----------
+# ---------- 2. HTML and root worker last (short cache, must-revalidate) ----------
 HTML_CACHE="public, max-age=60, must-revalidate"
+WORKER_CACHE="no-cache, no-store, must-revalidate"
 
 echo "==> Uploading HTML (Cache-Control: $HTML_CACHE)"
-for html in index.html privacy.html; do
+for html in index.html privacy.html terms.html; do
   if [ ! -f "$html" ]; then
     echo "WARN: $html missing, skipping" >&2
     continue
@@ -107,8 +108,15 @@ for html in index.html privacy.html; do
 done
 echo
 
+echo "==> Uploading root service worker (Cache-Control: $WORKER_CACHE)"
+aws s3 cp service-worker.js "s3://$S3_BUCKET/service-worker.js" \
+  --cache-control "$WORKER_CACHE" \
+  --content-type "application/javascript; charset=utf-8" \
+  $DRY
+echo
+
 # ---------- 3. CloudFront invalidation ----------
-INVALIDATION_PATHS=("/" "/index.html" "/privacy.html")
+INVALIDATION_PATHS=("/" "/index.html" "/privacy.html" "/terms.html" "/service-worker.js")
 
 INVALIDATION_DISPLAY=$( IFS=' '; echo "${INVALIDATION_PATHS[*]}" )
 
