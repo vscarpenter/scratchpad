@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="Scratchpad — a private, local-only notes app. Your data never leaves this browser." />
+  <meta name="referrer" content="no-referrer" />
+  <title>Scratchpad</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233B4A8C'/%3E%3Cpath d='M9 10h14M9 16h10M9 22h12' stroke='%23F4F4F0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+  <script>
+    (function () {
+      var s = localStorage.getItem('theme-preview') || 'auto';
+      if (s === 'light' || s === 'dark')
+        document.documentElement.setAttribute('data-theme', s);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="public/css/inkwell.css" />
+  <link rel="stylesheet" href="public/css/app.css" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Notes">
+      <div class="sidebar-head">
+        <div class="brand">
+          <h1 class="brand-title">Scratchpad</h1>
+          <button id="theme-toggle" class="btn btn-ghost btn-sm" type="button" aria-label="Toggle theme">
+            Theme: <span id="theme-label">auto</span>
+          </button>
+        </div>
+
+        <div class="sidebar-search">
+          <input
+            id="search"
+            class="input"
+            type="search"
+            placeholder="Search notes…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search notes"
+          />
+          <div id="active-filter" class="active-filter" hidden>
+            <span class="badge badge-accent">
+              tag: <span id="active-filter-tag"></span>
+              <button id="clear-filter" class="filter-x" type="button" aria-label="Clear tag filter">×</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="sidebar-actions">
+          <button id="new-note" class="btn btn-primary" type="button">New note</button>
+          <button id="open-about" class="btn btn-ghost" type="button" aria-label="About Scratchpad">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <nav class="note-list" id="note-list" aria-label="Note list"></nav>
+    </aside>
+
+    <main class="main" id="main">
+      <section id="editor-view" class="editor-view" hidden aria-labelledby="note-title-input">
+        <header class="editor-head">
+          <button id="back-to-list" class="btn btn-ghost btn-sm back-btn" type="button" aria-label="Back to list">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            <span>Back</span>
+          </button>
+
+          <input
+            id="note-title-input"
+            class="input title-input"
+            type="text"
+            placeholder="Untitled note"
+            aria-label="Note title"
+          />
+
+          <div class="editor-actions">
+            <span id="dirty-indicator" class="dirty-indicator" hidden title="You have unsaved changes">
+              <span class="dot" aria-hidden="true"></span>Unsaved
+            </span>
+            <button id="pin-toggle" class="icon-btn" type="button" aria-pressed="false" aria-label="Pin note" title="Pin note">
+              <svg id="pin-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 4h6l-1 6 3 3H7l3-3-1-6z"/></svg>
+            </button>
+            <button id="edit-btn" class="btn btn-secondary btn-sm" type="button">Edit</button>
+            <button id="save-btn" class="btn btn-primary btn-sm" type="button" hidden>Save</button>
+            <button id="delete-btn" class="btn btn-danger btn-sm" type="button">Delete</button>
+          </div>
+        </header>
+
+        <div class="tag-bar">
+          <ul class="tag-pills" id="tag-pills" aria-label="Tags"></ul>
+          <input
+            id="tag-input"
+            class="input tag-input"
+            type="text"
+            placeholder="Add tag and press Enter…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Add tag"
+          />
+        </div>
+
+        <article class="card editor-card">
+          <div id="note-rendered" class="note-rendered" hidden></div>
+          <textarea
+            id="note-editor"
+            class="textarea note-editor"
+            placeholder="Start writing in markdown…"
+            spellcheck="true"
+            hidden
+          ></textarea>
+        </article>
+      </section>
+
+      <section id="empty-no-notes" class="empty-state center-state" hidden>
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+        </div>
+        <h3>No notes yet</h3>
+        <p>Create your first note to get started. Everything stays on this device.</p>
+        <p><button id="empty-new-note" class="btn btn-primary" type="button">New note</button></p>
+      </section>
+
+      <section id="empty-no-results" class="empty-state center-state" hidden>
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </div>
+        <h3>No matches</h3>
+        <p>Nothing matched your search or filter.</p>
+        <p><button id="clear-search-btn" class="btn btn-secondary" type="button">Clear search & filters</button></p>
+      </section>
+
+      <section id="empty-pick-one" class="empty-state center-state" hidden>
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+        </div>
+        <h3>Select a note</h3>
+        <p>Pick a note from the sidebar, or create a new one.</p>
+      </section>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <nav class="footer-links" aria-label="Site links">
+      <a href="privacy.html">Privacy</a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a href="https://vinny.dev" target="_blank" rel="noopener noreferrer">vinny.dev</a>
+    </nav>
+    <div class="footer-meta">
+      <span>v<span id="app-version">—</span></span>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span>built <span id="app-build-date">—</span></span>
+    </div>
+  </footer>
+
+  <dialog id="delete-dialog" class="dialog" aria-labelledby="delete-dialog-title">
+    <div class="dialog-head">
+      <h2 id="delete-dialog-title">Delete this note?</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <p>This cannot be undone. The note will be removed from this browser.</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button id="confirm-delete" class="btn btn-danger" type="button">Delete note</button>
+    </div>
+  </dialog>
+
+  <dialog id="discard-dialog" class="dialog" aria-labelledby="discard-dialog-title">
+    <div class="dialog-head">
+      <h2 id="discard-dialog-title">Discard unsaved changes?</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <p>You have unsaved edits. Leaving edit mode will lose them.</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Keep editing</button>
+      <button id="confirm-discard" class="btn btn-danger" type="button">Discard</button>
+    </div>
+  </dialog>
+
+  <dialog id="about-dialog" class="dialog about-dialog" aria-labelledby="about-dialog-title">
+    <div class="dialog-head">
+      <h2 id="about-dialog-title">About Scratchpad</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body about-body">
+      <p>
+        Scratchpad keeps everything you write in <strong>this browser only</strong>, using IndexedDB.
+        Nothing is uploaded, synced, or transmitted. There are no accounts, trackers, or analytics.
+      </p>
+      <p>
+        Clearing site data (or using private browsing) will erase your notes. Back up regularly with
+        <em>Export</em>, and restore with <em>Import</em>.
+      </p>
+
+      <div class="about-row">
+        <button id="export-btn" class="btn btn-secondary" type="button">Export all notes (JSON)</button>
+        <button id="import-btn" class="btn btn-secondary" type="button">Import notes (JSON)</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden />
+      </div>
+
+      <h3 class="about-subhead">Keyboard shortcuts</h3>
+      <ul class="shortcut-list">
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">N</kbd> — New note</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">S</kbd> — Save (in edit mode)</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">K</kbd> or <kbd class="kbd">/</kbd> — Focus search</li>
+        <li><kbd class="kbd">Esc</kbd> — Clear search, or exit edit mode</li>
+      </ul>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
+    </div>
+  </dialog>
+
+  <template id="tpl-pin-icon">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 4h6l-1 6 3 3H7l3-3-1-6z"/></svg>
+  </template>
+
+  <script src="public/js/vendor/marked.min.js"></script>
+  <script src="public/js/vendor/purify.min.js"></script>
+  <script src="public/js/db.js"></script>
+  <script src="public/js/app.js"></script>
+  <script src="public/js/version.js"></script>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const btn = document.getElementById('theme-toggle');
+      const label = document.getElementById('theme-label');
+      const KEY = 'theme-preview';
+      const order = ['auto', 'light', 'dark'];
+      function apply(s) {
+        if (s === 'auto') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', s);
+        if (label) label.textContent = s;
+      }
+      let current = localStorage.getItem(KEY) || 'auto';
+      if (!order.includes(current)) current = 'auto';
+      apply(current);
+      btn.addEventListener('click', () => {
+        current = order[(order.indexOf(current) + 1) % order.length];
+        localStorage.setItem(KEY, current);
+        apply(current);
+      });
+    })();
+  </script>
+</body>
+</html>

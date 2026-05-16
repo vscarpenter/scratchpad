@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="Scratchpad privacy policy — local-only notes, no servers, no tracking, no data leaves your browser." />
+  <meta name="referrer" content="no-referrer" />
+  <title>Privacy — Scratchpad</title>
+
+  <script>
+    (function () {
+      var s = localStorage.getItem('theme-preview') || 'auto';
+      if (s === 'light' || s === 'dark')
+        document.documentElement.setAttribute('data-theme', s);
+    })();
+  </script>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233B4A8C'/%3E%3Cpath d='M9 10h14M9 16h10M9 22h12' stroke='%23F4F4F0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="public/css/inkwell.css" />
+  <link rel="stylesheet" href="public/css/app.css" />
+</head>
+<body class="page-privacy">
+  <header class="privacy-header">
+    <a class="brand-link" href="index.html" aria-label="Back to Scratchpad">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="brand-title-inline">Scratchpad</span>
+    </a>
+    <button id="theme-toggle" class="btn btn-ghost btn-sm" type="button" aria-label="Toggle theme">
+      Theme: <span id="theme-label">auto</span>
+    </button>
+  </header>
+
+  <main class="privacy-main">
+    <article class="card privacy-card">
+      <p class="eyebrow">Privacy policy</p>
+      <h1 class="privacy-title">Your notes stay on your device.</h1>
+      <p class="privacy-lede">
+        Scratchpad is a local-only notes app. There is no account to create, no server to send
+        your notes to, and no telemetry. This page describes exactly what that means in practice.
+      </p>
+
+      <h2>The short version</h2>
+      <ul>
+        <li>Your notes are stored in this browser using IndexedDB. Nothing leaves the device.</li>
+        <li>There is no backend. There are no servers we operate that process your content.</li>
+        <li>There are no analytics, no trackers, no advertising IDs, no third-party scripts.</li>
+        <li>No requests are made to any external service while you use the app.</li>
+        <li>If you clear site data or use private browsing, your notes are deleted.</li>
+      </ul>
+
+      <h2>What we store, and where</h2>
+      <p>Two pieces of state live on your device. That's the entire list.</p>
+      <ul>
+        <li>
+          <strong>Your notes</strong> — kept in the browser's <em>IndexedDB</em> database named
+          <code>scratchpad</code>, in an object store called <code>notes</code>. Each note holds
+          its id, title, body, tags, pinned flag, and timestamps. Nothing else.
+        </li>
+        <li>
+          <strong>Theme preference</strong> — kept in <em>localStorage</em> under the key
+          <code>theme-preview</code>. Values are <code>auto</code>, <code>light</code>, or
+          <code>dark</code>.
+        </li>
+      </ul>
+      <p>
+        Both of these are scoped to this origin. Other sites cannot read them; we cannot read them.
+        They are not transmitted anywhere.
+      </p>
+
+      <h2>What we don't do</h2>
+      <ul>
+        <li><strong>No accounts.</strong> There is nothing to sign up for. There is no identity.</li>
+        <li><strong>No sync.</strong> Notes live only in this browser, on this device.</li>
+        <li><strong>No analytics or telemetry.</strong> We don't count visits, clicks, or sessions.</li>
+        <li><strong>No third-party scripts.</strong> Every script and stylesheet is served from the same origin as the app.</li>
+        <li><strong>No external fonts.</strong> Typography uses platform-native fonts only — nothing is fetched from a font CDN.</li>
+        <li><strong>No cookies.</strong> Scratchpad does not set any cookies.</li>
+      </ul>
+
+      <h2>Your data, your control</h2>
+      <p>
+        Use <strong>About → Export all notes (JSON)</strong> to download a portable copy of every
+        note, including tags and pin state. Use <strong>Import notes (JSON)</strong> to load it
+        back into this or any other Scratchpad install.
+      </p>
+      <p>
+        To erase everything: in your browser, open Developer Tools → Application → Storage and
+        clear site data for this origin. The IndexedDB <code>scratchpad</code> database and the
+        <code>theme-preview</code> entry are gone the moment you confirm.
+      </p>
+
+      <h2>Hosting</h2>
+      <p>
+        Scratchpad is delivered as static files from a content delivery network. The host can see
+        the request for <code>index.html</code> and related assets (this is how the web works), but
+        it never sees the contents of your notes — those never leave your browser.
+      </p>
+
+      <h2>Children's privacy</h2>
+      <p>
+        Scratchpad does not collect personal information from anyone, including children. There is
+        no account, no profile, and no contact form.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        If the privacy posture of the app ever changes — for example, if an optional sync feature
+        were added later — this page would be updated and would describe the new behavior in
+        plain terms. Any such change would remain opt-in.
+      </p>
+
+      <h2>Questions</h2>
+      <p>
+        Scratchpad is built by <a href="https://vinny.dev" target="_blank" rel="noopener noreferrer">Vinny Carpenter</a>.
+        If something on this page is unclear, the source code is the authoritative record of what the
+        app actually does.
+      </p>
+    </article>
+  </main>
+
+  <footer class="app-footer">
+    <nav class="footer-links" aria-label="Site links">
+      <a href="index.html">Scratchpad</a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a href="privacy.html">Privacy</a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a href="https://vinny.dev" target="_blank" rel="noopener noreferrer">vinny.dev</a>
+    </nav>
+    <div class="footer-meta">
+      <span>v<span id="app-version">—</span></span>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span>built <span id="app-build-date">—</span></span>
+    </div>
+  </footer>
+
+  <script src="public/js/version.js"></script>
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const btn = document.getElementById('theme-toggle');
+      const label = document.getElementById('theme-label');
+      const KEY = 'theme-preview';
+      const order = ['auto', 'light', 'dark'];
+      function apply(s) {
+        if (s === 'auto') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', s);
+        if (label) label.textContent = s;
+      }
+      let current = localStorage.getItem(KEY) || 'auto';
+      if (!order.includes(current)) current = 'auto';
+      apply(current);
+      btn.addEventListener('click', () => {
+        current = order[(order.indexOf(current) + 1) % order.length];
+        localStorage.setItem(KEY, current);
+        apply(current);
+      });
+    })();
+  </script>
+</body>
+</html>

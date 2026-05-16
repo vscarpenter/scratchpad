@@ -1,0 +1,43 @@
+# Scratchpad — gitignore.
+# This is a static-only app with no build step. Most ignores below are
+# defensive (OS cruft, secrets, future tooling).
+
+# ---- Secrets ----
+# Never commit real env files. The .example file IS committed.
+.env
+.env.local
+.env.*.local
+!.env.local.example
+
+# ---- OS / editor cruft ----
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+*~
+*.swp
+*.swo
+
+# ---- Editor / IDE ----
+.idea/
+.vscode/
+*.iml
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Future tooling guardrails ----
+# We don't use Node today, but ignore these so an accidental `npm install`
+# doesn't dump a 200MB tree into the repo.
+node_modules/
+dist/
+build/
+.cache/
+
+# ---- Local verification artifacts ----
+# Screenshots from local browser-driven verification. Not part of the app.
+.verify/
