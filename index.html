@@ -245,19 +245,29 @@
   </div>
 
   <footer class="app-footer">
-    <nav class="footer-links" aria-label="Site links">
-      <a href="about.html">About</a>
-      <span class="footer-sep" aria-hidden="true">·</span>
-      <a href="privacy.html">Privacy</a>
-      <span class="footer-sep" aria-hidden="true">·</span>
-      <a href="terms.html">Terms</a>
-      <span class="footer-sep" aria-hidden="true">·</span>
-      <a href="https://vinny.dev" target="_blank" rel="noopener noreferrer">vinny.dev</a>
-    </nav>
-    <div class="footer-meta">
-      <span>v<span id="app-version">—</span></span>
-      <span class="footer-sep" aria-hidden="true">·</span>
-      <span>built <span id="app-build-date">—</span></span>
+    <div class="footer-inner">
+      <a href="index.html" class="footer-brand" aria-label="Scratchpad home">
+        <span class="footer-wordmark">Scratchpad</span>
+        <span class="footer-tagline">Notes that stay in your browser.</span>
+      </a>
+      <nav class="footer-nav" aria-label="Site links">
+        <a href="about.html">About</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a class="footer-ext-link" href="https://vinny.dev" target="_blank" rel="noopener noreferrer">
+          vinny.dev
+          <svg class="footer-ext-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M9 3h4v4M13 3 8 8M11 9v3.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </nav>
+    </div>
+    <div class="footer-meta-row">
+      <div class="footer-meta">
+        <span>v<span id="app-version">—</span></span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>built <span id="app-build-date">—</span></span>
+      </div>
     </div>
   </footer>
 
