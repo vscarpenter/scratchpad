@@ -24,6 +24,9 @@ ehthumbs.db
 .vscode/
 *.iml
 
+# ---- Local agent/tooling artifacts ----
+.claude/
+
 # ---- Logs ----
 *.log
 npm-debug.log*

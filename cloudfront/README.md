@@ -160,7 +160,7 @@ And attached to the distribution's default cache behavior via
   "Quantity": 1,
   "Items": [
     {
-      "FunctionARN": "arn:aws:cloudfront::710603110067:function/scratchpad-security-headers",
+      "FunctionARN": "arn:aws:cloudfront::<account-id>:function/scratchpad-security-headers",
       "EventType": "viewer-response"
     }
   ]

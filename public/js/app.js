@@ -260,22 +260,12 @@
     ];
   }
 
-  // Post-render decorator: tag first paragraph as a lede, first non-lede
-  // body paragraph as dropcap target, and short single-paragraph blockquotes
-  // as pullquotes. Selectors stay simple because the JS does the picking.
+  // Post-render decorator: tag first paragraph as a lede and short
+  // single-paragraph blockquotes as pullquotes. Selectors stay simple
+  // because the JS does the picking.
   function decorateRendered(root) {
     const firstP = root.querySelector(':scope > p');
     if (firstP && firstP.textContent.length > 60) firstP.classList.add('is-lede');
-
-    const bodyText = root.textContent || '';
-    if (bodyText.length > 200) {
-      const paragraphs = root.querySelectorAll(':scope > p');
-      for (const p of paragraphs) {
-        if (p.classList.contains('is-lede')) continue;
-        p.classList.add('has-dropcap-target');
-        break;
-      }
-    }
 
     for (const bq of root.querySelectorAll('blockquote')) {
       const ps = bq.querySelectorAll('p');
