@@ -44,6 +44,7 @@
     noteEyebrow: $('note-eyebrow'),
     noteByline: $('note-byline'),
     editorDocHead: $('editor-doc-head'),
+    editorCard: document.querySelector('.editor-card'),
     pinToggle: $('pin-toggle'),
     pinIcon: $('pin-icon'),
     editBtn: $('edit-btn'),
@@ -605,12 +606,15 @@
   }
 
   let lastRenderedNoteId = null;
+  let lastEditorMode = false;
 
   function renderEditor() {
     const note = getNote(state.selectedId);
     if (!note) {
       els.editorView.hidden = true;
+      els.editorCard.classList.remove('is-editing');
       lastRenderedNoteId = null;
+      lastEditorMode = false;
       return;
     }
 
@@ -621,7 +625,8 @@
     els.titleInput.disabled = trashed;
     els.tagBar.classList.toggle('is-readonly', trashed);
 
-    if (lastRenderedNoteId !== note.id) {
+    const noteChanged = lastRenderedNoteId !== note.id;
+    if (noteChanged) {
       els.tagInput.value = '';
       els.tagInput.hidden = true;
       closeOverflowMenu();
@@ -635,6 +640,12 @@
     els.titleInput.placeholder = deriveTitle({ ...note, title: '' }) || 'Untitled note';
 
     const showInput = state.editing && !trashed;
+    els.editorCard.classList.toggle('is-editing', showInput);
+    if (showInput && (!lastEditorMode || noteChanged)) {
+      els.editorCard.scrollTop = 0;
+    }
+    lastEditorMode = showInput;
+
     els.titleDisplay.hidden = showInput;
     els.titleInput.hidden = !showInput;
     els.titleDisplay.textContent = deriveTitle(note);

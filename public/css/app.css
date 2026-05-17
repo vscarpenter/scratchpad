@@ -592,6 +592,17 @@ body:not(.page-privacy) {
   overflow: auto;
 }
 
+.editor-card.is-editing {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-card.is-editing .editor-doc-head,
+.editor-card.is-editing .tag-bar {
+  flex: 0 0 auto;
+}
+
 .editor-doc-head {
   max-width: var(--content-narrow);
   margin: 0 auto 22px;
@@ -654,6 +665,13 @@ body:not(.page-privacy) {
   color: var(--slate);
 }
 .note-editor:focus { outline: 0; box-shadow: none; }
+
+.editor-card.is-editing .note-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+}
 
 /* ---------- Empty editor canvas (#7) ---------- */
 .editor-empty {
