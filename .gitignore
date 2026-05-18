@@ -33,13 +33,17 @@ npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# ---- Future tooling guardrails ----
-# We don't use Node today, but ignore these so an accidental `npm install`
-# doesn't dump a 200MB tree into the repo.
+# ---- Dev tooling (Playwright) ----
+# package.json + playwright.config.js ARE committed (test recipe).
+# These directories are generated and never deployed.
 node_modules/
 dist/
 build/
 .cache/
+playwright-report/
+test-results/
+blob-report/
+.playwright-mcp/
 
 # ---- Local verification artifacts ----
 # Screenshots from local browser-driven verification. Not part of the app.

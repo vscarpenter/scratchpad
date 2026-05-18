@@ -1,0 +1,15 @@
+{
+  "name": "scratchpad-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-only dev tooling for Scratchpad. Not deployed; not used by the production app.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
