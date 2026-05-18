@@ -34,8 +34,8 @@ yarn-error.log*
 pnpm-debug.log*
 
 # ---- Dev tooling (Playwright) ----
-# package.json + playwright.config.js ARE committed (test recipe).
-# These directories are generated and never deployed.
+# package.json + bun.lock + playwright.config.js ARE committed (test recipe).
+# These directories/files are generated and never deployed.
 node_modules/
 dist/
 build/
@@ -44,6 +44,11 @@ playwright-report/
 test-results/
 blob-report/
 .playwright-mcp/
+
+# bun is the package manager here — npm/pnpm/yarn lockfiles are not tracked.
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
 
 # ---- Local verification artifacts ----
 # Screenshots from local browser-driven verification. Not part of the app.
