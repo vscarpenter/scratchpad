@@ -90,13 +90,15 @@ body:not(.page-privacy) {
 }
 
 .theme-toggle {
-  width: 30px;
-  height: 30px;
-  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+body:not(.page-privacy) .theme-toggle {
+  width: 30px;
+  height: 30px;
+  padding: 0;
 }
 .theme-toggle .theme-icon { display: none; }
 .theme-toggle[data-theme-icon="auto"] .theme-icon-auto { display: block; }
@@ -1205,6 +1207,8 @@ body:not(.page-privacy) {
     gap: 4px;
     padding: 10px 12px 6px;
   }
+  body:not(.page-privacy) .footer-meta-row { display: none; }
+  body:not(.page-privacy) .footer-inner { padding: 6px 12px; }
   .footer-meta-row { justify-content: center; }
   .footer-nav { justify-content: center; }
   .app-footer a {

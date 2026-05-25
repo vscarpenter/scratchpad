@@ -964,7 +964,11 @@
   }
 
   async function selectNote(id) {
-    if (state.selectedId === id && !state.editing) return;
+    if (state.selectedId === id && !state.editing) {
+      state.mobileView = 'editor';
+      syncMobileView();
+      return;
+    }
     if (state.editing && state.dirty) {
       const ok = await confirmDiscard();
       if (!ok) return;
