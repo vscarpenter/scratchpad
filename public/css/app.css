@@ -23,6 +23,60 @@ body:not(.page-privacy) {
   height: 100dvh;
 }
 
+/* ---------- Accessibility: motion + touch ---------- */
+/* Inkwell sets html { scroll-behavior: smooth }; honor reduced-motion for it too. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Enlarge small hit areas on touch devices and narrow layouts. */
+@media (pointer: coarse), (max-width: 640px) {
+  .btn,
+  .popover-menu button,
+  .app-footer a {
+    min-height: 44px;
+  }
+  .filter-x,
+  .tag-pill-filter,
+  .tag-pill-remove,
+  .tag-add-empty,
+  .tag-add-plus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  body:not(.page-privacy) .theme-toggle,
+  .icon-btn,
+  .dialog-close,
+  .back-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  body:not(.page-privacy) .theme-toggle {
+    width: 44px;
+    height: 44px;
+  }
+  .btn-sm {
+    min-height: 44px;
+    padding-inline: 14px;
+  }
+  .tag-pill {
+    min-height: 44px;
+    padding: 0 4px 0 12px;
+  }
+  .tag-pill-filter {
+    padding: 0 8px;
+  }
+  .tag-pill-remove {
+    padding: 0;
+  }
+  .tag-bar .tag-input {
+    height: 44px;
+  }
+}
+
 /* ---------- App shell ---------- */
 .app-shell {
   display: grid;
@@ -137,6 +191,18 @@ body:not(.page-privacy) .theme-toggle {
   gap: 6px;
 }
 
+.search-scope {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.search-scope .btn {
+  width: 100%;
+  justify-content: center;
+  padding-inline: 6px;
+}
+
 .sidebar-actions {
   display: flex;
   align-items: center;
@@ -198,6 +264,33 @@ body:not(.page-privacy) .theme-toggle {
 
 .trash-tools .btn { width: 100%; }
 
+.bulk-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 4px 8px;
+  padding: 10px;
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  background: var(--ivory);
+}
+
+.bulk-count {
+  font: 600 12px/1 var(--mono);
+  color: var(--slate);
+}
+
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bulk-actions .btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
 .note-section {
   display: flex;
   flex-direction: column;
@@ -236,7 +329,44 @@ body:not(.page-privacy) .theme-toggle {
 .note-row.is-active {
   background: var(--paper);
   border-left-color: var(--accent);
-  box-shadow: var(--shadow-sm);
+}
+
+.note-row.is-bulk {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.note-row.is-bulk .note-row-check {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding-top: 1px;
+}
+
+.note-row.is-bulk .note-row-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.note-row.is-bulk .note-row-title {
+  grid-column: 2;
+}
+
+.note-row.is-bulk .note-row-when {
+  grid-column: 3;
+}
+
+.note-row.is-bulk .note-row-excerpt,
+.note-row.is-bulk .note-row-tags {
+  grid-column: 2 / -1;
+}
+
+.note-row.is-bulk.is-selected {
+  background: var(--accent-tint);
+  border-left-color: var(--accent);
 }
 
 .note-row.is-trashed .note-row-title {
@@ -319,6 +449,13 @@ body:not(.page-privacy) .theme-toggle {
   margin-right: 1px;
 }
 .note-row-tag:hover { color: var(--accent); }
+
+.search-hit {
+  background: var(--accent-tint);
+  color: var(--slate);
+  border-radius: var(--r-xs);
+  padding: 0 2px;
+}
 
 .note-section-head.is-pinned::before {
   background: var(--warning);
@@ -580,6 +717,13 @@ body:not(.page-privacy) .theme-toggle {
 .tag-bar .tag-input:focus {
   border-style: solid;
   box-shadow: none;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .tag-bar .tag-input {
+    min-height: 44px;
+    height: 44px;
+  }
 }
 
 .tag-bar.is-readonly .tag-pill {
@@ -904,7 +1048,7 @@ body:not(.page-privacy) .theme-toggle {
 }
 
 /* ---------- About dialog ---------- */
-.about-dialog { max-width: 520px; }
+.about-dialog { max-width: 560px; }
 .about-body { font-size: 14px; }
 .about-row {
   display: flex;
@@ -912,6 +1056,70 @@ body:not(.page-privacy) .theme-toggle {
   gap: 8px;
   margin: 16px 0;
 }
+
+.backup-reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 12px;
+  border: var(--border-hair);
+  border-left: 2px solid var(--warning);
+  border-radius: var(--r-sm);
+  background: var(--ivory);
+}
+
+.backup-reminder[hidden] {
+  display: none;
+}
+
+.backup-reminder .about-subhead {
+  margin-top: 0;
+}
+
+.backup-reminder p {
+  margin: 0;
+  color: var(--gray-700);
+  line-height: 1.45;
+}
+
+.backup-reminder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diagnostics-panel {
+  margin: 16px 0;
+}
+
+.diagnostics-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.diagnostics-list div {
+  padding: 8px 10px;
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+}
+
+.diagnostics-list dt {
+  color: var(--gray-700);
+  font: 500 11px/1.2 var(--mono);
+  margin-bottom: 5px;
+}
+
+.diagnostics-list dd {
+  margin: 0;
+  color: var(--slate);
+  font: 600 13px/1.25 var(--sans);
+  overflow-wrap: anywhere;
+}
+
 .about-subhead {
   font: 600 14px/1.2 var(--sans);
   margin: 16px 0 8px;
@@ -928,11 +1136,72 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--gray-700);
 }
 
+.field-label {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--gray-700);
+  font: 500 12px/1.2 var(--mono);
+}
+
 /* ---------- History / import / tag dialogs ---------- */
 .history-dialog,
 .import-preview-dialog,
-.tag-manager-dialog {
+.tag-manager-dialog,
+.command-palette-dialog {
   max-width: 620px;
+}
+
+.command-palette-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.command-palette-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: min(420px, 55vh);
+  overflow-y: auto;
+}
+
+.command-palette-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--slate);
+  text-align: left;
+  cursor: pointer;
+}
+
+.command-palette-item:hover,
+.command-palette-item.is-active {
+  background: var(--gray-100);
+}
+
+.command-palette-item:focus-visible {
+  outline: 2px solid var(--accent-focus-ring);
+  outline-offset: -1px;
+}
+
+.command-palette-label {
+  min-width: 0;
+  font: 600 14px/1.25 var(--sans);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette-meta {
+  color: var(--gray-700);
+  font: 400 12px/1 var(--mono);
+  white-space: nowrap;
 }
 
 .history-list,
@@ -1002,6 +1271,27 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--slate);
 }
 
+.import-errors {
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin: 0 0 16px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-size: 13px;
+}
+
+.import-errors p {
+  margin: 0 0 6px;
+  color: var(--slate);
+  font-weight: 600;
+}
+
+.import-errors ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .import-options {
   border: var(--border-hair);
   border-radius: var(--r-sm);
@@ -1056,6 +1346,73 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--accent);
   margin: 8px 0 0;
   min-height: 1em;
+}
+
+/* ---------- Toast (transient action feedback) ----------
+   One polite aria-live region holds the stack, bottom-center. Toasts are
+   overlays, so a shadow is allowed here (see Inkwell Flat-Surface Rule).
+   Callers never fire a toast while a modal <dialog> is open, so the normal
+   z-index sits correctly above page content. */
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  pointer-events: none;
+}
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  padding: 9px 14px;
+  font: 500 12.5px/1.35 var(--mono);
+  color: var(--slate);
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out);
+}
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--olive);
+  flex: none;
+}
+.toast.is-info .toast-dot { background: var(--accent); }
+.toast.is-error .toast-dot { background: var(--rust); }
+.toast-dismiss {
+  margin-left: 4px;
+  padding: 0 2px;
+  background: transparent;
+  border: 0;
+  color: var(--gray-500);
+  font: 600 14px/1 var(--sans);
+  cursor: pointer;
+}
+.toast-dismiss:hover { color: var(--slate); }
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transform: none;
+    transition: opacity var(--t-fast) linear;
+  }
+  .toast.is-visible { transform: none; }
 }
 
 /* ---------- Footer (shared across pages) ----------
@@ -1601,42 +1958,51 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--gray-700);
 }
 
-/* ---------- Features ---------- */
+/* ---------- Features (borderless typographic list, not cards) ---------- */
 .about-features {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+  border-top: var(--border-hair);
 }
 .about-feature {
-  padding: 24px 22px;
-  background: var(--paper);
-  border: var(--border);
-  border-radius: var(--r-md);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  row-gap: 4px;
+  align-items: start;
+  padding: 22px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: var(--border-hair);
 }
+/* Drop the divider under the final row (last two items in the 2-up grid). */
+.about-feature:nth-last-child(-n + 2) { border-bottom: 0; }
 .about-feature-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-sm);
-  background: var(--accent-tint);
+  width: 26px;
+  height: 26px;
+  background: transparent;
   color: var(--accent);
-  margin-bottom: 4px;
 }
 .about-feature-title {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
   font: 600 17px/1.25 var(--serif);
   letter-spacing: -0.01em;
   color: var(--slate);
 }
 .about-feature-body {
+  grid-column: 2;
+  grid-row: 2;
   margin: 0;
   font: 400 14px/1.55 var(--sans);
   color: var(--gray-700);
@@ -1828,7 +2194,12 @@ body:not(.page-privacy) .theme-toggle {
   .about-section-head { margin-bottom: 32px; }
   .about-features {
     grid-template-columns: 1fr;
+    column-gap: 0;
   }
+  /* Single column: restore the divider above the second-to-last item, keep
+     only the final item border-free. */
+  .about-feature:nth-last-child(-n + 2) { border-bottom: var(--border-hair); }
+  .about-feature:last-child { border-bottom: 0; }
   .about-promises {
     grid-template-columns: 1fr;
   }

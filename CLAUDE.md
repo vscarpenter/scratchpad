@@ -53,12 +53,16 @@ when in doubt. Key rules that apply to anything in `public/css/app.css`:
 
 ```
 index.html               app entry
+about.html               about / support page
 privacy.html             privacy policy page
 terms.html               terms-of-use page (reuses .page-privacy class for layout)
+service-worker.js        root service worker (deployed no-store)
 deploy.sh                S3 sync + CloudFront invalidation
 .env.local.example       documents required env vars (S3_BUCKET, CLOUDFRONT_DISTRIBUTION_ID)
 .env.local               actual secrets (gitignored)
 public/
+  manifest.webmanifest   PWA manifest (deployed with explicit content-type)
+  service-worker.js      PWA service-worker logic (deployed no-store)
   og-image.png           1200x630 OG/Twitter card image (deployed)
   og-image.svg           regenerable source for og-image.png (deployed)
   css/
@@ -102,9 +106,11 @@ images, so the PNG is the one social scrapers actually see.
 
 ## Layout tripwires (don't unintentionally regress)
 
-The two pages share `app.css` but want opposite layouts. Three load-bearing
-rules in `app.css` make both work simultaneously — touch any of them
-carefully:
+All four pages share `app.css` but split into two layout modes that want
+opposite behavior: the app shell (`index.html`) and the `.page-privacy`
+content pages (`about.html`, `privacy.html`, `terms.html`). Three
+load-bearing rules in `app.css` make both work simultaneously — touch any
+of them carefully:
 
 1. **`body:not(.page-privacy) { height: 100vh; height: 100dvh; }`** — caps
    the app page at viewport height so internal scroll regions have a
@@ -128,26 +134,45 @@ attribute. There are **no dark-mode rules in `app.css`** — and there
 shouldn't be. If something doesn't render correctly in dark mode, fix the
 token usage rather than adding `[data-theme="dark"] {…}` rules.
 
-The inline `<head>` script in `index.html` and `privacy.html` reads
-`localStorage['theme-preview']` and applies the attribute before any CSS
-parses, preventing flash of incorrect theme. The toggle script at the
-bottom of each page cycles `auto → light → dark → auto`.
+The inline `<head>` script in every page (`index.html`, `about.html`,
+`privacy.html`, `terms.html`) reads `localStorage['theme-preview']` and
+applies the attribute before any CSS parses, preventing flash of incorrect
+theme. It's byte-identical across all four pages (they share one CSP hash).
+The toggle script at the bottom of each page cycles
+`auto → light → dark → auto`.
 
 ## Releases and deploys
 
 ### Version bumps
 Single source of truth: `public/js/version.js`. Edit the two constants
-(`SCRATCHPAD_VERSION`, `SCRATCHPAD_BUILD_DATE`) and both pages pick up the
-new values via the `#app-version` and `#app-build-date` placeholders in
-their footers.
+(`SCRATCHPAD_VERSION`, `SCRATCHPAD_BUILD_DATE`) and all four pages
+(`index.html`, `about.html`, `privacy.html`, `terms.html`) pick up the new
+values via the `#app-version` and `#app-build-date` placeholders in their
+footers.
 
 ### Deploying
 Run `./deploy.sh` (or `bash deploy.sh`). It reads `.env.local` for
-`S3_BUCKET` and `CLOUDFRONT_DISTRIBUTION_ID`, then:
-1. Syncs `public/` to S3 with `Cache-Control: public, max-age=300`.
-2. Uploads `index.html` + `privacy.html` with
-   `Cache-Control: public, max-age=60, must-revalidate`.
-3. Invalidates CloudFront for `/`, `/index.html`, `/privacy.html`.
+`S3_BUCKET` and `CLOUDFRONT_DISTRIBUTION_ID`, then, in order:
+1. Syncs `public/` to `s3://$S3_BUCKET/public/` with
+   `Cache-Control: public, max-age=300` and `--delete` (excludes
+   `*.DS_Store` and dotfiles). Assets go up **before** HTML so every
+   asset a fresh page references already exists in the bucket.
+2. Re-uploads `public/manifest.webmanifest` with an explicit
+   `application/manifest+json` content-type and
+   `Cache-Control: public, max-age=300, must-revalidate`.
+3. Re-uploads `public/service-worker.js` with an explicit
+   `application/javascript` content-type and
+   `Cache-Control: no-cache, no-store, must-revalidate`.
+4. Uploads the HTML shells — `index.html`, `about.html`, `privacy.html`,
+   `terms.html` — with `Cache-Control: public, max-age=60, must-revalidate`.
+5. Uploads the root `service-worker.js` with
+   `Cache-Control: no-cache, no-store, must-revalidate`.
+6. Invalidates CloudFront for the shell entry points: `/`, `/index.html`,
+   `/about.html`, `/privacy.html`, `/terms.html`, `/service-worker.js`,
+   `/public/manifest.webmanifest`, and `/public/service-worker.js*`.
+
+Service workers are always uploaded `no-store` so a stale worker can never
+pin users to old code; HTML gets a short 60s cache.
 
 `./deploy.sh --dry-run` previews without changing anything.
 
@@ -195,9 +220,10 @@ immediate but adds a flat monthly fee.
 Headers live in `cloudfront/security-headers-function.js`. To change them:
 
 1. Edit the file. If you touched an inline `<script>` in `index.html`,
-   `privacy.html`, or `terms.html`, run `bash cloudfront/recompute-csp-hashes.sh`
-   first and update the CSP `script-src` hashes (in both the .js file and
-   the reference .json — the script verifies both).
+   `about.html`, `privacy.html`, or `terms.html`, run
+   `bash cloudfront/recompute-csp-hashes.sh` first and update the CSP
+   `script-src` hashes (in both the .js file and the reference .json — the
+   script verifies both).
 2. Push the new code to the DEVELOPMENT stage with `aws cloudfront update-function`
    (needs the current DEVELOPMENT ETag from `describe-function`).
 3. Publish DEVELOPMENT → LIVE with `aws cloudfront publish-function`. Edge
@@ -229,9 +255,12 @@ These files exist in the repo but **must not** end up in S3 / CloudFront:
 - `README.md`, `ScratchPad-PRD.md`, `CLAUDE.md`, `coding-standard.md`, `backlog.md`
 - `deploy.sh`, `.env.local`, `.env.local.example`
 - `cloudfront/` (operator-only AWS policy artifacts)
+- `package.json`, `bun.lock`, `node_modules/`, `tests/`, `scripts/`,
+  `playwright.config.js` (local-only dev/test tooling)
 - `.git/`, `.verify/`, `.gitignore`
 
 The deploy script handles this by uploading only `public/**` (with
-`--delete`) plus the three HTML files explicitly (`index.html`,
-`privacy.html`, `terms.html`). Don't widen the upload scope without
-adjusting the exclusions.
+`--delete`) plus the four HTML shells explicitly (`index.html`,
+`about.html`, `privacy.html`, `terms.html`) and the root
+`service-worker.js`. Don't widen the upload scope without adjusting the
+exclusions.

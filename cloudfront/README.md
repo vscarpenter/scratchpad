@@ -7,7 +7,7 @@ not something the app reads at runtime.
 | File | Purpose |
 |---|---|
 | `security-headers-function.js` | The active deployed source. Body of a CloudFront Function (`cloudfront-js-2.0`) attached to the distribution's default cache behavior on `viewer-response`. Emits CSP, HSTS, COOP/CORP, Permissions-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. |
-| `recompute-csp-hashes.sh` | Re-derives sha256 hashes of every inline `<script>` in the three HTML pages and verifies each one is present in every CSP-bearing source file under this directory. Run after editing any inline `<script>`. |
+| `recompute-csp-hashes.sh` | Re-derives sha256 hashes of every inline `<script>` in the four HTML pages and verifies each one is present in every CSP-bearing source file under this directory. Run after editing any inline `<script>`. |
 | `response-headers-policy.json` | **Reference only.** The equivalent declarative policy body, kept for documentation and as a starting point if this distribution ever moves off the Free flat-rate pricing plan (which forbids custom response-headers policies). The hash-check script keeps it in sync with the JS file so the two never drift. |
 
 ## Why a CloudFront Function instead of a response-headers policy
@@ -40,9 +40,9 @@ Every response from the distribution gains:
 
 ### Why hashes for inline scripts
 
-`index.html`, `privacy.html`, and `terms.html` each contain two inline
-`<script>` blocks: the FOIT-prevention theme guard at the top of `<head>`,
-and the theme-toggle wiring at the bottom of `<body>`. Extracting these to
+`index.html`, `about.html`, `privacy.html`, and `terms.html` contain inline
+`<script>` blocks for the FOIT-prevention theme guard near the top of `<head>`
+and, where needed, theme-toggle wiring near the bottom of `<body>`. Extracting these to
 external files would reintroduce a flash of incorrect theme on first paint.
 CloudFront Functions emit static header values per response — there is no
 per-request nonce — so we use **sha256 hashes** of the script bodies in
@@ -60,8 +60,7 @@ attached will silently stop rendering:
 
 - **External images** — `![alt](https://example.com/foo.png)` will not load.
   This is the right default for a privacy-first app: every external image
-  request leaks the read event to the host. Users who need an image can
-  still embed it as a `data:` URI, which CSP allows.
+  request leaks the read event to the host.
 - **Inline `style="…"` attributes** in pasted HTML. DOMPurify already
   strips most dangerous attributes, but any inline styles that survived
   sanitization will be ignored by the browser under CSP.

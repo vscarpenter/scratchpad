@@ -4,8 +4,8 @@
 // pricing plan on this distribution forbids custom response-headers
 // policies. CloudFront Functions are allowed on every tier.
 //
-// CSP hashes for the inline <script> blocks in index.html / privacy.html
-// / terms.html must stay in sync with the literal strings below.
+// CSP hashes for the inline <script> blocks in index.html / about.html
+// / privacy.html / terms.html must stay in sync with the literal strings below.
 // Re-run `bash cloudfront/recompute-csp-hashes.sh` after editing any
 // inline <script> in the HTML pages.
 

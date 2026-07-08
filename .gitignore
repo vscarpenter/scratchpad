@@ -26,6 +26,8 @@ ehthumbs.db
 
 # ---- Local agent/tooling artifacts ----
 .claude/
+.agents/
+.impeccable/
 
 # ---- Logs ----
 *.log
