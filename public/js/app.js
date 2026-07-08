@@ -572,11 +572,7 @@
 
   function renderSearchScope() {
     if (!els.searchScope) return;
-    for (const btn of els.searchScope.querySelectorAll('[data-search-scope]')) {
-      const active = btn.dataset.searchScope === state.searchScope;
-      btn.classList.toggle('is-active', active);
-      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    }
+    els.searchScope.value = state.searchScope;
   }
 
   function renderBulkToggle() {
@@ -2651,11 +2647,7 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
-    els.searchScope.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-search-scope]');
-      if (!btn) return;
-      setSearchScope(btn.dataset.searchScope);
-    });
+    els.searchScope.addEventListener('change', () => setSearchScope(els.searchScope.value));
 
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);

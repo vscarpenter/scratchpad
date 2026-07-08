@@ -13,15 +13,15 @@ test.describe('enhanced search', () => {
     await page.locator('#search').fill('needle');
     await expect(page.locator('.note-row')).toHaveCount(3);
 
-    await page.locator('[data-search-scope="title"]').click();
+    await page.locator('#search-scope').selectOption('title');
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('.note-row')).toContainText('Needle title');
 
-    await page.locator('[data-search-scope="body"]').click();
+    await page.locator('#search-scope').selectOption('body');
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('.note-row')).toContainText('Plain title');
 
-    await page.locator('[data-search-scope="tags"]').click();
+    await page.locator('#search-scope').selectOption('tags');
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('.note-row')).toContainText('Tagged note');
   });

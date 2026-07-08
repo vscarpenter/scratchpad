@@ -67,20 +67,23 @@
         </p>
 
         <div class="sidebar-search">
-          <input
-            id="search"
-            class="input"
-            type="search"
-            placeholder="Search notes…"
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Search notes"
-          />
-          <div id="search-scope" class="search-scope" role="group" aria-label="Search scope">
-            <button class="btn btn-secondary btn-sm is-active" type="button" data-search-scope="all" aria-pressed="true">All</button>
-            <button class="btn btn-secondary btn-sm" type="button" data-search-scope="title" aria-pressed="false">Title</button>
-            <button class="btn btn-secondary btn-sm" type="button" data-search-scope="body" aria-pressed="false">Body</button>
-            <button class="btn btn-secondary btn-sm" type="button" data-search-scope="tags" aria-pressed="false">Tags</button>
+          <div class="search-control">
+            <input
+              id="search"
+              class="input search-input"
+              type="search"
+              placeholder="Search notes…"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Search notes"
+            />
+            <label class="visually-hidden" for="search-scope">Search scope</label>
+            <select id="search-scope" class="select search-scope-select" aria-label="Search scope">
+              <option value="all">All</option>
+              <option value="title">Title</option>
+              <option value="body">Body</option>
+              <option value="tags">Tags</option>
+            </select>
           </div>
           <div id="active-filter" class="active-filter" hidden>
             <span class="badge badge-accent">
