@@ -78,6 +78,7 @@
   --accent-soft:          #EBEEFC;                 /* chip / soft tint bg */
   --accent-soft-2:        #DDE2FB;                 /* squircle gradient end */
   --accent-grad:          linear-gradient(135deg, #5B6CE4, #4E5FD8);
+  --accent-2:             #7A8AD1;                  /* lighter indigo — About display-text gradient */
   --glyph-ink:            #FFFFFF;                  /* brand-glyph strokes: white in both themes */
   --accent-tint:          var(--accent-soft);      /* legacy alias (badge-accent bg) */
   --accent-focus-ring:    rgba(78, 95, 216, 0.25); /* focus halo */
