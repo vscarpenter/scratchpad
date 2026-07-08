@@ -91,9 +91,10 @@ See `cloudfront/README.md` for the exact headers and publish flow.
 
 ### Releasing a new version
 
-Edit `public/js/version.js` — change `SCRATCHPAD_VERSION` and
-`SCRATCHPAD_BUILD_DATE`. Both pages pick the new values up automatically
-via the footer placeholders.
+Edit `public/js/version.js` and change `SCRATCHPAD_VERSION`. The deploy
+script refreshes `SCRATCHPAD_BUILD_DATE` to the current date before syncing
+`public/`, so the footer build date updates automatically on deploy. The
+pages pick both values up automatically via the footer placeholders.
 
 ## How data is stored
 
