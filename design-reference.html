@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scratchpad — Soft Glass design reference</title>
+</head>
+<body style="margin:0; background:#E7E6E2; padding:48px; display:flex; flex-direction:column; align-items:center; gap:24px;">
+<div style="width:1280px; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;">
+  <h1 style="margin:0 0 6px; font:700 24px/1.2 system-ui, sans-serif; color:#1C1E28;">Soft Glass — design reference</h1>
+  <p style="margin:0 0 26px; font:400 14px/1.5 system-ui, sans-serif; color:#55555A;">Static hi-fi mockups. See README.md for the full implementation spec. Four screens: main reader, edit mode, empty first run, About hero.</p>
+</div>
+<!-- ============================================================ 1e — SOFT GLASS ============================================================ -->
+    <div id="1e" style="display:flex; flex-direction:column; gap:24px; width:1280px; flex:none;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="display:inline-flex; align-items:center; height:26px; padding:0 9px; border-radius:8px; background:#4E5FD8; color:#FFFFFF; font:600 12px/1 ui-monospace, 'SF Mono', Menlo, monospace;">1e</span>
+          <span style="font:600 22px/1.2 'Iowan Old Style', Palatino, Georgia, serif; color:#13141B;">V4 · Soft glass</span>
+          <span style="font:400 13px/1 system-ui, sans-serif; color:#6F6F75;">a modern native-feeling app — depth, blur, rounded</span>
+        </div>
+        <div>
+          <p style="margin:0 0 0 38px; font:400 13px/1.5 system-ui, sans-serif; color:#55555A; max-width:860px;">Panels float as frosted glass cards over a faint tinted wash. The serif gives way to the system sans; the indigo lifts to a brighter #4E5FD8. Pills, squircles and soft shadows everywhere; the trust message becomes a status chip. Closest to a macOS/iOS companion app.</p>
+        </div>
+      </div>
+
+      <!-- 1e · main reader -->
+      <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="1e Main reader (glass)">
+        <div style="font:500 11px/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing:0.1em; text-transform:uppercase; color:#6F6F75;">Main · note open in reader</div>
+        <div style="width:1280px; height:840px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid rgba(19,20,27,0.12); box-shadow:0 18px 50px rgba(19,20,27,0.10); font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background:radial-gradient(900px 500px at 8% -5%, rgba(96,112,226,0.16), transparent 60%), radial-gradient(800px 480px at 100% 108%, rgba(236,166,140,0.14), transparent 55%), #F3F4F8; position:relative;">
+          <div style="flex:1; display:flex; gap:16px; padding:18px; min-height:0;">
+            <!-- glass sidebar -->
+            <div style="width:302px; flex:none; display:flex; flex-direction:column; background:rgba(255,255,255,0.66); backdrop-filter:blur(26px); border:1px solid rgba(255,255,255,0.9); border-radius:22px; box-shadow:0 20px 50px rgba(35,42,90,0.12); overflow:hidden;">
+              <div style="padding:16px 14px 10px; display:flex; flex-direction:column; gap:11px;">
+                <div style="display:flex; align-items:center; gap:9px;">
+                  <span style="width:26px; height:26px; border-radius:9px; background:linear-gradient(135deg, #5B6CE4, #4E5FD8); display:inline-grid; place-items:center; box-shadow:0 4px 10px rgba(78,95,216,0.35);"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 8h12M6 13h8M6 18h10" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" fill="none"></path></svg></span>
+                  <span style="font:700 16px/1 system-ui, sans-serif; letter-spacing:-0.01em; color:#1C1E28;">Scratchpad</span>
+                  <span style="margin-left:auto; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:999px; background:rgba(28,30,40,0.05); color:#5D6170;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; height:38px; background:rgba(255,255,255,0.85); border:1px solid rgba(28,30,40,0.07); border-radius:12px; padding:0 10px; box-shadow:inset 0 1px 2px rgba(28,30,40,0.03);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9EAD" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+                  <span style="flex:1; font:400 13.5px/1 system-ui, sans-serif; color:#9A9EAD;">Search</span>
+                  <span style="font:500 11px/1 system-ui, sans-serif; color:#9A9EAD; background:rgba(28,30,40,0.05); border-radius:6px; padding:3px 6px;">⌘K</span>
+                </div>
+                <span style="display:inline-flex; align-items:center; justify-content:center; gap:7px; height:40px; border-radius:12px; background:#4E5FD8; color:#FFFFFF; font:600 14px/1 system-ui, sans-serif; box-shadow:0 8px 18px rgba(78,95,216,0.35);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>New note</span>
+                <div style="display:flex; align-items:center; background:rgba(28,30,40,0.05); border-radius:11px; padding:3px; gap:2px;">
+                  <span style="flex:1; display:inline-flex; align-items:center; justify-content:center; height:28px; border-radius:8px; background:#FFFFFF; color:#1C1E28; font:600 12.5px/1 system-ui, sans-serif; box-shadow:0 2px 6px rgba(28,30,40,0.10);">Notes</span>
+                  <span style="flex:1; display:inline-flex; align-items:center; justify-content:center; height:28px; border-radius:8px; color:#5D6170; font:500 12.5px/1 system-ui, sans-serif;">Trash</span>
+                  <span style="flex:1; display:inline-flex; align-items:center; justify-content:center; height:28px; border-radius:8px; color:#5D6170; font:500 12.5px/1 system-ui, sans-serif;">Tags</span>
+                </div>
+              </div>
+              <div style="flex:1; overflow:hidden; padding:4px 10px 10px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; align-items:center; gap:5px; font:600 10.5px/1 system-ui, sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:#9A9EAD; padding:6px 8px 2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#E8A23D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"></path><path d="M9 4h6l-1 6 3 3H7l3-3-1-6z"></path></svg>Pinned</div>
+                <div style="background:#FFFFFF; border-radius:14px; padding:11px 12px; box-shadow:0 8px 20px rgba(35,42,90,0.12); border:1px solid rgba(78,95,216,0.35); display:flex; flex-direction:column; gap:4px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;">
+                    <span style="flex:1; font:600 13.5px/1.3 system-ui, sans-serif; color:#1C1E28; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Fix flaky Playwright test in CI</span>
+                    <span style="font:500 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">8:06</span>
+                  </div>
+                  <span style="font:400 12px/1.45 system-ui, sans-serif; color:#5D6170; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">The command-palette.spec.js test fails intermittently on CI.</span>
+                  <span style="display:flex; gap:5px; margin-top:2px;"><span style="display:inline-flex; align-items:center; height:18px; padding:0 8px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 10px/1 system-ui, sans-serif;">testing</span><span style="display:inline-flex; align-items:center; height:18px; padding:0 8px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 10px/1 system-ui, sans-serif;">ci</span></span>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px; font:600 10.5px/1 system-ui, sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:#9A9EAD; padding:8px 8px 2px;">Recent</div>
+                <div style="border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;"><span style="flex:1; font:600 13.5px/1.3 system-ui, sans-serif; color:#1C1E28; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">IndexedDB migration plan for v3</span><span style="font:500 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">Yest</span></div>
+                  <span style="font:400 12px/1.45 system-ui, sans-serif; color:#5D6170; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Schema v3 adds a noteLinks store for backlinks.</span>
+                </div>
+                <div style="border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;"><span style="flex:1; font:600 13.5px/1.3 system-ui, sans-serif; color:#1C1E28; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Snippet: debounce with trailing flush</span><span style="font:500 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">Mon</span></div>
+                  <span style="font:400 12px/1.45 system-ui, sans-serif; color:#5D6170; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">function debounce(fn, ms) { let t; …</span>
+                </div>
+                <div style="border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;"><span style="flex:1; font:600 13.5px/1.3 system-ui, sans-serif; color:#1C1E28; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Standup notes — deploy checklist</span><span style="font:500 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">Sun</span></div>
+                  <span style="font:400 12px/1.45 system-ui, sans-serif; color:#5D6170; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Recompute CSP hashes after editing inline scripts</span>
+                </div>
+                <div style="border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;"><span style="flex:1; font:600 13.5px/1.3 system-ui, sans-serif; color:#1C1E28; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Reading list: local-first essays</span><span style="font:500 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">Sat</span></div>
+                  <span style="font:400 12px/1.45 system-ui, sans-serif; color:#5D6170; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Ink &amp; Switch · Kleppmann on CRDTs</span>
+                </div>
+                <div style="border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;"><span style="flex:1; font:600 13.5px/1.3 system-ui, sans-serif; color:#1C1E28; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Perf: virtualize the note list?</span><span style="font:500 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">Fri</span></div>
+                  <span style="font:400 12px/1.45 system-ui, sans-serif; color:#5D6170; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">At 2k notes the sidebar render takes ~180ms.</span>
+                </div>
+              </div>
+              <div style="padding:10px 14px 12px;"><span style="display:inline-flex; align-items:center; gap:7px; height:26px; padding:0 11px; border-radius:999px; background:rgba(28,30,40,0.05); font:500 11px/1 system-ui, sans-serif; color:#5D6170;"><span style="width:6px; height:6px; border-radius:999px; background:#57B26A;"></span>Local-only · never syncs</span></div>
+            </div>
+            <!-- glass main -->
+            <div style="flex:1; display:flex; flex-direction:column; min-width:0; background:rgba(255,255,255,0.66); backdrop-filter:blur(26px); border:1px solid rgba(255,255,255,0.9); border-radius:22px; box-shadow:0 20px 50px rgba(35,42,90,0.12); overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:8px; padding:14px 18px 12px; border-bottom:1px solid rgba(28,30,40,0.06);">
+                <span style="display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 12px; border-radius:999px; background:rgba(28,30,40,0.05); font:500 12px/1 system-ui, sans-serif; color:#5D6170;">Notes<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9A9EAD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg><span style="color:#1C1E28; font-weight:600;">Pinned</span></span>
+                <span style="flex:1;"></span>
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:999px; background:#EBEEFC; color:#4E5FD8;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"></path><path d="M9 4h6l-1 6 3 3H7l3-3-1-6z"></path></svg></span>
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:999px; background:rgba(28,30,40,0.05); color:#5D6170;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg></span>
+                <span style="display:inline-flex; align-items:center; justify-content:center; height:32px; padding:0 18px; border-radius:999px; background:#4E5FD8; color:#FFFFFF; font:600 13px/1 system-ui, sans-serif; box-shadow:0 6px 14px rgba(78,95,216,0.3);">Edit</span>
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:999px; background:rgba(28,30,40,0.05); color:#5D6170;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="18" cy="12" r="1.8"></circle></svg></span>
+              </div>
+              <div style="flex:1; overflow:hidden; padding:30px 40px;">
+                <div style="max-width:720px; margin:0 auto;">
+                  <h2 style="margin:0 0 10px; font:700 32px/1.2 system-ui, sans-serif; letter-spacing:-0.02em; color:#1C1E28;">Fix flaky Playwright test in CI</h2>
+                  <div style="display:flex; align-items:center; gap:8px; font:400 12.5px/1 system-ui, sans-serif; color:#9A9EAD;">Updated 8:06 AM<span style="width:3px; height:3px; border-radius:999px; background:#C9CBD4;"></span>53 words<span style="width:3px; height:3px; border-radius:999px; background:#C9CBD4;"></span>16s read</div>
+                  <div style="display:flex; gap:6px; margin:14px 0 22px;">
+                    <span style="display:inline-flex; align-items:center; height:24px; padding:0 11px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 11.5px/1 system-ui, sans-serif;">testing</span>
+                    <span style="display:inline-flex; align-items:center; height:24px; padding:0 11px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 11.5px/1 system-ui, sans-serif;">ci</span>
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:999px; background:rgba(28,30,40,0.05); color:#9A9EAD; font:600 13px/1 system-ui, sans-serif;">+</span>
+                  </div>
+                  <div style="font:400 15.5px/1.75 system-ui, sans-serif; color:#33353F;">
+                    <p style="margin:0 0 1em;">The <code style="font-family:ui-monospace, 'SF Mono', Menlo, monospace; font-size:0.88em; background:rgba(28,30,40,0.055); padding:2px 7px; border-radius:7px; color:#1C1E28;">command-palette.spec.js</code> test fails intermittently on CI.</p>
+                    <h3 style="margin:1.5em 0 0.5em; font:700 20px/1.3 system-ui, sans-serif; letter-spacing:-0.015em; color:#1C1E28;">Hypothesis</h3>
+                    <p style="margin:0 0 1em;">The dialog animation (150ms) races the click. Playwright clicks before the input is focusable.</p>
+                    <pre style="margin:1.2em 0; padding:16px 18px; background:rgba(28,30,40,0.045); border-radius:14px; overflow:hidden; font:400 13px/1.6 ui-monospace, 'SF Mono', Menlo, monospace; color:#1C1E28;">await expect(page.locator("#command-palette-input")).toBeFocused();</pre>
+                    <div style="margin:1.2em 0; padding:14px 18px; background:#EBEEFC; border-radius:14px; display:flex; gap:12px;"><span style="width:3.5px; border-radius:999px; background:#4E5FD8; flex:none;"></span><span style="font-style:italic; color:#3A3F63;">Always wait on state, not time.</span></div>
+                    <div style="display:flex; flex-direction:column; gap:9px; margin:1.2em 0 0;">
+                      <div style="display:flex; align-items:center; gap:10px;"><span style="width:18px; height:18px; border-radius:6px; background:#4E5FD8; display:inline-grid; place-items:center; flex:none;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span><span style="color:#9A9EAD; text-decoration:line-through;">Repro locally with --repeat-each=20</span></div>
+                      <div style="display:flex; align-items:center; gap:10px;"><span style="width:18px; height:18px; border-radius:6px; border:1.5px solid #C9CBD4; box-sizing:border-box; flex:none; background:#FFFFFF;"></span>Add toBeFocused assertion</div>
+                      <div style="display:flex; align-items:center; gap:10px;"><span style="width:18px; height:18px; border-radius:6px; border:1.5px solid #C9CBD4; box-sizing:border-box; flex:none; background:#FFFFFF;"></span>Remove the sleep(200) hack</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 1e · edit mode -->
+      <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="1e Edit mode (glass)">
+        <div style="font:500 11px/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing:0.1em; text-transform:uppercase; color:#6F6F75;">Editor · edit mode</div>
+        <div style="width:1280px; height:840px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid rgba(19,20,27,0.12); box-shadow:0 18px 50px rgba(19,20,27,0.10); font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background:radial-gradient(900px 500px at 8% -5%, rgba(96,112,226,0.16), transparent 60%), radial-gradient(800px 480px at 100% 108%, rgba(236,166,140,0.14), transparent 55%), #F3F4F8;">
+          <div style="flex:1; display:flex; padding:18px; min-height:0; justify-content:center;">
+            <div style="flex:1; max-width:1000px; display:flex; flex-direction:column; min-width:0; background:rgba(255,255,255,0.7); backdrop-filter:blur(26px); border:1px solid rgba(255,255,255,0.9); border-radius:22px; box-shadow:0 20px 50px rgba(35,42,90,0.12); overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:8px; padding:14px 18px 12px; border-bottom:1px solid rgba(28,30,40,0.06);">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:999px; background:rgba(28,30,40,0.05); color:#5D6170;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></span>
+                <span style="font:600 13px/1 system-ui, sans-serif; color:#1C1E28;">Fix flaky Playwright test in CI</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px; border-radius:999px; background:rgba(232,162,61,0.14); color:#A2701F; font:600 11px/1 system-ui, sans-serif;"><span style="width:5px; height:5px; border-radius:999px; background:#E8A23D;"></span>Unsaved</span>
+                <span style="flex:1;"></span>
+                <span style="display:inline-flex; align-items:center; gap:4px; background:rgba(28,30,40,0.05); border-radius:10px; padding:3px;">
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px; border-radius:7px; background:#FFFFFF; box-shadow:0 1px 4px rgba(28,30,40,0.12); font:700 12px/1 system-ui, sans-serif; color:#1C1E28;">B</span>
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px; border-radius:7px; font:italic 600 12px/1 Georgia, serif; color:#5D6170;">I</span>
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px; border-radius:7px; font:600 11px/1 ui-monospace, monospace; color:#5D6170;">&lt;/&gt;</span>
+                  <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px; border-radius:7px; color:#5D6170;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                </span>
+                <span style="display:inline-flex; align-items:center; justify-content:center; height:32px; padding:0 18px; border-radius:999px; background:#4E5FD8; color:#FFFFFF; font:600 13px/1 system-ui, sans-serif; box-shadow:0 6px 14px rgba(78,95,216,0.3);">Save</span>
+              </div>
+              <div style="flex:1; overflow:hidden; padding:30px 40px;">
+                <div style="max-width:720px; margin:0 auto; display:flex; flex-direction:column; height:100%;">
+                  <div style="font:700 32px/1.2 system-ui, sans-serif; letter-spacing:-0.02em; color:#1C1E28;">Fix flaky Playwright test in CI<span style="display:inline-block; width:2px; height:26px; background:#4E5FD8; margin-left:3px; border-radius:2px;"></span></div>
+                  <div style="display:flex; gap:6px; margin:14px 0 18px;">
+                    <span style="display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 11px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 11.5px/1 system-ui, sans-serif;">testing<span style="opacity:0.6;">×</span></span>
+                    <span style="display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 11px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 11.5px/1 system-ui, sans-serif;">ci<span style="opacity:0.6;">×</span></span>
+                    <span style="display:inline-flex; align-items:center; height:24px; padding:0 11px; border-radius:999px; border:1.5px dashed #C9CBD4; color:#9A9EAD; font:500 11.5px/1 system-ui, sans-serif;">add tag</span>
+                  </div>
+                  <div style="flex:1; background:rgba(255,255,255,0.7); border:1px solid rgba(28,30,40,0.06); border-radius:16px; padding:20px 22px; font:400 14px/1.85 ui-monospace, 'SF Mono', Menlo, monospace; color:#33353F; white-space:pre-wrap; box-shadow:inset 0 1px 3px rgba(28,30,40,0.04);">The `command-palette.spec.js` test fails intermittently on CI.
+
+<span style="color:#4E5FD8; font-weight:600;">##</span> Hypothesis
+
+The dialog animation (150ms) races the click. Playwright clicks before the input is focusable.
+
+<span style="color:#9A9EAD;">```js</span>
+await expect(page.locator("#command-palette-input")).toBeFocused();
+<span style="color:#9A9EAD;">```
+
+</span><span style="color:#4E5FD8;">&gt;</span> Always wait on state, not time.
+
+- [x] Repro locally with --repeat-each=20
+- [ ] Add toBeFocused assertion
+- [ ] Remove the sleep(200) hack</div>
+                  <div style="display:flex; justify-content:space-between; padding:12px 4px 0; font:400 11.5px/1 system-ui, sans-serif; color:#9A9EAD;"><span>Draft autosaved to this device · 8:11 AM</span><span>53 words · 16s read</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1e · empty -->
+      <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="1e Empty onboarding (glass)">
+        <div style="font:500 11px/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing:0.1em; text-transform:uppercase; color:#6F6F75;">Empty · first run</div>
+        <div style="width:1280px; height:840px; display:flex; align-items:center; justify-content:center; border-radius:10px; overflow:hidden; border:1px solid rgba(19,20,27,0.12); box-shadow:0 18px 50px rgba(19,20,27,0.10); font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background:radial-gradient(900px 500px at 8% -5%, rgba(96,112,226,0.18), transparent 60%), radial-gradient(800px 480px at 100% 108%, rgba(236,166,140,0.16), transparent 55%), #F3F4F8; position:relative;">
+          <div style="width:560px; padding:44px 48px; background:rgba(255,255,255,0.72); backdrop-filter:blur(28px); border:1px solid rgba(255,255,255,0.95); border-radius:26px; box-shadow:0 30px 70px rgba(35,42,90,0.16); text-align:center; display:flex; flex-direction:column; align-items:center;">
+            <span style="width:64px; height:64px; border-radius:20px; background:linear-gradient(135deg, #EBEEFC, #DDE2FB); display:inline-grid; place-items:center; margin-bottom:18px; box-shadow:inset 0 1px 2px #FFFFFF, 0 10px 24px rgba(78,95,216,0.18);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4E5FD8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12l4 4v12H4z"></path><path d="M16 4v4h4"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg></span>
+            <div style="font:700 24px/1.25 system-ui, sans-serif; letter-spacing:-0.02em; color:#1C1E28; margin-bottom:8px;">Start your first note</div>
+            <div style="font:400 14.5px/1.6 system-ui, sans-serif; color:#5D6170; max-width:38ch; margin-bottom:22px;">Everything you write stays on this device. No account to create, nothing to configure.</div>
+            <div style="display:flex; gap:10px; margin-bottom:24px;">
+              <span style="display:inline-flex; align-items:center; justify-content:center; gap:7px; height:42px; padding:0 22px; border-radius:999px; background:#4E5FD8; color:#FFFFFF; font:600 14px/1 system-ui, sans-serif; box-shadow:0 8px 18px rgba(78,95,216,0.35);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>New note</span>
+              <span style="display:inline-flex; align-items:center; justify-content:center; height:42px; padding:0 22px; border-radius:999px; background:rgba(28,30,40,0.05); color:#1C1E28; font:600 14px/1 system-ui, sans-serif;">Import backup</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 11px; border-radius:999px; background:rgba(87,178,106,0.12); color:#3B7A4B; font:600 11px/1 system-ui, sans-serif;"><span style="width:5px; height:5px; border-radius:999px; background:#57B26A;"></span>On-device only</span>
+              <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 11px; border-radius:999px; background:rgba(28,30,40,0.05); color:#5D6170; font:600 11px/1 system-ui, sans-serif;">No account</span>
+              <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 11px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 11px/1 system-ui, sans-serif;">Export anytime</span>
+            </div>
+          </div>
+          <span style="position:absolute; left:22px; bottom:20px; display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 12px; border-radius:999px; background:rgba(255,255,255,0.7); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.9); font:500 11px/1 system-ui, sans-serif; color:#5D6170; box-shadow:0 8px 20px rgba(35,42,90,0.10);"><span style="width:6px; height:6px; border-radius:999px; background:#57B26A;"></span>Local-only · never syncs</span>
+        </div>
+      </div>
+
+      <!-- 1e · about hero -->
+      <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="1e About page (glass)">
+        <div style="font:500 11px/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing:0.1em; text-transform:uppercase; color:#6F6F75;">About · hero</div>
+        <div style="width:1280px; height:840px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid rgba(19,20,27,0.12); box-shadow:0 18px 50px rgba(19,20,27,0.10); font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background:radial-gradient(1100px 600px at 20% -10%, rgba(96,112,226,0.20), transparent 60%), radial-gradient(900px 560px at 105% 40%, rgba(236,166,140,0.18), transparent 55%), #F3F4F8;">
+          <div style="display:flex; justify-content:center; padding:20px 0 0;">
+            <div style="display:flex; align-items:center; gap:22px; height:48px; padding:0 10px 0 16px; background:rgba(255,255,255,0.7); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.9); border-radius:999px; box-shadow:0 14px 34px rgba(35,42,90,0.12);">
+              <span style="display:inline-flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:8px; background:linear-gradient(135deg, #5B6CE4, #4E5FD8); display:inline-grid; place-items:center;"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M6 8h12M6 13h8M6 18h10" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" fill="none"></path></svg></span><span style="font:700 14px/1 system-ui, sans-serif; color:#1C1E28;">Scratchpad</span></span>
+              <span style="font:500 13px/1 system-ui, sans-serif; color:#5D6170;">Privacy</span>
+              <span style="font:500 13px/1 system-ui, sans-serif; color:#5D6170;">Terms</span>
+              <span style="display:inline-flex; align-items:center; height:32px; padding:0 16px; border-radius:999px; background:#4E5FD8; color:#FFFFFF; font:600 13px/1 system-ui, sans-serif; box-shadow:0 6px 14px rgba(78,95,216,0.3);">Open app</span>
+            </div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; padding:52px 80px 0;">
+            <h2 style="margin:0 0 20px; font:800 62px/1.08 system-ui, sans-serif; letter-spacing:-0.035em; color:#1C1E28;">Your thoughts. Your browser.<br><span style="background:linear-gradient(90deg, #4E5FD8, #7A8AD1); -webkit-background-clip:text; background-clip:text; color:transparent;">Your business.</span></h2>
+            <p style="margin:0 0 28px; max-width:54ch; font:400 17px/1.65 system-ui, sans-serif; color:#5D6170;">A notes app that runs entirely inside this tab. No accounts, no servers, no telemetry — just markdown and a fast editor that keeps what you write on your device.</p>
+            <div style="display:flex; gap:12px; margin-bottom:14px;">
+              <span style="display:inline-flex; align-items:center; justify-content:center; gap:8px; height:46px; padding:0 26px; border-radius:999px; background:#4E5FD8; color:#FFFFFF; font:600 15px/1 system-ui, sans-serif; box-shadow:0 10px 24px rgba(78,95,216,0.4);">Open Scratchpad<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"></path></svg></span>
+              <span style="display:inline-flex; align-items:center; justify-content:center; height:46px; padding:0 26px; border-radius:999px; background:rgba(255,255,255,0.75); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.95); color:#1C1E28; font:600 15px/1 system-ui, sans-serif; box-shadow:0 8px 20px rgba(35,42,90,0.10);">Privacy policy</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:34px;">
+              <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 11px; border-radius:999px; background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.9); font:600 11px/1 system-ui, sans-serif; color:#5D6170;"><span style="width:5px; height:5px; border-radius:999px; background:#4E5FD8;"></span>Local-only</span>
+              <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 11px; border-radius:999px; background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.9); font:600 11px/1 system-ui, sans-serif; color:#5D6170;"><span style="width:5px; height:5px; border-radius:999px; background:#57B26A;"></span>Works offline</span>
+              <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 11px; border-radius:999px; background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.9); font:600 11px/1 system-ui, sans-serif; color:#5D6170;"><span style="width:5px; height:5px; border-radius:999px; background:#E8A23D;"></span>Zero accounts</span>
+            </div>
+            <div style="width:820px; flex:1; min-height:0; background:rgba(255,255,255,0.66); backdrop-filter:blur(26px); border:1px solid rgba(255,255,255,0.95); border-radius:24px 24px 0 0; border-bottom:none; box-shadow:0 -20px 60px rgba(35,42,90,0.10), 0 20px 50px rgba(35,42,90,0.14); overflow:hidden; display:flex;">
+              <div style="width:230px; flex:none; border-right:1px solid rgba(28,30,40,0.06); padding:16px 12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:center; gap:7px;"><span style="width:18px; height:18px; border-radius:6px; background:linear-gradient(135deg, #5B6CE4, #4E5FD8);"></span><span style="font:700 12px/1 system-ui, sans-serif; color:#1C1E28;">Scratchpad</span></div>
+                <div style="height:28px; background:rgba(255,255,255,0.85); border:1px solid rgba(28,30,40,0.07); border-radius:9px; display:flex; align-items:center; padding:0 9px; font:400 10.5px/1 system-ui, sans-serif; color:#9A9EAD;">Search&nbsp; ⌘K</div>
+                <div style="height:30px; background:#4E5FD8; border-radius:9px; display:flex; align-items:center; justify-content:center; font:600 11px/1 system-ui, sans-serif; color:#FFFFFF; box-shadow:0 5px 12px rgba(78,95,216,0.3);">+ New note</div>
+                <div style="background:#FFFFFF; border:1px solid rgba(78,95,216,0.35); border-radius:10px; padding:8px 9px; box-shadow:0 5px 14px rgba(35,42,90,0.10);">
+                  <div style="font:600 11px/1.3 system-ui, sans-serif; color:#1C1E28;">Q2 product strategy</div>
+                  <div style="font:400 9.5px/1.4 system-ui, sans-serif; color:#9A9EAD; margin-top:3px;">Pricing experiments, retention…</div>
+                </div>
+                <div style="border-radius:10px; padding:8px 9px;">
+                  <div style="font:600 11px/1.3 system-ui, sans-serif; color:#33353F;">Coffee shop list</div>
+                  <div style="font:400 9.5px/1.4 system-ui, sans-serif; color:#9A9EAD; margin-top:3px;">Sightglass, Saint Frank…</div>
+                </div>
+                <div style="border-radius:10px; padding:8px 9px;">
+                  <div style="font:600 11px/1.3 system-ui, sans-serif; color:#33353F;">Reading queue 2026</div>
+                  <div style="font:400 9.5px/1.4 system-ui, sans-serif; color:#9A9EAD; margin-top:3px;">A Pattern Language…</div>
+                </div>
+              </div>
+              <div style="flex:1; padding:20px 26px; text-align:left;">
+                <div style="font:700 19px/1.2 system-ui, sans-serif; letter-spacing:-0.015em; color:#1C1E28;">Q2 product strategy</div>
+                <div style="font:400 10.5px/1 system-ui, sans-serif; color:#9A9EAD; margin:6px 0 12px;">Updated 2h ago · 214 words</div>
+                <div style="font:400 12.5px/1.7 system-ui, sans-serif; color:#33353F; max-width:52ch;">The thesis for the quarter is simple: trust is the moat. We ship features that make the product feel less like surveillance software and more like a tool a thoughtful person would actually use.</div>
+                <div style="display:flex; gap:5px; margin-top:12px;"><span style="display:inline-flex; align-items:center; height:20px; padding:0 9px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 10px/1 system-ui, sans-serif;">strategy</span><span style="display:inline-flex; align-items:center; height:20px; padding:0 9px; border-radius:999px; background:#EBEEFC; color:#4E5FD8; font:600 10px/1 system-ui, sans-serif;">q2</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+</body>
+</html>
