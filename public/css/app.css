@@ -17,10 +17,13 @@ body {
 
 /* App page: cap body at viewport height so inner scroll regions (sidebar
    note list, editor card) have a definite size to scroll within. Privacy
-   page opts out via .page-privacy below. */
+   page opts out via .page-privacy below. The tinted wash sits behind the
+   two floating glass panels. */
 body:not(.page-privacy) {
   height: 100vh;
   height: 100dvh;
+  background: var(--wash-app);
+  background-attachment: fixed;
 }
 
 /* ---------- Accessibility: motion + touch ---------- */
@@ -80,10 +83,28 @@ body:not(.page-privacy) {
 /* ---------- App shell ---------- */
 .app-shell {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 302px 1fr;
   grid-template-rows: 1fr;
+  gap: 16px;
+  padding: 18px;
   flex: 1;
   min-height: 0;
+}
+
+/* Two floating frosted-glass panels. Blur is compositing-heavy, so it lives
+   only on these two top-level panels (never on rows/chips). contain isolates
+   their rendering. Fallbacks for no-backdrop-filter support and for
+   prefers-reduced-transparency live just below. */
+.sidebar,
+.main {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: var(--glass-border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+  contain: layout style paint;
 }
 
 .sidebar {
@@ -91,9 +112,37 @@ body:not(.page-privacy) {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  border-top: 1.5px solid var(--accent);
-  border-right: var(--border);
-  background: var(--paper);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sidebar,
+  .main,
+  .dialog,
+  .onboarding-panel,
+  .status-chip.is-floating {
+    background: var(--glass-fallback);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .sidebar,
+  .main,
+  .dialog,
+  .onboarding-panel,
+  .status-chip.is-floating {
+    background: var(--glass-fallback);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Optional entrance: panels fade/translate up once on load. */
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar { animation: panel-rise var(--t-slow) var(--ease-out) both; }
+  .main    { animation: panel-rise var(--t-slow) var(--ease-out) 40ms both; }
+  @keyframes panel-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
 }
 
 .visually-hidden {
@@ -113,17 +162,14 @@ body:not(.page-privacy) {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  background: var(--ivory);
-  overflow: hidden;
 }
 
 /* ---------- Sidebar head ---------- */
 .sidebar-head {
-  padding: 14px 14px 12px;
+  padding: 16px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  border-bottom: var(--border-hair);
+  gap: 11px;
 }
 
 .brand {
@@ -136,11 +182,11 @@ body:not(.page-privacy) {
 .brand-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   margin: 0;
-  font: 600 18px/1.2 var(--serif);
+  font: 700 16px/1 var(--sans);
   letter-spacing: -0.01em;
-  color: var(--slate);
+  color: var(--ink);
 }
 
 .theme-toggle {
@@ -150,40 +196,52 @@ body:not(.page-privacy) {
   flex-shrink: 0;
 }
 body:not(.page-privacy) .theme-toggle {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   padding: 0;
+  background: var(--control-fill);
+  border-radius: var(--r-pill);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+body:not(.page-privacy) .theme-toggle:hover {
+  background: var(--control-fill-hover);
+  color: var(--ink);
 }
 .theme-toggle .theme-icon { display: none; }
 .theme-toggle[data-theme-icon="auto"] .theme-icon-auto { display: block; }
 .theme-toggle[data-theme-icon="light"] .theme-icon-light { display: block; }
 .theme-toggle[data-theme-icon="dark"] .theme-icon-dark { display: block; }
 
-.sidebar-kicker {
-  margin: -2px 0 2px 30px;
-  color: var(--gray-500);
-  font: 400 11px/1.35 var(--mono);
-}
-.sidebar-kicker .accent { color: var(--accent); font-weight: 500; }
+/* Note-count kicker retired in Soft Glass; the sidebar-foot status chip
+   carries the "Local-only · never syncs" message instead. Element kept in
+   the DOM (app.js writes #note-count) but hidden. */
+.sidebar-kicker { display: none; }
 
 .brand-mark {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
   display: block;
+  background: var(--accent-grad);
+  border-radius: var(--r-glyph);
+  box-shadow: var(--shadow-glyph);
 }
-.brand-mark-bg { fill: var(--accent); }
+.brand-mark-bg { fill: transparent; }
 .brand-mark-lines {
-  stroke: var(--paper);
-  stroke-width: 2;
+  stroke: var(--glyph-ink);
+  stroke-width: 2.4;
   stroke-linecap: round;
   fill: none;
 }
 
 .btn-sm {
-  padding: 6px 10px;
-  font-size: 12px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
 }
+.btn-primary.btn-sm,
+.btn-danger.btn-sm { box-shadow: var(--shadow-primary-sm); }
 
 .sidebar-search {
   display: flex;
@@ -194,11 +252,14 @@ body:not(.page-privacy) .theme-toggle {
 .search-control {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
-  background: var(--paper);
-  border: var(--border);
-  border-radius: var(--r-sm);
+  height: 38px;
+  padding: 0 10px;
+  background: var(--field-bg);
+  border: 1px solid var(--hairline-color-2);
+  border-radius: var(--r-md);
+  box-shadow: var(--field-inset-shadow);
   transition: border-color var(--t-fast) ease, box-shadow var(--t-fast) ease;
 }
 
@@ -207,51 +268,39 @@ body:not(.page-privacy) .theme-toggle {
   box-shadow: 0 0 0 3px var(--accent-focus-ring);
 }
 
+.search-icon { flex: none; color: var(--text-muted); }
+
 .search-control .search-input {
   flex: 1 1 auto;
   min-width: 0;
+  height: 100%;
   border: 0;
-  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding-right: 6px;
+  padding: 0;
+  font: 400 13.5px/1 var(--sans);
+  color: var(--ink);
 }
 
 .search-control .search-input:focus {
   border-color: transparent;
   box-shadow: none;
 }
+.search-control .search-input::placeholder { color: var(--text-muted); }
 
-.search-scope-select {
-  flex: 0 0 auto;
-  width: 76px;
-  height: 30px;
-  margin-right: 4px;
-  padding: 0 26px 0 9px;
-  border: var(--border-hair);
-  border-radius: var(--r-xs);
-  background-color: var(--ivory);
-  color: var(--gray-700);
-  font: 500 12px/1 var(--mono);
-}
-
-.search-scope-select:focus {
-  border-color: var(--accent);
-  box-shadow: none;
+.search-hint {
+  flex: none;
+  font: 500 11px/1 var(--sans);
+  color: var(--text-muted);
+  background: var(--control-fill);
+  border-radius: var(--r-code);
+  padding: 3px 6px;
 }
 
 @media (pointer: coarse), (max-width: 640px) {
-  .search-control .search-input {
-    min-height: 44px;
-    height: 44px;
-  }
-
-  .search-scope-select {
-    height: 44px;
-    min-height: 44px;
-    width: 86px;
-    margin-right: 0;
-  }
+  .search-control { height: 44px; }
+  .search-hint { display: none; }
 }
 
 .sidebar-actions {
@@ -260,23 +309,87 @@ body:not(.page-privacy) .theme-toggle {
   gap: 8px;
 }
 
-.sidebar-actions .btn-primary { flex: 1; }
+.sidebar-actions .btn-primary {
+  flex: 1;
+  border-radius: var(--r-md);
+}
+.sidebar-actions .btn-ghost {
+  flex: none;
+  width: 40px;
+  padding: 0;
+}
 
+/* View switch — a segmented control (track + segments). */
 .sidebar-view-switch {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  background: var(--control-fill);
+  border-radius: var(--r-seg-track);
+  padding: 3px;
+  gap: 2px;
 }
 
 .sidebar-view-switch .btn {
-  width: 100%;
+  flex: 1;
+  height: 28px;
+  padding: 0 12px;
   justify-content: center;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+  font: 500 12.5px/1 var(--sans);
+}
+.sidebar-view-switch .btn:hover {
+  background: transparent;
+  color: var(--ink);
+}
+.sidebar-view-switch .btn.is-active {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow-seg);
 }
 
+/* Pressed/active state for standalone toggle buttons (e.g. bulk "Select"). */
 .btn.is-active {
-  border-color: var(--accent);
   color: var(--accent);
-  background: var(--accent-tint);
+  background: var(--accent-soft);
+}
+
+/* ---------- Sidebar foot status chip ---------- */
+.sidebar-foot {
+  flex: 0 0 auto;
+  padding: 10px 14px 12px;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: var(--r-pill);
+  background: var(--control-fill);
+  font: 500 11px/1 var(--sans);
+  color: var(--text-secondary);
+}
+.status-chip .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--success);
+  flex: none;
+}
+.status-chip.is-floating {
+  position: fixed;
+  left: 30px;
+  bottom: 30px;
+  height: 28px;
+  background: var(--glass-bg-pill);
+  -webkit-backdrop-filter: blur(var(--glass-blur-pill));
+  backdrop-filter: blur(var(--glass-blur-pill));
+  border: var(--glass-border);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-sticky);
 }
 
 .active-filter {

@@ -68,22 +68,17 @@
 
         <div class="sidebar-search">
           <div class="search-control">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             <input
               id="search"
               class="input search-input"
               type="search"
-              placeholder="Search notes…"
+              placeholder="Search"
               autocomplete="off"
               spellcheck="false"
               aria-label="Search notes"
             />
-            <label class="visually-hidden" for="search-scope">Search scope</label>
-            <select id="search-scope" class="select search-scope-select" aria-label="Search scope">
-              <option value="all">All</option>
-              <option value="title">Title</option>
-              <option value="body">Body</option>
-              <option value="tags">Tags</option>
-            </select>
+            <span class="search-hint" aria-hidden="true">⌘K</span>
           </div>
           <div id="active-filter" class="active-filter" hidden>
             <span class="badge badge-accent">
@@ -112,6 +107,12 @@
       </div>
 
       <nav class="note-list" id="note-list" aria-label="Note list"></nav>
+
+      <div class="sidebar-foot">
+        <span class="status-chip">
+          <span class="status-dot" aria-hidden="true"></span>Local-only · never syncs
+        </span>
+      </div>
     </aside>
 
     <main class="main" id="main">
@@ -259,33 +260,6 @@
       </section>
     </main>
   </div>
-
-  <footer class="app-footer">
-    <div class="footer-inner">
-      <a href="index.html" class="footer-brand" aria-label="Scratchpad home">
-        <span class="footer-wordmark">Scratchpad</span>
-        <span class="footer-tagline">Notes that stay in your browser.</span>
-      </a>
-      <nav class="footer-nav" aria-label="Site links">
-        <a href="about.html">About</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-        <a class="footer-ext-link" href="https://vinny.dev" target="_blank" rel="noopener noreferrer">
-          vinny.dev
-          <svg class="footer-ext-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <path d="M9 3h4v4M13 3 8 8M11 9v3.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-      </nav>
-    </div>
-    <div class="footer-meta-row">
-      <div class="footer-meta">
-        <span>v<span id="app-version">—</span></span>
-        <span class="footer-sep" aria-hidden="true">·</span>
-        <span>built <span id="app-build-date">—</span></span>
-      </div>
-    </div>
-  </footer>
 
   <dialog id="delete-dialog" class="dialog" aria-labelledby="delete-dialog-title">
     <div class="dialog-head">

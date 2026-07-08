@@ -2647,7 +2647,11 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
-    els.searchScope.addEventListener('change', () => setSearchScope(els.searchScope.value));
+    // Search-scope select was retired in the Soft Glass redesign; search now
+    // always matches all fields (state.searchScope defaults to 'all').
+    if (els.searchScope) {
+      els.searchScope.addEventListener('change', () => setSearchScope(els.searchScope.value));
+    }
 
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);
