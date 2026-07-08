@@ -8,6 +8,7 @@
   const APP_SHELL = [
     '/',
     '/index.html',
+    '/about.html',
     '/privacy.html',
     '/terms.html',
     '/public/manifest.webmanifest',
@@ -23,8 +24,10 @@
     '/public/js/vendor/marked.min.js',
     '/public/js/vendor/purify.min.js',
     '/public/js/db.js',
-    '/public/js/app.js',
     '/public/js/version.js',
+    '/public/js/markdown.js',
+    '/public/js/zip.js',
+    '/public/js/app.js',
   ];
   const APP_SHELL_SET = new Set(APP_SHELL);
 

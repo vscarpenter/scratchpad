@@ -1,0 +1,95 @@
+/* Scratchpad markdown rendering. Depends on marked and DOMPurify. */
+(function () {
+  'use strict';
+
+  const SAFE_URI_PATTERN = /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
+  const SANITIZE_CONFIG = Object.freeze({
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ['target', 'rel'],
+    FORBID_TAGS: ['style', 'svg', 'math', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select'],
+    FORBID_ATTR: ['style', 'srcset', 'formaction'],
+    ALLOW_DATA_ATTR: false,
+    ALLOWED_URI_REGEXP: SAFE_URI_PATTERN,
+    RETURN_DOM_FRAGMENT: true,
+  });
+
+  if (window.marked && typeof window.marked.setOptions === 'function') {
+    window.marked.setOptions({ breaks: false, gfm: true });
+  }
+
+  function el(tag, options) {
+    const node = document.createElement(tag);
+    if (!options) return node;
+    if (options.class) node.className = options.class;
+    if (options.text != null) node.textContent = options.text;
+    if (options.children) {
+      for (const child of options.children) if (child) node.appendChild(child);
+    }
+    return node;
+  }
+
+  function isSameOriginAsset(url) {
+    try {
+      const parsed = new URL(url, window.location.href);
+      return parsed.origin === window.location.origin;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function hardenLinks(root) {
+    for (const a of root.querySelectorAll('a[href]')) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    }
+  }
+
+  function stripRemoteAssets(root) {
+    for (const node of root.querySelectorAll('[src]')) {
+      const src = node.getAttribute('src') || '';
+      if (!src.trim() || !isSameOriginAsset(src)) node.removeAttribute('src');
+    }
+  }
+
+  function decorateRendered(root) {
+    const firstP = root.querySelector(':scope > p');
+    if (firstP && firstP.textContent.length > 60) firstP.classList.add('is-lede');
+
+    for (const bq of root.querySelectorAll('blockquote')) {
+      const ps = bq.querySelectorAll('p');
+      if (ps.length === 1 && ps[0].textContent.length < 200) {
+        bq.classList.add('is-pullquote');
+      }
+    }
+  }
+
+  function renderMarkdownInto(container, src) {
+    container.replaceChildren();
+    const raw = window.marked.parse(src || '');
+    const frag = window.DOMPurify.sanitize(raw, SANITIZE_CONFIG);
+    hardenLinks(frag);
+    stripRemoteAssets(frag);
+    for (const pre of frag.querySelectorAll('pre')) pre.classList.add('code-block');
+    container.appendChild(frag);
+    decorateRendered(container);
+  }
+
+  function renderEmptyBody(container) {
+    container.replaceChildren(
+      el('p', {
+        class: 'rendered-empty',
+        children: [
+          document.createTextNode('This note is empty. Press '),
+          el('em', { text: 'Edit' }),
+          document.createTextNode(' to start writing.'),
+        ],
+      })
+    );
+  }
+
+  window.ScratchpadMarkdown = {
+    sanitizeConfig: SANITIZE_CONFIG,
+    renderMarkdownInto,
+    renderEmptyBody,
+  };
+})();

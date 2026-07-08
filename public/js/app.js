@@ -3,8 +3,22 @@
   'use strict';
 
   const DB = window.ScratchpadDB;
+  const Markdown = window.ScratchpadMarkdown;
+  const Zip = window.ScratchpadZip;
   const REVISION_LIMIT = 10;
   const DRAFT_DEBOUNCE_MS = 350;
+  const IMPORT_MAX_FILE_BYTES = 2 * 1024 * 1024;
+  const IMPORT_MAX_NOTES = 1000;
+  const IMPORT_MAX_REVISIONS = 5000;
+  const NOTE_TITLE_MAX = 240;
+  const NOTE_BODY_MAX = 200000;
+  const NOTE_TAG_MAX = 48;
+  const NOTE_TAGS_MAX = 20;
+  const SEARCH_SCOPES = new Set(['all', 'title', 'body', 'tags']);
+  const LAST_BACKUP_KEY = 'scratchpad:lastBackupAt';
+  const BACKUP_SNOOZE_KEY = 'scratchpad:backupReminderSnoozedUntil';
+  const BACKUP_REMINDER_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+  const BACKUP_SNOOZE_MS = 24 * 60 * 60 * 1000;
 
   const state = {
     notes: [],
@@ -12,12 +26,18 @@
     editing: false,
     dirty: false,
     search: '',
+    searchScope: 'all',
     tagFilter: null,
     view: 'active',
     mobileView: 'list', // 'list' | 'editor' - only meaningful on narrow viewports
     promptedDrafts: new Set(),
     pendingTagDelete: null,
     importPreview: null,
+    bulkMode: false,
+    bulkSelectedIds: new Set(),
+    commandItems: [],
+    commandIndex: 0,
+    busy: new Set(),
   };
 
   // -------- Element refs --------
@@ -27,6 +47,7 @@
     sidebar: $('sidebar'),
     main: $('main'),
     search: $('search'),
+    searchScope: $('search-scope'),
     activeFilter: $('active-filter'),
     activeFilterTag: $('active-filter-tag'),
     clearFilter: $('clear-filter'),
@@ -34,6 +55,8 @@
     trashView: $('trash-view'),
     manageTags: $('manage-tags'),
     newNote: $('new-note'),
+    bulkToggle: $('bulk-toggle'),
+    commandPaletteBtn: $('command-palette-btn'),
     emptyNewNote: $('empty-new-note'),
     noteList: $('note-list'),
     noteCount: $('note-count'),
@@ -93,14 +116,33 @@
     exportMarkdownBtn: $('export-markdown-btn'),
     importBtn: $('import-btn'),
     importFile: $('import-file'),
+    backupReminder: $('backup-reminder'),
+    backupReminderCopy: $('backup-reminder-copy'),
+    backupReminderExport: $('backup-reminder-export'),
+    backupReminderSnooze: $('backup-reminder-snooze'),
+    diagnosticActiveNotes: $('diagnostic-active-notes'),
+    diagnosticTrashedNotes: $('diagnostic-trashed-notes'),
+    diagnosticRevisions: $('diagnostic-revisions'),
+    diagnosticDrafts: $('diagnostic-drafts'),
+    diagnosticStorage: $('diagnostic-storage'),
+    diagnosticLastBackup: $('diagnostic-last-backup'),
+    diagnosticOfflineCache: $('diagnostic-offline-cache'),
     importPreviewDialog: $('import-preview-dialog'),
     importPreviewCounts: $('import-preview-counts'),
+    importPreviewErrors: $('import-preview-errors'),
     confirmImport: $('confirm-import'),
     tagManagerDialog: $('tag-manager-dialog'),
     tagManagerList: $('tag-manager-list'),
     tagDeleteDialog: $('tag-delete-dialog'),
     tagDeleteCopy: $('tag-delete-copy'),
     confirmTagDelete: $('confirm-tag-delete'),
+    commandPaletteDialog: $('command-palette-dialog'),
+    commandPaletteInput: $('command-palette-input'),
+    commandPaletteList: $('command-palette-list'),
+    commandPaletteEmpty: $('command-palette-empty'),
+    bulkTagDialog: $('bulk-tag-dialog'),
+    bulkTagInput: $('bulk-tag-input'),
+    bulkApplyTag: $('bulk-apply-tag'),
     pinTemplate: $('tpl-pin-icon'),
     shareBtn: $('share-btn'),
     shareDialog: $('share-dialog'),
@@ -108,6 +150,7 @@
     shareEmail: $('share-email'),
     shareStatus: $('share-status'),
     shareMailtoWarning: $('share-mailto-warning'),
+    toastRegion: $('toast-region'),
   };
 
   // mailto: URLs above ~2000 chars get truncated by many mail clients;
@@ -152,6 +195,72 @@
 
   function clonePinIcon() {
     return els.pinTemplate.content.cloneNode(true);
+  }
+
+  // Transient action feedback. The region is an aria-live="polite" status, so
+  // appending a toast announces it. Callers must not fire a toast while a modal
+  // <dialog> is open (a native dialog's top layer would cover it) — close the
+  // dialog first. tone: 'success' | 'info' | 'error'. Errors persist with a
+  // dismiss button; everything else auto-dismisses.
+  function toast(message, opts) {
+    if (!els.toastRegion) return;
+    opts = opts || {};
+    const tone = opts.tone || 'success';
+    const persist = opts.persist != null ? opts.persist : tone === 'error';
+    const duration = opts.duration || 2600;
+
+    const node = el('div', {
+      class: 'toast is-' + tone,
+      children: [el('span', { class: 'toast-dot', attrs: { 'aria-hidden': 'true' } })],
+    });
+    node.appendChild(document.createTextNode(message));
+
+    let removed = false;
+    const remove = () => {
+      if (removed) return;
+      removed = true;
+      node.classList.remove('is-visible');
+      setTimeout(() => node.remove(), 220);
+    };
+
+    if (persist) {
+      node.appendChild(el('button', {
+        class: 'toast-dismiss',
+        text: '×',
+        attrs: { type: 'button', 'aria-label': 'Dismiss' },
+        on: { click: remove },
+      }));
+    }
+
+    els.toastRegion.appendChild(node);
+    requestAnimationFrame(() => node.classList.add('is-visible'));
+    if (!persist) setTimeout(remove, duration);
+    return node;
+  }
+
+  function setControlsBusy(controls, busy) {
+    for (const control of controls || []) {
+      if (!control) continue;
+      control.disabled = busy;
+      if (busy) control.setAttribute('aria-busy', 'true');
+      else control.removeAttribute('aria-busy');
+    }
+  }
+
+  async function withBusy(key, controls, errorMessage, work) {
+    if (state.busy.has(key)) return undefined;
+    state.busy.add(key);
+    setControlsBusy(controls, true);
+    try {
+      return await work();
+    } catch (e) {
+      console.error(errorMessage, e);
+      toast(errorMessage, { tone: 'error', persist: true });
+      return undefined;
+    } finally {
+      setControlsBusy(controls, false);
+      state.busy.delete(key);
+    }
   }
 
   function deriveTitle(note) {
@@ -261,21 +370,6 @@
     ];
   }
 
-  // Post-render decorator: tag first paragraph as a lede and short
-  // single-paragraph blockquotes as pullquotes. Selectors stay simple
-  // because the JS does the picking.
-  function decorateRendered(root) {
-    const firstP = root.querySelector(':scope > p');
-    if (firstP && firstP.textContent.length > 60) firstP.classList.add('is-lede');
-
-    for (const bq of root.querySelectorAll('blockquote')) {
-      const ps = bq.querySelectorAll('p');
-      if (ps.length === 1 && ps[0].textContent.length < 200) {
-        bq.classList.add('is-pullquote');
-      }
-    }
-  }
-
   function truncate(text, n) {
     if (!text) return '';
     text = text.replace(/\s+/g, ' ').trim();
@@ -302,6 +396,93 @@
       return truncate(line, 112);
     }
     return '';
+  }
+
+  function normalizeSearchText(text) {
+    return String(text || '')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function fuzzyIncludes(haystack, query) {
+    if (!query) return true;
+    let pos = 0;
+    for (const ch of query) {
+      pos = haystack.indexOf(ch, pos);
+      if (pos === -1) return false;
+      pos += 1;
+    }
+    return true;
+  }
+
+  function matchesQuery(text, query) {
+    const q = normalizeSearchText(query);
+    if (!q) return true;
+    const hay = normalizeSearchText(text);
+    return hay.includes(q) || fuzzyIncludes(hay, q);
+  }
+
+  function noteSearchText(note, scope) {
+    if (scope === 'title') return note.title || deriveTitle(note);
+    if (scope === 'body') return note.body || '';
+    if (scope === 'tags') return (note.tags || []).join(' ');
+    return [
+      note.title || deriveTitle(note),
+      note.body || '',
+      (note.tags || []).join(' '),
+    ].join('\n');
+  }
+
+  function scopeIncludes(field) {
+    return state.searchScope === 'all' || state.searchScope === field;
+  }
+
+  function highlightTextNodes(text, query) {
+    const source = String(text || '');
+    const q = String(query || '').trim();
+    if (!q) return [document.createTextNode(source)];
+    const lower = source.toLowerCase();
+    const needle = q.toLowerCase();
+    const nodes = [];
+    let start = 0;
+    let index = lower.indexOf(needle, start);
+    while (index !== -1) {
+      if (index > start) nodes.push(document.createTextNode(source.slice(start, index)));
+      nodes.push(el('mark', { class: 'search-hit', text: source.slice(index, index + q.length) }));
+      start = index + q.length;
+      index = lower.indexOf(needle, start);
+    }
+    if (start < source.length) nodes.push(document.createTextNode(source.slice(start)));
+    return nodes.length ? nodes : [document.createTextNode(source)];
+  }
+
+  function highlightedChildren(text, field) {
+    if (!state.search.trim() || !scopeIncludes(field)) return [document.createTextNode(text || '')];
+    return highlightTextNodes(text || '', state.search);
+  }
+
+  function highlightElementText(root, query) {
+    const q = String(query || '').trim();
+    if (!root || !q) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || parent.closest('script, style, textarea, mark')) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue && node.nodeValue.toLowerCase().includes(q.toLowerCase())
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT;
+      },
+    });
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    for (const textNode of textNodes) {
+      const fragment = document.createDocumentFragment();
+      for (const node of highlightTextNodes(textNode.nodeValue || '', q)) fragment.appendChild(node);
+      textNode.replaceWith(fragment);
+    }
   }
 
   function normalizeTag(t) {
@@ -369,54 +550,14 @@
     return !!note && (state.view === 'trash' ? isTrashed(note) : !isTrashed(note));
   }
 
-  // -------- Markdown rendering (sanitized) --------
-  if (window.marked && typeof window.marked.setOptions === 'function') {
-    window.marked.setOptions({ breaks: false, gfm: true });
-  }
-
-  function renderMarkdownInto(container, src) {
-    container.replaceChildren();
-    const raw = window.marked.parse(src || '');
-    const frag = window.DOMPurify.sanitize(raw, {
-      USE_PROFILES: { html: true },
-      ADD_ATTR: ['target', 'rel'],
-      RETURN_DOM_FRAGMENT: true,
-    });
-    for (const a of frag.querySelectorAll('a[href]')) {
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noopener noreferrer');
-    }
-    for (const pre of frag.querySelectorAll('pre')) pre.classList.add('code-block');
-    container.appendChild(frag);
-    decorateRendered(container);
-  }
-
-  function renderEmptyBody(container) {
-    container.replaceChildren(
-      el('p', {
-        class: 'rendered-empty',
-        children: [
-          document.createTextNode('This note is empty. Press '),
-          el('em', { text: 'Edit' }),
-          document.createTextNode(' to start writing.'),
-        ],
-      })
-    );
-  }
-
   // -------- Sidebar rendering --------
   function filteredNotes() {
-    const q = state.search.trim().toLowerCase();
+    const q = state.search.trim();
     const tag = state.tagFilter;
     return currentBaseNotes().filter((n) => {
       if (tag && !(n.tags || []).includes(tag)) return false;
       if (!q) return true;
-      const hay = [
-        n.title || '',
-        n.body || '',
-        (n.tags || []).join(' '),
-      ].join('\n').toLowerCase();
-      return hay.includes(q);
+      return matchesQuery(noteSearchText(n, state.searchScope), q);
     });
   }
 
@@ -429,10 +570,34 @@
     els.trashView.classList.toggle('is-active', state.view === 'trash');
   }
 
+  function renderSearchScope() {
+    if (!els.searchScope) return;
+    for (const btn of els.searchScope.querySelectorAll('[data-search-scope]')) {
+      const active = btn.dataset.searchScope === state.searchScope;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+  }
+
+  function renderBulkToggle() {
+    if (!els.bulkToggle) return;
+    els.bulkToggle.classList.toggle('is-active', state.bulkMode);
+    els.bulkToggle.setAttribute('aria-pressed', state.bulkMode ? 'true' : 'false');
+    els.bulkToggle.textContent = state.bulkMode ? 'Done' : 'Select';
+  }
+
+  function pruneBulkSelection() {
+    const valid = new Set(currentBaseNotes().map((note) => note.id));
+    for (const id of [...state.bulkSelectedIds]) {
+      if (!valid.has(id)) state.bulkSelectedIds.delete(id);
+    }
+  }
+
   function renderSidebar() {
     const filtered = filteredNotes();
     const sorted = sortNotes(filtered);
     const children = [];
+    pruneBulkSelection();
 
     if (state.view === 'trash') {
       if (trashedNotes().length) {
@@ -448,8 +613,10 @@
           ],
         }));
       }
+      if (state.bulkMode && sorted.length) children.push(renderBulkToolbar(sorted));
       if (sorted.length) children.push(renderSection('Trash', sorted));
     } else {
+      if (state.bulkMode && sorted.length) children.push(renderBulkToolbar(sorted));
       const buckets = bucketizeNotes(sorted);
       for (const bucket of buckets) {
         if (!bucket.notes.length) continue;
@@ -462,6 +629,80 @@
     }
     els.noteList.replaceChildren(...children);
     renderViewSwitch();
+    renderSearchScope();
+    renderBulkToggle();
+  }
+
+  function selectedBulkNotes() {
+    const selected = state.bulkSelectedIds;
+    return currentBaseNotes().filter((note) => selected.has(note.id));
+  }
+
+  function renderBulkToolbar(visibleNotes) {
+    const selected = selectedBulkNotes();
+    const selectedCount = selected.length;
+    const selectionLabel = selectedCount + ' selected';
+    const actions = [
+      el('button', {
+        class: 'btn btn-secondary btn-sm',
+        text: 'Select all',
+        attrs: { id: 'bulk-select-all', type: 'button' },
+        on: { click: () => bulkSelectAll(visibleNotes) },
+      }),
+      el('button', {
+        class: 'btn btn-secondary btn-sm',
+        text: 'Clear',
+        attrs: { id: 'bulk-clear', type: 'button', disabled: selectedCount === 0 },
+        on: { click: bulkClear },
+      }),
+      el('button', {
+        class: 'btn btn-secondary btn-sm',
+        text: 'Export JSON',
+        attrs: { id: 'bulk-export-json', type: 'button', disabled: selectedCount === 0 },
+        on: { click: bulkExportJson },
+      }),
+    ];
+
+    if (state.view === 'trash') {
+      actions.push(
+        el('button', {
+          class: 'btn btn-secondary btn-sm',
+          text: 'Restore',
+          attrs: { id: 'bulk-restore', type: 'button', disabled: selectedCount === 0 },
+          on: { click: bulkRestore },
+        }),
+        el('button', {
+          class: 'btn btn-danger btn-sm',
+          text: 'Delete forever',
+          attrs: { id: 'bulk-delete-forever', type: 'button', disabled: selectedCount === 0 },
+          on: { click: bulkDeleteForever },
+        })
+      );
+    } else {
+      actions.push(
+        el('button', {
+          class: 'btn btn-secondary btn-sm',
+          text: 'Add tag',
+          attrs: { id: 'bulk-add-tag', type: 'button', disabled: selectedCount === 0 },
+          on: { click: openBulkTagDialog },
+        }),
+        el('button', {
+          class: 'btn btn-danger btn-sm',
+          text: 'Move to Trash',
+          attrs: { id: 'bulk-move-trash', type: 'button', disabled: selectedCount === 0 },
+          on: { click: bulkMoveToTrash },
+        })
+      );
+    }
+
+    return el('div', {
+      class: 'bulk-toolbar',
+      attrs: { id: 'bulk-toolbar' },
+      children: [
+        el('span', { class: 'bulk-count', text: selectionLabel, attrs: { id: 'bulk-selected-count' } }),
+        el('div', { class: 'bulk-actions', children: actions }),
+      ],
+    });
   }
 
   function renderSidebarEmptyState() {
@@ -529,13 +770,14 @@
   }
 
   function renderRow(note) {
+    if (state.bulkMode) return renderBulkRow(note);
     const trashed = isTrashed(note);
     const pinned = !!(note.pinned && !trashed);
     const time = trashed ? note.deletedAt : note.updatedAt;
     const excerpt = noteExcerpt(note);
 
     const children = [
-      el('span', { class: 'note-row-title', text: truncate(deriveTitle(note), 64) }),
+      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64), 'title') }),
     ];
 
     if (pinned) {
@@ -550,7 +792,7 @@
     }
 
     if (excerpt) {
-      children.push(el('span', { class: 'note-row-excerpt', text: excerpt }));
+      children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
     }
 
     if (pinned) {
@@ -561,8 +803,8 @@
       const tagButtons = note.tags.slice(0, 4).map((t) =>
         el('button', {
           class: 'note-row-tag',
-          text: t,
           attrs: { type: 'button', 'data-tag': t },
+          children: highlightedChildren(t, 'tags'),
         })
       );
       children.push(el('span', { class: 'note-row-tags', children: tagButtons }));
@@ -586,6 +828,49 @@
           selectNote(note.id);
         },
       },
+    });
+  }
+
+  function renderBulkRow(note) {
+    const trashed = isTrashed(note);
+    const pinned = !!(note.pinned && !trashed);
+    const time = trashed ? note.deletedAt : note.updatedAt;
+    const excerpt = noteExcerpt(note);
+    const selected = state.bulkSelectedIds.has(note.id);
+    const checkbox = el('input', {
+      attrs: {
+        type: 'checkbox',
+        checked: selected,
+        'aria-label': 'Select ' + deriveTitle(note),
+      },
+      on: {
+        change: (e) => toggleBulkNote(note.id, e.currentTarget.checked),
+      },
+    });
+    const children = [
+      el('span', { class: 'note-row-check', children: [checkbox] }),
+      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64), 'title') }),
+      el('span', { class: 'note-row-when', text: formatRelativeDay(time) }),
+    ];
+    if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
+    if (note.tags && note.tags.length) {
+      const tagNodes = note.tags.slice(0, 4).map((t) =>
+        el('span', {
+          class: 'note-row-tag',
+          attrs: { 'data-tag': t },
+          children: highlightedChildren(t, 'tags'),
+        })
+      );
+      children.push(el('span', { class: 'note-row-tags', children: tagNodes }));
+    }
+    return el('label', {
+      class: 'note-row is-bulk' +
+        (note.id === state.selectedId ? ' is-active' : '') +
+        (trashed ? ' is-trashed' : '') +
+        (pinned ? ' is-pinned' : '') +
+        (selected ? ' is-selected' : ''),
+      attrs: { 'data-id': note.id },
+      children,
     });
   }
 
@@ -648,7 +933,7 @@
 
     els.titleDisplay.hidden = showInput;
     els.titleInput.hidden = !showInput;
-    els.titleDisplay.textContent = deriveTitle(note);
+    els.titleDisplay.replaceChildren(...highlightedChildren(deriveTitle(note), 'title'));
 
     renderBreadcrumb(note);
     renderEyebrow(note);
@@ -684,10 +969,11 @@
         els.rendered.hidden = true;
       } else if (bodyEmpty) {
         els.rendered.hidden = false;
-        renderEmptyBody(els.rendered);
+        Markdown.renderEmptyBody(els.rendered);
       } else {
         els.rendered.hidden = false;
-        renderMarkdownInto(els.rendered, note.body || '');
+        Markdown.renderMarkdownInto(els.rendered, note.body || '');
+        if (scopeIncludes('body')) highlightElementText(els.rendered, state.search);
       }
       els.editBtn.hidden = trashed;
       els.saveBtn.hidden = true;
@@ -850,7 +1136,8 @@
 
   function ensureSelectionForView() {
     const visible = filteredNotes();
-    if (selectedNoteIsInView() && (!state.search || visible.some((n) => n.id === state.selectedId))) return;
+    const hasFilter = !!(state.search || state.tagFilter);
+    if (selectedNoteIsInView() && (!hasFilter || visible.some((n) => n.id === state.selectedId))) return;
     const pinned = sortNotes(visible.filter((n) => n.pinned && !isTrashed(n)));
     const others = sortNotes(visible.filter((n) => !n.pinned || isTrashed(n)));
     const next = pinned.concat(others)[0] || currentBaseNotes()[0] || null;
@@ -863,20 +1150,36 @@
   }
 
   // -------- Overflow menu (#6) --------
+  // role="menu" with APG keyboard semantics: focus moves into the menu on open,
+  // Up/Down/Home/End cycle items, Esc closes and returns focus to the trigger.
+  function overflowMenuItems() {
+    return Array.from(els.overflowMenu.querySelectorAll('[role="menuitem"]'))
+      .filter((item) => !item.hidden && item.offsetParent !== null);
+  }
+
+  function focusOverflowItem(index) {
+    const items = overflowMenuItems();
+    if (!items.length) return;
+    const i = (index + items.length) % items.length;
+    items[i].focus();
+  }
+
   function openOverflowMenu() {
     if (!els.overflowMenu.hidden) return;
     els.overflowMenu.hidden = false;
     els.overflowBtn.setAttribute('aria-expanded', 'true');
     document.addEventListener('click', onOverflowOutsideClick, true);
     document.addEventListener('keydown', onOverflowKey, true);
+    setTimeout(() => focusOverflowItem(0), 0);
   }
 
-  function closeOverflowMenu() {
+  function closeOverflowMenu(opts) {
     if (els.overflowMenu.hidden) return;
     els.overflowMenu.hidden = true;
     els.overflowBtn.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', onOverflowOutsideClick, true);
     document.removeEventListener('keydown', onOverflowKey, true);
+    if (opts && opts.returnFocus) els.overflowBtn.focus();
   }
 
   function toggleOverflowMenu() {
@@ -890,10 +1193,40 @@
   }
 
   function onOverflowKey(e) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closeOverflowMenu();
-      els.overflowBtn.focus();
+    const items = overflowMenuItems();
+    const current = items.indexOf(document.activeElement);
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        closeOverflowMenu({ returnFocus: true });
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        focusOverflowItem(current < 0 ? 0 : current + 1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        focusOverflowItem(current < 0 ? items.length - 1 : current - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        e.stopPropagation();
+        focusOverflowItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        e.stopPropagation();
+        focusOverflowItem(items.length - 1);
+        break;
+      case 'Tab':
+        // Tab leaves the menu: close it and let focus move on naturally.
+        closeOverflowMenu();
+        break;
+      default:
+        break;
     }
   }
 
@@ -951,16 +1284,18 @@
       deletedAt: null,
       lastDraftAt: null,
     };
-    state.view = 'active';
-    state.notes.push(note);
-    state.selectedId = note.id;
-    state.editing = true;
-    state.dirty = false;
-    await DB.put(note);
-    renderAll();
-    state.mobileView = 'editor';
-    syncMobileView();
-    setTimeout(() => els.editor.focus(), 0);
+    return withBusy('create-note', [els.newNote, els.emptyNewNote], 'Could not create a new note.', async () => {
+      await DB.put(note);
+      state.view = 'active';
+      state.notes.push(note);
+      state.selectedId = note.id;
+      state.editing = true;
+      state.dirty = false;
+      renderAll();
+      state.mobileView = 'editor';
+      syncMobileView();
+      setTimeout(() => els.editor.focus(), 0);
+    });
   }
 
   async function selectNote(id) {
@@ -986,19 +1321,25 @@
     if (!state.editing) return;
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
-    const nextTitle = els.titleInput.value.trim();
-    const nextBody = els.editor.value;
-    const changed = (note.title || '') !== nextTitle || (note.body || '') !== nextBody;
-    if (changed) await storeRevision(note);
-    note.title = nextTitle;
-    note.body = nextBody;
-    note.updatedAt = now();
-    note.lastDraftAt = null;
-    await DB.put(note);
-    await DB.removeDraft(note.id);
-    state.editing = false;
-    state.dirty = false;
-    renderAll();
+    return withBusy('save', [els.saveBtn], 'Save failed. Your unsaved edits are still open.', async () => {
+      const nextTitle = els.titleInput.value.trim();
+      const nextBody = els.editor.value;
+      const changed = (note.title || '') !== nextTitle || (note.body || '') !== nextBody;
+      const nextNote = {
+        ...note,
+        title: nextTitle,
+        body: nextBody,
+        updatedAt: now(),
+        lastDraftAt: null,
+      };
+      if (changed) await storeRevision(note);
+      await DB.put(nextNote);
+      await DB.removeDraft(note.id);
+      Object.assign(note, nextNote);
+      state.editing = false;
+      state.dirty = false;
+      renderAll();
+    });
   }
 
   async function storeRevision(note) {
@@ -1026,58 +1367,72 @@
       if (!ok) return;
       await discardCurrentDraft();
     }
-    const t = now();
-    note.deletedAt = t;
-    note.updatedAt = t;
-    note.lastDraftAt = null;
-    await DB.put(note);
-    await DB.removeDraft(note.id);
-    state.editing = false;
-    state.dirty = false;
-    state.selectedId = null;
-    state.mobileView = 'list';
-    renderAll();
+    return withBusy('move-trash', [els.confirmDelete, els.deleteBtn], 'Delete failed. The note is still in Notes.', async () => {
+      const t = now();
+      const nextNote = { ...note, deletedAt: t, updatedAt: t, lastDraftAt: null };
+      await DB.put(nextNote);
+      await DB.removeDraft(note.id);
+      Object.assign(note, nextNote);
+      state.editing = false;
+      state.dirty = false;
+      state.selectedId = null;
+      state.mobileView = 'list';
+      renderAll();
+      toast('Moved to Trash.');
+    });
   }
 
   async function restoreCurrentFromTrash() {
     const note = getNote(state.selectedId);
     if (!note || !isTrashed(note)) return;
-    note.deletedAt = null;
-    note.updatedAt = now();
-    await DB.put(note);
-    state.view = 'active';
-    state.selectedId = note.id;
-    renderAll();
+    return withBusy('restore', [els.restoreBtn], 'Restore failed. The note is still in Trash.', async () => {
+      const nextNote = { ...note, deletedAt: null, updatedAt: now() };
+      await DB.put(nextNote);
+      Object.assign(note, nextNote);
+      state.view = 'active';
+      state.selectedId = note.id;
+      renderAll();
+      toast('Note restored.');
+    });
   }
 
   async function permanentlyDeleteCurrent() {
     const id = state.selectedId;
     if (!id) return;
-    await DB.deleteNoteEverywhere(id);
-    state.notes = state.notes.filter((n) => n.id !== id);
-    state.selectedId = null;
-    state.editing = false;
-    state.dirty = false;
-    renderAll();
+    return withBusy('permanent-delete', [els.confirmPermanentDelete, els.permanentDeleteBtn], 'Permanent delete failed. The note is still in Trash.', async () => {
+      await DB.deleteNoteEverywhere(id);
+      state.notes = state.notes.filter((n) => n.id !== id);
+      state.selectedId = null;
+      state.editing = false;
+      state.dirty = false;
+      renderAll();
+      toast('Note permanently deleted.');
+    });
   }
 
   async function emptyTrash() {
     const notes = trashedNotes();
-    await Promise.all(notes.map((note) => DB.deleteNoteEverywhere(note.id)));
-    state.notes = state.notes.filter((n) => !isTrashed(n));
-    state.selectedId = null;
-    state.editing = false;
-    state.dirty = false;
-    renderAll();
+    return withBusy('empty-trash', [els.confirmEmptyTrash], 'Empty Trash failed. Trashed notes were not removed.', async () => {
+      await Promise.all(notes.map((note) => DB.deleteNoteEverywhere(note.id)));
+      state.notes = state.notes.filter((n) => !isTrashed(n));
+      state.selectedId = null;
+      state.editing = false;
+      state.dirty = false;
+      renderAll();
+      toast('Trash emptied.');
+    });
   }
 
   async function togglePin() {
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
-    note.pinned = !note.pinned;
-    note.updatedAt = now();
-    await DB.put(note);
-    renderAll();
+    return withBusy('pin', [els.pinToggle], 'Pin update failed.', async () => {
+      const nextNote = { ...note, pinned: !note.pinned, updatedAt: now() };
+      await DB.put(nextNote);
+      Object.assign(note, nextNote);
+      renderAll();
+      toast(note.pinned ? 'Pinned.' : 'Unpinned.');
+    });
   }
 
   async function addTagFromInput() {
@@ -1090,20 +1445,32 @@
     }
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
-    note.tags = Array.from(new Set([...(note.tags || []), ...parts]));
-    note.updatedAt = now();
-    await DB.put(note);
-    els.tagInput.value = '';
-    renderAll();
+    return withBusy('add-tag', [els.tagAddEmpty, els.tagAddPlus], 'Tag update failed.', async () => {
+      const nextNote = {
+        ...note,
+        tags: Array.from(new Set([...(note.tags || []), ...parts])),
+        updatedAt: now(),
+      };
+      await DB.put(nextNote);
+      Object.assign(note, nextNote);
+      els.tagInput.value = '';
+      renderAll();
+    });
   }
 
   async function removeTag(tag) {
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
-    note.tags = (note.tags || []).filter((t) => t !== tag);
-    note.updatedAt = now();
-    await DB.put(note);
-    renderAll();
+    return withBusy('remove-tag', [], 'Tag update failed.', async () => {
+      const nextNote = {
+        ...note,
+        tags: (note.tags || []).filter((t) => t !== tag),
+        updatedAt: now(),
+      };
+      await DB.put(nextNote);
+      Object.assign(note, nextNote);
+      renderAll();
+    });
   }
 
   function setTagFilter(tag) {
@@ -1115,8 +1482,148 @@
   function clearAllFilters() {
     state.tagFilter = null;
     state.search = '';
+    state.searchScope = 'all';
     els.search.value = '';
     renderAll();
+  }
+
+  function setSearchScope(scope) {
+    if (!SEARCH_SCOPES.has(scope)) return;
+    state.searchScope = scope;
+    renderAll();
+  }
+
+  function toggleBulkMode() {
+    state.bulkMode = !state.bulkMode;
+    state.bulkSelectedIds.clear();
+    renderAll();
+  }
+
+  function toggleBulkNote(id, selected) {
+    if (selected) state.bulkSelectedIds.add(id);
+    else state.bulkSelectedIds.delete(id);
+    renderAll();
+  }
+
+  function bulkSelectAll(notes) {
+    for (const note of notes || []) state.bulkSelectedIds.add(note.id);
+    renderAll();
+  }
+
+  function bulkClear() {
+    state.bulkSelectedIds.clear();
+    renderAll();
+  }
+
+  async function bulkMoveToTrash() {
+    const selected = selectedBulkNotes().filter((note) => !isTrashed(note));
+    if (!selected.length) return;
+    return withBusy('bulk-move-trash', [], 'Move to Trash failed. Selected notes were not changed.', async () => {
+      const t = now();
+      const nextNotes = selected.map((note) => ({ ...note, deletedAt: t, updatedAt: t, lastDraftAt: null }));
+      await DB.bulkPut(nextNotes);
+      await Promise.all(nextNotes.map((note) => DB.removeDraft(note.id)));
+      const nextById = new Map(nextNotes.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      if (state.selectedId && nextById.has(state.selectedId)) state.selectedId = null;
+      state.bulkSelectedIds.clear();
+      state.editing = false;
+      state.dirty = false;
+      renderAll();
+      toast('Moved ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + ' to Trash.');
+    });
+  }
+
+  async function bulkRestore() {
+    const selected = selectedBulkNotes().filter(isTrashed);
+    if (!selected.length) return;
+    return withBusy('bulk-restore', [], 'Restore failed. Selected notes are still in Trash.', async () => {
+      const t = now();
+      const nextNotes = selected.map((note) => ({ ...note, deletedAt: null, updatedAt: t }));
+      await DB.bulkPut(nextNotes);
+      const nextById = new Map(nextNotes.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      state.bulkSelectedIds.clear();
+      state.view = 'active';
+      renderAll();
+      toast('Restored ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + '.');
+    });
+  }
+
+  async function bulkDeleteForever() {
+    const selected = selectedBulkNotes().filter(isTrashed);
+    if (!selected.length) return;
+    const ok = window.confirm('Permanently delete ' + selected.length + ' selected note' + (selected.length === 1 ? '' : 's') + '?');
+    if (!ok) return;
+    return withBusy('bulk-delete-forever', [], 'Permanent delete failed. Selected notes are still in Trash.', async () => {
+      await Promise.all(selected.map((note) => DB.deleteNoteEverywhere(note.id)));
+      const selectedIds = new Set(selected.map((note) => note.id));
+      state.notes = state.notes.filter((note) => !selectedIds.has(note.id));
+      if (state.selectedId && selectedIds.has(state.selectedId)) state.selectedId = null;
+      state.bulkSelectedIds.clear();
+      renderAll();
+      toast('Deleted ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + ' forever.');
+    });
+  }
+
+  async function bulkExportJson() {
+    const selected = selectedBulkNotes();
+    if (!selected.length) return;
+    return withBusy('bulk-export-json', [], 'Export failed.', async () => {
+      const selectedIds = new Set(selected.map((note) => note.id));
+      const revisions = (await DB.getAllRevisions())
+        .map((rev) => normalizeRevision(rev, rev.noteId))
+        .filter((rev) => rev && selectedIds.has(rev.noteId));
+      const payload = {
+        app: 'scratchpad',
+        version: window.SCRATCHPAD_VERSION || 'unknown',
+        schemaVersion: 2,
+        exportedAt: new Date().toISOString(),
+        notes: selected.filter((note) => !isTrashed(note)),
+        trashedNotes: selected.filter(isTrashed),
+        revisions,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `scratchpad-selected-${exportStamp()}.json`);
+      toast('Selected notes exported.');
+    });
+  }
+
+  function openBulkTagDialog() {
+    if (!selectedBulkNotes().filter((note) => !isTrashed(note)).length) return;
+    els.bulkTagInput.value = '';
+    openDialog(els.bulkTagDialog);
+    setTimeout(() => els.bulkTagInput.focus(), 0);
+  }
+
+  async function applyBulkTag() {
+    const tags = els.bulkTagInput.value.split(',').map(normalizeTag).filter(Boolean);
+    if (!tags.length) return;
+    const selected = selectedBulkNotes().filter((note) => !isTrashed(note));
+    if (!selected.length) return;
+    return withBusy('bulk-tag', [els.bulkApplyTag], 'Tag update failed.', async () => {
+      const t = now();
+      const nextNotes = selected.map((note) => ({
+        ...note,
+        tags: Array.from(new Set([...(note.tags || []), ...tags])),
+        updatedAt: t,
+      }));
+      await DB.bulkPut(nextNotes);
+      const nextById = new Map(nextNotes.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      closeDialog(els.bulkTagDialog);
+      renderAll();
+      toast('Tag added to ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + '.');
+    });
   }
 
   // -------- Drafts --------
@@ -1125,14 +1632,19 @@
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
     const updatedAt = now();
-    await DB.putDraft({
-      noteId: note.id,
-      title: els.titleInput.value.trim(),
-      body: els.editor.value,
-      updatedAt,
-    });
-    note.lastDraftAt = updatedAt;
-    await DB.put(note);
+    try {
+      await DB.putDraft({
+        noteId: note.id,
+        title: els.titleInput.value.trim(),
+        body: els.editor.value,
+        updatedAt,
+      });
+      const nextNote = { ...note, lastDraftAt: updatedAt };
+      await DB.put(nextNote);
+      Object.assign(note, nextNote);
+    } catch (e) {
+      console.warn('Draft persistence failed', e);
+    }
   }
 
   const persistDraftDebounced = debounce(persistDraftNow, DRAFT_DEBOUNCE_MS);
@@ -1140,9 +1652,10 @@
   async function discardCurrentDraft() {
     const note = getNote(state.selectedId);
     if (!note) return;
-    note.lastDraftAt = null;
     await DB.removeDraft(note.id);
-    await DB.put(note);
+    const nextNote = { ...note, lastDraftAt: null };
+    await DB.put(nextNote);
+    Object.assign(note, nextNote);
   }
 
   async function maybePromptDraftForSelected() {
@@ -1166,9 +1679,10 @@
       els.dirtyIndicator.hidden = false;
       setTimeout(() => els.editor.focus(), 0);
     } else if (decision === 'discard') {
-      note.lastDraftAt = null;
       await DB.removeDraft(note.id);
-      await DB.put(note);
+      const nextNote = { ...note, lastDraftAt: null };
+      await DB.put(nextNote);
+      Object.assign(note, nextNote);
       renderAll();
     } else {
       state.promptedDrafts.delete(note.id);
@@ -1254,6 +1768,113 @@
     });
   }
 
+  function readStoredTime(key) {
+    const value = Number(localStorage.getItem(key));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  function writeStoredTime(key, value) {
+    localStorage.setItem(key, String(value));
+  }
+
+  function lastBackupAt() {
+    return readStoredTime(LAST_BACKUP_KEY);
+  }
+
+  function formatBackupStatus(ms) {
+    if (!ms) return 'No backup recorded';
+    return 'Last backup ' + formatFullTimestamp(ms);
+  }
+
+  function backupReminderDue() {
+    if (!activeNotes().length) return false;
+    const snoozedUntil = readStoredTime(BACKUP_SNOOZE_KEY);
+    if (snoozedUntil && snoozedUntil > now()) return false;
+    const last = lastBackupAt();
+    return !last || now() - last > BACKUP_REMINDER_INTERVAL_MS;
+  }
+
+  function renderBackupReminder() {
+    if (!els.backupReminder) return;
+    const last = lastBackupAt();
+    els.backupReminderCopy.textContent = last
+      ? formatBackupStatus(last) + '. Export a fresh JSON backup to keep another copy outside this browser.'
+      : 'No backup recorded for this browser. Export a JSON backup before clearing site data or switching devices.';
+    els.backupReminder.hidden = !backupReminderDue();
+  }
+
+  function snoozeBackupReminder() {
+    writeStoredTime(BACKUP_SNOOZE_KEY, now() + BACKUP_SNOOZE_MS);
+    renderBackupReminder();
+  }
+
+  function recordBackupDownload() {
+    writeStoredTime(LAST_BACKUP_KEY, now());
+    localStorage.removeItem(BACKUP_SNOOZE_KEY);
+    renderBackupReminder();
+    renderDiagnostics();
+  }
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes)) return 'Unavailable';
+    if (bytes < 1024) return Math.round(bytes) + ' B';
+    const units = ['KB', 'MB', 'GB'];
+    let value = bytes / 1024;
+    let unit = units[0];
+    for (let i = 1; i < units.length && value >= 1024; i += 1) {
+      value /= 1024;
+      unit = units[i];
+    }
+    return value.toFixed(value >= 10 ? 0 : 1) + ' ' + unit;
+  }
+
+  async function storageSummary() {
+    if (!navigator.storage || typeof navigator.storage.estimate !== 'function') return 'Unavailable';
+    try {
+      const estimate = await navigator.storage.estimate();
+      const usage = formatBytes(estimate.usage || 0);
+      const quota = Number.isFinite(estimate.quota) && estimate.quota > 0 ? formatBytes(estimate.quota) : null;
+      return quota ? usage + ' of ' + quota : usage;
+    } catch (e) {
+      return 'Unavailable';
+    }
+  }
+
+  function offlineCacheStatus() {
+    if (!('serviceWorker' in navigator)) return 'Unavailable';
+    if (navigator.serviceWorker.controller) return 'Ready';
+    return 'Available after reload';
+  }
+
+  async function renderDiagnostics() {
+    if (!els.diagnosticActiveNotes) return;
+    els.diagnosticActiveNotes.textContent = String(activeNotes().length);
+    els.diagnosticTrashedNotes.textContent = String(trashedNotes().length);
+    els.diagnosticStorage.textContent = 'Checking...';
+    try {
+      const [revisions, drafts, storage] = await Promise.all([
+        DB.getAllRevisions(),
+        DB.getAllDrafts(),
+        storageSummary(),
+      ]);
+      els.diagnosticRevisions.textContent = String(revisions.length);
+      els.diagnosticDrafts.textContent = String(drafts.length);
+      els.diagnosticStorage.textContent = storage;
+    } catch (e) {
+      els.diagnosticRevisions.textContent = 'Unavailable';
+      els.diagnosticDrafts.textContent = 'Unavailable';
+      els.diagnosticStorage.textContent = 'Unavailable';
+    }
+    els.diagnosticLastBackup.textContent = formatBackupStatus(lastBackupAt());
+    els.diagnosticOfflineCache.textContent = offlineCacheStatus();
+  }
+
+  function openAboutDialog() {
+    renderBackupReminder();
+    renderDiagnostics();
+    openDialog(els.aboutDialog);
+  }
+
   // -------- Share --------
   function buildShareText(note) {
     const title = (note.title || '').trim();
@@ -1332,6 +1953,175 @@
     openDialog(els.shareDialog);
   }
 
+  // -------- Command palette --------
+  function commandDefinitions() {
+    const commands = [
+      {
+        id: 'new-note',
+        label: 'New note',
+        meta: 'Create a blank note',
+        keywords: 'create write',
+        run: createNote,
+      },
+      {
+        id: 'search-notes',
+        label: 'Search notes',
+        meta: 'Focus the sidebar search',
+        keywords: 'find filter',
+        run: () => {
+          els.search.focus();
+          els.search.select();
+        },
+      },
+      {
+        id: 'manage-tags',
+        label: 'Manage tags',
+        meta: 'Rename, filter, or delete tags',
+        keywords: 'tag labels',
+        run: openTagManager,
+      },
+      {
+        id: 'toggle-bulk',
+        label: state.bulkMode ? 'Exit selection mode' : 'Select multiple notes',
+        meta: 'Bulk actions',
+        keywords: 'bulk batch multi',
+        run: toggleBulkMode,
+      },
+      {
+        id: 'export-backup',
+        label: 'Export backup',
+        meta: 'Download JSON backup',
+        keywords: 'backup json download',
+        run: exportAll,
+      },
+      {
+        id: 'export-markdown',
+        label: 'Export Markdown ZIP',
+        meta: 'Download active notes as Markdown',
+        keywords: 'zip markdown download',
+        run: exportMarkdownZip,
+      },
+      {
+        id: 'import-notes',
+        label: 'Import notes',
+        meta: 'Restore a JSON backup',
+        keywords: 'backup restore json',
+        run: () => els.importFile.click(),
+      },
+      {
+        id: 'view-notes',
+        label: 'View Notes',
+        meta: 'Show active notes',
+        keywords: 'active list',
+        run: () => setView('active'),
+      },
+      {
+        id: 'view-trash',
+        label: 'View Trash',
+        meta: 'Show deleted notes',
+        keywords: 'deleted',
+        run: () => setView('trash'),
+      },
+      {
+        id: 'diagnostics',
+        label: 'Open diagnostics',
+        meta: 'Storage and backup health',
+        keywords: 'about local health storage',
+        run: openAboutDialog,
+      },
+    ];
+
+    const notes = sortNotes(state.notes)
+      .slice(0, 8)
+      .map((note) => ({
+        id: 'note-' + note.id,
+        label: deriveTitle(note),
+        meta: isTrashed(note) ? 'Open note in Trash' : 'Open note',
+        keywords: [note.body || '', (note.tags || []).join(' ')].join(' '),
+        run: () => openNoteFromCommand(note.id),
+      }));
+    return commands.concat(notes);
+  }
+
+  async function openNoteFromCommand(id) {
+    const note = getNote(id);
+    if (!note) return;
+    if (state.editing && state.dirty) {
+      const ok = await confirmDiscard();
+      if (!ok) return;
+      await discardCurrentDraft();
+    }
+    state.view = isTrashed(note) ? 'trash' : 'active';
+    state.selectedId = note.id;
+    state.editing = false;
+    state.dirty = false;
+    state.mobileView = 'editor';
+    renderAll();
+    await maybePromptDraftForSelected();
+  }
+
+  function filteredCommandItems() {
+    const q = els.commandPaletteInput.value;
+    return commandDefinitions()
+      .filter((item) => matchesQuery([item.label, item.meta, item.keywords].join(' '), q))
+      .slice(0, 12);
+  }
+
+  function renderCommandPaletteList() {
+    const items = filteredCommandItems();
+    state.commandItems = items;
+    if (state.commandIndex >= items.length) state.commandIndex = Math.max(0, items.length - 1);
+    const rows = items.map((item, index) => el('button', {
+      class: 'command-palette-item' + (index === state.commandIndex ? ' is-active' : ''),
+      attrs: {
+        type: 'button',
+        role: 'option',
+        'aria-selected': index === state.commandIndex ? 'true' : 'false',
+      },
+      children: [
+        el('span', { class: 'command-palette-label', text: item.label }),
+        el('span', { class: 'command-palette-meta', text: item.meta }),
+      ],
+      on: { click: () => runCommandAt(index) },
+    }));
+    els.commandPaletteList.replaceChildren(...rows);
+    els.commandPaletteEmpty.hidden = items.length > 0;
+  }
+
+  function openCommandPalette() {
+    state.commandIndex = 0;
+    els.commandPaletteInput.value = '';
+    renderCommandPaletteList();
+    openDialog(els.commandPaletteDialog);
+    setTimeout(() => els.commandPaletteInput.focus(), 0);
+  }
+
+  async function runCommandAt(index) {
+    const item = state.commandItems[index];
+    if (!item) return;
+    closeDialog(els.commandPaletteDialog);
+    els.commandPaletteInput.value = '';
+    await item.run();
+  }
+
+  function onCommandPaletteKey(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      state.commandIndex = Math.min(state.commandItems.length - 1, state.commandIndex + 1);
+      renderCommandPaletteList();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      state.commandIndex = Math.max(0, state.commandIndex - 1);
+      renderCommandPaletteList();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      runCommandAt(state.commandIndex);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeDialog(els.commandPaletteDialog);
+    }
+  }
+
   // -------- Revision history --------
   async function openHistoryDialog() {
     const note = getNote(state.selectedId);
@@ -1367,17 +2157,23 @@
   async function restoreRevision(rev) {
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
-    await storeRevision(note);
-    note.title = rev.title || '';
-    note.body = rev.body || '';
-    note.updatedAt = now();
-    note.lastDraftAt = null;
-    await DB.put(note);
-    await DB.removeDraft(note.id);
-    state.editing = false;
-    state.dirty = false;
-    closeDialog(els.historyDialog);
-    renderAll();
+    return withBusy('restore-revision', [], 'Revision restore failed.', async () => {
+      const nextNote = {
+        ...note,
+        title: rev.title || '',
+        body: rev.body || '',
+        updatedAt: now(),
+        lastDraftAt: null,
+      };
+      await storeRevision(note);
+      await DB.put(nextNote);
+      await DB.removeDraft(note.id);
+      Object.assign(note, nextNote);
+      state.editing = false;
+      state.dirty = false;
+      closeDialog(els.historyDialog);
+      renderAll();
+    });
   }
 
   // -------- Export / Import --------
@@ -1396,37 +2192,44 @@
   }
 
   async function exportAll() {
-    const notes = (await DB.getAll()).map(normalizeNote);
-    const revisions = (await DB.getAllRevisions()).map((rev) => normalizeRevision(rev, rev.noteId)).filter(Boolean);
-    const payload = {
-      app: 'scratchpad',
-      version: window.SCRATCHPAD_VERSION || 'unknown',
-      schemaVersion: 2,
-      exportedAt: new Date().toISOString(),
-      notes: notes.filter((n) => !isTrashed(n)),
-      trashedNotes: notes.filter(isTrashed),
-      revisions,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, `scratchpad-${exportStamp()}.json`);
+    return withBusy('export-json', [els.exportBtn], 'Export failed.', async () => {
+      const notes = (await DB.getAll()).map(normalizeNote);
+      const revisions = (await DB.getAllRevisions()).map((rev) => normalizeRevision(rev, rev.noteId)).filter(Boolean);
+      const payload = {
+        app: 'scratchpad',
+        version: window.SCRATCHPAD_VERSION || 'unknown',
+        schemaVersion: 2,
+        exportedAt: new Date().toISOString(),
+        notes: notes.filter((n) => !isTrashed(n)),
+        trashedNotes: notes.filter(isTrashed),
+        revisions,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `scratchpad-${exportStamp()}.json`);
+      recordBackupDownload();
+      toast('Backup downloaded (JSON).');
+    });
   }
 
   async function exportMarkdownZip() {
-    const notes = activeNotes();
-    if (!notes.length) {
-      alert('There are no active notes to export.');
-      return;
-    }
-    const used = new Map();
-    const files = notes.map((note) => {
-      const base = slugify(deriveTitle(note)) || 'untitled-note';
-      const count = used.get(base) || 0;
-      used.set(base, count + 1);
-      const name = count ? `${base}-${count + 1}.md` : `${base}.md`;
-      return { name, content: noteToMarkdown(note) };
+    return withBusy('export-markdown', [els.exportMarkdownBtn, els.exportOverflowBtn], 'Markdown export failed.', async () => {
+      const notes = activeNotes();
+      if (!notes.length) {
+        toast('No active notes to export.', { tone: 'info' });
+        return;
+      }
+      const used = new Map();
+      const files = notes.map((note) => {
+        const base = slugify(deriveTitle(note)) || 'untitled-note';
+        const count = used.get(base) || 0;
+        used.set(base, count + 1);
+        const name = count ? `${base}-${count + 1}.md` : `${base}.md`;
+        return { name, content: noteToMarkdown(note) };
+      });
+      const blob = new Blob([Zip.createZip(files)], { type: 'application/zip' });
+      downloadBlob(blob, `scratchpad-markdown-${exportStamp()}.zip`);
+      toast('Markdown ZIP downloaded.');
     });
-    const blob = new Blob([createZip(files)], { type: 'application/zip' });
-    downloadBlob(blob, `scratchpad-markdown-${exportStamp()}.zip`);
   }
 
   function noteToMarkdown(note) {
@@ -1452,53 +2255,177 @@
       .slice(0, 80);
   }
 
+  function importError(label, reason) {
+    return label + ': ' + reason;
+  }
+
+  function validateTags(rawTags, errors) {
+    if (rawTags == null) return;
+    if (!Array.isArray(rawTags)) {
+      errors.push('tags must be an array');
+      return;
+    }
+    if (rawTags.length > NOTE_TAGS_MAX) errors.push('too many tags');
+    for (const tag of rawTags) {
+      if (typeof tag !== 'string') {
+        errors.push('tags must be text');
+        continue;
+      }
+      const normalized = normalizeTag(tag);
+      if (normalized.length > NOTE_TAG_MAX) errors.push('tag is too long');
+    }
+  }
+
+  function validateImportText(raw, key, max, errors) {
+    if (raw[key] == null) return;
+    if (typeof raw[key] !== 'string') {
+      errors.push(key + ' must be text');
+      return;
+    }
+    if (raw[key].length > max) errors.push(key + ' is too long');
+  }
+
+  function validateImportNote(raw, index) {
+    const label = 'Note ' + (index + 1);
+    const errors = [];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return { error: importError(label, 'entry is not a note object') };
+    }
+    if (raw.id != null && typeof raw.id !== 'string') errors.push('id must be text');
+    if (typeof raw.title !== 'string' && typeof raw.body !== 'string') {
+      errors.push('title or body is required');
+    }
+    validateImportText(raw, 'title', NOTE_TITLE_MAX, errors);
+    validateImportText(raw, 'body', NOTE_BODY_MAX, errors);
+    validateTags(raw.tags, errors);
+    if (errors.length) return { error: importError(label, errors[0]) };
+    return { note: normalizeNote(raw) };
+  }
+
+  function validateImportRevision(raw, index, validNoteIds) {
+    const label = 'Revision ' + (index + 1);
+    const errors = [];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return { error: importError(label, 'entry is not a revision object') };
+    }
+    if (typeof raw.noteId !== 'string' || !raw.noteId) errors.push('noteId is required');
+    else if (!validNoteIds.has(raw.noteId)) errors.push('noteId does not match an imported note');
+    validateImportText(raw, 'title', NOTE_TITLE_MAX, errors);
+    validateImportText(raw, 'body', NOTE_BODY_MAX, errors);
+    validateTags(raw.tags, errors);
+    if (errors.length) return { error: importError(label, errors[0]) };
+    return { revision: normalizeRevision(raw, raw.noteId) };
+  }
+
   async function importFromFile(file) {
-    const text = await file.text();
+    // Close the About dialog up front so any error toast / the preview dialog
+    // isn't covered by the modal's top layer.
+    closeDialog(els.aboutDialog);
+    if (file.size > IMPORT_MAX_FILE_BYTES) {
+      toast('Import failed: backup files must be 2 MB or smaller.', { tone: 'error' });
+      return;
+    }
+    let text;
+    try {
+      text = await file.text();
+    } catch (e) {
+      console.error('Import read failed', e);
+      toast('Import failed: Scratchpad could not read that file.', { tone: 'error' });
+      return;
+    }
     let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
-      alert('Import failed: file is not valid JSON.');
+      toast('Import failed: that file is not valid JSON.', { tone: 'error' });
       return;
     }
     const preview = buildImportPreview(data);
     if (!preview.notes.length) {
-      alert('Import found no valid notes.');
+      const rejected = preview.invalid + preview.invalidRevisions;
+      toast(
+        rejected ? `Import found no valid notes. Rejected ${rejected} invalid entr${rejected === 1 ? 'y' : 'ies'}.` : 'Import found no valid notes in that file.',
+        { tone: 'error' }
+      );
       return;
     }
     state.importPreview = preview;
     renderImportPreview(preview);
-    closeDialog(els.aboutDialog);
     openDialog(els.importPreviewDialog);
   }
 
   function buildImportPreview(data) {
+    const empty = {
+      notes: [],
+      revisions: [],
+      invalid: 0,
+      invalidRevisions: 0,
+      rejectedNotes: [],
+      rejectedRevisions: [],
+      newCount: 0,
+      conflicts: 0,
+    };
     if (!data || typeof data !== 'object') {
-      return { notes: [], revisions: [], invalid: 0, newCount: 0, conflicts: 0 };
+      return {
+        ...empty,
+        invalid: 1,
+        rejectedNotes: [importError('File', 'top-level JSON must be an object or array')],
+      };
     }
-    const rawNotes = Array.isArray(data)
+    let rawNotes = Array.isArray(data)
       ? data
       : []
         .concat(Array.isArray(data.notes) ? data.notes : [])
         .concat(Array.isArray(data.trashedNotes) ? data.trashedNotes : []);
     const existingIds = new Set(state.notes.map((n) => n.id));
+    const seenIds = new Set();
     const notes = [];
-    let invalid = 0;
-    for (const raw of rawNotes) {
-      if (!raw || typeof raw !== 'object' || (typeof raw.title !== 'string' && typeof raw.body !== 'string')) {
-        invalid += 1;
+    const rejectedNotes = [];
+    if (rawNotes.length > IMPORT_MAX_NOTES) {
+      for (let i = IMPORT_MAX_NOTES; i < rawNotes.length; i += 1) {
+        rejectedNotes.push(importError('Note ' + (i + 1), 'import limit exceeded'));
+      }
+      rawNotes = rawNotes.slice(0, IMPORT_MAX_NOTES);
+    }
+    for (let i = 0; i < rawNotes.length; i += 1) {
+      const result = validateImportNote(rawNotes[i], i);
+      if (result.error) {
+        rejectedNotes.push(result.error);
         continue;
       }
-      notes.push(normalizeNote(raw));
+      if (seenIds.has(result.note.id)) {
+        rejectedNotes.push(importError('Note ' + (i + 1), 'duplicate id in import file'));
+        continue;
+      }
+      seenIds.add(result.note.id);
+      notes.push(result.note);
     }
-    const revisions = Array.isArray(data.revisions)
-      ? data.revisions.map((rev) => normalizeRevision(rev, rev.noteId)).filter((rev) => rev && rev.noteId)
-      : [];
+    let rawRevisions = Array.isArray(data.revisions) ? data.revisions : [];
+    const validNoteIds = new Set(notes.map((note) => note.id));
+    const revisions = [];
+    const rejectedRevisions = [];
+    if (rawRevisions.length > IMPORT_MAX_REVISIONS) {
+      for (let i = IMPORT_MAX_REVISIONS; i < rawRevisions.length; i += 1) {
+        rejectedRevisions.push(importError('Revision ' + (i + 1), 'import limit exceeded'));
+      }
+      rawRevisions = rawRevisions.slice(0, IMPORT_MAX_REVISIONS);
+    }
+    for (let i = 0; i < rawRevisions.length; i += 1) {
+      const result = validateImportRevision(rawRevisions[i], i, validNoteIds);
+      if (result.error) {
+        rejectedRevisions.push(result.error);
+        continue;
+      }
+      revisions.push(result.revision);
+    }
     const conflicts = notes.filter((note) => existingIds.has(note.id)).length;
     return {
       notes,
       revisions,
-      invalid,
+      invalid: rejectedNotes.length,
+      invalidRevisions: rejectedRevisions.length,
+      rejectedNotes,
+      rejectedRevisions,
       newCount: notes.length - conflicts,
       conflicts,
     };
@@ -1508,13 +2435,30 @@
     const rows = [
       ['New notes', preview.newCount],
       ['Conflicts', preview.conflicts],
-      ['Invalid entries', preview.invalid],
+      ['Rejected entries', preview.invalid],
       ['Revision snapshots', preview.revisions.length],
+      ['Rejected revisions', preview.invalidRevisions],
     ].map(([label, value]) => [
       el('dt', { text: label }),
       el('dd', { text: String(value) }),
     ]).flat();
     els.importPreviewCounts.replaceChildren(...rows);
+    const rejected = [...preview.rejectedNotes, ...preview.rejectedRevisions];
+    if (rejected.length) {
+      const shown = rejected.slice(0, 5);
+      const items = shown.map((msg) => el('li', { text: msg }));
+      if (rejected.length > shown.length) {
+        items.push(el('li', { text: `${rejected.length - shown.length} more rejected entr${rejected.length - shown.length === 1 ? 'y' : 'ies'}.` }));
+      }
+      els.importPreviewErrors.replaceChildren(
+        el('p', { text: 'Skipped invalid import content' }),
+        el('ul', { children: items })
+      );
+      els.importPreviewErrors.hidden = false;
+    } else {
+      els.importPreviewErrors.replaceChildren();
+      els.importPreviewErrors.hidden = true;
+    }
     const duplicate = document.querySelector('input[name="import-conflict-mode"][value="duplicate"]');
     if (duplicate) duplicate.checked = true;
   }
@@ -1522,128 +2466,41 @@
   async function confirmImport() {
     const preview = state.importPreview;
     if (!preview) return;
-    const selected = document.querySelector('input[name="import-conflict-mode"]:checked');
-    const mode = selected ? selected.value : 'duplicate';
-    const existingIds = new Set(state.notes.map((n) => n.id));
-    const idMap = new Map();
-    const notesToImport = [];
-    for (const note of preview.notes) {
-      const conflict = existingIds.has(note.id);
-      if (conflict && mode === 'skip') continue;
-      if (conflict && mode === 'duplicate') {
-        const newId = uuid();
-        idMap.set(note.id, newId);
-        notesToImport.push({ ...note, id: newId });
-      } else {
-        idMap.set(note.id, note.id);
-        notesToImport.push(note);
+    return withBusy('import', [els.confirmImport], 'Import failed. No notes were changed.', async () => {
+      const selected = document.querySelector('input[name="import-conflict-mode"]:checked');
+      const mode = selected ? selected.value : 'duplicate';
+      const existingIds = new Set(state.notes.map((n) => n.id));
+      const idMap = new Map();
+      const notesToImport = [];
+      for (const note of preview.notes) {
+        const conflict = existingIds.has(note.id);
+        if (conflict && mode === 'skip') continue;
+        if (conflict && mode === 'duplicate') {
+          const newId = uuid();
+          idMap.set(note.id, newId);
+          notesToImport.push({ ...note, id: newId });
+        } else {
+          idMap.set(note.id, note.id);
+          notesToImport.push(note);
+        }
       }
-    }
-    const revisionsToImport = preview.revisions
-      .filter((rev) => idMap.has(rev.noteId))
-      .map((rev) => ({ ...rev, id: uuid(), noteId: idMap.get(rev.noteId) }));
-    if (notesToImport.length) await DB.bulkPut(notesToImport);
-    if (revisionsToImport.length) await DB.bulkPutRevisions(revisionsToImport);
-    for (const noteId of new Set(revisionsToImport.map((rev) => rev.noteId))) {
-      await DB.pruneRevisions(noteId, REVISION_LIMIT);
-    }
-    state.importPreview = null;
-    closeDialog(els.importPreviewDialog);
-    await loadAll();
-  }
-
-  // Tiny ZIP writer using stored files only. Keeps Markdown export dependency-free.
-  function createZip(files) {
-    const encoder = new TextEncoder();
-    const localParts = [];
-    const centralParts = [];
-    let offset = 0;
-    for (const file of files) {
-      const name = encoder.encode(file.name);
-      const data = encoder.encode(file.content);
-      const crc = crc32(data);
-      const local = zipLocalHeader(name, data, crc);
-      localParts.push(local, data);
-      centralParts.push(zipCentralHeader(name, data, crc, offset));
-      offset += local.length + data.length;
-    }
-    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
-    const end = zipEnd(files.length, centralSize, offset);
-    return concatBytes([...localParts, ...centralParts, end]);
-  }
-
-  function zipLocalHeader(name, data, crc) {
-    const bytes = new Uint8Array(30 + name.length);
-    const view = new DataView(bytes.buffer);
-    view.setUint32(0, 0x04034b50, true);
-    view.setUint16(4, 20, true);
-    view.setUint16(6, 0x0800, true);
-    view.setUint16(8, 0, true);
-    view.setUint16(10, 0, true);
-    view.setUint16(12, 0, true);
-    view.setUint32(14, crc, true);
-    view.setUint32(18, data.length, true);
-    view.setUint32(22, data.length, true);
-    view.setUint16(26, name.length, true);
-    bytes.set(name, 30);
-    return bytes;
-  }
-
-  function zipCentralHeader(name, data, crc, offset) {
-    const bytes = new Uint8Array(46 + name.length);
-    const view = new DataView(bytes.buffer);
-    view.setUint32(0, 0x02014b50, true);
-    view.setUint16(4, 20, true);
-    view.setUint16(6, 20, true);
-    view.setUint16(8, 0x0800, true);
-    view.setUint16(10, 0, true);
-    view.setUint16(12, 0, true);
-    view.setUint16(14, 0, true);
-    view.setUint32(16, crc, true);
-    view.setUint32(20, data.length, true);
-    view.setUint32(24, data.length, true);
-    view.setUint16(28, name.length, true);
-    view.setUint32(42, offset, true);
-    bytes.set(name, 46);
-    return bytes;
-  }
-
-  function zipEnd(count, centralSize, centralOffset) {
-    const bytes = new Uint8Array(22);
-    const view = new DataView(bytes.buffer);
-    view.setUint32(0, 0x06054b50, true);
-    view.setUint16(8, count, true);
-    view.setUint16(10, count, true);
-    view.setUint32(12, centralSize, true);
-    view.setUint32(16, centralOffset, true);
-    return bytes;
-  }
-
-  function concatBytes(parts) {
-    const length = parts.reduce((sum, part) => sum + part.length, 0);
-    const out = new Uint8Array(length);
-    let offset = 0;
-    for (const part of parts) {
-      out.set(part, offset);
-      offset += part.length;
-    }
-    return out;
-  }
-
-  const CRC_TABLE = (() => {
-    const table = new Uint32Array(256);
-    for (let i = 0; i < 256; i += 1) {
-      let c = i;
-      for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-      table[i] = c >>> 0;
-    }
-    return table;
-  })();
-
-  function crc32(bytes) {
-    let c = 0xffffffff;
-    for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
-    return (c ^ 0xffffffff) >>> 0;
+      const revisionsToImport = preview.revisions
+        .filter((rev) => idMap.has(rev.noteId))
+        .map((rev) => ({ ...rev, id: uuid(), noteId: idMap.get(rev.noteId) }));
+      if (notesToImport.length) await DB.bulkPut(notesToImport);
+      if (revisionsToImport.length) await DB.bulkPutRevisions(revisionsToImport);
+      for (const noteId of new Set(revisionsToImport.map((rev) => rev.noteId))) {
+        await DB.pruneRevisions(noteId, REVISION_LIMIT);
+      }
+      state.importPreview = null;
+      closeDialog(els.importPreviewDialog);
+      await loadAll();
+      const imported = notesToImport.length;
+      toast(
+        imported ? `Imported ${imported} note${imported === 1 ? '' : 's'}.` : 'No new notes to import.',
+        { tone: imported ? 'success' : 'info' }
+      );
+    });
   }
 
   // -------- Tag management --------
@@ -1705,17 +2562,28 @@
   async function renameTag(oldTag, rawNewTag) {
     const newTag = normalizeTag(rawNewTag);
     if (!newTag || newTag === oldTag) return;
-    const changed = [];
-    for (const note of activeNotes()) {
-      if (!(note.tags || []).includes(oldTag)) continue;
-      note.tags = Array.from(new Set(note.tags.map((tag) => tag === oldTag ? newTag : tag)));
-      note.updatedAt = now();
-      changed.push(DB.put(note));
-    }
-    await Promise.all(changed);
-    if (state.tagFilter === oldTag) state.tagFilter = newTag;
-    renderAll();
-    renderTagManager();
+    return withBusy('rename-tag', [], 'Tag rename failed.', async () => {
+      const changed = [];
+      const nextById = new Map();
+      for (const note of activeNotes()) {
+        if (!(note.tags || []).includes(oldTag)) continue;
+        const nextNote = {
+          ...note,
+          tags: Array.from(new Set(note.tags.map((tag) => tag === oldTag ? newTag : tag))),
+          updatedAt: now(),
+        };
+        nextById.set(note.id, nextNote);
+        changed.push(DB.put(nextNote));
+      }
+      await Promise.all(changed);
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      if (state.tagFilter === oldTag) state.tagFilter = newTag;
+      renderAll();
+      renderTagManager();
+    });
   }
 
   function openTagDelete(tag, count) {
@@ -1727,19 +2595,30 @@
   async function deletePendingTag() {
     const tag = state.pendingTagDelete;
     if (!tag) return;
-    const changed = [];
-    for (const note of activeNotes()) {
-      if (!(note.tags || []).includes(tag)) continue;
-      note.tags = note.tags.filter((t) => t !== tag);
-      note.updatedAt = now();
-      changed.push(DB.put(note));
-    }
-    await Promise.all(changed);
-    if (state.tagFilter === tag) state.tagFilter = null;
-    state.pendingTagDelete = null;
-    closeDialog(els.tagDeleteDialog);
-    renderAll();
-    renderTagManager();
+    return withBusy('delete-tag', [els.confirmTagDelete], 'Tag delete failed.', async () => {
+      const changed = [];
+      const nextById = new Map();
+      for (const note of activeNotes()) {
+        if (!(note.tags || []).includes(tag)) continue;
+        const nextNote = {
+          ...note,
+          tags: note.tags.filter((t) => t !== tag),
+          updatedAt: now(),
+        };
+        nextById.set(note.id, nextNote);
+        changed.push(DB.put(nextNote));
+      }
+      await Promise.all(changed);
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      if (state.tagFilter === tag) state.tagFilter = null;
+      state.pendingTagDelete = null;
+      closeDialog(els.tagDeleteDialog);
+      renderAll();
+      renderTagManager();
+    });
   }
 
   // -------- Mobile view sync --------
@@ -1772,6 +2651,11 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
+    els.searchScope.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-search-scope]');
+      if (!btn) return;
+      setSearchScope(btn.dataset.searchScope);
+    });
 
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);
@@ -1780,6 +2664,8 @@
     els.manageTags.addEventListener('click', openTagManager);
 
     els.newNote.addEventListener('click', createNote);
+    els.bulkToggle.addEventListener('click', toggleBulkMode);
+    els.commandPaletteBtn.addEventListener('click', openCommandPalette);
     els.emptyNewNote.addEventListener('click', createNote);
     els.emptyImportNotes.addEventListener('click', () => els.importFile.click());
 
@@ -1797,12 +2683,14 @@
         els.dirtyIndicator.hidden = true;
         return;
       }
-      note.title = v;
-      note.updatedAt = now();
-      await DB.put(note);
-      state.dirty = false;
-      renderSidebar();
-      els.dirtyIndicator.hidden = true;
+      await withBusy('title-save', [els.titleInput], 'Title update failed.', async () => {
+        const nextNote = { ...note, title: v, updatedAt: now() };
+        await DB.put(nextNote);
+        Object.assign(note, nextNote);
+        state.dirty = false;
+        renderSidebar();
+        els.dirtyIndicator.hidden = true;
+      });
     });
 
     els.pinToggle.addEventListener('click', togglePin);
@@ -1896,10 +2784,12 @@
       renderEditor();
     });
 
-    els.openAbout.addEventListener('click', () => openDialog(els.aboutDialog));
-    els.exportBtn.addEventListener('click', exportAll);
-    els.exportMarkdownBtn.addEventListener('click', exportMarkdownZip);
+    els.openAbout.addEventListener('click', openAboutDialog);
+    els.exportBtn.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
+    els.exportMarkdownBtn.addEventListener('click', () => { closeDialog(els.aboutDialog); exportMarkdownZip(); });
     els.importBtn.addEventListener('click', () => els.importFile.click());
+    els.backupReminderExport.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
+    els.backupReminderSnooze.addEventListener('click', snoozeBackupReminder);
     els.importFile.addEventListener('change', async () => {
       const file = els.importFile.files && els.importFile.files[0];
       if (file) await importFromFile(file);
@@ -1907,6 +2797,18 @@
     });
     els.confirmImport.addEventListener('click', confirmImport);
     els.confirmTagDelete.addEventListener('click', deletePendingTag);
+    els.bulkApplyTag.addEventListener('click', applyBulkTag);
+    els.bulkTagInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyBulkTag();
+      }
+    });
+    els.commandPaletteInput.addEventListener('input', () => {
+      state.commandIndex = 0;
+      renderCommandPaletteList();
+    });
+    els.commandPaletteInput.addEventListener('keydown', onCommandPaletteKey);
 
     window.addEventListener('keydown', onGlobalKey);
     window.addEventListener('resize', debounce(syncMobileView, 100));
@@ -1934,6 +2836,12 @@
     if (meta && (e.key === 'n' || e.key === 'N')) {
       e.preventDefault();
       createNote();
+      return;
+    }
+
+    if (meta && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
+      e.preventDefault();
+      openCommandPalette();
       return;
     }
 
@@ -1988,7 +2896,7 @@
       registerServiceWorker();
     } catch (e) {
       console.error('Failed to load notes', e);
-      alert('Scratchpad failed to open its database. Storage may be blocked.');
+      toast('Scratchpad could not open its local database. Your browser may be blocking storage.', { tone: 'error', persist: true });
     }
   }
 

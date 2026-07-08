@@ -31,6 +31,27 @@ async function seedNotes(page, count) {
   await expect(page.locator('#app-shell')).toBeVisible();
 }
 
+async function seedRawNotes(page, notes) {
+  await gotoApp(page);
+  await page.evaluate(async (rawNotes) => {
+    const base = Date.now();
+    const notes = rawNotes.map((note, index) => ({
+      id: note.id || `raw-${index}`,
+      title: note.title || '',
+      body: note.body || '',
+      tags: Array.isArray(note.tags) ? note.tags : [],
+      pinned: !!note.pinned,
+      createdAt: Number.isFinite(note.createdAt) ? note.createdAt : base - (rawNotes.length - index) * 1000,
+      updatedAt: Number.isFinite(note.updatedAt) ? note.updatedAt : base - (rawNotes.length - index) * 1000,
+      deletedAt: Number.isFinite(note.deletedAt) ? note.deletedAt : null,
+      lastDraftAt: Number.isFinite(note.lastDraftAt) ? note.lastDraftAt : null,
+    }));
+    await window.ScratchpadDB.bulkPut(notes);
+  }, notes);
+  await page.reload();
+  await expect(page.locator('#app-shell')).toBeVisible();
+}
+
 async function createAndSaveNote(page, title, body) {
   await page.locator('#new-note').click();
   await expect(page.locator('#note-editor')).toBeVisible();
@@ -40,4 +61,12 @@ async function createAndSaveNote(page, title, body) {
   await expect(page.locator('#save-btn')).toBeHidden();
 }
 
-module.exports = { gotoApp, seedNotes, createAndSaveNote };
+async function importJson(page, payload, filename = 'scratchpad-import.json') {
+  await page.setInputFiles('#import-file', {
+    name: filename,
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(payload)),
+  });
+}
+
+module.exports = { gotoApp, seedNotes, seedRawNotes, createAndSaveNote, importJson };

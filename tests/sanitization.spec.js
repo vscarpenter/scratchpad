@@ -46,4 +46,30 @@ test.describe('markdown rendering — XSS guard', () => {
     await expect(link).toHaveAttribute('rel', /noopener/);
     await expect(link).toHaveAttribute('rel', /noreferrer/);
   });
+
+  test('strips inline styles, SVG, and data URLs from rendered markdown', async ({ page }) => {
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Strict policy', [
+      '<p style="color:red">Styled text</p>',
+      '<svg><script>window.__SVG_PWNED = true</script></svg>',
+      '<img src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==" alt="bad data">',
+      '',
+      '[safe mail](mailto:hello@example.com)',
+      '',
+      '[data link](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)',
+    ].join('\n'));
+
+    const rendered = page.locator('#note-rendered');
+    await expect(rendered.locator('[style]')).toHaveCount(0);
+    await expect(rendered.locator('svg')).toHaveCount(0);
+
+    const urls = await rendered.locator('[href], [src]').evaluateAll((els) =>
+      els.map((node) => node.getAttribute('href') || node.getAttribute('src') || '')
+    );
+    for (const url of urls) {
+      expect(url.toLowerCase().startsWith('data:')).toBe(false);
+    }
+    await expect(rendered.locator('a[href^="mailto:"]')).toHaveCount(1);
+    await expect(page.evaluate(() => /** @type {any} */ (window).__SVG_PWNED)).resolves.toBeUndefined();
+  });
 });

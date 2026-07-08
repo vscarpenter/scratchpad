@@ -59,48 +59,41 @@ What it does:
    `aws s3 cp public/service-worker.js` with `Cache-Control: no-cache,
    no-store, must-revalidate` so the imported service-worker logic is never
    stuck behind the generic asset cache.
-3. `aws s3 cp index.html / privacy.html / terms.html → s3://$S3_BUCKET/` with
+3. `aws s3 cp index.html / about.html / privacy.html / terms.html → s3://$S3_BUCKET/` with
    `Cache-Control: public, max-age=60, must-revalidate` so new HTML reaches
    users within a minute.
 4. `aws s3 cp service-worker.js → s3://$S3_BUCKET/service-worker.js` with
    `Cache-Control: no-cache, no-store, must-revalidate` so installed copies
    see the newest app-shell cache quickly.
 5. `aws cloudfront create-invalidation` for `/`, `/index.html`,
-   `/privacy.html`, `/terms.html`, `/service-worker.js`,
+   `/about.html`, `/privacy.html`, `/terms.html`, `/service-worker.js`,
    `/public/manifest.webmanifest`, and `/public/service-worker.js*` so the
    edge cache flips immediately.
 
 Assets are uploaded **before** HTML on purpose: the new HTML never refers
 to assets that haven't landed yet.
 
-### Optional response headers (CloudFront response headers policy)
+### Security headers
 
-- `Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; base-uri 'none'; frame-ancestors 'none'`
-- `Referrer-Policy: no-referrer`
-- `X-Content-Type-Options: nosniff`
+Production security headers are emitted by
+`cloudfront/security-headers-function.js`, a CloudFront Function attached on
+`viewer-response`. The CSP uses sha256 hashes for the inline theme scripts;
+it does not require `script-src 'unsafe-inline'`.
 
-`'unsafe-inline'` is needed for the two small inline scripts (the theme
-bootstrap in `<head>` and the toggle script before `</body>`). If you move
-both into a separate file, you can drop `'unsafe-inline'`.
+Run this after editing any inline `<script>` in `index.html`, `about.html`,
+`privacy.html`, or `terms.html`:
+
+```sh
+bash cloudfront/recompute-csp-hashes.sh
+```
+
+See `cloudfront/README.md` for the exact headers and publish flow.
 
 ### Releasing a new version
 
 Edit `public/js/version.js` — change `SCRATCHPAD_VERSION` and
 `SCRATCHPAD_BUILD_DATE`. Both pages pick the new values up automatically
 via the footer placeholders.
-
-Optional but recommended response headers (set via CloudFront response
-headers policy):
-
-- `Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; base-uri 'none'; frame-ancestors 'none'`
-- `Referrer-Policy: no-referrer`
-- `X-Content-Type-Options: nosniff`
-
-(`'unsafe-inline'` on `script-src` and `style-src` is needed for the two
-small inline scripts — the theme bootstrap in `<head>` and the toggle script
-before `</body>`. Everything else loads from `'self'`. If you move both
-inline scripts into a separate file, you can tighten this to remove
-`'unsafe-inline'`.)
 
 ## How data is stored
 
@@ -131,9 +124,24 @@ excluded.
 Use **About → Export Markdown ZIP** for readable `.md` copies of active notes.
 Each file includes frontmatter with title, tags, pinned state, and timestamps.
 
-Importing JSON always shows a preview before writing anything. The default is
-to import conflicts as duplicates; you can also replace matching ids or skip
+Importing JSON validates the file before writing anything. The importer caps
+file size, note count, revision count, body length, title length, tag count,
+and tag length, then shows a preview with rejected entries. The default is to
+import conflicts as duplicates; you can also replace matching ids or skip
 conflicts.
+
+## Vendored libraries
+
+Runtime dependencies are vendored in `public/js/vendor/` so the deployed app
+does not depend on a package CDN. Check them against npm with:
+
+```sh
+npm run check:vendor
+```
+
+When updating, copy only browser-distribution artifacts into
+`public/js/vendor/`, keep filenames stable unless the HTML/service worker are
+updated too, then run the Playwright suite and CSP hash check.
 
 ## Offline install
 
@@ -161,7 +169,9 @@ so the new worker can activate.
 
 ```
 index.html
+about.html
 privacy.html
+terms.html
 deploy.sh
 .env.local.example
 public/
@@ -173,6 +183,8 @@ public/
     app.css                # Scratchpad layout (uses Inkwell tokens only)
   js/
     db.js                  # IndexedDB wrapper
+    markdown.js            # marked + DOMPurify rendering policy
+    zip.js                 # Dependency-free ZIP writer for Markdown export
     app.js                 # App logic
     version.js             # SCRATCHPAD_VERSION + build date
     vendor/

@@ -5,7 +5,7 @@
     "": {
       "name": "scratchpad-tests",
       "devDependencies": {
-        "@playwright/test": "^1.49.0",
+        "@playwright/test": "^1.60.0",
       },
     },
   },
