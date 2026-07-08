@@ -2885,7 +2885,40 @@
   }
 
   // -------- Boot --------
+  // First run: send a brand-new visitor to the About page exactly once —
+  // only when they've never visited (no flag) AND have no notes yet. Existing
+  // users who predate the flag keep their place (they have notes); a returning
+  // user who cleared all their notes also stays (their flag survives). Clearing
+  // site data wipes both flag and notes, so it reads as a fresh first run.
+  // Fails open if localStorage is blocked so the app can never get stuck here.
+  async function maybeRedirectFirstRun() {
+    let visited;
+    try {
+      visited = localStorage.getItem('scratchpad-visited');
+    } catch (e) {
+      return false;
+    }
+    if (visited) return false;
+    try {
+      localStorage.setItem('scratchpad-visited', '1');
+    } catch (e) {
+      /* private mode / quota — mark best-effort, still safe to continue */
+    }
+    let count = 0;
+    try {
+      count = (await DB.getAll()).length;
+    } catch (e) {
+      return false;
+    }
+    if (count === 0) {
+      window.location.replace('about.html');
+      return true;
+    }
+    return false;
+  }
+
   async function init() {
+    if (await maybeRedirectFirstRun()) return;
     bindEvents();
     try {
       await loadAll();
