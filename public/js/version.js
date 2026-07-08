@@ -1,10 +1,10 @@
 /* Scratchpad version metadata — single source of truth for the footer.
-   Bump these two values at release time. */
+   Bump the version at release time; deploy.sh refreshes the build date. */
 (function () {
   'use strict';
 
-  window.SCRATCHPAD_VERSION = '1.4.0';
-  window.SCRATCHPAD_BUILD_DATE = '2026-06-06';
+  window.SCRATCHPAD_VERSION = '2.0.0';
+  window.SCRATCHPAD_BUILD_DATE = '2026-07-08';
 
   function apply() {
     const v = document.getElementById('app-version');
