@@ -995,8 +995,8 @@
     }
     els.breadcrumb.replaceChildren(
       document.createTextNode(primary),
-      el('span', { class: 'crumb-sep', text: '/' }),
-      document.createTextNode(secondary),
+      el('span', { class: 'crumb-sep', attrs: { 'aria-hidden': 'true' } }),
+      el('span', { class: 'crumb-current', text: secondary }),
     );
   }
 
@@ -1047,7 +1047,7 @@
     const items = (note.tags || []).map((tag) => {
       const filterBtn = el('button', {
         class: 'tag-pill-filter',
-        text: '#' + tag,
+        text: tag,
         attrs: { type: 'button', title: 'Filter by #' + tag, 'aria-label': 'Filter by ' + tag },
         on: { click: () => setTagFilter(tag) },
       });

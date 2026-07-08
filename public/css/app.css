@@ -434,14 +434,14 @@ body:not(.page-privacy) .theme-toggle:hover {
   gap: 8px;
   margin: 4px 4px 8px;
   padding: 10px;
-  border: var(--border-hair);
-  border-radius: var(--r-sm);
-  background: var(--ivory);
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--control-fill);
 }
 
 .bulk-count {
-  font: 600 12px/1 var(--mono);
-  color: var(--slate);
+  font: 600 12px/1 var(--sans);
+  color: var(--ink);
 }
 
 .bulk-actions {
@@ -463,8 +463,15 @@ body:not(.page-privacy) .theme-toggle:hover {
 }
 
 .note-section-head {
-  padding: 6px 8px 4px;
+  font: 600 10.5px/1 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  gap: 5px;
+  padding: 6px 8px 2px;
 }
+/* Neutralize the .eyebrow accent dash for section labels. */
+.note-section-head::before { content: none; }
 
 .note-row {
   display: grid;
@@ -474,25 +481,26 @@ body:not(.page-privacy) .theme-toggle:hover {
   width: 100%;
   text-align: left;
   background: transparent;
-  border: 0;
-  border-left: 1.5px solid transparent;
-  border-radius: var(--r-sm);
-  padding: 11px 12px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--r-lg);
+  padding: 10px 12px;
   cursor: pointer;
-  color: var(--slate);
+  color: var(--ink);
   font-family: var(--sans);
   position: relative;
-  transition: background var(--t-fast) ease, border-color var(--t-fast) ease;
+  transition: background var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease;
 }
-.note-row:hover { background: var(--gray-100); }
+.note-row:hover { background: var(--row-hover); }
 .note-row:focus-visible {
-  outline: 2px solid var(--accent-focus-ring);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
 .note-row.is-active {
   background: var(--paper);
-  border-left-color: var(--accent);
+  border-color: var(--accent-strong-border);
+  box-shadow: var(--shadow-card);
+  padding: 11px 12px;
 }
 
 .note-row.is-bulk {
@@ -529,28 +537,22 @@ body:not(.page-privacy) .theme-toggle:hover {
 }
 
 .note-row.is-bulk.is-selected {
-  background: var(--accent-tint);
-  border-left-color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-strong-border);
 }
 
 .note-row.is-trashed .note-row-title {
-  color: var(--gray-700);
+  color: var(--text-secondary);
 }
 
-.note-row.is-pinned {
-  background: var(--paper);
-  border-left-color: var(--warning);
-}
-.note-row.is-pinned:hover { background: var(--gray-100); }
-.note-row.is-pinned.is-active {
-  border-left-color: var(--accent);
-}
+.note-row.is-pinned { background: transparent; }
+.note-row.is-pinned:hover { background: var(--row-hover); }
 
 .note-row-title {
   grid-column: 1;
-  font: 600 14.5px/1.3 var(--serif);
-  letter-spacing: -0.008em;
-  color: var(--slate);
+  font: 600 13.5px/1.3 var(--sans);
+  letter-spacing: -0.006em;
+  color: var(--ink);
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -561,8 +563,8 @@ body:not(.page-privacy) .theme-toggle:hover {
   grid-column: 2;
   align-self: start;
   margin-top: 3px;
-  font: 400 11px/1 var(--mono);
-  color: var(--gray-500);
+  font: 500 10.5px/1 var(--sans);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -571,7 +573,7 @@ body:not(.page-privacy) .theme-toggle:hover {
   grid-row: 1;
   align-self: start;
   margin-top: 1px;
-  color: var(--warning-dark);
+  color: var(--warning);
   display: inline-flex;
 }
 
@@ -583,65 +585,74 @@ body:not(.page-privacy) .theme-toggle:hover {
 
 .note-row-excerpt {
   grid-column: 1 / -1;
-  color: var(--gray-700);
-  font: 400 12.5px/1.4 var(--sans);
+  color: var(--text-secondary);
+  font: 400 12px/1.45 var(--sans);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.note-row.is-active .note-row-excerpt { -webkit-line-clamp: 2; }
 
+/* Tag chips show on the active/selected card only (per the Soft Glass spec). */
 .note-row-tags {
   grid-column: 1 / -1;
-  display: flex;
+  display: none;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 5px;
+  margin-top: 2px;
 }
+.note-row.is-active .note-row-tags { display: flex; }
 
 .note-row-tag {
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
   border: 0;
-  padding: 0;
-  font: 400 10.5px/1 var(--mono);
-  color: var(--gray-500);
+  font: 600 10px/1 var(--sans);
+  color: var(--accent);
   cursor: pointer;
 }
-.note-row-tag::before {
-  content: '#';
-  color: var(--gray-300);
-  margin-right: 1px;
-}
-.note-row-tag:hover { color: var(--accent); }
+.note-row-tag::before { content: none; }
+.note-row-tag:hover { background: var(--accent-soft-2); }
 
 .search-hit {
-  background: var(--accent-tint);
-  color: var(--slate);
+  background: var(--accent-soft);
+  color: var(--ink);
   border-radius: var(--r-xs);
   padding: 0 2px;
 }
 
 .note-section-head.is-pinned::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
   background: var(--warning);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M9 4h6l-1 6 3 3H7l3-3-1-6z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M9 4h6l-1 6 3 3H7l3-3-1-6z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .sidebar-empty {
   margin: 8px 4px;
   padding: 16px 14px;
-  border: var(--border);
-  border-radius: var(--r-sm);
-  background: var(--ivory);
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--control-fill);
 }
 
 .sidebar-empty-title {
   margin: 0 0 4px;
-  color: var(--slate);
-  font: 600 15px/1.3 var(--serif);
+  color: var(--ink);
+  font: 700 15px/1.3 var(--sans);
 }
 
 .sidebar-empty-copy {
   margin: 0 0 12px;
-  color: var(--gray-700);
+  color: var(--text-secondary);
   font: 400 12px/1.45 var(--sans);
 }
 
@@ -661,34 +672,47 @@ body:not(.page-privacy) .theme-toggle:hover {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 20px 24px 24px;
-  gap: 12px;
   overflow: hidden;
 }
 
 .editor-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding-bottom: 4px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--hairline-color);
 }
 
 .note-breadcrumb {
-  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  margin-right: auto;
   min-width: 0;
-  font: 400 13px/1 var(--mono);
-  letter-spacing: 0.04em;
-  color: var(--gray-500);
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: var(--control-fill);
+  font: 500 12px/1 var(--sans);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 6px 2px;
+  text-transform: capitalize;
 }
 .note-breadcrumb .crumb-sep {
-  color: var(--gray-300);
-  margin: 0 6px;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  font-size: 0;
+  flex: none;
+  background: var(--text-muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
 }
+.note-breadcrumb .crumb-current { color: var(--ink); font-weight: 600; }
 
 .editor-actions {
   display: flex;
@@ -752,37 +776,66 @@ body:not(.page-privacy) .theme-toggle:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 500 12px/1 var(--mono);
-  color: var(--gray-700);
-  padding: 4px 8px;
+  height: 24px;
+  font: 600 11px/1 var(--sans);
+  color: var(--warning-dark);
+  padding: 0 10px;
   border-radius: var(--r-pill);
-  background: var(--gray-100);
+  background: var(--warning-tint);
 }
 .dirty-indicator .dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: var(--r-pill);
-  background: var(--accent);
+  background: var(--warning);
+}
+
+/* Decorative format-chip group — visual only, shown in edit mode. */
+.editor-format {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--r-seg-track);
+  background: var(--control-fill);
+}
+#editor-view:has(.editor-card.is-editing) .editor-format { display: inline-flex; }
+.fmt-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border-radius: var(--r-code);
+  color: var(--text-secondary);
+  font: 700 12px/1 var(--sans);
+}
+.fmt-chip.fmt-italic { font: italic 600 12px/1 var(--serif); }
+.fmt-chip.fmt-code { font: 600 11px/1 var(--mono); }
+.fmt-chip.fmt-link svg { width: 13px; height: 13px; }
+.fmt-chip.is-active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-chip);
 }
 
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  background: transparent;
-  border: var(--border);
-  border-radius: var(--r-sm);
-  color: var(--gray-700);
+  width: 32px;
+  height: 32px;
+  background: var(--control-fill);
+  border: none;
+  border-radius: var(--r-pill);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: color var(--t-fast) ease, background var(--t-fast) ease;
 }
-.icon-btn:hover { background: var(--gray-100); color: var(--slate); }
+.icon-btn:hover { background: var(--control-fill-hover); color: var(--ink); }
 .icon-btn.is-active {
   color: var(--accent);
-  background: var(--accent-tint);
-  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .back-btn {
@@ -817,10 +870,13 @@ body:not(.page-privacy) .theme-toggle:hover {
 .tag-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px 2px 10px;
-  font-family: var(--mono);
-  font-size: 11px;
+  gap: 5px;
+  height: 24px;
+  padding: 0 4px 0 11px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  font: 600 11.5px/1 var(--sans);
+  color: var(--accent);
 }
 
 .tag-pill-filter {
@@ -848,33 +904,45 @@ body:not(.page-privacy) .theme-toggle:hover {
   background: var(--accent-tint);
 }
 
-.tag-add-empty,
-.tag-add-plus {
+.tag-add-empty {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font: 400 12px/1 var(--mono);
-  color: var(--gray-500);
-  border: 1.5px dashed var(--gray-300);
+  height: 24px;
+  padding: 0 11px;
+  font: 500 11.5px/1 var(--sans);
+  color: var(--text-muted);
+  border: 1.5px dashed var(--idle-border);
   border-radius: var(--r-pill);
-  padding: 5px 12px;
   background: transparent;
   cursor: pointer;
 }
-.tag-add-plus { padding: 4px 9px; }
-.tag-add-empty:hover,
-.tag-add-plus:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+.tag-add-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font: 600 14px/1 var(--sans);
+  color: var(--text-muted);
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--control-fill);
+  cursor: pointer;
 }
+.tag-add-empty:hover { color: var(--accent); border-color: var(--accent); }
+.tag-add-plus:hover { color: var(--accent); background: var(--accent-soft); }
 
 .tag-bar .tag-input {
   background: transparent;
   border: 1.5px dashed var(--accent);
   border-radius: var(--r-pill);
-  height: 26px;
+  box-shadow: none;
+  height: 24px;
   padding: 0 12px;
-  font: 400 12px/1 var(--mono);
+  font: 500 11.5px/1 var(--sans);
+  color: var(--ink);
   min-width: 140px;
   flex: 0 1 180px;
 }
@@ -895,11 +963,17 @@ body:not(.page-privacy) .theme-toggle:hover {
 }
 
 /* ---------- Editor card ---------- */
+/* Editor content sits directly inside the glass main panel — not a nested
+   card. Override the .card component surface to transparent. */
 .editor-card {
   flex: 1;
   min-height: 0;
-  padding: 24px 28px;
+  padding: 30px 40px;
   overflow: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .editor-card.is-editing {
@@ -914,22 +988,28 @@ body:not(.page-privacy) .theme-toggle:hover {
 }
 
 .editor-doc-head {
-  max-width: var(--content-narrow);
+  max-width: 720px;
   margin: 0 auto 22px;
-  padding-bottom: 18px;
-  border-bottom: var(--border-hair);
 }
 
-.editor-doc-head .eyebrow {
-  margin: 0 0 6px;
+/* Soft Glass drops the eyebrow above the title. */
+.editor-doc-head .eyebrow { display: none; }
+
+.editor-doc-head .byline {
+  margin: 0;
+  font: 400 12.5px/1.4 var(--sans);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  gap: 8px;
 }
 
 .note-doc-title {
-  margin: 0 0 6px;
+  margin: 0 0 10px;
   padding: 0;
-  font: 600 34px/1.15 var(--serif);
+  font: 700 32px/1.2 var(--sans);
   letter-spacing: -0.02em;
-  color: var(--slate);
+  color: var(--ink);
   word-break: break-word;
 }
 
@@ -956,31 +1036,38 @@ body:not(.page-privacy) .theme-toggle:hover {
 .editor-doc-head .byline:empty { display: none; }
 
 .tag-bar {
-  max-width: var(--content-narrow);
+  max-width: 720px;
   margin: 0 auto;
 }
 
 .note-editor {
   width: 100%;
-  max-width: var(--content-narrow);
+  max-width: 720px;
   min-height: 360px;
   height: 100%;
   border: 0;
   outline: 0;
   background: transparent;
+  box-shadow: none;
   padding: 0;
   margin: 0 auto;
   resize: none;
-  font: 400 14px/1.6 var(--mono);
-  color: var(--slate);
+  font: 400 14px/1.85 var(--mono);
+  color: var(--text-body);
 }
 .note-editor:focus { outline: 0; box-shadow: none; }
 
+/* Edit mode: the textarea gains the inset glass writing surface. */
 .editor-card.is-editing .note-editor {
   flex: 1 1 auto;
   min-height: 0;
   height: auto;
   overflow-y: auto;
+  background: var(--field-bg-textarea);
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-textarea);
+  padding: 20px 22px;
+  box-shadow: var(--textarea-inset-shadow);
 }
 
 /* ---------- Empty editor canvas (#7) ---------- */
@@ -993,30 +1080,25 @@ body:not(.page-privacy) .theme-toggle:hover {
   margin: 0 auto;
 }
 .editor-empty .editor-empty-quote {
-  font: 500 26px/1.3 var(--serif);
-  font-style: italic;
+  font: 600 24px/1.3 var(--sans);
+  letter-spacing: -0.015em;
   max-width: 26ch;
   margin: 0;
-  padding-left: 18px;
-  border-left: 1.5px solid var(--accent);
-  color: var(--slate);
+  padding-left: 16px;
+  border-left: 3px solid var(--accent);
+  color: var(--ink);
 }
 .editor-empty .editor-empty-meta {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  font: 11px/1 var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--gray-500);
+  gap: 8px;
+  font: 400 12.5px/1 var(--sans);
+  color: var(--text-muted);
   margin: 0;
 }
-.editor-empty .editor-empty-meta .dotsep { color: var(--gray-300); }
+.editor-empty .editor-empty-meta .dotsep { color: var(--meta-dot); }
 .editor-empty .editor-empty-meta .author {
-  font: italic 13px/1 var(--serif);
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--gray-700);
+  color: var(--text-secondary);
 }
 .editor-hints {
   display: flex;
@@ -1029,11 +1111,11 @@ body:not(.page-privacy) .theme-toggle:hover {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: var(--border-hair);
+  border: none;
   border-radius: var(--r-pill);
-  font: 12px var(--mono);
-  color: var(--gray-700);
-  background: var(--ivory);
+  font: 400 12px/1 var(--sans);
+  color: var(--text-secondary);
+  background: var(--control-fill);
 }
 .editor-hints .hint kbd {
   min-width: 0;
@@ -1045,11 +1127,12 @@ body:not(.page-privacy) .theme-toggle:hover {
 /* ---------- Rendered markdown (scoped, Inkwell tokens only) ---------- */
 .note-rendered {
   width: 100%;
-  max-width: var(--content-narrow);
+  max-width: 720px;
   margin: 0 auto;
   font-family: var(--sans);
-  color: var(--slate);
-  line-height: 1.68;
+  color: var(--text-body);
+  font-size: 15.5px;
+  line-height: 1.75;
 }
 .note-rendered h1,
 .note-rendered h2,
@@ -1057,53 +1140,66 @@ body:not(.page-privacy) .theme-toggle:hover {
 .note-rendered h4,
 .note-rendered h5,
 .note-rendered h6 {
-  font-family: var(--serif);
-  letter-spacing: -0.01em;
-  color: var(--slate);
-  margin: 1.4em 0 0.5em;
+  font-family: var(--sans);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 1.5em 0 0.5em;
 }
-.note-rendered h1 { font-size: 28px; line-height: 1.2; margin-top: 0.2em; }
-.note-rendered h2 { font-size: 22px; line-height: 1.25; }
-.note-rendered h3 { font-size: 18px; line-height: 1.3; }
-.note-rendered h4 { font-size: 16px; }
-.note-rendered p { margin: 0.7em 0; }
+.note-rendered h1 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 0.2em; }
+.note-rendered h2 { font-size: 20px; line-height: 1.3; }
+.note-rendered h3 { font-size: 17px; line-height: 1.35; }
+.note-rendered h4 { font-size: 15.5px; }
+.note-rendered p { margin: 0 0 1em; }
 .note-rendered a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .note-rendered a:hover { color: var(--accent-d); }
 .note-rendered ul,
 .note-rendered ol { padding-left: 1.3em; margin: 0.6em 0; }
 .note-rendered li { margin: 0.2em 0; }
+/* Blockquote: accent-soft box with a pill-shaped accent bar (the ::before). */
 .note-rendered blockquote {
-  margin: 1em 0;
-  padding: 0.3em 1em;
-  border-left: 1.5px solid var(--accent);
-  color: var(--gray-700);
+  display: flex;
+  gap: 12px;
+  margin: 1.2em 0;
+  padding: 14px 18px;
+  background: var(--accent-soft);
+  border-radius: var(--r-lg);
+  color: var(--text-quote);
   font-style: italic;
-  background: var(--gray-100);
-  border-radius: 0 var(--r-sm) var(--r-sm) 0;
 }
+.note-rendered blockquote::before {
+  content: "";
+  flex: none;
+  width: 3.5px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+.note-rendered blockquote p { margin: 0; }
 .note-rendered code {
   font-family: var(--mono);
-  font-size: 0.92em;
-  background: var(--gray-100);
-  color: var(--slate);
-  padding: 1px 6px;
-  border-radius: var(--r-xs);
+  font-size: 0.88em;
+  background: var(--code-fill);
+  color: var(--ink);
+  padding: 2px 7px;
+  border-radius: var(--r-code);
 }
 .note-rendered pre,
 .note-rendered pre.code-block {
-  margin: 1em 0;
-  padding: 14px 16px;
-  background: var(--gray-100);
-  border: var(--border-hair);
-  border-radius: var(--r-sm);
+  margin: 1.2em 0;
+  padding: 16px 18px;
+  background: var(--code-fill);
+  border: none;
+  border-radius: var(--r-lg);
   overflow-x: auto;
   font-family: var(--mono);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
+  color: var(--ink);
 }
 .note-rendered pre code {
   background: transparent;
   padding: 0;
+  font-size: inherit;
 }
 .note-rendered table {
   width: 100%;
@@ -1121,7 +1217,7 @@ body:not(.page-privacy) .theme-toggle:hover {
 .note-rendered th {
   font-family: var(--sans);
   font-weight: 600;
-  color: var(--gray-700);
+  color: var(--text-secondary);
 }
 .note-rendered hr {
   border: 0;
@@ -1131,64 +1227,78 @@ body:not(.page-privacy) .theme-toggle:hover {
 .note-rendered img {
   max-width: 100%;
   height: auto;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
 }
 .rendered-empty {
-  color: var(--gray-500);
+  color: var(--text-muted);
   font-style: italic;
 }
 
-/* ---------- Editorial markdown (#2): lede, pullquote ---------- */
+/* ---------- Editorial markdown: lede + pullquote (sans in Soft Glass) ---------- */
 .note-rendered p.is-lede {
-  font: 400 18px/1.55 var(--serif);
-  font-style: italic;
-  color: var(--gray-700);
+  font: 400 17px/1.6 var(--sans);
+  color: var(--text-secondary);
   max-width: 60ch;
   margin: 0 0 18px;
 }
 
+/* Short blockquotes are auto-tagged .is-pullquote; keep them as the pill box. */
 .note-rendered blockquote.is-pullquote {
-  font: 500 clamp(22px, 3vw, 28px)/1.35 var(--serif);
-  font-style: italic;
-  max-width: 32ch;
-  margin: 32px auto;
-  padding: 0 0 0 24px;
-  border-left: 1.5px solid var(--accent);
-  background: transparent;
-  color: var(--slate);
-  border-radius: 0;
+  max-width: none;
+  margin: 1.2em 0;
+  padding: 14px 18px;
+  background: var(--accent-soft);
+  color: var(--text-quote);
+  border-radius: var(--r-lg);
+  font: italic 400 15.5px/1.6 var(--sans);
 }
 .note-rendered blockquote.is-pullquote p { margin: 0; }
 
 /* ---------- Empty states ---------- */
 .center-state {
   margin: auto;
-  width: min(680px, calc(100% - 48px));
-  max-width: 680px;
+  width: min(560px, calc(100% - 40px));
+  max-width: 560px;
   text-align: center;
-  padding: 32px 0;
+  padding: 24px 0;
 }
 
 .onboarding-panel {
   width: 100%;
-  padding: 34px 38px;
-  border: var(--border);
-  border-radius: var(--r-md);
-  background: var(--paper);
+  padding: 44px 48px;
+  border: var(--glass-border-strong);
+  border-radius: var(--r-empty);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+  backdrop-filter: blur(var(--glass-blur-strong));
+  box-shadow: var(--shadow-empty);
 }
 
 .onboarding-panel .empty-state-icon {
   display: grid;
-  margin: 0 auto 14px;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-xl);
+  margin: 0 auto 18px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent-soft-2));
+  box-shadow: var(--shadow-glyph-inset), var(--shadow-primary-sm);
+  color: var(--accent);
 }
 
-.onboarding-eyebrow {
-  justify-content: center;
-  margin: 0 0 12px;
-}
+/* Soft Glass empty card drops the eyebrow. */
+.onboarding-eyebrow { display: none; }
 
 .onboarding-panel h3 {
   font-size: 24px;
+  letter-spacing: -0.02em;
+}
+.onboarding-panel p {
+  max-width: 38ch;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 14.5px;
+  color: var(--text-secondary);
 }
 
 .onboarding-actions {
@@ -1856,10 +1966,11 @@ body:not(.page-privacy) .theme-toggle:hover {
 @media (max-width: 767px) {
   .app-shell {
     grid-template-columns: 1fr;
+    padding: 10px;
   }
-  .sidebar {
-    border-right: 0;
-    border-bottom: var(--border-hair);
+  .sidebar,
+  .main {
+    border-radius: 18px;
   }
   .main { display: none; }
   .app-shell.mobile-editor .sidebar { display: none; }
