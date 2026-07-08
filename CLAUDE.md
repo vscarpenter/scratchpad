@@ -22,20 +22,39 @@ guarantee, not an implementation detail.
 - **`marked` and `DOMPurify` are vendored**, not loaded from a CDN. They live
   in `public/js/vendor/`. Don't replace with CDN URLs.
 
-### Inkwell design system
-Read `https://raw.githubusercontent.com/vscarpenter/inkwell/main/agent-instructions.md`
-when in doubt. Key rules that apply to anything in `public/css/app.css`:
+### Inkwell design system — "Soft Glass" (v3)
+This repo overrides the base Inkwell system with the **Soft Glass** reskin
+(frosted floating glass panels over a tinted wash, system-sans identity, lifted
+`#4E5FD8` accent, pills/squircles/soft shadows). The full spec is in
+`docs/superpowers/specs/2026-07-08-soft-glass-redesign-design.md`. Read
+`https://raw.githubusercontent.com/vscarpenter/inkwell/main/agent-instructions.md`
+for the base system, but the rules below reflect this repo's overrides and win.
+Key rules for anything in `public/css/app.css`:
 - **All colors via `var(--token)`** — no hex codes anywhere in app CSS. Use
-  `--accent`, `--paper`, `--slate`, `--ivory`, `--gray-*`, etc.
-- **Borders are always 1.5px** via `var(--border)`. Never `1px` or `2px` for
-  outer borders. The exception is focus outlines (Inkwell itself uses
-  `outline: 2px solid var(--accent)` — that's fine).
-- **One accent only** — `--accent`. Use `--olive` or `--sky` if a second
-  data-viz hue is genuinely needed.
-- **Platform fonts only** — no `@font-face`, no Google Fonts. Use `--serif`,
-  `--sans`, `--mono`.
-- **No emoji in source.** Icons are inline SVG strokes.
-- **No drop shadows or gradients on surfaces.** No "lift" hover effects.
+  `--accent`, `--ink`, `--text-secondary`/`--text-muted`/`--text-body`, `--paper`,
+  `--accent-soft`, `--glass-*`, `--wash-*`, `--control-fill`, `--gray-*`, etc.
+  Gradients built from token colors (e.g. `--accent-grad`) are fine.
+- **Outer borders are 1px hairlines** via `var(--border)` / `var(--border-hair)`;
+  floating panels use `var(--glass-border)`. (Soft Glass retired the old 1.5px
+  signature border.) Focus outlines (`outline: 2px solid var(--accent)`) are the
+  exception and stay.
+- **Surfaces float.** The two top-level panels (sidebar + main; the About nav
+  pill and hero preview) are frosted glass — `--glass-bg` + `backdrop-filter`
+  (always ship the `-webkit-` prefix), `contain: layout style paint`, and both
+  `@supports not (backdrop-filter…)` and `prefers-reduced-transparency` opaque
+  fallbacks. Smaller cards are opaque panels with `--glass-shadow`; do **not**
+  put `backdrop-filter` on rows, chips, or many small elements (compositing cost).
+  Soft shadows and the sanctioned gradients (brand glyph, About display text,
+  page wash) are part of the system now.
+- **One accent** — `--accent` (`--accent-2` is only the lighter stop for the
+  About display-text gradient). Use `--olive`/`--sky` for a data-viz hue.
+- **Platform fonts only** — no `@font-face`, no Google Fonts. The system is
+  sans-led (`--sans`); `--serif` is retained but unused by Soft Glass.
+- **No emoji in source.** Icons are inline SVG strokes (the `⌘K` hint is a
+  Unicode symbol, matching the existing kbd shortcuts).
+- **Dark mode** extends the Pattern-B cascade in `inkwell-tokens.css`; validate
+  AA before shipping. The dark accent is lifted to `#8593D6` so accent text on
+  `--accent-soft` chips clears 4.5:1.
 
 ### HTML/JS safety
 - **Never set `innerHTML` to untrusted content.** A pre-commit hook flags
