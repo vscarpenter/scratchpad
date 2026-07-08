@@ -1,81 +1,128 @@
 /* =====================================================================
    Inkwell — design tokens & dark-mode cascade.
-   Version: 2.0.0
-   Default palette: Indigo & Cloud (cool stone + deep indigo).
+   Version: 3.0.0 — "Soft Glass"
+   Palette: lifted indigo (#4E5FD8) over a faintly tinted wash;
+   frosted glass panels, pills, squircles, soft shadows.
 
    This file contains ONLY:
      • :root custom-property declarations
      • Pattern B dark-mode cascade (auto via prefers-color-scheme,
        manual override via [data-theme="dark"|"light"] on <html>)
-     • The dark-mode .select chevron overrides (specificity-locked
-       to the .select base rule that lives in inkwell-components.css)
+     • The dark-mode .select chevron override
 
-   Component CSS lives in inkwell-components.css. The legacy
-   `tokens.css` re-exports both files for backward compatibility.
-   Tailwind v4 consumers should import `inkwell-theme.css` instead.
+   Soft Glass deliberately retires three older Inkwell rules: the flat
+   no-shadow surface, the signature 1.5px border, and the no-gradient
+   rule. Surfaces now float as frosted glass with soft shadows, outer
+   borders are 1px hairlines, and gradients appear on the brand glyph,
+   the About display headline, and the page wash. Colors still route
+   through tokens; nothing loads off-origin.
 
-   The system separates structure (borders, type scale, spacing,
-   motion, components) from brand (colors). Three alternate palettes
-   — clay, sage, burgundy — live in /variants/ as standalone files
-   that override only the brand-layer tokens.
+   Component CSS lives in inkwell-components.css; app layout in app.css.
    ===================================================================== */
 
 :root {
-  /* ---------- Surfaces ---------- */
-  --ivory: #F4F4F0;       /* page background — cool stone, barely warm */
-  --paper: #FFFFFF;       /* card / panel surface */
-  --slate: #13141B;       /* primary text, slight cool undertone */
-  --oat:   #DDDCDF;       /* tertiary surface, hover thumbnails */
+  /* ---------- Wash (page background) ---------- */
+  --wash-base: #F3F4F8;
+  --wash-app:
+    radial-gradient(900px 500px at 8% -5%, rgba(96, 112, 226, 0.16), transparent 60%),
+    radial-gradient(800px 480px at 100% 108%, rgba(236, 166, 140, 0.14), transparent 55%),
+    var(--wash-base);
+  --wash-hero:
+    radial-gradient(1100px 600px at 20% -10%, rgba(96, 112, 226, 0.20), transparent 60%),
+    radial-gradient(900px 560px at 105% 40%, rgba(236, 166, 140, 0.18), transparent 55%),
+    var(--wash-base);
 
-  /* ---------- Accent (saturated indigo) ---------- */
-  --accent:               #3B4A8C;
-  --accent-d:             #2A3768;                /* hover/pressed */
-  --accent-tint:          rgba(59, 74, 140, 0.14); /* badge bg, periwinkle on cool paper */
-  --accent-focus-ring:    rgba(59, 74, 140, 0.18); /* input focus halo */
-  --accent-strong-border: rgba(59, 74, 140, 0.5);  /* tinted chip border */
+  /* ---------- Surfaces ---------- */
+  --ivory: var(--wash-base);   /* page base (legacy alias) */
+  --paper: #FFFFFF;            /* opaque card surface: active row, chip-on-white */
+  --slate: #1C1E28;            /* primary text / ink (legacy alias) */
+  --oat:   #ECEDF3;            /* tertiary surface */
+
+  /* ---------- Glass ---------- */
+  --glass-bg:          rgba(255, 255, 255, 0.66);
+  --glass-bg-strong:   rgba(255, 255, 255, 0.72);  /* empty-state card */
+  --glass-bg-pill:     rgba(255, 255, 255, 0.72);  /* floating pills / nav */
+  --glass-blur:        26px;
+  --glass-blur-strong: 28px;
+  --glass-blur-pill:   22px;
+  --glass-border:        1px solid rgba(255, 255, 255, 0.90);
+  --glass-border-strong: 1px solid rgba(255, 255, 255, 0.95);
+  --glass-shadow:   0 20px 50px rgba(35, 42, 90, 0.12);
+  --glass-fallback: rgba(255, 255, 255, 0.94);      /* opaque, no-blur fallback */
+
+  /* ---------- Text ---------- */
+  --ink:            #1C1E28;
+  --text-secondary: #5D6170;
+  --text-muted:     #9A9EAD;   /* timestamps, placeholders, meta — decorative secondary */
+  --text-body:      #33353F;
+  --text-quote:     #3A3F63;
+
+  /* ---------- Lines & fills ---------- */
+  --hairline-color:      rgba(28, 30, 40, 0.06);
+  --hairline-color-2:    rgba(28, 30, 40, 0.07);
+  --control-fill:        rgba(28, 30, 40, 0.05);
+  --control-fill-hover:  rgba(28, 30, 40, 0.09);
+  --row-hover:           rgba(28, 30, 40, 0.04);
+  --code-fill:           rgba(28, 30, 40, 0.05);
+  --field-bg:            rgba(255, 255, 255, 0.85);
+  --field-bg-textarea:   rgba(255, 255, 255, 0.70);
+  --field-inset-shadow:  inset 0 1px 2px rgba(28, 30, 40, 0.03);
+  --textarea-inset-shadow: inset 0 1px 3px rgba(28, 30, 40, 0.04);
+  --idle-border:         #C9CBD4;   /* checkbox idle, dashed add-tag */
+  --meta-dot:            #C9CBD4;
+
+  /* ---------- Accent (lifted indigo) ---------- */
+  --accent:               #4E5FD8;
+  --accent-d:             #4553C4;                 /* hover/pressed */
+  --on-accent:            #FFFFFF;                 /* text/icon on accent fill */
+  --accent-soft:          #EBEEFC;                 /* chip / soft tint bg */
+  --accent-soft-2:        #DDE2FB;                 /* squircle gradient end */
+  --accent-grad:          linear-gradient(135deg, #5B6CE4, #4E5FD8);
+  --accent-tint:          var(--accent-soft);      /* legacy alias (badge-accent bg) */
+  --accent-focus-ring:    rgba(78, 95, 216, 0.25); /* focus halo */
+  --accent-strong-border: rgba(78, 95, 216, 0.35); /* active-card border */
 
   /* ---------- Semantic ---------- */
-  --olive:        #788C5D;                         /* success, additions */
-  --olive-tint:   rgba(120, 140, 93, 0.16);
-  --olive-strong-border: rgba(120, 140, 93, 0.45); /* tinted success border */
-  --rust:         #B04A3F;                         /* danger, deletions */
-  --rust-d:       #9A3F3F;                         /* rust hover/pressed */
-  --rust-tint:    rgba(176, 74, 63, 0.10);        /* danger alert background */
-  --rust-tint-border: rgba(176, 74, 63, 0.45);    /* danger alert border */
-  --rust-focus-ring:  rgba(176, 74, 63, 0.18);    /* danger input focus halo */
-  --warning:      #C78E3F;
-  --warning-dark: #A06A2A;                         /* warning text (darker for contrast) */
-  --warning-tint: rgba(199, 142, 63, 0.16);
-  --warning-strong-border: rgba(199, 142, 63, 0.45); /* tinted warning border */
-  --info:         #5C7CA3;                         /* informational */
-  --sky:          #6A8CAF;                         /* alt info / data viz */
+  --success:      #57B26A;
+  --success-text: #3B7A4B;                          /* success text on tint */
+  --success-tint: rgba(87, 178, 106, 0.12);
+  --olive:        var(--success);                   /* legacy alias */
+  --olive-tint:   var(--success-tint);              /* legacy alias */
+  --olive-strong-border: rgba(87, 178, 106, 0.45);
 
-  /* ---------- Neutral scale (cool putty) ---------- */
-  --gray-100: #EDEDEA;
-  --gray-200: #E1E1DE;
-  --gray-300: #CFCFCC;
-  --gray-500: #6F6F75;  /* WCAG AA: 5.05:1 on --paper, 4.64:1 on --ivory */
-  --gray-700: #3A3B41;
+  --warning:      #E8A23D;
+  --warning-dark: #A2701F;                          /* warning text (contrast) */
+  --warning-tint: rgba(232, 162, 61, 0.14);
+  --warning-strong-border: rgba(232, 162, 61, 0.45);
 
-  /* ---------- Typography ----------
-     Headline serif: leads with platform serifs we've QA'd at display sizes.
-     ui-serif was dropped in 1.4.0 — it resolves to wildly variable fonts
-     (New York on Apple, Noto Serif on Android, DejaVu Serif on many Linux
-     distros) and can't be QA'd. Iowan Old Style is preinstalled on
-     iOS/macOS and renders well at display weights; Palatino covers
-     Windows; Source Serif Pro picks up where it's installed; Georgia
-     is the final fallback and renders consistently everywhere. */
+  --rust:         #B04A3F;                           /* danger, deletions */
+  --rust-d:       #9A3F3F;
+  --rust-tint:    rgba(176, 74, 63, 0.10);
+  --rust-tint-border: rgba(176, 74, 63, 0.45);
+  --rust-focus-ring:  rgba(176, 74, 63, 0.20);
+
+  --info:         #5C7CA3;
+  --sky:          #6A8CAF;
+
+  /* ---------- Neutral scale (remapped to Soft Glass) ---------- */
+  --gray-100: rgba(28, 30, 40, 0.05);  /* control fill / row hover (semi over glass) */
+  --gray-200: rgba(28, 30, 40, 0.09);  /* stronger hover (circle icon buttons) */
+  --gray-300: #C9CBD4;                 /* visible element border, idle states, meta dots */
+  --gray-500: #9A9EAD;                 /* muted text */
+  --gray-700: #5D6170;                 /* secondary text */
+
+  /* ---------- Typography ---------- */
   --serif: "Iowan Old Style", "Palatino", "Palatino Linotype",
-           "Source Serif Pro", Georgia, serif;
+           "Source Serif Pro", Georgia, serif;   /* retained; unused by Soft Glass */
   --sans:  system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono:  ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
 
   /* Type scale */
-  --t-display: 48px;
+  --t-display: 62px;
   --t-h1:      32px;
   --t-h2:      24px;
-  --t-h3:      19px;
-  --t-lede:    20px;  /* deck/intro paragraph — sits between h3 and body */
+  --t-h3:      20px;
+  --t-lede:    17px;
   --t-body:    16px;
   --t-small:   14px;
   --t-caption: 12px;
@@ -92,33 +139,44 @@
   --sp-8: 64px;
 
   /* ---------- Radius ---------- */
-  --r-xs:    4px;
-  --r-sm:    8px;
-  --r-md:   12px;
-  --r-lg:   14px;
-  --r-xl:   20px;
-  --r-pill: 999px;
+  --r-xs:        4px;
+  --r-code:      7px;   /* inline code */
+  --r-sm:        8px;   /* segments, hints */
+  --r-glyph:     9px;   /* brand glyph squircle */
+  --r-seg-track: 11px;  /* segmented / chip-group track */
+  --r-md:       12px;   /* inputs, New note */
+  --r-lg:       14px;   /* cards, code blocks, quotes, note rows */
+  --r-textarea: 16px;
+  --r-xl:       20px;   /* icon squircle */
+  --r-panel:    22px;   /* floating panels */
+  --r-empty:    26px;   /* empty-state card */
+  --r-pill:    999px;
 
-  /* ---------- Borders (signature 1.5px) ---------- */
-  --border:        1.5px solid var(--gray-300);
-  --border-strong: 1.5px solid var(--slate);
-  --border-hair:   1px   solid var(--gray-100);
-  --border-rule:   1px   solid var(--gray-300);
+  /* ---------- Borders (1px hairlines) ---------- */
+  --border:        1px solid var(--gray-300);
+  --border-strong: 1px solid var(--accent-strong-border);
+  --border-hair:   1px solid var(--hairline-color);
+  --border-rule:   1px solid var(--hairline-color-2);
 
-  /* ---------- Shadows (warm low-spread) ---------- */
-  --shadow-sm:         0 1px 2px  rgba(20, 20, 19, 0.06);
-  --shadow-md:         0 4px 14px rgba(20, 20, 19, 0.08);
-  --shadow-lg:         0 12px 28px rgba(20, 20, 19, 0.12);
-  --shadow-card-hover: 0 10px 30px rgba(20, 20, 19, 0.10);
+  /* ---------- Shadows ---------- */
+  --shadow-sm:         0 1px 2px rgba(28, 30, 40, 0.05);
+  --shadow-md:         0 8px 20px rgba(35, 42, 90, 0.10);
+  --shadow-lg:         0 20px 50px rgba(35, 42, 90, 0.12);
+  --shadow-card-hover: 0 8px 20px rgba(35, 42, 90, 0.12);
+  --shadow-card:       0 8px 20px rgba(35, 42, 90, 0.12);  /* active note card */
+  --shadow-empty:      0 30px 70px rgba(35, 42, 90, 0.16); /* empty-state card */
+  --shadow-primary:    0 8px 18px rgba(78, 95, 216, 0.35);
+  --shadow-primary-sm: 0 6px 14px rgba(78, 95, 216, 0.30);
+  --shadow-primary-lg: 0 10px 24px rgba(78, 95, 216, 0.40);
+  --shadow-seg:        0 2px 6px rgba(28, 30, 40, 0.10);   /* active segment */
+  --shadow-chip:       0 1px 4px rgba(28, 30, 40, 0.12);   /* active format chip */
+  --shadow-glyph:      0 4px 10px rgba(78, 95, 216, 0.35); /* brand glyph */
+  --shadow-glyph-inset: inset 0 1px 2px #FFFFFF;           /* empty icon squircle */
+  --shadow-pill-float: 0 14px 34px rgba(35, 42, 90, 0.12); /* about nav pill */
 
-  /* ---------- Backdrop (dialog::backdrop, modal scrims) ---------- */
-  --backdrop: rgba(15, 16, 24, 0.55);
-
-  /* ---------- TLDR code-chip tint ----------
-     Subtle overlay on the inverted .tldr surface. The .tldr panel flips
-     light↔dark with the theme (it always shows the *opposite* of body),
-     so this tint inverts too: white-at-8% on dark, black-at-8% on light. */
-  --tldr-code-tint: rgba(255, 255, 255, 0.08);
+  /* ---------- Backdrop (dialog scrim) ---------- */
+  --backdrop: rgba(20, 24, 44, 0.35);
+  --backdrop-blur: 8px;
 
   /* ---------- Motion ---------- */
   --t-fast:   120ms;
@@ -126,6 +184,7 @@
   --t-slow:   300ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --press:    cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* ---------- Layout ---------- */
   --content-narrow:  820px;
@@ -140,117 +199,225 @@
   --z-overlay: 30;
   --z-modal:  50;
 
-  /* Declare both schemes so native UI follows whichever is active */
   color-scheme: light dark;
 }
 
 /* =====================================================================
-   Dark mode — Pattern B
-   • prefers-color-scheme: dark applies UNLESS data-theme="light" is set
-   • data-theme="dark"  → forces dark regardless of OS preference
-   • data-theme="light" → forces light regardless of OS preference
+   Dark mode — Pattern B  (proposal per handoff; AA-validated)
+   • prefers-color-scheme: dark applies UNLESS data-theme="light"
+   • data-theme="dark"  → forces dark
+   • data-theme="light" → forces light
+   The two dark blocks below are kept byte-parallel.
    ===================================================================== */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --ivory: #0F1018;
-    --paper: #181A24;
-    --slate: #E8E8EE;
+    --wash-base: #101219;
+    --wash-app:
+      radial-gradient(900px 500px at 8% -5%, rgba(122, 138, 209, 0.14), transparent 60%),
+      radial-gradient(800px 480px at 100% 108%, rgba(217, 165, 95, 0.10), transparent 55%),
+      var(--wash-base);
+    --wash-hero:
+      radial-gradient(1100px 600px at 20% -10%, rgba(122, 138, 209, 0.18), transparent 60%),
+      radial-gradient(900px 560px at 105% 40%, rgba(217, 165, 95, 0.12), transparent 55%),
+      var(--wash-base);
+
+    --ivory: var(--wash-base);
+    --paper: #232634;
+    --slate: #E8E9F0;
     --oat:   #2B2D38;
 
-    --accent:               #7A8AD1;                 /* lifted indigo → periwinkle */
-    --accent-d:             #6273C0;
-    --accent-tint:          rgba(122, 138, 209, 0.18);
-    --accent-focus-ring:    rgba(122, 138, 209, 0.28);
-    --accent-strong-border: rgba(122, 138, 209, 0.6);
+    --glass-bg:          rgba(23, 26, 36, 0.62);
+    --glass-bg-strong:   rgba(23, 26, 36, 0.72);
+    --glass-bg-pill:     rgba(23, 26, 36, 0.70);
+    --glass-border:        1px solid rgba(255, 255, 255, 0.08);
+    --glass-border-strong: 1px solid rgba(255, 255, 255, 0.12);
+    --glass-shadow:   0 20px 50px rgba(0, 0, 0, 0.50);
+    --glass-fallback: rgba(23, 26, 36, 0.94);
 
-    --olive:        #9CB07A;                         /* lifted */
-    --olive-tint:   rgba(156, 176, 122, 0.18);
-    --olive-strong-border: rgba(156, 176, 122, 0.6); /* lifted tinted success border */
+    --ink:            #E8E9F0;
+    --text-secondary: #B4B8C4;
+    --text-muted:     #8E92A0;
+    --text-body:      #C9CBD4;
+    --text-quote:     #B9BEDD;
+
+    --hairline-color:     rgba(255, 255, 255, 0.08);
+    --hairline-color-2:   rgba(255, 255, 255, 0.10);
+    --control-fill:       rgba(255, 255, 255, 0.06);
+    --control-fill-hover: rgba(255, 255, 255, 0.12);
+    --row-hover:          rgba(255, 255, 255, 0.05);
+    --code-fill:          rgba(255, 255, 255, 0.06);
+    --field-bg:           rgba(255, 255, 255, 0.06);
+    --field-bg-textarea:  rgba(255, 255, 255, 0.05);
+    --field-inset-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+    --textarea-inset-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30);
+    --idle-border:        #4A4D5A;
+    --meta-dot:           #4A4D5A;
+
+    --accent:               #7A8AD1;
+    --accent-d:             #6273C0;
+    --on-accent:            #0E1016;
+    --accent-soft:          rgba(122, 138, 209, 0.16);
+    --accent-soft-2:        rgba(122, 138, 209, 0.22);
+    --accent-grad:          linear-gradient(135deg, #7A8AD1, #6273C0);
+    --accent-tint:          var(--accent-soft);
+    --accent-focus-ring:    rgba(122, 138, 209, 0.35);
+    --accent-strong-border: rgba(122, 138, 209, 0.50);
+
+    --success:      #6FBF83;
+    --success-text: #9AD3A8;
+    --success-tint: rgba(87, 178, 106, 0.18);
+    --olive:        var(--success);
+    --olive-tint:   var(--success-tint);
+    --olive-strong-border: rgba(111, 191, 131, 0.55);
+
+    --warning:      #E8A23D;
+    --warning-dark: #E8B45F;
+    --warning-tint: rgba(232, 162, 61, 0.18);
+    --warning-strong-border: rgba(232, 162, 61, 0.55);
+
     --rust:         #D27468;
-    --rust-d:       #C96B5F;                         /* lifted rust hover/pressed */
-    --rust-tint:    rgba(210, 116, 104, 0.18);       /* lifted danger alert background */
-    --rust-tint-border: rgba(210, 116, 104, 0.6);    /* lifted danger alert border */
-    --rust-focus-ring:  rgba(210, 116, 104, 0.28);   /* lifted danger input focus halo */
-    --warning:      #D9A55F;
-    --warning-dark: #D9A55F;                         /* lifted warning text (same as warning for contrast) */
-    --warning-tint: rgba(217, 165, 95, 0.18);
-    --warning-strong-border: rgba(217, 165, 95, 0.6); /* lifted tinted warning border */
+    --rust-d:       #C96B5F;
+    --rust-tint:    rgba(210, 116, 104, 0.18);
+    --rust-tint-border: rgba(210, 116, 104, 0.55);
+    --rust-focus-ring:  rgba(210, 116, 104, 0.30);
+
     --info:         #7C9FD2;
     --sky:          #85A6CB;
 
-    --gray-100: #1E1F29;
-    --gray-200: #262732;
-    --gray-300: #34363F;
-    --gray-500: #9A9AA0;
-    --gray-700: #C0C0C7;
+    --gray-100: rgba(255, 255, 255, 0.06);
+    --gray-200: rgba(255, 255, 255, 0.12);
+    --gray-300: #3A3D48;
+    --gray-500: #8E92A0;
+    --gray-700: #B4B8C4;
 
-    --shadow-sm:         0 1px 2px  rgba(0, 0, 0, 0.45);
-    --shadow-md:         0 4px 14px rgba(0, 0, 0, 0.50);
-    --shadow-lg:         0 12px 28px rgba(0, 0, 0, 0.55);
-    --shadow-card-hover: 0 10px 30px rgba(0, 0, 0, 0.50);
+    --shadow-sm:         0 1px 2px rgba(0, 0, 0, 0.45);
+    --shadow-md:         0 8px 20px rgba(0, 0, 0, 0.50);
+    --shadow-lg:         0 20px 50px rgba(0, 0, 0, 0.55);
+    --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.50);
+    --shadow-card:       0 8px 20px rgba(0, 0, 0, 0.50);
+    --shadow-empty:      0 30px 70px rgba(0, 0, 0, 0.60);
+    --shadow-primary:    0 8px 18px rgba(0, 0, 0, 0.45);
+    --shadow-primary-sm: 0 6px 14px rgba(0, 0, 0, 0.40);
+    --shadow-primary-lg: 0 10px 24px rgba(0, 0, 0, 0.50);
+    --shadow-seg:        0 2px 6px rgba(0, 0, 0, 0.45);
+    --shadow-chip:       0 1px 4px rgba(0, 0, 0, 0.45);
+    --shadow-glyph:      0 4px 10px rgba(0, 0, 0, 0.45);
+    --shadow-glyph-inset: inset 0 1px 2px rgba(255, 255, 255, 0.10);
+    --shadow-pill-float: 0 14px 34px rgba(0, 0, 0, 0.50);
 
-    --backdrop: rgba(0, 0, 0, 0.6);                  /* pure-black scrim for dark surfaces */
-
-    --tldr-code-tint: rgba(0, 0, 0, 0.08);           /* .tldr surface is light in dark mode */
+    --backdrop: rgba(0, 0, 0, 0.55);
   }
-  /* Select chevron dark-mode override: the base .select rule in inkwell-components.css
-   uses a data URI SVG with a hardcoded stroke color. Since data URIs can't reference
-   CSS variables, we override the entire background-image in dark mode with the
-   lifted gray-500 color. These overrides carry higher specificity than the base
-   rule, ensuring the dark chevron always wins regardless of cascade order. */
-:root:not([data-theme="light"]) .select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%239A9AA0' stroke-width='1.5' stroke-linecap='round'/></svg>");
+  /* Select chevron in dark mode — data URIs can't read CSS vars, so the
+     whole background-image is overridden with the lifted muted color.
+     Higher specificity than the base .select rule in inkwell-components.css. */
+  :root:not([data-theme="light"]) .select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%238E92A0' stroke-width='1.5' stroke-linecap='round'/></svg>");
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --ivory: #0F1018;
-  --paper: #181A24;
-  --slate: #E8E8EE;
+  --wash-base: #101219;
+  --wash-app:
+    radial-gradient(900px 500px at 8% -5%, rgba(122, 138, 209, 0.14), transparent 60%),
+    radial-gradient(800px 480px at 100% 108%, rgba(217, 165, 95, 0.10), transparent 55%),
+    var(--wash-base);
+  --wash-hero:
+    radial-gradient(1100px 600px at 20% -10%, rgba(122, 138, 209, 0.18), transparent 60%),
+    radial-gradient(900px 560px at 105% 40%, rgba(217, 165, 95, 0.12), transparent 55%),
+    var(--wash-base);
+
+  --ivory: var(--wash-base);
+  --paper: #232634;
+  --slate: #E8E9F0;
   --oat:   #2B2D38;
+
+  --glass-bg:          rgba(23, 26, 36, 0.62);
+  --glass-bg-strong:   rgba(23, 26, 36, 0.72);
+  --glass-bg-pill:     rgba(23, 26, 36, 0.70);
+  --glass-border:        1px solid rgba(255, 255, 255, 0.08);
+  --glass-border-strong: 1px solid rgba(255, 255, 255, 0.12);
+  --glass-shadow:   0 20px 50px rgba(0, 0, 0, 0.50);
+  --glass-fallback: rgba(23, 26, 36, 0.94);
+
+  --ink:            #E8E9F0;
+  --text-secondary: #B4B8C4;
+  --text-muted:     #8E92A0;
+  --text-body:      #C9CBD4;
+  --text-quote:     #B9BEDD;
+
+  --hairline-color:     rgba(255, 255, 255, 0.08);
+  --hairline-color-2:   rgba(255, 255, 255, 0.10);
+  --control-fill:       rgba(255, 255, 255, 0.06);
+  --control-fill-hover: rgba(255, 255, 255, 0.12);
+  --row-hover:          rgba(255, 255, 255, 0.05);
+  --code-fill:          rgba(255, 255, 255, 0.06);
+  --field-bg:           rgba(255, 255, 255, 0.06);
+  --field-bg-textarea:  rgba(255, 255, 255, 0.05);
+  --field-inset-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  --textarea-inset-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30);
+  --idle-border:        #4A4D5A;
+  --meta-dot:           #4A4D5A;
 
   --accent:               #7A8AD1;
   --accent-d:             #6273C0;
-  --accent-tint:          rgba(122, 138, 209, 0.18);
-  --accent-focus-ring:    rgba(122, 138, 209, 0.28);
-  --accent-strong-border: rgba(122, 138, 209, 0.6);
+  --on-accent:            #0E1016;
+  --accent-soft:          rgba(122, 138, 209, 0.16);
+  --accent-soft-2:        rgba(122, 138, 209, 0.22);
+  --accent-grad:          linear-gradient(135deg, #7A8AD1, #6273C0);
+  --accent-tint:          var(--accent-soft);
+  --accent-focus-ring:    rgba(122, 138, 209, 0.35);
+  --accent-strong-border: rgba(122, 138, 209, 0.50);
 
-  --olive:        #9CB07A;
-  --olive-tint:   rgba(156, 176, 122, 0.18);
-  --olive-strong-border: rgba(156, 176, 122, 0.6); /* lifted tinted success border */
+  --success:      #6FBF83;
+  --success-text: #9AD3A8;
+  --success-tint: rgba(87, 178, 106, 0.18);
+  --olive:        var(--success);
+  --olive-tint:   var(--success-tint);
+  --olive-strong-border: rgba(111, 191, 131, 0.55);
+
+  --warning:      #E8A23D;
+  --warning-dark: #E8B45F;
+  --warning-tint: rgba(232, 162, 61, 0.18);
+  --warning-strong-border: rgba(232, 162, 61, 0.55);
+
   --rust:         #D27468;
-  --rust-d:       #C96B5F;                         /* lifted rust hover/pressed */
-  --rust-tint:    rgba(210, 116, 104, 0.18);       /* lifted danger alert background */
-  --rust-tint-border: rgba(210, 116, 104, 0.6);    /* lifted danger alert border */
-  --rust-focus-ring:  rgba(210, 116, 104, 0.28);   /* lifted danger input focus halo */
-  --warning:      #D9A55F;
-  --warning-dark: #D9A55F;                         /* lifted warning text (same as warning for contrast) */
-  --warning-tint: rgba(217, 165, 95, 0.18);
-  --warning-strong-border: rgba(217, 165, 95, 0.6); /* lifted tinted warning border */
+  --rust-d:       #C96B5F;
+  --rust-tint:    rgba(210, 116, 104, 0.18);
+  --rust-tint-border: rgba(210, 116, 104, 0.55);
+  --rust-focus-ring:  rgba(210, 116, 104, 0.30);
+
   --info:         #7C9FD2;
   --sky:          #85A6CB;
 
-  --gray-100: #1E1F29;
-  --gray-200: #262732;
-  --gray-300: #34363F;
-  --gray-500: #9A9AA0;
-  --gray-700: #C0C0C7;
+  --gray-100: rgba(255, 255, 255, 0.06);
+  --gray-200: rgba(255, 255, 255, 0.12);
+  --gray-300: #3A3D48;
+  --gray-500: #8E92A0;
+  --gray-700: #B4B8C4;
 
-  --shadow-sm:         0 1px 2px  rgba(0, 0, 0, 0.45);
-  --shadow-md:         0 4px 14px rgba(0, 0, 0, 0.50);
-  --shadow-lg:         0 12px 28px rgba(0, 0, 0, 0.55);
-  --shadow-card-hover: 0 10px 30px rgba(0, 0, 0, 0.50);
+  --shadow-sm:         0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-md:         0 8px 20px rgba(0, 0, 0, 0.50);
+  --shadow-lg:         0 20px 50px rgba(0, 0, 0, 0.55);
+  --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.50);
+  --shadow-card:       0 8px 20px rgba(0, 0, 0, 0.50);
+  --shadow-empty:      0 30px 70px rgba(0, 0, 0, 0.60);
+  --shadow-primary:    0 8px 18px rgba(0, 0, 0, 0.45);
+  --shadow-primary-sm: 0 6px 14px rgba(0, 0, 0, 0.40);
+  --shadow-primary-lg: 0 10px 24px rgba(0, 0, 0, 0.50);
+  --shadow-seg:        0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-chip:       0 1px 4px rgba(0, 0, 0, 0.45);
+  --shadow-glyph:      0 4px 10px rgba(0, 0, 0, 0.45);
+  --shadow-glyph-inset: inset 0 1px 2px rgba(255, 255, 255, 0.10);
+  --shadow-pill-float: 0 14px 34px rgba(0, 0, 0, 0.50);
 
-  --backdrop: rgba(0, 0, 0, 0.6);                  /* pure-black scrim for dark surfaces */
-
-  --tldr-code-tint: rgba(0, 0, 0, 0.08);           /* .tldr surface is light in dark mode */
+  --backdrop: rgba(0, 0, 0, 0.55);
 }
-/* Select chevron dark-mode override: see comment above in @media section for rationale */
+/* Select chevron in dark mode — see comment in the @media block above. */
 :root[data-theme="dark"] .select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%239A9AA0' stroke-width='1.5' stroke-linecap='round'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%238E92A0' stroke-width='1.5' stroke-linecap='round'/></svg>");
 }
