@@ -1321,6 +1321,21 @@ body:not(.page-privacy) .theme-toggle:hover {
   margin-top: 18px;
 }
 
+/* Subtle "new here?" nudge for returning users with an empty store — they skip
+   the first-run redirect, so this quietly points them to the About page. */
+.onboarding-tour {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 20px;
+  font: 500 12.5px/1 var(--sans);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--t-fast) ease;
+}
+.onboarding-tour:hover { color: var(--accent); }
+.onboarding-tour svg { width: 13px; height: 13px; flex: none; }
+
 /* ---------- About dialog ---------- */
 .about-dialog { max-width: 560px; }
 .about-body { font-size: 14px; }
