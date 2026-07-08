@@ -18,10 +18,11 @@ for arg in "$@"; do
 Usage: ./deploy.sh [--dry-run]
 
 Deploys Scratchpad:
-  1. Syncs public/ to s3://$S3_BUCKET/public/ with a 5-minute cache.
-  2. Re-uploads manifest and service-worker assets with explicit content headers.
-  3. Uploads index.html, about.html, privacy.html, terms.html, and service-worker.js with short caches.
-  4. Creates a CloudFront invalidation for changed shell entry points.
+  1. Updates SCRATCHPAD_BUILD_DATE in public/js/version.js to today's date.
+  2. Syncs public/ to s3://$S3_BUCKET/public/ with a 5-minute cache.
+  3. Re-uploads manifest and service-worker assets with explicit content headers.
+  4. Uploads index.html, about.html, privacy.html, terms.html, and service-worker.js with short caches.
+  5. Creates a CloudFront invalidation for changed shell entry points.
 
 Required variables (in .env.local):
   S3_BUCKET                   bucket name, no "s3://" prefix
@@ -78,7 +79,34 @@ echo "  distribution: $CLOUDFRONT_DISTRIBUTION_ID"
 [ -n "$DRY" ] && echo "  mode:         DRY RUN (no changes)"
 echo
 
-# ---------- 1. assets first (CSS, JS, vendor) ----------
+# ---------- 1. release metadata ----------
+VERSION_FILE="public/js/version.js"
+BUILD_DATE="$(date +%F)"
+BUILD_DATE_PATTERN="window\.SCRATCHPAD_BUILD_DATE = '[0-9]{4}-[0-9]{2}-[0-9]{2}';"
+
+if [ ! -f "$VERSION_FILE" ]; then
+  echo "ERROR: $VERSION_FILE not found." >&2
+  exit 1
+fi
+
+if ! grep -Eq "$BUILD_DATE_PATTERN" "$VERSION_FILE"; then
+  echo "ERROR: Could not find SCRATCHPAD_BUILD_DATE assignment in $VERSION_FILE" >&2
+  exit 1
+fi
+
+if [ -n "$DRY" ]; then
+  echo "==> [dry-run] Would update SCRATCHPAD_BUILD_DATE in $VERSION_FILE to $BUILD_DATE"
+else
+  echo "==> Updating SCRATCHPAD_BUILD_DATE in $VERSION_FILE to $BUILD_DATE"
+  perl -0pi -e "s/$BUILD_DATE_PATTERN/window.SCRATCHPAD_BUILD_DATE = '$BUILD_DATE';/" "$VERSION_FILE"
+  if ! grep -Fq "window.SCRATCHPAD_BUILD_DATE = '$BUILD_DATE';" "$VERSION_FILE"; then
+    echo "ERROR: Failed to update SCRATCHPAD_BUILD_DATE in $VERSION_FILE" >&2
+    exit 1
+  fi
+fi
+echo
+
+# ---------- 2. assets first (CSS, JS, vendor) ----------
 # Assets are uploaded before HTML so that the moment a fresh HTML lands
 # in the bucket, every asset it references already exists.
 ASSET_CACHE="public, max-age=300"
@@ -92,7 +120,7 @@ aws s3 sync public/ "s3://$S3_BUCKET/public/" \
   $DRY
 echo
 
-# ---------- 2. Explicit app-shell asset metadata ----------
+# ---------- 3. Explicit app-shell asset metadata ----------
 MANIFEST_CACHE="public, max-age=300, must-revalidate"
 PUBLIC_WORKER_CACHE="no-cache, no-store, must-revalidate"
 
@@ -118,7 +146,7 @@ else
   echo "WARN: public/service-worker.js missing, skipping" >&2
 fi
 
-# ---------- 3. HTML and root worker last (short cache, must-revalidate) ----------
+# ---------- 4. HTML and root worker last (short cache, must-revalidate) ----------
 HTML_CACHE="public, max-age=60, must-revalidate"
 WORKER_CACHE="no-cache, no-store, must-revalidate"
 
@@ -142,7 +170,7 @@ aws s3 cp service-worker.js "s3://$S3_BUCKET/service-worker.js" \
   $DRY
 echo
 
-# ---------- 4. CloudFront invalidation ----------
+# ---------- 5. CloudFront invalidation ----------
 INVALIDATION_PATHS=(
   "/"
   "/index.html"
