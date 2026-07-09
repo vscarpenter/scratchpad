@@ -2,6 +2,9 @@
 const { expect } = require('@playwright/test');
 
 async function gotoApp(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('scratchpad-visited', '1');
+  });
   await page.goto('/');
   await expect(page.locator('#app-shell')).toBeVisible();
   await page.waitForFunction(() => !!window.ScratchpadDB);

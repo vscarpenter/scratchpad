@@ -88,6 +88,7 @@
     tagAddPlus: $('tag-add-plus'),
     rendered: $('note-rendered'),
     editor: $('note-editor'),
+    formatToolbar: $('editor-format'),
     editorEmptyState: $('editor-empty-state'),
     editorView: $('editor-view'),
     emptyNoNotes: $('empty-no-notes'),
@@ -922,6 +923,7 @@
 
     const showInput = state.editing && !trashed;
     els.editorCard.classList.toggle('is-editing', showInput);
+    els.formatToolbar.hidden = !showInput;
     if (showInput && (!lastEditorMode || noteChanged)) {
       els.editorCard.scrollTop = 0;
     }
@@ -1723,6 +1725,51 @@
     }
     state.dirty = true;
     els.dirtyIndicator.hidden = false;
+  }
+
+  function applyEditorFormat(format) {
+    if (!state.editing || !els.editor || els.editor.hidden) return;
+
+    const editor = els.editor;
+    const value = editor.value;
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const selected = value.slice(start, end);
+    let replacement = selected;
+    let nextStart = start;
+    let nextEnd = end;
+
+    if (format === 'bold') {
+      replacement = '**' + (selected || 'bold text') + '**';
+      nextStart = start + 2;
+      nextEnd = nextStart + (selected || 'bold text').length;
+    } else if (format === 'italic') {
+      replacement = '*' + (selected || 'italic text') + '*';
+      nextStart = start + 1;
+      nextEnd = nextStart + (selected || 'italic text').length;
+    } else if (format === 'code') {
+      replacement = '`' + (selected || 'code') + '`';
+      nextStart = start + 1;
+      nextEnd = nextStart + (selected || 'code').length;
+    } else if (format === 'link') {
+      const text = selected || 'link text';
+      const url = 'https://example.com';
+      replacement = '[' + text + '](' + url + ')';
+      if (selected) {
+        nextStart = start + text.length + 3;
+        nextEnd = nextStart + url.length;
+      } else {
+        nextStart = start + 1;
+        nextEnd = nextStart + text.length;
+      }
+    } else {
+      return;
+    }
+
+    editor.setRangeText(replacement, start, end, 'end');
+    editor.focus();
+    editor.setSelectionRange(nextStart, nextEnd);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   // -------- Dialogs --------
@@ -2703,6 +2750,15 @@
     els.historyBtn.addEventListener('click', openHistoryDialog);
 
     els.editor.addEventListener('input', markDirty);
+    els.formatToolbar.addEventListener('mousedown', (e) => {
+      const button = e.target.closest && e.target.closest('[data-format]');
+      if (button) e.preventDefault();
+    });
+    els.formatToolbar.addEventListener('click', (e) => {
+      const button = e.target.closest && e.target.closest('[data-format]');
+      if (!button) return;
+      applyEditorFormat(button.dataset.format);
+    });
 
     els.shareBtn.addEventListener('click', openShareDialog);
     els.shareCopy.addEventListener('click', copyShare);
