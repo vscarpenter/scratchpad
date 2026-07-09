@@ -58,8 +58,8 @@ body:not(.page-privacy) {
     min-height: 44px;
   }
   body:not(.page-privacy) .theme-toggle {
-    width: 44px;
-    height: 44px;
+    min-width: 45px;
+    min-height: 45px;
   }
   .btn-sm {
     min-height: 44px;
@@ -317,6 +317,9 @@ body:not(.page-privacy) .theme-toggle:hover {
   flex: none;
   width: 40px;
   padding: 0;
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .sidebar-actions .btn-ghost { width: 44px; }
 }
 
 /* View switch — a segmented control (track + segments). */
@@ -790,34 +793,40 @@ body:not(.page-privacy) .theme-toggle:hover {
   background: var(--warning);
 }
 
-/* Decorative format-chip group — visual only, shown in edit mode. */
 .editor-format {
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 3px;
   border-radius: var(--r-seg-track);
   background: var(--control-fill);
 }
-#editor-view:has(.editor-card.is-editing) .editor-format { display: inline-flex; }
+.editor-format[hidden] { display: none; }
 .fmt-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 24px;
+  padding: 0;
+  border: 0;
   border-radius: var(--r-code);
+  background: transparent;
   color: var(--text-secondary);
   font: 700 12px/1 var(--sans);
+  cursor: pointer;
+  transition: background var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease;
 }
 .fmt-chip.fmt-italic { font: italic 600 12px/1 var(--serif); }
 .fmt-chip.fmt-code { font: 600 11px/1 var(--mono); }
 .fmt-chip.fmt-link svg { width: 13px; height: 13px; }
-.fmt-chip.is-active {
+.fmt-chip:hover,
+.fmt-chip:focus-visible {
   background: var(--paper);
   color: var(--ink);
   box-shadow: var(--shadow-chip);
 }
+.fmt-chip:active { transform: scale(0.97); }
 
 .icon-btn {
   display: inline-flex;
