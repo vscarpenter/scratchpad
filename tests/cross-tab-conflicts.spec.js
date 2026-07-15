@@ -17,6 +17,11 @@ test.describe('cross-tab note conflicts', () => {
     await other.locator('#save-btn').click();
 
     await expect(page.locator('#note-editor')).toHaveValue('Draft from first tab');
+    await page.locator('#note-editor').fill('Draft from first tab, still editing');
+    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(async () =>
+      (await window.ScratchpadDB.getAll()).find((note) => note.title === 'Shared note').body
+    )).toBe('Saved from second tab');
     await page.locator('#save-btn').click();
     await expect(page.locator('#save-conflict-dialog')).toBeVisible();
     await expect(page.locator('#save-conflict-copy')).toContainText('changed in another tab');
@@ -27,7 +32,7 @@ test.describe('cross-tab note conflicts', () => {
     const bodies = await page.evaluate(async () =>
       (await window.ScratchpadDB.getAll()).map((note) => note.body).sort()
     );
-    expect(bodies).toEqual(['Draft from first tab', 'Saved from second tab']);
+    expect(bodies).toEqual(['Draft from first tab, still editing', 'Saved from second tab']);
   });
 
   test('can keep this tab while preserving the other version in history', async ({ context, page }) => {

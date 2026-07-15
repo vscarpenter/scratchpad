@@ -1848,9 +1848,6 @@
         body: els.editor.value,
         updatedAt,
       });
-      const nextNote = { ...note, lastDraftAt: updatedAt };
-      await DB.put(nextNote);
-      Object.assign(note, nextNote);
     } catch (e) {
       console.warn('Draft persistence failed', e);
     }
@@ -1862,9 +1859,6 @@
     const note = getNote(state.selectedId);
     if (!note) return;
     await DB.removeDraft(note.id);
-    const nextNote = { ...note, lastDraftAt: null };
-    await DB.put(nextNote);
-    Object.assign(note, nextNote);
   }
 
   async function maybePromptDraftForSelected() {
@@ -1889,9 +1883,6 @@
       setTimeout(() => els.editor.focus(), 0);
     } else if (decision === 'discard') {
       await DB.removeDraft(note.id);
-      const nextNote = { ...note, lastDraftAt: null };
-      await DB.put(nextNote);
-      Object.assign(note, nextNote);
       renderAll();
     } else {
       state.promptedDrafts.delete(note.id);
@@ -2617,6 +2608,12 @@
     els.backupPassphraseError.hidden = true;
   }
 
+  function clearPassphraseSession() {
+    resetPassphraseDialog();
+    state.backupPassphraseMode = null;
+    state.encryptedImport = null;
+  }
+
   function openEncryptedExportDialog() {
     closeDialog(els.aboutDialog);
     state.backupPassphraseMode = 'export';
@@ -2668,7 +2665,7 @@
       const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `scratchpad-encrypted-${exportStamp()}.scratchpad`);
       closeDialog(els.backupPassphraseDialog);
-      state.backupPassphraseMode = null;
+      clearPassphraseSession();
       recordBackupDownload();
       toast('Encrypted backup downloaded.');
     });
@@ -2693,6 +2690,7 @@
       state.importPreview = preview;
       state.encryptedImport = null;
       closeDialog(els.backupPassphraseDialog);
+      clearPassphraseSession();
       renderImportPreview(preview);
       openDialog(els.importPreviewDialog);
     });
@@ -3466,6 +3464,10 @@
       els.backupPassphrase.type = type;
       els.backupPassphraseConfirm.type = type;
     });
+    for (const button of els.backupPassphraseDialog.querySelectorAll('[data-dialog-close]')) {
+      button.addEventListener('click', clearPassphraseSession);
+    }
+    els.backupPassphraseDialog.addEventListener('cancel', clearPassphraseSession);
     els.backupReminderExport.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
     els.backupReminderSnooze.addEventListener('click', snoozeBackupReminder);
     els.importFile.addEventListener('change', async () => {
