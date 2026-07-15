@@ -19,6 +19,16 @@
   const BACKUP_SNOOZE_KEY = 'scratchpad:backupReminderSnoozedUntil';
   const BACKUP_REMINDER_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
   const BACKUP_SNOOZE_MS = 24 * 60 * 60 * 1000;
+  const ENCRYPTED_BACKUP_FORMAT = 'scratchpad-encrypted-backup';
+  const ENCRYPTED_BACKUP_VERSION = 1;
+  const ENCRYPTED_BACKUP_ITERATIONS = 600000;
+  const CROSS_TAB_CHANNEL = 'scratchpad-notes';
+  const TAB_ID = uuidLike();
+
+  function uuidLike() {
+    return (crypto.randomUUID && crypto.randomUUID()) ||
+      'tab-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  }
 
   const state = {
     notes: [],
@@ -33,6 +43,13 @@
     promptedDrafts: new Set(),
     pendingTagDelete: null,
     importPreview: null,
+    encryptedImport: null,
+    backupPassphraseMode: null,
+    saveConflict: null,
+    externalChanges: new Set(),
+    serviceWorkerRegistration: null,
+    waitingWorker: null,
+    reloadForUpdate: false,
     bulkMode: false,
     bulkSelectedIds: new Set(),
     commandItems: [],
@@ -114,6 +131,7 @@
     aboutDialog: $('about-dialog'),
     openAbout: $('open-about'),
     exportBtn: $('export-btn'),
+    exportEncryptedBtn: $('export-encrypted-btn'),
     exportMarkdownBtn: $('export-markdown-btn'),
     importBtn: $('import-btn'),
     importFile: $('import-file'),
@@ -126,8 +144,35 @@
     diagnosticRevisions: $('diagnostic-revisions'),
     diagnosticDrafts: $('diagnostic-drafts'),
     diagnosticStorage: $('diagnostic-storage'),
+    diagnosticStorageProtection: $('diagnostic-storage-protection'),
     diagnosticLastBackup: $('diagnostic-last-backup'),
     diagnosticOfflineCache: $('diagnostic-offline-cache'),
+    protectStorageBtn: $('protect-storage-btn'),
+    checkUpdatesBtn: $('check-updates-btn'),
+    refreshOfflineCopyBtn: $('refresh-offline-copy-btn'),
+    backupPassphraseDialog: $('backup-passphrase-dialog'),
+    backupPassphraseTitle: $('backup-passphrase-title'),
+    backupPassphraseCopy: $('backup-passphrase-copy'),
+    backupPassphrase: $('backup-passphrase'),
+    backupPassphraseConfirmWrap: $('backup-passphrase-confirm-wrap'),
+    backupPassphraseConfirm: $('backup-passphrase-confirm'),
+    backupPassphraseShow: $('backup-passphrase-show'),
+    backupPassphraseError: $('backup-passphrase-error'),
+    confirmEncryptedExport: $('confirm-encrypted-export'),
+    confirmEncryptedImport: $('confirm-encrypted-import'),
+    saveConflictDialog: $('save-conflict-dialog'),
+    saveConflictCopy: $('save-conflict-copy'),
+    conflictUseSaved: $('conflict-use-saved'),
+    conflictSaveCopy: $('conflict-save-copy'),
+    conflictKeepMine: $('conflict-keep-mine'),
+    eraseLocalDataBtn: $('erase-local-data-btn'),
+    eraseLocalDataDialog: $('erase-local-data-dialog'),
+    eraseConfirmation: $('erase-confirmation'),
+    eraseConfirmationError: $('erase-confirmation-error'),
+    confirmEraseLocalData: $('confirm-erase-local-data'),
+    pwaUpdateNotice: $('pwa-update-notice'),
+    pwaUpdateLater: $('pwa-update-later'),
+    pwaUpdateReload: $('pwa-update-reload'),
     importPreviewDialog: $('import-preview-dialog'),
     importPreviewCounts: $('import-preview-counts'),
     importPreviewErrors: $('import-preview-errors'),
@@ -165,6 +210,85 @@
     'n-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 
   const now = () => Date.now();
+
+  let crossTabChannel = null;
+
+  function nextUpdatedAt(note) {
+    return Math.max(now(), (Number(note && note.updatedAt) || 0) + 1);
+  }
+
+  function broadcastChange(message) {
+    if (!crossTabChannel) return;
+    try {
+      crossTabChannel.postMessage({ ...message, source: TAB_ID });
+    } catch (e) {
+      console.warn('Cross-tab notification failed', e);
+    }
+  }
+
+  async function putNoteRecord(note, changeType) {
+    await DB.put(note);
+    broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
+  }
+
+  async function bulkPutNoteRecords(notes, changeType) {
+    await DB.bulkPut(notes);
+    for (const note of notes) {
+      broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
+    }
+  }
+
+  async function deleteNoteRecord(noteId) {
+    await DB.deleteNoteEverywhere(noteId);
+    broadcastChange({ type: 'note-deleted', noteId });
+  }
+
+  async function refreshNoteFromDatabase(noteId, deleted) {
+    const index = state.notes.findIndex((note) => note.id === noteId);
+    if (deleted) {
+      if (index >= 0) state.notes.splice(index, 1);
+      if (state.selectedId === noteId) {
+        state.selectedId = null;
+        state.editing = false;
+        state.dirty = false;
+      }
+      renderAll();
+      return;
+    }
+    const stored = await DB.get(noteId);
+    if (!stored) return;
+    const note = normalizeNote(stored);
+    if (index >= 0) state.notes[index] = note;
+    else state.notes.push(note);
+    renderAll();
+  }
+
+  function initCrossTabSync() {
+    if (typeof BroadcastChannel !== 'function') return;
+    crossTabChannel = new BroadcastChannel(CROSS_TAB_CHANNEL);
+    crossTabChannel.addEventListener('message', (event) => {
+      const message = event.data || {};
+      if (message.source === TAB_ID) return;
+      if (message.type === 'reset') {
+        state.notes = [];
+        state.selectedId = null;
+        state.editing = false;
+        state.dirty = false;
+        state.externalChanges.clear();
+        renderAll();
+        toast('Local data was erased in another tab.', { tone: 'info' });
+        return;
+      }
+      if (!message.noteId) return;
+      if (state.selectedId === message.noteId && state.editing && state.dirty) {
+        state.externalChanges.add(message.noteId);
+        return;
+      }
+      refreshNoteFromDatabase(message.noteId, message.type === 'note-deleted').catch((e) => {
+        console.warn('Cross-tab refresh failed', e);
+      });
+    });
+  }
 
   function debounce(fn, ms) {
     let t = null;
@@ -1283,7 +1407,7 @@
       lastDraftAt: null,
     };
     return withBusy('create-note', [els.newNote, els.emptyNewNote], 'Could not create a new note.', async () => {
-      await DB.put(note);
+      await putNoteRecord(note);
       state.view = 'active';
       state.notes.push(note);
       state.selectedId = note.id;
@@ -1322,21 +1446,108 @@
     return withBusy('save', [els.saveBtn], 'Save failed. Your unsaved edits are still open.', async () => {
       const nextTitle = els.titleInput.value.trim();
       const nextBody = els.editor.value;
-      const changed = (note.title || '') !== nextTitle || (note.body || '') !== nextBody;
+      const latestRaw = await DB.get(note.id);
+      const latest = latestRaw ? normalizeNote(latestRaw) : null;
+      const hasConflict = !latest || latest.updatedAt !== note.updatedAt || state.externalChanges.has(note.id);
+      let conflictChoice = null;
+      if (hasConflict) {
+        conflictChoice = await chooseSaveConflict(latest);
+        if (!conflictChoice) return;
+        if (conflictChoice === 'saved') {
+          await DB.removeDraft(note.id);
+          state.externalChanges.delete(note.id);
+          if (latest) {
+            const index = state.notes.findIndex((item) => item.id === note.id);
+            if (index >= 0) state.notes[index] = latest;
+          } else {
+            state.notes = state.notes.filter((item) => item.id !== note.id);
+            state.selectedId = null;
+          }
+          state.editing = false;
+          state.dirty = false;
+          renderAll();
+          return;
+        }
+        if (conflictChoice === 'copy') {
+          const copy = normalizeNote({
+            ...(latest || note),
+            id: uuid(),
+            title: nextTitle,
+            body: nextBody,
+            createdAt: now(),
+            updatedAt: now(),
+            lastDraftAt: null,
+          });
+          await putNoteRecord(copy);
+          await DB.removeDraft(note.id);
+          state.externalChanges.delete(note.id);
+          if (latest) {
+            const index = state.notes.findIndex((item) => item.id === note.id);
+            if (index >= 0) state.notes[index] = latest;
+          }
+          state.notes.push(copy);
+          state.selectedId = copy.id;
+          state.editing = false;
+          state.dirty = false;
+          renderAll();
+          toast('Saved your edits as a separate note.');
+          return;
+        }
+      }
+      const baseNote = latest || note;
+      const changed = (baseNote.title || '') !== nextTitle || (baseNote.body || '') !== nextBody;
       const nextNote = {
-        ...note,
+        ...baseNote,
         title: nextTitle,
         body: nextBody,
-        updatedAt: now(),
+        updatedAt: nextUpdatedAt(baseNote),
         lastDraftAt: null,
       };
-      if (changed) await storeRevision(note);
-      await DB.put(nextNote);
+      if (changed) await storeRevision(baseNote);
+      await putNoteRecord(nextNote);
       await DB.removeDraft(note.id);
-      Object.assign(note, nextNote);
+      const index = state.notes.findIndex((item) => item.id === note.id);
+      if (index >= 0) state.notes[index] = nextNote;
+      state.externalChanges.delete(note.id);
       state.editing = false;
       state.dirty = false;
       renderAll();
+    });
+  }
+
+  function chooseSaveConflict(latest) {
+    state.saveConflict = latest;
+    els.saveConflictCopy.textContent = latest
+      ? 'This note changed in another tab. Your edits are still open; choose which version to keep.'
+      : 'This note was deleted in another tab. You can keep your edits as a separate note.';
+    els.conflictKeepMine.hidden = !latest;
+    openDialog(els.saveConflictDialog);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (choice) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        closeDialog(els.saveConflictDialog);
+        state.saveConflict = null;
+        resolve(choice);
+      };
+      const useSaved = () => finish('saved');
+      const saveCopy = () => finish('copy');
+      const keepMine = () => finish('mine');
+      const onClose = () => {
+        if (!settled) finish(null);
+      };
+      const cleanup = () => {
+        els.conflictUseSaved.removeEventListener('click', useSaved);
+        els.conflictSaveCopy.removeEventListener('click', saveCopy);
+        els.conflictKeepMine.removeEventListener('click', keepMine);
+        els.saveConflictDialog.removeEventListener('close', onClose);
+      };
+      els.conflictUseSaved.addEventListener('click', useSaved);
+      els.conflictSaveCopy.addEventListener('click', saveCopy);
+      els.conflictKeepMine.addEventListener('click', keepMine);
+      els.saveConflictDialog.addEventListener('close', onClose);
     });
   }
 
@@ -1368,7 +1579,7 @@
     return withBusy('move-trash', [els.confirmDelete, els.deleteBtn], 'Delete failed. The note is still in Notes.', async () => {
       const t = now();
       const nextNote = { ...note, deletedAt: t, updatedAt: t, lastDraftAt: null };
-      await DB.put(nextNote);
+      await putNoteRecord(nextNote);
       await DB.removeDraft(note.id);
       Object.assign(note, nextNote);
       state.editing = false;
@@ -1385,7 +1596,7 @@
     if (!note || !isTrashed(note)) return;
     return withBusy('restore', [els.restoreBtn], 'Restore failed. The note is still in Trash.', async () => {
       const nextNote = { ...note, deletedAt: null, updatedAt: now() };
-      await DB.put(nextNote);
+      await putNoteRecord(nextNote);
       Object.assign(note, nextNote);
       state.view = 'active';
       state.selectedId = note.id;
@@ -1398,7 +1609,7 @@
     const id = state.selectedId;
     if (!id) return;
     return withBusy('permanent-delete', [els.confirmPermanentDelete, els.permanentDeleteBtn], 'Permanent delete failed. The note is still in Trash.', async () => {
-      await DB.deleteNoteEverywhere(id);
+      await deleteNoteRecord(id);
       state.notes = state.notes.filter((n) => n.id !== id);
       state.selectedId = null;
       state.editing = false;
@@ -1411,7 +1622,7 @@
   async function emptyTrash() {
     const notes = trashedNotes();
     return withBusy('empty-trash', [els.confirmEmptyTrash], 'Empty Trash failed. Trashed notes were not removed.', async () => {
-      await Promise.all(notes.map((note) => DB.deleteNoteEverywhere(note.id)));
+      await Promise.all(notes.map((note) => deleteNoteRecord(note.id)));
       state.notes = state.notes.filter((n) => !isTrashed(n));
       state.selectedId = null;
       state.editing = false;
@@ -1426,7 +1637,7 @@
     if (!note || isTrashed(note)) return;
     return withBusy('pin', [els.pinToggle], 'Pin update failed.', async () => {
       const nextNote = { ...note, pinned: !note.pinned, updatedAt: now() };
-      await DB.put(nextNote);
+      await putNoteRecord(nextNote);
       Object.assign(note, nextNote);
       renderAll();
       toast(note.pinned ? 'Pinned.' : 'Unpinned.');
@@ -1449,7 +1660,7 @@
         tags: Array.from(new Set([...(note.tags || []), ...parts])),
         updatedAt: now(),
       };
-      await DB.put(nextNote);
+      await putNoteRecord(nextNote);
       Object.assign(note, nextNote);
       els.tagInput.value = '';
       renderAll();
@@ -1465,7 +1676,7 @@
         tags: (note.tags || []).filter((t) => t !== tag),
         updatedAt: now(),
       };
-      await DB.put(nextNote);
+      await putNoteRecord(nextNote);
       Object.assign(note, nextNote);
       renderAll();
     });
@@ -1519,7 +1730,7 @@
     return withBusy('bulk-move-trash', [], 'Move to Trash failed. Selected notes were not changed.', async () => {
       const t = now();
       const nextNotes = selected.map((note) => ({ ...note, deletedAt: t, updatedAt: t, lastDraftAt: null }));
-      await DB.bulkPut(nextNotes);
+      await bulkPutNoteRecords(nextNotes);
       await Promise.all(nextNotes.map((note) => DB.removeDraft(note.id)));
       const nextById = new Map(nextNotes.map((note) => [note.id, note]));
       for (const note of state.notes) {
@@ -1541,7 +1752,7 @@
     return withBusy('bulk-restore', [], 'Restore failed. Selected notes are still in Trash.', async () => {
       const t = now();
       const nextNotes = selected.map((note) => ({ ...note, deletedAt: null, updatedAt: t }));
-      await DB.bulkPut(nextNotes);
+      await bulkPutNoteRecords(nextNotes);
       const nextById = new Map(nextNotes.map((note) => [note.id, note]));
       for (const note of state.notes) {
         const nextNote = nextById.get(note.id);
@@ -1560,7 +1771,7 @@
     const ok = window.confirm('Permanently delete ' + selected.length + ' selected note' + (selected.length === 1 ? '' : 's') + '?');
     if (!ok) return;
     return withBusy('bulk-delete-forever', [], 'Permanent delete failed. Selected notes are still in Trash.', async () => {
-      await Promise.all(selected.map((note) => DB.deleteNoteEverywhere(note.id)));
+      await Promise.all(selected.map((note) => deleteNoteRecord(note.id)));
       const selectedIds = new Set(selected.map((note) => note.id));
       state.notes = state.notes.filter((note) => !selectedIds.has(note.id));
       if (state.selectedId && selectedIds.has(state.selectedId)) state.selectedId = null;
@@ -1612,7 +1823,7 @@
         tags: Array.from(new Set([...(note.tags || []), ...tags])),
         updatedAt: t,
       }));
-      await DB.bulkPut(nextNotes);
+      await bulkPutNoteRecords(nextNotes);
       const nextById = new Map(nextNotes.map((note) => [note.id, note]));
       for (const note of state.notes) {
         const nextNote = nextById.get(note.id);
@@ -1792,6 +2003,38 @@
     }
   }
 
+  function openEraseLocalDataDialog() {
+    closeDialog(els.aboutDialog);
+    els.eraseConfirmation.value = '';
+    els.eraseConfirmation.removeAttribute('aria-invalid');
+    els.eraseConfirmationError.hidden = true;
+    openDialog(els.eraseLocalDataDialog);
+    setTimeout(() => els.eraseConfirmation.focus(), 0);
+  }
+
+  async function eraseLocalData() {
+    if (els.eraseConfirmation.value !== 'ERASE') {
+      els.eraseConfirmation.setAttribute('aria-invalid', 'true');
+      els.eraseConfirmationError.hidden = false;
+      els.eraseConfirmation.focus();
+      return;
+    }
+    return withBusy('erase-local-data', [els.confirmEraseLocalData], 'Local data could not be erased.', async () => {
+      await DB.clearAllStores();
+      const appKeys = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('scratchpad:') || key === 'scratchpad-visited' || key === 'theme-preview')) {
+          appKeys.push(key);
+        }
+      }
+      for (const key of appKeys) localStorage.removeItem(key);
+      sessionStorage.setItem('scratchpad:eraseComplete', '1');
+      broadcastChange({ type: 'reset' });
+      window.location.replace('about.html');
+    });
+  }
+
   function confirmDiscard() {
     return new Promise((resolve) => {
       openDialog(els.discardDialog);
@@ -1883,6 +2126,41 @@
     }
   }
 
+  async function storageProtectionStatus() {
+    if (!navigator.storage || typeof navigator.storage.persisted !== 'function') return 'Unavailable';
+    try {
+      return (await navigator.storage.persisted()) ? 'Persistent' : 'Best effort';
+    } catch (e) {
+      return 'Unavailable';
+    }
+  }
+
+  async function renderStorageProtection() {
+    const status = await storageProtectionStatus();
+    els.diagnosticStorageProtection.textContent = status;
+    els.protectStorageBtn.hidden = status !== 'Best effort' ||
+      !navigator.storage || typeof navigator.storage.persist !== 'function';
+    return status;
+  }
+
+  async function requestStorageProtection() {
+    if (!navigator.storage || typeof navigator.storage.persist !== 'function') return;
+    return withBusy('storage-protection', [els.protectStorageBtn], 'Storage protection could not be requested.', async () => {
+      let granted = false;
+      try {
+        granted = await navigator.storage.persist();
+      } catch (e) {
+        granted = false;
+      }
+      els.diagnosticStorageProtection.textContent = granted ? 'Persistent' : 'Best effort';
+      els.protectStorageBtn.hidden = granted;
+      toast(
+        granted ? 'Local data protection is on.' : 'Protection was not granted. Keep exporting backups.',
+        { tone: granted ? 'success' : 'info' }
+      );
+    });
+  }
+
   function offlineCacheStatus() {
     if (!('serviceWorker' in navigator)) return 'Unavailable';
     if (navigator.serviceWorker.controller) return 'Ready';
@@ -1908,6 +2186,7 @@
       els.diagnosticDrafts.textContent = 'Unavailable';
       els.diagnosticStorage.textContent = 'Unavailable';
     }
+    await renderStorageProtection();
     els.diagnosticLastBackup.textContent = formatBackupStatus(lastBackupAt());
     els.diagnosticOfflineCache.textContent = offlineCacheStatus();
   }
@@ -2209,7 +2488,7 @@
         lastDraftAt: null,
       };
       await storeRevision(note);
-      await DB.put(nextNote);
+      await putNoteRecord(nextNote);
       await DB.removeDraft(note.id);
       Object.assign(note, nextNote);
       state.editing = false;
@@ -2234,23 +2513,188 @@
     return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   }
 
+  async function buildBackupPayload() {
+    const notes = (await DB.getAll()).map(normalizeNote);
+    const revisions = (await DB.getAllRevisions()).map((rev) => normalizeRevision(rev, rev.noteId)).filter(Boolean);
+    return {
+      app: 'scratchpad',
+      version: window.SCRATCHPAD_VERSION || 'unknown',
+      schemaVersion: 2,
+      exportedAt: new Date().toISOString(),
+      notes: notes.filter((n) => !isTrashed(n)),
+      trashedNotes: notes.filter(isTrashed),
+      revisions,
+    };
+  }
+
   async function exportAll() {
     return withBusy('export-json', [els.exportBtn], 'Export failed.', async () => {
-      const notes = (await DB.getAll()).map(normalizeNote);
-      const revisions = (await DB.getAllRevisions()).map((rev) => normalizeRevision(rev, rev.noteId)).filter(Boolean);
-      const payload = {
-        app: 'scratchpad',
-        version: window.SCRATCHPAD_VERSION || 'unknown',
-        schemaVersion: 2,
-        exportedAt: new Date().toISOString(),
-        notes: notes.filter((n) => !isTrashed(n)),
-        trashedNotes: notes.filter(isTrashed),
-        revisions,
-      };
+      const payload = await buildBackupPayload();
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `scratchpad-${exportStamp()}.json`);
       recordBackupDownload();
       toast('Backup downloaded (JSON).');
+    });
+  }
+
+  function bytesToBase64(bytes) {
+    let value = '';
+    for (const byte of bytes) value += String.fromCharCode(byte);
+    return btoa(value);
+  }
+
+  function base64ToBytes(value) {
+    const decoded = atob(value);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i += 1) bytes[i] = decoded.charCodeAt(i);
+    return bytes;
+  }
+
+  async function deriveBackupKey(passphrase, salt, usage) {
+    const material = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(passphrase),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: ENCRYPTED_BACKUP_ITERATIONS, hash: 'SHA-256' },
+      material,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      [usage]
+    );
+  }
+
+  async function encryptBackupPayload(payload, passphrase) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveBackupKey(passphrase, salt, 'encrypt');
+    const plaintext = new TextEncoder().encode(JSON.stringify(payload));
+    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+    return {
+      format: ENCRYPTED_BACKUP_FORMAT,
+      version: ENCRYPTED_BACKUP_VERSION,
+      kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: ENCRYPTED_BACKUP_ITERATIONS, salt: bytesToBase64(salt) },
+      cipher: { name: 'AES-GCM', iv: bytesToBase64(iv) },
+      ciphertext: bytesToBase64(new Uint8Array(ciphertext)),
+    };
+  }
+
+  function isEncryptedBackup(data) {
+    return !!data && data.format === ENCRYPTED_BACKUP_FORMAT && data.version === ENCRYPTED_BACKUP_VERSION;
+  }
+
+  async function decryptBackupEnvelope(envelope, passphrase) {
+    if (!isEncryptedBackup(envelope) || !envelope.kdf || !envelope.cipher ||
+      envelope.kdf.iterations !== ENCRYPTED_BACKUP_ITERATIONS ||
+      typeof envelope.kdf.salt !== 'string' || typeof envelope.cipher.iv !== 'string' ||
+      typeof envelope.ciphertext !== 'string') {
+      throw new Error('Invalid encrypted backup envelope');
+    }
+    const salt = base64ToBytes(envelope.kdf.salt);
+    const iv = base64ToBytes(envelope.cipher.iv);
+    if (salt.length !== 16 || iv.length !== 12) throw new Error('Invalid encrypted backup parameters');
+    const key = await deriveBackupKey(passphrase, salt, 'decrypt');
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      base64ToBytes(envelope.ciphertext)
+    );
+    return JSON.parse(new TextDecoder().decode(plaintext));
+  }
+
+  function resetPassphraseDialog() {
+    els.backupPassphrase.value = '';
+    els.backupPassphraseConfirm.value = '';
+    els.backupPassphraseShow.checked = false;
+    els.backupPassphrase.type = 'password';
+    els.backupPassphraseConfirm.type = 'password';
+    els.backupPassphrase.removeAttribute('aria-invalid');
+    els.backupPassphraseConfirm.removeAttribute('aria-invalid');
+    els.backupPassphraseError.textContent = '';
+    els.backupPassphraseError.hidden = true;
+  }
+
+  function openEncryptedExportDialog() {
+    closeDialog(els.aboutDialog);
+    state.backupPassphraseMode = 'export';
+    state.encryptedImport = null;
+    resetPassphraseDialog();
+    els.backupPassphraseTitle.textContent = 'Encrypt backup';
+    els.backupPassphraseCopy.textContent = 'Choose a passphrase. It cannot be recovered if you forget it.';
+    els.backupPassphraseConfirmWrap.hidden = false;
+    els.confirmEncryptedExport.hidden = false;
+    els.confirmEncryptedImport.hidden = true;
+    openDialog(els.backupPassphraseDialog);
+    setTimeout(() => els.backupPassphrase.focus(), 0);
+  }
+
+  function openEncryptedImportDialog(envelope) {
+    closeDialog(els.aboutDialog);
+    state.backupPassphraseMode = 'import';
+    state.encryptedImport = envelope;
+    resetPassphraseDialog();
+    els.backupPassphraseTitle.textContent = 'Unlock encrypted backup';
+    els.backupPassphraseCopy.textContent = 'Enter the passphrase used when this backup was created.';
+    els.backupPassphraseConfirmWrap.hidden = true;
+    els.confirmEncryptedExport.hidden = true;
+    els.confirmEncryptedImport.hidden = false;
+    openDialog(els.backupPassphraseDialog);
+    setTimeout(() => els.backupPassphrase.focus(), 0);
+  }
+
+  function showPassphraseError(message) {
+    els.backupPassphrase.setAttribute('aria-invalid', 'true');
+    els.backupPassphraseError.textContent = message;
+    els.backupPassphraseError.hidden = false;
+    els.backupPassphrase.focus();
+  }
+
+  async function exportEncryptedBackup() {
+    const passphrase = els.backupPassphrase.value;
+    if (passphrase.length < 12) {
+      showPassphraseError('Use at least 12 characters for this backup passphrase.');
+      return;
+    }
+    if (passphrase !== els.backupPassphraseConfirm.value) {
+      els.backupPassphraseConfirm.setAttribute('aria-invalid', 'true');
+      showPassphraseError('The passphrases do not match.');
+      return;
+    }
+    return withBusy('export-encrypted', [els.confirmEncryptedExport], 'Encrypted export failed.', async () => {
+      const envelope = await encryptBackupPayload(await buildBackupPayload(), passphrase);
+      const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `scratchpad-encrypted-${exportStamp()}.scratchpad`);
+      closeDialog(els.backupPassphraseDialog);
+      state.backupPassphraseMode = null;
+      recordBackupDownload();
+      toast('Encrypted backup downloaded.');
+    });
+  }
+
+  async function unlockEncryptedBackup() {
+    if (!state.encryptedImport) return;
+    return withBusy('import-encrypted', [els.confirmEncryptedImport], '', async () => {
+      let data;
+      try {
+        data = await decryptBackupEnvelope(state.encryptedImport, els.backupPassphrase.value);
+      } catch (e) {
+        console.warn('Encrypted backup unlock failed', e);
+        showPassphraseError('The passphrase or file is invalid. Try again.');
+        return;
+      }
+      const preview = buildImportPreview(data);
+      if (!preview.notes.length) {
+        showPassphraseError('This backup does not contain any valid notes.');
+        return;
+      }
+      state.importPreview = preview;
+      state.encryptedImport = null;
+      closeDialog(els.backupPassphraseDialog);
+      renderImportPreview(preview);
+      openDialog(els.importPreviewDialog);
     });
   }
 
@@ -2360,14 +2804,107 @@
     return { revision: normalizeRevision(raw, raw.noteId) };
   }
 
-  async function importFromFile(file) {
+  function isMarkdownFile(file) {
+    return /\.(md|markdown)$/i.test(file.name || '') || file.type === 'text/markdown';
+  }
+
+  function parseFrontmatterValue(value) {
+    const source = value.trim();
+    if (!source) return '';
+    try {
+      return JSON.parse(source);
+    } catch (e) {
+      if (source === 'true') return true;
+      if (source === 'false') return false;
+      return source.replace(/^['"]|['"]$/g, '');
+    }
+  }
+
+  function parseMarkdownNote(text) {
+    const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+    const metadata = {};
+    let bodyLines = lines;
+    if (lines[0] === '---') {
+      const end = lines.indexOf('---', 1);
+      if (end > 0) {
+        for (const line of lines.slice(1, end)) {
+          const match = line.match(/^([A-Za-z][A-Za-z0-9]*):\s*(.*)$/);
+          if (match) metadata[match[1]] = parseFrontmatterValue(match[2]);
+        }
+        bodyLines = lines.slice(end + 1);
+        if (bodyLines[0] === '') bodyLines.shift();
+      }
+    }
+    const body = bodyLines.join('\n');
+    const createdAt = Date.parse(metadata.createdAt);
+    const updatedAt = Date.parse(metadata.updatedAt);
+    const tags = Array.isArray(metadata.tags)
+      ? metadata.tags
+      : typeof metadata.tags === 'string'
+        ? metadata.tags.split(',')
+        : [];
+    const candidate = normalizeNote({
+      id: uuid(),
+      title: typeof metadata.title === 'string' ? metadata.title : '',
+      body,
+      tags,
+      pinned: metadata.pinned === true,
+      createdAt: Number.isFinite(createdAt) ? createdAt : now(),
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : (Number.isFinite(createdAt) ? createdAt : now()),
+      deletedAt: null,
+      lastDraftAt: null,
+    });
+    if (!candidate.title) candidate.title = deriveTitle(candidate);
+    return candidate;
+  }
+
+  function presentImportData(data) {
+    const preview = buildImportPreview(data);
+    if (!preview.notes.length) {
+      const rejected = preview.invalid + preview.invalidRevisions;
+      toast(
+        rejected ? `Import found no valid notes. Rejected ${rejected} invalid entr${rejected === 1 ? 'y' : 'ies'}.` : 'Import found no valid notes in that file.',
+        { tone: 'error' }
+      );
+      return;
+    }
+    state.importPreview = preview;
+    renderImportPreview(preview);
+    openDialog(els.importPreviewDialog);
+  }
+
+  async function importFromFiles(files) {
     // Close the About dialog up front so any error toast / the preview dialog
     // isn't covered by the modal's top layer.
     closeDialog(els.aboutDialog);
-    if (file.size > IMPORT_MAX_FILE_BYTES) {
+    const selected = Array.from(files || []);
+    if (!selected.length) return;
+    const markdown = selected.filter(isMarkdownFile);
+    if (markdown.length && markdown.length !== selected.length) {
+      toast('Choose JSON or Markdown files, not both.', { tone: 'error' });
+      return;
+    }
+    if (!markdown.length && selected.length !== 1) {
+      toast('Choose one JSON or encrypted backup at a time.', { tone: 'error' });
+      return;
+    }
+    if (selected.some((file) => file.size > IMPORT_MAX_FILE_BYTES)) {
       toast('Import failed: backup files must be 2 MB or smaller.', { tone: 'error' });
       return;
     }
+    if (markdown.length) {
+      const notes = [];
+      try {
+        for (const file of markdown.slice(0, IMPORT_MAX_NOTES)) notes.push(parseMarkdownNote(await file.text()));
+      } catch (e) {
+        console.error('Markdown import read failed', e);
+        toast('Import failed: Scratchpad could not read those Markdown files.', { tone: 'error' });
+        return;
+      }
+      presentImportData({ notes });
+      return;
+    }
+    const file = selected[0];
     let text;
     try {
       text = await file.text();
@@ -2383,18 +2920,11 @@
       toast('Import failed: that file is not valid JSON.', { tone: 'error' });
       return;
     }
-    const preview = buildImportPreview(data);
-    if (!preview.notes.length) {
-      const rejected = preview.invalid + preview.invalidRevisions;
-      toast(
-        rejected ? `Import found no valid notes. Rejected ${rejected} invalid entr${rejected === 1 ? 'y' : 'ies'}.` : 'Import found no valid notes in that file.',
-        { tone: 'error' }
-      );
+    if (isEncryptedBackup(data)) {
+      openEncryptedImportDialog(data);
       return;
     }
-    state.importPreview = preview;
-    renderImportPreview(preview);
-    openDialog(els.importPreviewDialog);
+    presentImportData(data);
   }
 
   function buildImportPreview(data) {
@@ -2530,7 +3060,7 @@
       const revisionsToImport = preview.revisions
         .filter((rev) => idMap.has(rev.noteId))
         .map((rev) => ({ ...rev, id: uuid(), noteId: idMap.get(rev.noteId) }));
-      if (notesToImport.length) await DB.bulkPut(notesToImport);
+      if (notesToImport.length) await bulkPutNoteRecords(notesToImport);
       if (revisionsToImport.length) await DB.bulkPutRevisions(revisionsToImport);
       for (const noteId of new Set(revisionsToImport.map((rev) => rev.noteId))) {
         await DB.pruneRevisions(noteId, REVISION_LIMIT);
@@ -2616,7 +3146,7 @@
           updatedAt: now(),
         };
         nextById.set(note.id, nextNote);
-        changed.push(DB.put(nextNote));
+        changed.push(putNoteRecord(nextNote));
       }
       await Promise.all(changed);
       for (const note of state.notes) {
@@ -2649,7 +3179,7 @@
           updatedAt: now(),
         };
         nextById.set(note.id, nextNote);
-        changed.push(DB.put(nextNote));
+        changed.push(putNoteRecord(nextNote));
       }
       await Promise.all(changed);
       for (const note of state.notes) {
@@ -2679,13 +3209,82 @@
   }
 
   // -------- PWA --------
-  function registerServiceWorker() {
+  function showWaitingUpdate(worker) {
+    state.waitingWorker = worker ||
+      (state.serviceWorkerRegistration && state.serviceWorkerRegistration.waiting) ||
+      state.waitingWorker;
+    if (!state.waitingWorker || !navigator.serviceWorker.controller) return;
+    els.pwaUpdateNotice.hidden = false;
+  }
+
+  async function registerServiceWorker() {
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
     const version = encodeURIComponent(window.SCRATCHPAD_VERSION || 'dev');
-    navigator.serviceWorker.register('service-worker.js?v=' + version).catch((e) => {
+    try {
+      const registration = await navigator.serviceWorker.register('service-worker.js?v=' + version);
+      state.serviceWorkerRegistration = registration;
+      if (registration.waiting && navigator.serviceWorker.controller) showWaitingUpdate(registration.waiting);
+      if (typeof registration.addEventListener === 'function') {
+        registration.addEventListener('updatefound', () => {
+          const installing = registration.installing;
+          if (!installing || typeof installing.addEventListener !== 'function') return;
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) showWaitingUpdate(registration.waiting || installing);
+          });
+        });
+      }
+      if (typeof navigator.serviceWorker.addEventListener === 'function') {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!state.reloadForUpdate) return;
+          state.reloadForUpdate = false;
+          window.location.reload();
+        });
+      }
+      return registration;
+    } catch (e) {
       console.warn('Service worker registration failed', e);
+      return null;
+    }
+  }
+
+  async function checkForUpdates() {
+    const registration = state.serviceWorkerRegistration ||
+      (navigator.serviceWorker.getRegistration && await navigator.serviceWorker.getRegistration());
+    if (!registration || typeof registration.update !== 'function') {
+      toast('Update checks are unavailable in this browser.', { tone: 'info' });
+      return;
+    }
+    await registration.update();
+    if (registration.waiting) showWaitingUpdate(registration.waiting);
+    toast('Checked for updates.', { tone: 'info' });
+  }
+
+  function messageServiceWorker(worker, message) {
+    return new Promise((resolve, reject) => {
+      if (!worker || typeof worker.postMessage !== 'function') {
+        reject(new Error('No active service worker'));
+        return;
+      }
+      const channel = new MessageChannel();
+      const timeout = setTimeout(() => reject(new Error('Service worker response timed out')), 8000);
+      channel.port1.onmessage = (event) => {
+        clearTimeout(timeout);
+        if (event.data && event.data.ok) resolve(event.data);
+        else reject(new Error('Service worker refresh failed'));
+      };
+      worker.postMessage(message, [channel.port2]);
     });
   }
+
+  async function refreshOfflineCopy() {
+    const registration = state.serviceWorkerRegistration ||
+      (navigator.serviceWorker.getRegistration && await navigator.serviceWorker.getRegistration());
+    const worker = (registration && registration.active) || navigator.serviceWorker.controller;
+    await messageServiceWorker(worker, { type: 'REFRESH_CACHE' });
+    toast('Offline copy refreshed.');
+  }
+
+  window.ScratchpadPWA = { showWaitingUpdate };
 
   // -------- Event wiring --------
   function bindEvents() {
@@ -2728,7 +3327,7 @@
       }
       await withBusy('title-save', [els.titleInput], 'Title update failed.', async () => {
         const nextNote = { ...note, title: v, updatedAt: now() };
-        await DB.put(nextNote);
+        await putNoteRecord(nextNote);
         Object.assign(note, nextNote);
         state.dirty = false;
         renderSidebar();
@@ -2838,14 +3437,52 @@
 
     els.openAbout.addEventListener('click', openAboutDialog);
     els.exportBtn.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
+    els.exportEncryptedBtn.addEventListener('click', openEncryptedExportDialog);
     els.exportMarkdownBtn.addEventListener('click', () => { closeDialog(els.aboutDialog); exportMarkdownZip(); });
     els.importBtn.addEventListener('click', () => els.importFile.click());
+    els.protectStorageBtn.addEventListener('click', requestStorageProtection);
+    els.checkUpdatesBtn.addEventListener('click', () => withBusy(
+      'check-updates',
+      [els.checkUpdatesBtn],
+      'Update check failed.',
+      checkForUpdates
+    ));
+    els.refreshOfflineCopyBtn.addEventListener('click', () => withBusy(
+      'refresh-offline-copy',
+      [els.refreshOfflineCopyBtn],
+      'Offline copy refresh failed.',
+      refreshOfflineCopy
+    ));
+    els.eraseLocalDataBtn.addEventListener('click', openEraseLocalDataDialog);
+    els.confirmEraseLocalData.addEventListener('click', eraseLocalData);
+    els.eraseConfirmation.addEventListener('input', () => {
+      els.eraseConfirmation.removeAttribute('aria-invalid');
+      els.eraseConfirmationError.hidden = true;
+    });
+    els.confirmEncryptedExport.addEventListener('click', exportEncryptedBackup);
+    els.confirmEncryptedImport.addEventListener('click', unlockEncryptedBackup);
+    els.backupPassphraseShow.addEventListener('change', () => {
+      const type = els.backupPassphraseShow.checked ? 'text' : 'password';
+      els.backupPassphrase.type = type;
+      els.backupPassphraseConfirm.type = type;
+    });
     els.backupReminderExport.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
     els.backupReminderSnooze.addEventListener('click', snoozeBackupReminder);
     els.importFile.addEventListener('change', async () => {
-      const file = els.importFile.files && els.importFile.files[0];
-      if (file) await importFromFile(file);
+      const files = els.importFile.files;
+      if (files && files.length) await importFromFiles(files);
       els.importFile.value = '';
+    });
+    els.pwaUpdateLater.addEventListener('click', () => {
+      els.pwaUpdateNotice.hidden = true;
+    });
+    els.pwaUpdateReload.addEventListener('click', () => {
+      const worker = state.waitingWorker ||
+        (state.serviceWorkerRegistration && state.serviceWorkerRegistration.waiting);
+      if (!worker) return;
+      state.reloadForUpdate = true;
+      els.pwaUpdateNotice.hidden = true;
+      worker.postMessage({ type: 'SKIP_WAITING' });
     });
     els.confirmImport.addEventListener('click', confirmImport);
     els.confirmTagDelete.addEventListener('click', deletePendingTag);
@@ -2975,6 +3612,7 @@
 
   async function init() {
     if (await maybeRedirectFirstRun()) return;
+    initCrossTabSync();
     bindEvents();
     try {
       await loadAll();

@@ -24,6 +24,7 @@
     '/public/js/vendor/marked.min.js',
     '/public/js/vendor/purify.min.js',
     '/public/js/db.js',
+    '/public/js/erase-landing.js',
     '/public/js/version.js',
     '/public/js/markdown.js',
     '/public/js/zip.js',
@@ -35,7 +36,27 @@
     event.waitUntil(
       caches.open(CACHE_NAME)
         .then((cache) => cache.addAll(APP_SHELL))
-        .then(() => self.skipWaiting())
+    );
+  });
+
+  self.addEventListener('message', (event) => {
+    const message = event.data || {};
+    if (message.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+      return;
+    }
+    if (message.type !== 'REFRESH_CACHE') return;
+    const reply = (ok) => {
+      if (event.ports && event.ports[0]) event.ports[0].postMessage({ ok });
+    };
+    event.waitUntil(
+      caches.open(CACHE_NAME)
+        .then((cache) => cache.addAll(APP_SHELL))
+        .then(() => reply(true))
+        .catch((error) => {
+          console.warn('Offline cache refresh failed', error);
+          reply(false);
+        })
     );
   });
 

@@ -355,9 +355,10 @@
 
       <div class="about-row">
         <button id="export-btn" class="btn btn-secondary" type="button">Export backup (JSON)</button>
+        <button id="export-encrypted-btn" class="btn btn-secondary" type="button">Export encrypted backup</button>
         <button id="export-markdown-btn" class="btn btn-secondary" type="button">Export Markdown ZIP</button>
-        <button id="import-btn" class="btn btn-secondary" type="button">Import notes (JSON)</button>
-        <input id="import-file" type="file" accept="application/json,.json" hidden />
+        <button id="import-btn" class="btn btn-secondary" type="button">Import notes</button>
+        <input id="import-file" type="file" accept="application/json,.json,text/markdown,.md,.markdown,.scratchpad" multiple hidden />
       </div>
 
       <section id="diagnostics-panel" class="diagnostics-panel" aria-labelledby="diagnostics-title">
@@ -384,6 +385,10 @@
             <dd id="diagnostic-storage">Checking...</dd>
           </div>
           <div>
+            <dt>Storage protection</dt>
+            <dd id="diagnostic-storage-protection">Checking...</dd>
+          </div>
+          <div>
             <dt>Last backup</dt>
             <dd id="diagnostic-last-backup">Checking...</dd>
           </div>
@@ -392,6 +397,19 @@
             <dd id="diagnostic-offline-cache">Checking...</dd>
           </div>
         </dl>
+        <div class="about-control-row">
+          <button id="protect-storage-btn" class="btn btn-secondary btn-sm" type="button">Protect local data</button>
+          <button id="check-updates-btn" class="btn btn-secondary btn-sm" type="button">Check for updates</button>
+          <button id="refresh-offline-copy-btn" class="btn btn-secondary btn-sm" type="button">Refresh offline copy</button>
+        </div>
+      </section>
+
+      <section class="danger-zone" aria-labelledby="danger-zone-title">
+        <div>
+          <h3 id="danger-zone-title" class="about-subhead">Erase local data</h3>
+          <p>Remove every note, draft, revision, and Scratchpad preference stored by this browser.</p>
+        </div>
+        <button id="erase-local-data-btn" class="btn btn-danger btn-sm" type="button">Erase local data</button>
       </section>
 
       <h3 class="about-subhead">Keyboard shortcuts</h3>
@@ -460,6 +478,65 @@
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
       <button id="confirm-import" class="btn btn-primary" type="button">Import</button>
+    </div>
+  </dialog>
+
+  <dialog id="backup-passphrase-dialog" class="dialog" aria-labelledby="backup-passphrase-title">
+    <div class="dialog-head">
+      <h2 id="backup-passphrase-title">Encrypt backup</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body passphrase-form">
+      <p id="backup-passphrase-copy">Choose a passphrase. It cannot be recovered if you forget it.</p>
+      <div>
+        <label class="field-label" for="backup-passphrase">Passphrase</label>
+        <input id="backup-passphrase" class="input" type="password" autocomplete="new-password" />
+      </div>
+      <div id="backup-passphrase-confirm-wrap">
+        <label class="field-label" for="backup-passphrase-confirm">Confirm passphrase</label>
+        <input id="backup-passphrase-confirm" class="input" type="password" autocomplete="new-password" />
+      </div>
+      <label class="check-row"><input id="backup-passphrase-show" type="checkbox" /> Show passphrase</label>
+      <p id="backup-passphrase-error" class="field-error" role="alert" hidden></p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button id="confirm-encrypted-export" class="btn btn-primary" type="button">Export encrypted backup</button>
+      <button id="confirm-encrypted-import" class="btn btn-primary" type="button" hidden>Unlock backup</button>
+    </div>
+  </dialog>
+
+  <dialog id="save-conflict-dialog" class="dialog" aria-labelledby="save-conflict-title">
+    <div class="dialog-head">
+      <h2 id="save-conflict-title">This note changed in another tab</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <p id="save-conflict-copy">Your edits are still open. Choose which version to keep.</p>
+    </div>
+    <div class="dialog-foot conflict-actions">
+      <button id="conflict-use-saved" class="btn btn-secondary" type="button">Use saved version</button>
+      <button id="conflict-save-copy" class="btn btn-secondary" type="button">Save mine as a copy</button>
+      <button id="conflict-keep-mine" class="btn btn-primary" type="button">Replace with mine</button>
+    </div>
+  </dialog>
+
+  <dialog id="erase-local-data-dialog" class="dialog" aria-labelledby="erase-local-data-title">
+    <div class="dialog-head">
+      <h2 id="erase-local-data-title">Erase all local data?</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body passphrase-form">
+      <p>This cannot be undone. Export a backup first if you may need these notes again.</p>
+      <div>
+        <label class="field-label" for="erase-confirmation">Type <strong>ERASE</strong> to confirm</label>
+        <input id="erase-confirmation" class="input" type="text" autocomplete="off" spellcheck="false" />
+      </div>
+      <p id="erase-confirmation-error" class="field-error" role="alert" hidden>Type ERASE exactly to continue.</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button id="confirm-erase-local-data" class="btn btn-danger" type="button">Erase everything</button>
     </div>
   </dialog>
 
@@ -544,6 +621,17 @@
       <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
     </div>
   </dialog>
+
+  <aside id="pwa-update-notice" class="pwa-update-notice" aria-labelledby="pwa-update-title" hidden>
+    <div>
+      <strong id="pwa-update-title">Scratchpad update ready</strong>
+      <p>Reload when you are ready. Unsaved drafts stay in this browser.</p>
+    </div>
+    <div class="pwa-update-actions">
+      <button id="pwa-update-later" class="btn btn-secondary btn-sm" type="button">Later</button>
+      <button id="pwa-update-reload" class="btn btn-primary btn-sm" type="button">Reload</button>
+    </div>
+  </aside>
 
   <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
