@@ -108,12 +108,21 @@ pages pick both values up automatically via the footer placeholders.
 - Deleted notes are kept in Trash by setting `deletedAt` on the note. They are
   removed permanently only when you choose delete forever or empty Trash.
 - The theme preference uses `localStorage` under the key `theme-preview`.
+- First-visit state and backup-reminder timestamps use small `localStorage`
+  entries. They never contain note content.
+- Scratchpad uses `BroadcastChannel` to announce note ids, timestamps, and
+  change types between same-origin tabs. It never sends note titles or bodies
+  through the channel. Saves compare timestamps against IndexedDB and offer
+  explicit conflict choices instead of silently overwriting another tab.
+- **About → Protect local data** requests persistent browser storage when the
+  Storage API supports it. The browser may decline, and backups remain the
+  recovery path either way.
 - Nothing is sent off-device. There are no analytics, no error reporting,
-  no font loaders. If you open DevTools → Network and disable cache, you
-  should see **zero** requests after the initial page load.
+  no font loaders, and no third-party runtime requests.
 
-To wipe everything: DevTools → Application → Storage → Clear site data, or
-remove the `scratchpad` IndexedDB database manually.
+To wipe Scratchpad's notes, drafts, revisions, and preferences, use
+**About → Erase local data** and type `ERASE`. Browser site-data controls also
+remove the database and offline app cache.
 
 ### Backups
 
@@ -125,11 +134,22 @@ excluded.
 Use **About → Export Markdown ZIP** for readable `.md` copies of active notes.
 Each file includes frontmatter with title, tags, pinned state, and timestamps.
 
+Use **About → Export encrypted backup** to encrypt the full JSON payload in
+the browser with AES-256-GCM. The key is derived from a passphrase with
+PBKDF2-HMAC-SHA256, a random salt, and 600,000 iterations. The passphrase and
+key are not written to storage, so a forgotten passphrase cannot be recovered.
+
 Importing JSON validates the file before writing anything. The importer caps
 file size, note count, revision count, body length, title length, tag count,
 and tag length, then shows a preview with rejected entries. The default is to
 import conflicts as duplicates; you can also replace matching ids or skip
 conflicts.
+
+Markdown import accepts one or more `.md` or `.markdown` files. Scratchpad
+understands its own exported frontmatter fields (`title`, `tags`, `pinned`,
+`createdAt`, and `updatedAt`) and derives a title from the first heading when
+frontmatter is absent. Encrypted `.scratchpad` files are decrypted locally,
+then go through the same preview and validation path as JSON.
 
 ## Vendored libraries
 
@@ -151,10 +171,11 @@ the static app shell: the root pages, CSS, JavaScript, vendored libraries,
 manifest, local icons, and local Open Graph assets. It does not cache exports,
 note content outside IndexedDB, or external resources.
 
-The service-worker cache name is tied to `SCRATCHPAD_VERSION`. After a deploy,
-users can force-refresh an installed/offline copy by reloading once while
-online; if the old shell persists, close all Scratchpad tabs and open it again
-so the new worker can activate.
+The service-worker cache name is tied to `SCRATCHPAD_VERSION`. A newly installed
+worker waits until Scratchpad shows an update notice; the user chooses when to
+reload and activate it. **About → Check for updates** performs an explicit
+check, while **Refresh offline copy** re-fetches the same-origin app shell and
+reports whether it succeeded.
 
 ## Keyboard shortcuts
 
@@ -187,6 +208,7 @@ public/
     markdown.js            # marked + DOMPurify rendering policy
     zip.js                 # Dependency-free ZIP writer for Markdown export
     app.js                 # App logic
+    erase-landing.js       # Finishes typed local-data erasure after redirect
     version.js             # SCRATCHPAD_VERSION + build date
     vendor/
       marked.min.js        # Markdown parser
