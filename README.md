@@ -4,6 +4,32 @@ A privacy-first, local-only notes app. Pure static HTML/CSS/JS — no backend,
 no accounts, no telemetry. Your notes live in this browser's IndexedDB and
 never leave it.
 
+## Features
+
+### Privacy and resilience
+
+- **Persistent storage protection** — ask supported browsers to reduce the
+  risk of automatic storage eviction, with clear best-effort fallback status.
+- **Safe multi-tab editing** — detect when another tab changes the same note
+  and offer to use the saved version, replace it, or save your work as a copy.
+- **Complete local erasure** — type `ERASE` to remove every note, draft,
+  revision, and Scratchpad preference from the browser.
+- **Encrypted backups** — protect full-fidelity `.scratchpad` backups with a
+  passphrase; encryption and decryption happen locally with the Web Crypto API.
+- **Controlled offline updates** — work from a cached app shell, choose when an
+  update reloads the app, and manually check or refresh the offline copy.
+
+### Notes workflow
+
+- Write and preview Markdown with formatting shortcuts, autosaved drafts, and
+  the last 10 saved revisions per note.
+- Search titles, bodies, and tags; pin important notes; and use bulk tagging,
+  Trash, and restore tools.
+- Import one or many Markdown files, including Scratchpad frontmatter, or use
+  validated JSON imports with a conflict preview.
+- Export full JSON backups, encrypted backups, selected notes, or a Markdown
+  ZIP without creating an account.
+
 ## Running locally
 
 The whole app is static files. Use any static HTTP server from the project
