@@ -1441,6 +1441,40 @@ body:not(.page-privacy) .theme-toggle:hover {
   overflow-wrap: anywhere;
 }
 
+.about-control-row,
+.pwa-update-actions,
+.conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.about-control-row {
+  margin-top: 10px;
+}
+
+.danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 18px 0;
+  padding: 12px;
+  border: 1px solid var(--rust);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+}
+
+.danger-zone .about-subhead {
+  margin: 0 0 4px;
+}
+
+.danger-zone p {
+  margin: 0;
+  color: var(--gray-700);
+  line-height: 1.45;
+}
+
 .about-subhead {
   font: 600 14px/1.2 var(--sans);
   margin: 16px 0 8px;
@@ -1462,6 +1496,32 @@ body:not(.page-privacy) .theme-toggle:hover {
   margin: 0 0 6px;
   color: var(--gray-700);
   font: 500 12px/1.2 var(--mono);
+}
+
+.passphrase-form {
+  display: grid;
+  gap: 14px;
+}
+
+.passphrase-form > p {
+  margin: 0;
+}
+
+.passphrase-form .input {
+  width: 100%;
+}
+
+.check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-700);
+  font-size: 13px;
+}
+
+.field-error {
+  color: var(--rust);
+  font: 500 12px/1.4 var(--mono);
 }
 
 /* ---------- History / import / tag dialogs ---------- */
@@ -1687,6 +1747,54 @@ body:not(.page-privacy) .theme-toggle:hover {
   width: max-content;
   max-width: calc(100% - 32px);
   pointer-events: none;
+}
+
+.pwa-update-notice {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: min(520px, calc(100% - 40px));
+  padding: 14px 16px;
+  border: var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-md);
+}
+
+.pwa-update-notice[hidden] {
+  display: none;
+}
+
+.pwa-update-notice strong {
+  display: block;
+  color: var(--slate);
+  font: 600 14px/1.2 var(--sans);
+}
+
+.pwa-update-notice p {
+  margin: 4px 0 0;
+  color: var(--gray-700);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .danger-zone,
+  .pwa-update-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pwa-update-notice {
+    right: 16px;
+    bottom: 16px;
+    max-width: calc(100% - 32px);
+  }
 }
 .toast {
   display: inline-flex;
