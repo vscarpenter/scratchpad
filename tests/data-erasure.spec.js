@@ -38,4 +38,28 @@ test.describe('local data erasure', () => {
     }));
     expect(counts).toEqual({ notes: 0, drafts: 0, revisions: 0 });
   });
+
+  test('visiting about.html normally does not erase local preferences', async ({ page }) => {
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Untouched note', 'Should survive a normal about.html visit');
+    await page.evaluate(() => {
+      localStorage.setItem('theme-preview', 'dark');
+    });
+
+    await page.goto('/about.html');
+    await expect(page.locator('body')).toBeVisible();
+
+    const state = await page.evaluate(() => ({
+      theme: localStorage.getItem('theme-preview'),
+      visited: localStorage.getItem('scratchpad-visited'),
+      eraseFlag: sessionStorage.getItem('scratchpad:eraseComplete'),
+    }));
+    expect(state.theme).toBe('dark');
+    expect(state.visited).toBe('1');
+    expect(state.eraseFlag).toBeNull();
+
+    await gotoApp(page);
+    const noteCount = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).length);
+    expect(noteCount).toBe(1);
+  });
 });

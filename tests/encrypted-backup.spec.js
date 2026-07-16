@@ -48,4 +48,43 @@ test.describe('encrypted backups', () => {
     await expect(page.locator('#backup-passphrase-error')).toContainText('passphrase or file is invalid');
     await expect(page.locator('#backup-passphrase-dialog')).toBeVisible();
   });
+
+  test('rejects passphrases under 12 characters and mismatched confirmations', async ({ page }) => {
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Passphrase validation', 'Body');
+    await page.locator('#open-about').click();
+    await page.locator('#export-encrypted-btn').click();
+
+    await page.locator('#backup-passphrase').fill('short');
+    await page.locator('#backup-passphrase-confirm').fill('short');
+    await page.locator('#confirm-encrypted-export').click();
+    await expect(page.locator('#backup-passphrase-error')).toContainText('at least 12 characters');
+    await expect(page.locator('#backup-passphrase-dialog')).toBeVisible();
+
+    await page.locator('#backup-passphrase').fill('long enough passphrase');
+    await page.locator('#backup-passphrase-confirm').fill('does not match');
+    await page.locator('#confirm-encrypted-export').click();
+    await expect(page.locator('#backup-passphrase-confirm')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#backup-passphrase-dialog')).toBeVisible();
+  });
+
+  test('rejects a corrupted or malformed encrypted backup envelope', async ({ page }) => {
+    await gotoApp(page);
+    const corrupted = {
+      format: 'scratchpad-encrypted-backup',
+      version: 1,
+      kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 1, salt: 'AAAA' },
+      cipher: { name: 'AES-GCM', iv: 'AAAA' },
+      ciphertext: 'AAAA',
+    };
+    await page.setInputFiles('#import-file', {
+      name: 'corrupted.scratchpad',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(corrupted)),
+    });
+    await expect(page.locator('#backup-passphrase-dialog')).toBeVisible();
+    await page.locator('#backup-passphrase').fill('any passphrase at all');
+    await page.locator('#confirm-encrypted-import').click();
+    await expect(page.locator('#backup-passphrase-error')).toContainText('passphrase or file is invalid');
+  });
 });

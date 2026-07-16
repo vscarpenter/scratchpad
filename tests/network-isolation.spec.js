@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote } = require('./helpers');
+const { gotoApp, createAndSaveNote, importJson } = require('./helpers');
 
 /**
  * Privacy guarantee: after page load, the app makes zero network calls,
@@ -30,6 +30,40 @@ test.describe('network isolation', () => {
     await createAndSaveNote(page, 'Privacy', 'No remote calls allowed.');
     await page.reload();
     await page.locator('.note-row').first().click();
+
+    expect(offOrigin, `unexpected off-origin requests: ${offOrigin.join(', ')}`).toEqual([]);
+  });
+
+  test('export and import flows make no off-origin requests', async ({ page, baseURL }) => {
+    const url = new URL(baseURL || 'http://127.0.0.1:8080');
+    const allowedHost = url.host;
+
+    /** @type {string[]} */
+    const offOrigin = [];
+    page.on('request', (req) => {
+      const reqUrl = req.url();
+      if (reqUrl.startsWith('data:') || reqUrl.startsWith('blob:')) return;
+      try {
+        const host = new URL(reqUrl).host;
+        if (host !== allowedHost) offOrigin.push(reqUrl);
+      } catch {
+        // Non-http(s) schemes — ignore.
+      }
+    });
+
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Export me', 'Nothing leaves this browser.');
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#open-about').click();
+    await page.locator('#export-btn').click();
+    await downloadPromise;
+
+    await importJson(page, {
+      notes: [{ id: 'net-import', title: 'Imported', body: 'Body', tags: [], createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null }],
+    });
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('#import-preview-dialog')).toBeHidden();
 
     expect(offOrigin, `unexpected off-origin requests: ${offOrigin.join(', ')}`).toEqual([]);
   });

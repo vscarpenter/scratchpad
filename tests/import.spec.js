@@ -63,6 +63,83 @@ test.describe('import — validation and conflicts', () => {
     await expect(page.locator('#note-rendered')).toContainText('New body');
   });
 
+  test('skips matching ids when the skip conflict mode is selected', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'skip-id', title: 'Existing note', body: 'Untouched body', tags: [] },
+    ]);
+
+    await importJson(page, {
+      notes: [
+        { id: 'skip-id', title: 'Should not import', body: 'New body', tags: ['new'] },
+      ],
+    });
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await page.locator('input[name="import-conflict-mode"][value="skip"]').check();
+    await page.locator('#confirm-import').click();
+
+    await expect(page.locator('.note-row')).toHaveCount(1);
+    await expect(page.locator('#note-title-display')).toHaveText('Existing note');
+    await expect(page.locator('#note-rendered')).toContainText('Untouched body');
+  });
+
+  test('imports trashedNotes from a backup file into Trash', async ({ page }) => {
+    await gotoApp(page);
+
+    await importJson(page, {
+      notes: [validNote],
+      trashedNotes: [
+        { id: 'was-trashed', title: 'Previously trashed', body: 'Trash body', tags: [], deletedAt: 1710000000000 },
+      ],
+    });
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('#import-preview-dialog')).toBeHidden();
+
+    await expect(page.locator('.note-row')).toHaveCount(1);
+    await page.locator('#trash-view').click();
+    await expect(page.locator('.note-row')).toHaveCount(1);
+    await expect(page.locator('#note-title-display')).toHaveText('Previously trashed');
+  });
+
+  test('rejects entries that share an id within the same import file', async ({ page }) => {
+    await gotoApp(page);
+
+    await importJson(page, {
+      notes: [
+        { id: 'dup-in-file', title: 'First copy', body: 'Body one' },
+        { id: 'dup-in-file', title: 'Second copy', body: 'Body two' },
+      ],
+    });
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await expect(page.locator('#import-preview-counts dd').nth(0)).toHaveText('1');
+    await expect(page.locator('#import-preview-counts dd').nth(2)).toHaveText('1');
+    await expect(page.locator('#import-preview-errors')).toContainText('duplicate id in import file');
+  });
+
+  test('rejects choosing more than one JSON file at a time', async ({ page }) => {
+    await gotoApp(page);
+    await page.setInputFiles('#import-file', [
+      { name: 'a.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ notes: [validNote] })) },
+      { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ notes: [validNote] })) },
+    ]);
+
+    await expect(page.locator('.toast.is-error')).toContainText('Choose one JSON or encrypted backup at a time');
+    await expect(page.locator('#import-preview-dialog')).toBeHidden();
+  });
+
+  test('rejects a backup file over the 2 MB size limit', async ({ page }) => {
+    await gotoApp(page);
+    const oversized = { notes: [{ ...validNote, body: 'x'.repeat(3 * 1024 * 1024) }] };
+    await page.setInputFiles('#import-file', {
+      name: 'oversized.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(oversized)),
+    });
+
+    await expect(page.locator('.toast.is-error')).toContainText('must be 2 MB or smaller');
+    await expect(page.locator('#import-preview-dialog')).toBeHidden();
+  });
+
   test('keeps the import confirmation disabled while IndexedDB writes are pending', async ({ page }) => {
     await gotoApp(page);
     await importJson(page, { notes: [validNote] });
