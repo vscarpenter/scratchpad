@@ -604,6 +604,25 @@
     </div>
   </dialog>
 
+  <dialog id="quick-capture-dialog" class="dialog quick-capture-dialog" aria-labelledby="quick-capture-title">
+    <div class="dialog-head">
+      <h2 id="quick-capture-title">Quick capture</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <p class="muted-copy">Press Enter to add a timestamped line to today's note.</p>
+      <input
+        id="quick-capture-input"
+        class="input"
+        type="text"
+        placeholder="What's on your mind?"
+        autocomplete="off"
+        spellcheck="true"
+        aria-label="Capture text"
+      />
+    </div>
+  </dialog>
+
   <dialog id="share-dialog" class="dialog share-dialog" aria-labelledby="share-dialog-title">
     <div class="dialog-head">
       <h2 id="share-dialog-title">Share this note</h2>
