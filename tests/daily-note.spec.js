@@ -145,3 +145,30 @@ test.describe('quick capture', () => {
     expect(stored.body).toBe('saved body');
   });
 });
+
+test.describe('action URLs', () => {
+  test('/?action=today opens today note and cleans the URL', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+    await page.goto('/?action=today');
+    await expect(page.locator('#app-shell')).toBeVisible();
+    await expect(page.locator('#note-rendered')).toBeVisible();
+    const note = await page.evaluate(async () => {
+      const all = await window.ScratchpadDB.getAll();
+      return all.find((n) => n.dailyDate);
+    });
+    expect(note).toBeTruthy();
+    expect(new URL(page.url()).search).toBe('');
+  });
+
+  test('/?action=capture opens the capture dialog', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+    await page.goto('/?action=capture');
+    await expect(page.locator('#quick-capture-input')).toBeVisible();
+  });
+
+  test('/?action=new starts a new note in edit mode', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+    await page.goto('/?action=new');
+    await expect(page.locator('#note-editor')).toBeVisible();
+  });
+});

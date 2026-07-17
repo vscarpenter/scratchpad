@@ -3833,12 +3833,26 @@
     return false;
   }
 
+  // OS-level PWA shortcuts land on /?action=<name>. Handle once at boot,
+  // then clean the URL so reload/bookmark behaves normally. The service
+  // worker matches navigations by pathname, so these URLs work offline.
+  async function handleActionParam() {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    if (!action) return;
+    window.history.replaceState(null, '', window.location.pathname);
+    if (action === 'new') await createNote();
+    else if (action === 'today') await openTodayNote();
+    else if (action === 'capture') openQuickCapture();
+  }
+
   async function init() {
     if (await maybeRedirectFirstRun()) return;
     initCrossTabSync();
     bindEvents();
     try {
       await loadAll();
+      await handleActionParam();
       registerServiceWorker();
     } catch (e) {
       console.error('Failed to load notes', e);
