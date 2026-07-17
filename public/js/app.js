@@ -105,6 +105,9 @@
     tagAddEmpty: $('tag-add-empty'),
     tagAddPlus: $('tag-add-plus'),
     rendered: $('note-rendered'),
+    backlinksSection: $('backlinks-section'),
+    backlinksSummary: $('backlinks-summary'),
+    backlinksList: $('backlinks-list'),
     editor: $('note-editor'),
     formatToolbar: $('editor-format'),
     editorEmptyState: $('editor-empty-state'),
@@ -1023,6 +1026,7 @@
     if (!note) {
       els.editorView.hidden = true;
       els.editorCard.classList.remove('is-editing');
+      els.backlinksSection.hidden = true;
       lastRenderedNoteId = null;
       lastEditorMode = false;
       return;
@@ -1107,6 +1111,7 @@
     }
 
     els.dirtyIndicator.hidden = !state.dirty || trashed;
+    renderBacklinks(note);
   }
 
   function renderBreadcrumb(note) {
@@ -2129,6 +2134,41 @@
       e.preventDefault();
       toggleTaskAt(index);
     }
+  }
+
+  // -------- Backlinks --------
+  // Computed from note bodies on every render — nothing persisted, so Trash
+  // restores and imports can never leave a stale index. O(total body text)
+  // per view is fine at local scale.
+  function linkingNotesTo(title, excludeId) {
+    const wanted = (title || '').trim().toLowerCase();
+    if (!wanted) return [];
+    return sortNotes(state.notes.filter((n) => {
+      if (n.id === excludeId || isTrashed(n)) return false;
+      return Markdown.extractWikilinkTargets(n.body || '')
+        .some((t) => t.toLowerCase() === wanted);
+    }));
+  }
+
+  function renderBacklinks(note) {
+    const show = note && !isTrashed(note) && !state.editing;
+    const sources = show ? linkingNotesTo(deriveTitle(note), note.id) : [];
+    if (!sources.length) {
+      els.backlinksSection.hidden = true;
+      els.backlinksList.replaceChildren();
+      return;
+    }
+    els.backlinksSection.hidden = false;
+    els.backlinksSummary.textContent =
+      'Linked from ' + sources.length + ' note' + (sources.length === 1 ? '' : 's');
+    els.backlinksList.replaceChildren(...sources.map((source) => el('li', {
+      children: [el('button', {
+        class: 'backlink-btn',
+        text: deriveTitle(source),
+        attrs: { type: 'button' },
+        on: { click: () => openNoteFromCommand(source.id) },
+      })],
+    })));
   }
 
   // -------- Daily note --------

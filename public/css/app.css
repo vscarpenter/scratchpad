@@ -1315,6 +1315,39 @@ body:not(.page-privacy) .theme-toggle:hover {
   text-decoration-style: dashed;
 }
 
+/* ---------- Backlinks ---------- */
+.backlinks {
+  margin-top: 24px;
+  border-top: 1px solid var(--border-hair);
+  padding-top: 12px;
+}
+.backlinks-summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+.backlinks-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.backlinks-list .backlink-btn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--control-fill);
+  color: var(--text-body);
+  padding: 3px 11px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.backlinks-list .backlink-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ---------- Empty states ---------- */
 .center-state {
   margin: auto;
