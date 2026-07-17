@@ -17,3 +17,35 @@ test.describe('task list rendering', () => {
     await expect(rendered.locator('.task-checkbox').first()).toHaveAttribute('tabindex', '0');
   });
 });
+
+test.describe('task marker scanner', () => {
+  test('matches rendered checkboxes and skips fenced code', async ({ page }) => {
+    await gotoApp(page);
+    const results = await page.evaluate(() => {
+      const scan = (src) => window.ScratchpadMarkdown.findTaskMarkers(src);
+      return {
+        simple: scan('- [ ] a\n- [x] b'),
+        nested: scan('- top\n  - [ ] nested'),
+        quoted: scan('> - [ ] quoted'),
+        ordered: scan('1. [x] ordered'),
+        fenced: scan('```\n- [ ] not a task\n```\n- [ ] real'),
+        tilde: scan('~~~\n- [ ] hidden\n~~~'),
+        notTask: scan('- [link](https://x) text'),
+      };
+    });
+    expect(results.simple.length).toBe(2);
+    expect(results.simple[0].checked).toBe(false);
+    expect(results.simple[1].checked).toBe(true);
+    expect(results.nested.length).toBe(1);
+    expect(results.quoted.length).toBe(1);
+    expect(results.ordered.length).toBe(1);
+    expect(results.fenced.length).toBe(1);
+    expect(results.tilde.length).toBe(0);
+    expect(results.notTask.length).toBe(0);
+    // Offsets point at the state character: flipping it changes the marker.
+    const src = '- [ ] a\n- [x] b';
+    const offsets = results.simple.map((m) => m.offset);
+    expect(src.charAt(offsets[0])).toBe(' ');
+    expect(src.charAt(offsets[1])).toBe('x');
+  });
+});
