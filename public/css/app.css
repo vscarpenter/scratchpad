@@ -1263,6 +1263,46 @@ body:not(.page-privacy) .theme-toggle:hover {
 }
 .note-rendered blockquote.is-pullquote p { margin: 0; }
 
+/* ---------- Task-list checkboxes (rendered as spans; see markdown.js) ---------- */
+.note-rendered .task-checkbox {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  margin-right: 0.45em;
+  vertical-align: -0.15em;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--control-fill);
+  cursor: pointer;
+  position: relative;
+}
+.note-rendered .task-checkbox[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.note-rendered .task-checkbox[aria-checked="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0.28em;
+  top: 0.08em;
+  width: 0.3em;
+  height: 0.6em;
+  border: solid var(--paper);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.note-rendered .task-checkbox:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.note-rendered .task-checkbox[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.6;
+}
+.note-rendered li:has(> .task-checkbox) {
+  list-style: none;
+}
+
 /* ---------- Empty states ---------- */
 .center-state {
   margin: auto;
