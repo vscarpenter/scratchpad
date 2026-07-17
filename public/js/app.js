@@ -2065,7 +2065,56 @@
     return Array.prototype.indexOf.call(els.rendered.querySelectorAll('.task-checkbox'), box);
   }
 
+  // -------- Wikilink navigation --------
+  async function createNoteFromWikilink(title) {
+    if (state.editing && state.dirty) {
+      const ok = await confirmDiscard();
+      if (!ok) return;
+      await discardCurrentDraft();
+    }
+    const t = now();
+    const note = normalizeNote({
+      id: uuid(),
+      title,
+      body: '',
+      tags: [],
+      pinned: false,
+      createdAt: t,
+      updatedAt: t,
+      deletedAt: null,
+      lastDraftAt: null,
+    });
+    await withBusy('create-from-wikilink', [], 'Could not create the linked note.', async () => {
+      await putNoteRecord(note);
+      state.view = 'active';
+      state.notes.push(note);
+      state.selectedId = note.id;
+      state.editing = true;
+      state.dirty = false;
+      renderAll();
+      state.mobileView = 'editor';
+      syncMobileView();
+      setTimeout(() => els.editor.focus(), 0);
+    });
+  }
+
+  function wikilinkHrefParts(target) {
+    const link = target.closest && target.closest('a.wikilink');
+    if (!link) return null;
+    const href = link.getAttribute('href') || '';
+    if (href.startsWith('#note:')) return { kind: 'note', value: decodeURIComponent(href.slice(6)) };
+    if (href.startsWith('#new:')) return { kind: 'new', value: decodeURIComponent(href.slice(5)) };
+    return null;
+  }
+
   function onRenderedClick(e) {
+    const parts = wikilinkHrefParts(e.target);
+    if (parts) {
+      e.preventDefault();
+      if (parts.kind === 'note') openNoteFromCommand(parts.value);
+      else createNoteFromWikilink(parts.value);
+      return;
+    }
     const index = taskCheckboxIndex(e.target);
     if (index >= 0) {
       e.preventDefault();

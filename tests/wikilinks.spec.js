@@ -36,3 +36,31 @@ test.describe('wikilink rendering', () => {
     await expect(rendered.locator('a.wikilink').nth(1)).toHaveClass(/is-phantom/);
   });
 });
+
+test.describe('wikilink navigation', () => {
+  test('clicking a resolved link opens the target note', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'nav-target', title: 'Target Note', body: 'target body' },
+      { id: 'nav-source', title: 'Source', body: 'go to [[Target Note]]', updatedAt: Date.now() + 1000 },
+    ]);
+    await page.locator('.note-row', { hasText: 'Source' }).click();
+    await page.locator('#note-rendered a.wikilink').click();
+    await expect(page.locator('#note-title-display')).toHaveText('Target Note');
+    await expect(page.locator('#note-rendered')).toContainText('target body');
+  });
+
+  test('clicking a phantom link creates the note and opens it in edit mode', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'ph-source', title: 'Source', body: 'todo: [[Brand New Idea]]' },
+    ]);
+    await page.locator('.note-row', { hasText: 'Source' }).click();
+    await page.locator('#note-rendered a.wikilink.is-phantom').click();
+    await expect(page.locator('#note-editor')).toBeVisible();
+    await expect(page.locator('#note-title-input')).toHaveValue('Brand New Idea');
+    // Save, go back to the source: the link is now resolved.
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#save-btn')).toBeHidden();
+    await page.locator('.note-row', { hasText: 'Source' }).click();
+    await expect(page.locator('#note-rendered a.wikilink')).not.toHaveClass(/is-phantom/);
+  });
+});
