@@ -29,6 +29,41 @@ test.describe('user guide page', () => {
     });
   });
 
+  test('every static page footer links to the guide', async ({ page }) => {
+    // index.html has no .footer-nav — the app's entry point is the About
+    // dialog link, covered by its own test below.
+    for (const path of ['/about.html', '/privacy.html', '/terms.html', '/guide.html']) {
+      await page.goto(path);
+      await expect(page.locator('.footer-nav a[href="guide.html"]'), path).toBeAttached();
+    }
+  });
+
+  test('about page links to the guide prominently', async ({ page }) => {
+    await page.goto('/about.html');
+    await expect(page.locator('a[href="guide.html"]', { hasText: /user guide/i }).first()).toBeVisible();
+  });
+
+  test('command palette opens the guide in a new tab', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+    await page.goto('/');
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('guide');
+    const popupPromise = context.waitForEvent('page');
+    await page.locator('.command-palette-item', { hasText: 'Open user guide' }).click();
+    const popup = await popupPromise;
+    await popup.waitForLoadState();
+    expect(new URL(popup.url()).pathname).toBe('/guide.html');
+  });
+
+  test('About dialog links to the guide', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+    await page.goto('/');
+    await page.locator('#open-about').click();
+    const link = page.locator('#about-dialog a[href="guide.html"]');
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('target', '_blank');
+  });
+
   test('theme toggle cycles and persists across reload', async ({ page }) => {
     await page.goto('/guide.html');
     const toggle = page.locator('#theme-toggle');

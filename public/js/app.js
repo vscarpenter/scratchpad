@@ -2802,6 +2802,13 @@
         run: () => setView('trash'),
       },
       {
+        id: 'open-guide',
+        label: 'Open user guide',
+        meta: 'How to use every feature',
+        keywords: 'help docs manual how to guide',
+        run: () => window.open('guide.html', '_blank', 'noopener'),
+      },
+      {
         id: 'diagnostics',
         label: 'Open diagnostics',
         meta: 'Storage and backup health',
