@@ -92,3 +92,46 @@ test.describe('backlinks', () => {
     await expect(page.locator('#backlinks-section')).toBeHidden();
   });
 });
+
+test.describe('rename rewriting', () => {
+  test('accepting the prompt rewrites linking notes and stores revisions', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'rn-target', title: 'Old Name', body: 'target' },
+      { id: 'rn-src', title: 'Linker', body: 'ref [[Old Name]] and [[old name|alias]]' },
+    ]);
+    await page.locator('.note-row[data-id="rn-target"]').click();
+    await page.locator('#edit-btn').click();
+    await page.locator('#note-title-input').fill('New Name');
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#link-rename-dialog')).toBeVisible();
+    await expect(page.locator('#link-rename-copy')).toContainText('1 note');
+    await page.locator('#confirm-link-rename').click();
+    await expect(page.locator('#link-rename-dialog')).toBeHidden();
+    await page.waitForFunction(async () => {
+      const linker = await window.ScratchpadDB.get('rn-src');
+      return linker.body.includes('[[New Name]]');
+    });
+    const linker = await page.evaluate(() => window.ScratchpadDB.get('rn-src'));
+    expect(linker.body).toBe('ref [[New Name]] and [[New Name|alias]]');
+    const revisions = await page.evaluate(() => window.ScratchpadDB.getRevisions('rn-src'));
+    expect(revisions.length).toBe(1);
+  });
+
+  test('declining leaves phantom links intact', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'rd-target', title: 'Old Name', body: 'target' },
+      { id: 'rd-src', title: 'Linker', body: 'ref [[Old Name]]' },
+    ]);
+    await page.locator('.note-row[data-id="rd-target"]').click();
+    await page.locator('#edit-btn').click();
+    await page.locator('#note-title-input').fill('New Name');
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#link-rename-dialog')).toBeVisible();
+    await page.locator('#link-rename-dialog [data-dialog-close]').first().click();
+    await expect(page.locator('#link-rename-dialog')).toBeHidden();
+    const linker = await page.evaluate(() => window.ScratchpadDB.get('rd-src'));
+    expect(linker.body).toBe('ref [[Old Name]]');
+    await page.locator('.note-row[data-id="rd-src"]').click();
+    await expect(page.locator('#note-rendered a.wikilink.is-phantom')).toHaveCount(1);
+  });
+});
