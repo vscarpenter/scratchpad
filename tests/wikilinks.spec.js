@@ -64,3 +64,31 @@ test.describe('wikilink navigation', () => {
     await expect(page.locator('#note-rendered a.wikilink')).not.toHaveClass(/is-phantom/);
   });
 });
+
+test.describe('backlinks', () => {
+  test('viewed note lists untrashed notes that link to it', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'bl-target', title: 'Hub', body: 'hub body' },
+      { id: 'bl-a', title: 'Alpha', body: 'see [[Hub]]' },
+      { id: 'bl-b', title: 'Beta', body: 'also [[hub]] lowercase' },
+      { id: 'bl-c', title: 'Trashed', body: '[[Hub]] from trash', deletedAt: Date.now() },
+      { id: 'bl-d', title: 'Fenced', body: '```\n[[Hub]]\n```' },
+    ]);
+    await page.locator('.note-row[data-id="bl-target"]').click();
+    const section = page.locator('#backlinks-section');
+    await expect(section).toBeVisible();
+    await expect(page.locator('#backlinks-summary')).toHaveText('Linked from 2 notes');
+    await section.locator('summary').click();
+    await expect(section.locator('button', { hasText: 'Alpha' })).toBeVisible();
+    await expect(section.locator('button', { hasText: 'Beta' })).toBeVisible();
+    // Clicking a backlink navigates to the source note.
+    await section.locator('button', { hasText: 'Alpha' }).click();
+    await expect(page.locator('#note-title-display')).toHaveText('Alpha');
+  });
+
+  test('section is hidden when nothing links here', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'lonely', title: 'Lonely', body: 'no links' }]);
+    await page.locator('.note-row').first().click();
+    await expect(page.locator('#backlinks-section')).toBeHidden();
+  });
+});
