@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="Scratchpad user guide — how to write, organize, link, and back up notes that never leave your browser." />
+  <meta name="referrer" content="no-referrer" />
+  <title>User guide — Scratchpad</title>
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Scratchpad" />
+  <meta property="og:title" content="User guide — Scratchpad" />
+  <meta property="og:description" content="How to use every Scratchpad feature: Markdown, task lists, daily notes, wikilinks, backups, and offline." />
+  <meta property="og:url" content="https://notes.vinny.dev/guide.html" />
+  <meta property="og:image" content="https://notes.vinny.dev/public/og-banner.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Scratchpad: private notes that never leave your browser." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="User guide — Scratchpad" />
+  <meta name="twitter:description" content="How to use every Scratchpad feature: Markdown, task lists, daily notes, wikilinks, backups, and offline." />
+  <meta name="twitter:image" content="https://notes.vinny.dev/public/og-banner.png" />
+
+  <script>
+    (function () {
+      var s = localStorage.getItem('theme-preview') || 'auto';
+      if (s === 'light' || s === 'dark')
+        document.documentElement.setAttribute('data-theme', s);
+    })();
+  </script>
+
+  <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="public/favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="public/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="public/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="public/favicon-180.png" />
+  <link rel="stylesheet" href="public/css/inkwell.css" />
+  <link rel="stylesheet" href="public/css/app.css" />
+</head>
+<body class="page-privacy page-guide">
+  <header class="privacy-header">
+    <a class="brand-link" href="index.html" aria-label="Back to Scratchpad">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="brand-title-inline">Scratchpad</span>
+    </a>
+    <button id="theme-toggle" class="btn btn-ghost btn-sm theme-toggle" type="button" aria-label="Toggle theme">
+      Theme: <span id="theme-label">auto</span>
+    </button>
+  </header>
+
+  <main class="privacy-main">
+    <article class="card privacy-card guide-card">
+      <p class="eyebrow">User guide</p>
+      <h1 class="privacy-title">How to use <em class="accent">Scratchpad.</em></h1>
+      <p class="privacy-lede">
+        Everything the app can do, in one page. Scratchpad is a local-only notes app — every
+        feature below works entirely in your browser, and nothing you write ever leaves it.
+      </p>
+
+      <nav class="guide-toc" aria-label="Guide sections">
+        <a href="#first-five-minutes">First five minutes</a>
+        <a href="#markdown">Markdown</a>
+        <a href="#task-lists">Task lists</a>
+        <a href="#daily-notes">Daily notes &amp; capture</a>
+        <a href="#linking">Linking notes</a>
+        <a href="#organizing">Finding &amp; organizing</a>
+        <a href="#backups">Backups</a>
+        <a href="#privacy-controls">Privacy controls</a>
+        <a href="#offline">Offline &amp; installing</a>
+        <a href="#shortcuts">Keyboard shortcuts</a>
+      </nav>
+
+      <h2 id="first-five-minutes">First five minutes</h2>
+      <p>
+        Press <strong>New note</strong> (or <kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">N</kbd>),
+        type a title and some text, and save with <kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">S</kbd>.
+        That's the whole loop. Notes have two modes: <strong>view</strong>, which shows your
+        Markdown rendered, and <strong>edit</strong>, which shows the raw text. The
+        <strong>Edit</strong> button (or saving) switches between them.
+      </p>
+      <p>
+        While you type, Scratchpad autosaves a draft. If the tab closes before you save, the next
+        visit offers to restore your unsaved edits. Everything is stored in this browser only —
+        see the <a href="privacy.html">privacy policy</a> for exactly what that means.
+      </p>
+
+      <h2 id="markdown">Writing in Markdown</h2>
+      <p>Notes are plain Markdown. The basics:</p>
+      <ul>
+        <li><code># Heading</code>, <code>## Subheading</code> — up to six levels.</li>
+        <li><code>**bold**</code>, <code>*italic*</code>, <code>`inline code`</code>.</li>
+        <li><code>- item</code> or <code>1. item</code> for lists; indent two spaces to nest.</li>
+        <li><code>&gt; quote</code> for blockquotes — short ones render as pull-quotes.</li>
+        <li><code>[text](https://example.com)</code> for links — they open in a new tab.</li>
+        <li>Three backticks on their own line open and close a code block.</li>
+        <li>Tables, in GitHub style: <code>| col | col |</code> with a <code>|---|---|</code> divider row.</li>
+      </ul>
+      <p>
+        While editing, the toolbar buttons (<strong>B</strong>, <strong>I</strong>, code, link)
+        wrap the selected text for you. Images from the web are not loaded — that's part of the
+        privacy promise, not a bug.
+      </p>
+
+      <h2 id="task-lists">Task lists</h2>
+      <p>Any list item can be a task:</p>
+      <pre><code>- [ ] pick up groceries
+- [x] renew domain</code></pre>
+      <p>
+        In view mode those render as real checkboxes — click one (or focus it and press
+        <kbd class="kbd">Space</kbd>) to tick or untick it. The change is written straight back
+        into your Markdown and saved, so you never enter edit mode just to check something off.
+        Task lists work nested, in numbered lists, and inside quotes.
+      </p>
+      <p>
+        If a note mixes real tasks with text that only looks like one (say, a
+        <code>- [ ]</code> inside a code block), and Scratchpad can't confidently match every
+        checkbox to its exact line, the checkboxes go gray and stop responding rather than risk
+        ticking the wrong line. Edit the note normally to make changes.
+      </p>
+
+      <h2 id="daily-notes">Daily notes &amp; quick capture</h2>
+      <p>
+        The calendar button in the sidebar — or <kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">D</kbd>,
+        or <em>Open today's note</em> in the command palette — jumps to today's note, creating it
+        the first time. Renaming a daily note is fine; Scratchpad tracks the date, not the title.
+      </p>
+      <p>
+        Want your own structure for each day? Create a note titled exactly
+        <strong>Daily template</strong> — its body becomes the starting point for every new daily
+        note. No settings required.
+      </p>
+      <p>
+        <em>Quick capture</em> (in the command palette) takes one line of text and appends it to
+        today's note with a timestamp — even creating the note if needed — without leaving what
+        you're doing. If you install Scratchpad as an app, your OS's icon menu gets shortcuts for
+        <em>New note</em>, <em>Today's note</em>, and <em>Quick capture</em>.
+      </p>
+
+      <h2 id="linking">Linking notes</h2>
+      <p>
+        Type <code>[[</code> while editing and Scratchpad suggests your note titles — arrow keys
+        to choose, <kbd class="kbd">Enter</kbd> to insert. A link like <code>[[Project Plan]]</code>
+        renders as a working link to that note; <code>[[Project Plan|the plan]]</code> shows
+        custom text.
+      </p>
+      <ul>
+        <li>
+          <strong>Phantom links.</strong> A link to a note that doesn't exist yet renders dashed.
+          Click it and Scratchpad creates the note and opens it — write the idea first, fill it
+          in later.
+        </li>
+        <li>
+          <strong>Backlinks.</strong> Below each note, <em>Linked from N notes</em> lists every
+          note that links here. It's computed live, so restoring from Trash or importing never
+          leaves it stale.
+        </li>
+        <li>
+          <strong>Renames stay safe.</strong> When you rename a note that others link to,
+          Scratchpad offers to update those links. Each updated note keeps a revision, so the
+          change is reversible.
+        </li>
+      </ul>
+
+      <h2 id="organizing">Finding &amp; organizing</h2>
+      <ul>
+        <li>
+          <strong>Search</strong> (<kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">K</kbd> or
+          <kbd class="kbd">/</kbd>) matches titles, bodies, and tags, with typo tolerance.
+        </li>
+        <li>
+          <strong>Tags</strong> — add them under a note's title; click a tag to filter by it.
+          The <strong>Tags</strong> view renames, merges, or deletes tags everywhere at once.
+        </li>
+        <li><strong>Pins</strong> keep important notes at the top of the list.</li>
+        <li>
+          <strong>Select</strong> enters bulk mode: tag, pin, or trash several notes in one go.
+        </li>
+        <li>
+          <strong>Trash</strong> holds deleted notes until you restore them, delete them forever,
+          or empty it.
+        </li>
+        <li>
+          <strong>The command palette</strong> (<kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">P</kbd>)
+          runs every action and jumps to recent notes from the keyboard.
+        </li>
+      </ul>
+
+      <h2 id="backups">Backups &amp; portability</h2>
+      <p>
+        Because notes live only in this browser, backups matter. Everything is under
+        <strong>About</strong> (the ⓘ button in the sidebar):
+      </p>
+      <ul>
+        <li>
+          <strong>Export backup (JSON)</strong> — the full-fidelity format: notes, Trash, and
+          revision history. Use this one for restores.
+        </li>
+        <li>
+          <strong>Export encrypted backup</strong> — the same data, protected by a passphrase.
+          Encryption happens in the browser; a forgotten passphrase cannot be recovered.
+        </li>
+        <li>
+          <strong>Export Markdown ZIP</strong> — readable <code>.md</code> copies of active notes,
+          for use anywhere.
+        </li>
+        <li>
+          <strong>Import</strong> — accepts a JSON backup, an encrypted backup, or one or more
+          Markdown files. Every import shows a preview first, and you choose how conflicts are
+          handled: keep both, replace, or skip.
+        </li>
+      </ul>
+      <p>
+        Scratchpad reminds you gently when it's been a while since your last backup.
+      </p>
+
+      <h2 id="privacy-controls">Your data &amp; privacy controls</h2>
+      <ul>
+        <li>
+          <strong>Protect local data</strong> asks the browser to mark this site's storage
+          persistent, reducing the chance of automatic cleanup. The browser decides; backups are
+          still the real safety net.
+        </li>
+        <li>
+          <strong>Multi-tab safety.</strong> If the same note changes in another tab, Scratchpad
+          stops before overwriting and lets you choose: keep this tab's version, use the saved
+          one, or keep both as separate notes.
+        </li>
+        <li>
+          <strong>Erase local data</strong> removes every note, draft, revision, and preference
+          from this browser. You must type <code>ERASE</code> to confirm — there is no undo.
+        </li>
+        <li>
+          Nothing is ever sent anywhere: no accounts, no sync, no analytics, no third-party
+          scripts. The <a href="privacy.html">privacy policy</a> has the full picture.
+        </li>
+      </ul>
+
+      <h2 id="offline">Offline &amp; installing</h2>
+      <p>
+        Scratchpad works offline after your first visit — the app shell is cached, and your notes
+        were always local. Install it from your browser's install prompt (or menu) to get a
+        standalone window and app-icon shortcuts.
+      </p>
+      <p>
+        Updates are under your control: when a new version is available, Scratchpad shows a
+        notice and you choose when to reload. <strong>About → Check for updates</strong> looks
+        for one on demand, and <strong>Refresh offline copy</strong> re-downloads the cached app
+        files.
+      </p>
+
+      <h2 id="shortcuts">Keyboard shortcuts</h2>
+      <table>
+        <thead>
+          <tr><th>Shortcut</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">N</kbd></td><td>New note</td></tr>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">S</kbd></td><td>Save (while editing)</td></tr>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">Shift</kbd> <kbd class="kbd">D</kbd></td><td>Open today's note</td></tr>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">Shift</kbd> <kbd class="kbd">P</kbd></td><td>Command palette</td></tr>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">K</kbd> or <kbd class="kbd">/</kbd></td><td>Focus search</td></tr>
+          <tr><td><kbd class="kbd">Esc</kbd></td><td>Clear search, close panels, or exit edit mode</td></tr>
+          <tr><td><kbd class="kbd">Enter</kbd> / <kbd class="kbd">Tab</kbd></td><td>Accept a <code>[[</code> link suggestion</td></tr>
+          <tr><td><kbd class="kbd">Space</kbd></td><td>Toggle a focused task checkbox</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-brand" aria-label="Scratchpad home">
+        <span class="footer-wordmark">Scratchpad</span>
+        <span class="footer-tagline">Notes that stay in your browser.</span>
+      </a>
+      <nav class="footer-nav" aria-label="Site links">
+        <a href="about.html">About</a>
+        <a href="guide.html">Guide</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a class="footer-ext-link" href="https://vinny.dev" target="_blank" rel="noopener noreferrer">
+          vinny.dev
+          <svg class="footer-ext-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M9 3h4v4M13 3 8 8M11 9v3.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </nav>
+    </div>
+    <div class="footer-meta-row">
+      <div class="footer-meta">
+        <span>v<span id="app-version">—</span></span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>built <span id="app-build-date">—</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="public/js/version.js"></script>
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const btn = document.getElementById('theme-toggle');
+      const label = document.getElementById('theme-label');
+      const KEY = 'theme-preview';
+      const order = ['auto', 'light', 'dark'];
+      function apply(s) {
+        if (s === 'auto') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', s);
+        if (label) label.textContent = s;
+      }
+      let current = localStorage.getItem(KEY) || 'auto';
+      if (!order.includes(current)) current = 'auto';
+      apply(current);
+      btn.addEventListener('click', () => {
+        current = order[(order.indexOf(current) + 1) % order.length];
+        localStorage.setItem(KEY, current);
+        apply(current);
+      });
+    })();
+  </script>
+</body>
+</html>
