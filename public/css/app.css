@@ -303,15 +303,24 @@ body:not(.page-privacy) .theme-toggle:hover {
   .search-hint { display: none; }
 }
 
+/* Two intentional rows: the primary CTA gets the full width (no text
+   wrapping), then a quiet utility strip — Select left, icon cluster right.
+   One shared row cannot hold all five controls in the 274px content box. */
 .sidebar-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
 .sidebar-actions .btn-primary {
-  flex: 1;
+  flex: 1 1 100%;
   border-radius: var(--r-md);
+}
+
+/* First icon after the Select button opens the right-aligned cluster. */
+.sidebar-actions .btn-secondary + .btn-ghost {
+  margin-left: auto;
 }
 .sidebar-actions .btn-ghost {
   flex: none;

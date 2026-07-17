@@ -28,4 +28,21 @@ test.describe('sidebar layout — scroll containment', () => {
     }));
     expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
   });
+
+  test('sidebar action buttons all fit inside the sidebar', async ({ page }) => {
+    await seedNotes(page, 3);
+    const sidebar = await page.locator('#sidebar').boundingBox();
+    if (!sidebar) throw new Error('sidebar has no bounding box');
+    // Every action control must end inside the sidebar's right edge —
+    // regression guard for the Today button overflowing the actions row
+    // and clipping the About icon.
+    for (const id of ['#new-note', '#bulk-toggle', '#today-note', '#command-palette-btn', '#open-about']) {
+      const box = await page.locator(id).boundingBox();
+      if (!box) throw new Error(id + ' has no bounding box');
+      expect(box.x + box.width, id + ' overflows sidebar').toBeLessThanOrEqual(sidebar.x + sidebar.width + 0.5);
+    }
+    // And the primary button must have room for one-line text.
+    const newNote = await page.locator('#new-note').boundingBox();
+    expect(newNote.width).toBeGreaterThanOrEqual(110);
+  });
 });
