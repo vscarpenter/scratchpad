@@ -48,6 +48,7 @@ async function seedRawNotes(page, notes) {
       updatedAt: Number.isFinite(note.updatedAt) ? note.updatedAt : base - (rawNotes.length - index) * 1000,
       deletedAt: Number.isFinite(note.deletedAt) ? note.deletedAt : null,
       lastDraftAt: Number.isFinite(note.lastDraftAt) ? note.lastDraftAt : null,
+      dailyDate: typeof note.dailyDate === 'string' ? note.dailyDate : null,
     }));
     await window.ScratchpadDB.bulkPut(notes);
   }, notes);

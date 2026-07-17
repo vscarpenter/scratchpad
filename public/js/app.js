@@ -630,6 +630,7 @@
       updatedAt: finiteTime(n.updatedAt, t),
       deletedAt: Number.isFinite(n.deletedAt) ? n.deletedAt : null,
       lastDraftAt: Number.isFinite(n.lastDraftAt) ? n.lastDraftAt : null,
+      dailyDate: typeof n.dailyDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(n.dailyDate) ? n.dailyDate : null,
     };
   }
 
@@ -2723,6 +2724,7 @@
       'title: ' + JSON.stringify(deriveTitle(note)),
       'tags: [' + (note.tags || []).map((tag) => JSON.stringify(tag)).join(', ') + ']',
       'pinned: ' + (!!note.pinned ? 'true' : 'false'),
+      ...(note.dailyDate ? ['dailyDate: ' + JSON.stringify(note.dailyDate)] : []),
       'createdAt: ' + JSON.stringify(new Date(note.createdAt).toISOString()),
       'updatedAt: ' + JSON.stringify(new Date(note.updatedAt).toISOString()),
       '---',
@@ -2851,6 +2853,7 @@
       updatedAt: Number.isFinite(updatedAt) ? updatedAt : (Number.isFinite(createdAt) ? createdAt : now()),
       deletedAt: null,
       lastDraftAt: null,
+      dailyDate: typeof metadata.dailyDate === 'string' ? metadata.dailyDate : null,
     });
     if (!candidate.title) candidate.title = deriveTitle(candidate);
     return candidate;
