@@ -170,30 +170,15 @@ values via the `#app-version` and `#app-build-date` placeholders in their
 footers.
 
 ### Deploying
-Run `./deploy.sh` (or `bash deploy.sh`). It reads `.env.local` for
-`S3_BUCKET` and `CLOUDFRONT_DISTRIBUTION_ID`, then, in order:
-1. Syncs `public/` to `s3://$S3_BUCKET/public/` with
-   `Cache-Control: public, max-age=300` and `--delete` (excludes
-   `*.DS_Store` and dotfiles). Assets go up **before** HTML so every
-   asset a fresh page references already exists in the bucket.
-2. Re-uploads `public/manifest.webmanifest` with an explicit
-   `application/manifest+json` content-type and
-   `Cache-Control: public, max-age=300, must-revalidate`.
-3. Re-uploads `public/service-worker.js` with an explicit
-   `application/javascript` content-type and
-   `Cache-Control: no-cache, no-store, must-revalidate`.
-4. Uploads the HTML shells — `index.html`, `about.html`, `privacy.html`,
-   `terms.html` — with `Cache-Control: public, max-age=60, must-revalidate`.
-5. Uploads the root `service-worker.js` with
-   `Cache-Control: no-cache, no-store, must-revalidate`.
-6. Invalidates CloudFront for the shell entry points: `/`, `/index.html`,
-   `/about.html`, `/privacy.html`, `/terms.html`, `/service-worker.js`,
-   `/public/manifest.webmanifest`, and `/public/service-worker.js*`.
-
-Service workers are always uploaded `no-store` so a stale worker can never
-pin users to old code; HTML gets a short 60s cache.
-
-`./deploy.sh --dry-run` previews without changing anything.
+Run `./deploy.sh` (or `bash deploy.sh`); `./deploy.sh --dry-run` previews
+without changing anything. It reads `S3_BUCKET` and
+`CLOUDFRONT_DISTRIBUTION_ID` from `.env.local`, uploads assets **before**
+HTML (so every asset a fresh page references already exists in the bucket),
+gives both service workers a `no-store` cache so a stale worker can never
+pin users to old code, and invalidates CloudFront for the shell entry
+points. The exact sync order, per-file cache-control values, and
+content-types live in `deploy.sh`; the `release-prep` skill runs the version
+bump + dry-run preflight.
 
 **Authorization:** never run the real deploy without explicit user
 confirmation in the current turn. Dry-runs are fine to run autonomously
@@ -236,21 +221,16 @@ the Free plan takes effect at the next billing cycle; upgrading is
 immediate but adds a flat monthly fee.
 
 ### Updating security headers
-Headers live in `cloudfront/security-headers-function.js`. To change them:
-
-1. Edit the file. If you touched an inline `<script>` in `index.html`,
-   `about.html`, `privacy.html`, or `terms.html`, run
-   `bash cloudfront/recompute-csp-hashes.sh` first and update the CSP
-   `script-src` hashes (in both the .js file and the reference .json — the
-   script verifies both).
-2. Push the new code to the DEVELOPMENT stage with `aws cloudfront update-function`
-   (needs the current DEVELOPMENT ETag from `describe-function`).
-3. Publish DEVELOPMENT → LIVE with `aws cloudfront publish-function`. Edge
-   propagation is seconds; no `update-distribution` and no invalidation
-   needed (the function runs at viewer-response on every response,
-   including cached ones).
-
-`cloudfront/README.md` has the exact command snippets.
+Headers live in `cloudfront/security-headers-function.js`. If you edit an
+inline `<script>` in any HTML shell, run
+`bash cloudfront/recompute-csp-hashes.sh` first and update the CSP
+`script-src` hashes in **both** the `.js` file and the reference `.json`.
+Publishing is push-to-DEVELOPMENT → publish-to-LIVE
+(`aws cloudfront update-function` / `publish-function`) — edge propagation
+is seconds, with **no** `update-distribution` and no invalidation needed
+(the function runs at viewer-response on every response, cached ones
+included). The `csp-update` skill runs this end to end; `cloudfront/README.md`
+has the exact command snippets.
 
 ## Local development
 
