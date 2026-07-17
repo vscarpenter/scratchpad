@@ -109,6 +109,7 @@
     backlinksSummary: $('backlinks-summary'),
     backlinksList: $('backlinks-list'),
     editor: $('note-editor'),
+    wikilinkSuggest: $('wikilink-suggest'),
     formatToolbar: $('editor-format'),
     editorEmptyState: $('editor-empty-state'),
     editorView: $('editor-view'),
@@ -2176,6 +2177,134 @@
     })));
   }
 
+  // -------- Wikilink autocomplete --------
+  // Opens while the caret sits inside an unclosed [[… run on one line.
+  // Caret pixel position comes from a throwaway mirror div that copies the
+  // textarea's text metrics; if that ever misbehaves the panel still works,
+  // it just anchors slightly off — selection state, not geometry, is the
+  // source of truth for insertion.
+  const wikilinkSuggestState = { open: false, items: [], index: 0, start: 0 };
+
+  function wikilinkQueryAt(value, caret) {
+    const open = value.lastIndexOf('[[', caret - 1);
+    if (open === -1) return null;
+    const between = value.slice(open + 2, caret);
+    if (/[\n\]|]/.test(between)) return null;
+    return { start: open + 2, query: between };
+  }
+
+  function wikilinkSuggestions(query) {
+    const q = normalizeSearchText(query);
+    const current = state.selectedId;
+    return sortNotes(state.notes.filter((n) => {
+      if (n.id === current || isTrashed(n)) return false;
+      return !q || normalizeSearchText(deriveTitle(n)).includes(q);
+    })).slice(0, 8);
+  }
+
+  function caretPixelPosition(textarea, caret) {
+    const mirror = el('div');
+    const style = window.getComputedStyle(textarea);
+    for (const prop of ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing',
+      'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth',
+      'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'boxSizing', 'whiteSpace',
+      'overflowWrap', 'tabSize']) {
+      mirror.style[prop] = style[prop];
+    }
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.overflowWrap = 'break-word';
+    mirror.style.width = textarea.clientWidth + 'px';
+    mirror.textContent = textarea.value.slice(0, caret);
+    const marker = el('span', { text: '​' });
+    mirror.appendChild(marker);
+    textarea.parentElement.appendChild(mirror);
+    const top = marker.offsetTop - textarea.scrollTop;
+    const left = marker.offsetLeft;
+    mirror.remove();
+    return { top: textarea.offsetTop + top, left: textarea.offsetLeft + left };
+  }
+
+  function closeWikilinkSuggest() {
+    wikilinkSuggestState.open = false;
+    els.wikilinkSuggest.hidden = true;
+    els.wikilinkSuggest.replaceChildren();
+  }
+
+  function renderWikilinkSuggest() {
+    const items = wikilinkSuggestState.items;
+    if (!items.length) {
+      closeWikilinkSuggest();
+      return;
+    }
+    els.wikilinkSuggest.replaceChildren(...items.map((note, index) => el('button', {
+      class: 'wikilink-option',
+      text: deriveTitle(note),
+      attrs: {
+        type: 'button',
+        role: 'option',
+        'aria-selected': index === wikilinkSuggestState.index ? 'true' : 'false',
+      },
+      on: {
+        mousedown: (e) => e.preventDefault(), // keep editor focus
+        click: () => insertWikilinkSuggestion(index),
+      },
+    })));
+    els.wikilinkSuggest.hidden = false;
+  }
+
+  function updateWikilinkSuggest() {
+    if (!state.editing || els.editor.hidden) {
+      closeWikilinkSuggest();
+      return;
+    }
+    const caret = els.editor.selectionStart;
+    const found = wikilinkQueryAt(els.editor.value, caret);
+    if (!found) {
+      closeWikilinkSuggest();
+      return;
+    }
+    wikilinkSuggestState.open = true;
+    wikilinkSuggestState.start = found.start;
+    wikilinkSuggestState.index = 0;
+    wikilinkSuggestState.items = wikilinkSuggestions(found.query);
+    const pos = caretPixelPosition(els.editor, caret);
+    els.wikilinkSuggest.style.top = (pos.top + 24) + 'px';
+    els.wikilinkSuggest.style.left = Math.max(0, Math.min(pos.left, els.editor.clientWidth - 200)) + 'px';
+    renderWikilinkSuggest();
+  }
+
+  function insertWikilinkSuggestion(index) {
+    const note = wikilinkSuggestState.items[index];
+    if (!note) return;
+    const caret = els.editor.selectionStart;
+    els.editor.setRangeText(deriveTitle(note) + ']]', wikilinkSuggestState.start, caret, 'end');
+    closeWikilinkSuggest();
+    els.editor.focus();
+    els.editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function onEditorSuggestKey(e) {
+    if (!wikilinkSuggestState.open) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      wikilinkSuggestState.index = Math.min(wikilinkSuggestState.items.length - 1, wikilinkSuggestState.index + 1);
+      renderWikilinkSuggest();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      wikilinkSuggestState.index = Math.max(0, wikilinkSuggestState.index - 1);
+      renderWikilinkSuggest();
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      insertWikilinkSuggestion(wikilinkSuggestState.index);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation(); // do not let Escape exit edit mode while the panel is open
+      closeWikilinkSuggest();
+    }
+  }
+
   // -------- Rename-safe links --------
   function replaceWikilinkTargets(body, oldTitle, newTitle) {
     const escaped = oldTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -3689,6 +3818,10 @@
     els.historyBtn.addEventListener('click', openHistoryDialog);
 
     els.editor.addEventListener('input', markDirty);
+    els.editor.addEventListener('input', updateWikilinkSuggest);
+    els.editor.addEventListener('keydown', onEditorSuggestKey);
+    els.editor.addEventListener('blur', () => setTimeout(closeWikilinkSuggest, 0));
+    els.editor.addEventListener('click', () => { if (wikilinkSuggestState.open) updateWikilinkSuggest(); });
     els.rendered.addEventListener('click', onRenderedClick);
     els.rendered.addEventListener('keydown', onRenderedKey);
     els.formatToolbar.addEventListener('mousedown', (e) => {

@@ -135,3 +135,43 @@ test.describe('rename rewriting', () => {
     await expect(page.locator('#note-rendered a.wikilink.is-phantom')).toHaveCount(1);
   });
 });
+
+test.describe('wikilink autocomplete', () => {
+  test('typing [[ suggests titles; Enter inserts and closes', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'ac-1', title: 'Project Plan', body: 'p' },
+      { id: 'ac-2', title: 'Project Notes', body: 'n' },
+      { id: 'ac-3', title: 'Groceries', body: 'g' },
+    ]);
+    await page.locator('#new-note').click();
+    const editor = page.locator('#note-editor');
+    // createNote is async — typing before the editor is visible and focused
+    // would send keystrokes to <body> (focus on a hidden element no-ops).
+    await expect(editor).toBeVisible();
+    await expect(editor).toBeFocused();
+    await editor.pressSequentially('See [[Proj');
+    const panel = page.locator('#wikilink-suggest');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[role="option"]')).toHaveCount(2);
+    await expect(panel.locator('[role="option"]').first()).toContainText('Project');
+    await page.keyboard.press('Enter');
+    await expect(panel).toBeHidden();
+    const value = await editor.inputValue();
+    expect(value).toMatch(/^See \[\[Project (Plan|Notes)\]\]$/);
+  });
+
+  test('Escape dismisses without inserting; editing continues', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'ac-4', title: 'Alpha', body: 'a' }]);
+    await page.locator('#new-note').click();
+    const editor = page.locator('#note-editor');
+    await expect(editor).toBeVisible();
+    await expect(editor).toBeFocused();
+    await editor.pressSequentially('x [[Al');
+    await expect(page.locator('#wikilink-suggest')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#wikilink-suggest')).toBeHidden();
+    expect(await editor.inputValue()).toBe('x [[Al');
+    // Editing continues normally (Escape did not exit edit mode).
+    await expect(editor).toBeVisible();
+  });
+});
