@@ -53,6 +53,10 @@
 
   function hardenLinks(root) {
     for (const a of root.querySelectorAll('a[href]')) {
+      const href = a.getAttribute('href') || '';
+      // Fragment links (wikilinks, in-note anchors) are same-page; forcing
+      // target=_blank on them would break in-app navigation.
+      if (href.startsWith('#')) continue;
       a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener noreferrer');
     }
@@ -75,6 +79,67 @@
         bq.classList.add('is-pullquote');
       }
     }
+  }
+
+  // Wikilinks: [[Title]] / [[Title|alias]]. Resolution is injected by app.js
+  // at boot so this module stays free of note-state knowledge. Rendered as
+  // fragment hrefs (#note:<id> / #new:<title>) which pass SAFE_URI_PATTERN —
+  // no data attributes, no sanitizer changes. app.js intercepts clicks.
+  let wikilinkResolver = null;
+
+  function setWikilinkResolver(fn) {
+    wikilinkResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  const WIKILINK_TOKEN = /^\[\[([^\[\]\n|]+?)(?:\|([^\[\]\n]+?))?\]\]/;
+
+  if (window.marked && typeof window.marked.use === 'function') {
+    window.marked.use({
+      extensions: [{
+        name: 'wikilink',
+        level: 'inline',
+        start(src) { return src.indexOf('[['); },
+        tokenizer(src) {
+          const match = WIKILINK_TOKEN.exec(src);
+          if (!match) return undefined;
+          return {
+            type: 'wikilink',
+            raw: match[0],
+            target: match[1].trim(),
+            alias: (match[2] || '').trim(),
+          };
+        },
+        renderer(token) {
+          const resolved = wikilinkResolver ? wikilinkResolver(token.target) : null;
+          const text = escapeHtml(token.alias || token.target);
+          if (resolved) {
+            return '<a class="wikilink" href="#note:' + encodeURIComponent(resolved) + '">' + text + '</a>';
+          }
+          return '<a class="wikilink is-phantom" href="#new:' + encodeURIComponent(token.target) + '">' + text + '</a>';
+        },
+      }],
+    });
+  }
+
+  // Raw wikilink targets in document order, ignoring fenced code blocks.
+  // Used for backlink indexing and rename rewriting.
+  function extractWikilinkTargets(src) {
+    const targets = [];
+    const pattern = /\[\[([^\[\]\n|]+?)(?:\|[^\[\]\n]*?)?\]\]/g;
+    scanOutsideFences(src, (line) => {
+      let match;
+      while ((match = pattern.exec(line)) !== null) targets.push(match[1].trim());
+      pattern.lastIndex = 0;
+    });
+    return targets;
   }
 
   // Walks src line by line, invoking cb(line, offset) only for lines outside
@@ -142,5 +207,7 @@
     renderMarkdownInto,
     renderEmptyBody,
     findTaskMarkers,
+    setWikilinkResolver,
+    extractWikilinkTargets,
   };
 })();
