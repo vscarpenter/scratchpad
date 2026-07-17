@@ -32,5 +32,10 @@
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "New note", "url": "/?action=new" },
+    { "name": "Today's note", "url": "/?action=today" },
+    { "name": "Quick capture", "url": "/?action=capture" }
   ]
 }
