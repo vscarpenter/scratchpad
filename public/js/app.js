@@ -3848,6 +3848,14 @@
 
   async function init() {
     if (await maybeRedirectFirstRun()) return;
+    Markdown.setWikilinkResolver((target) => {
+      const wanted = (target || '').trim().toLowerCase();
+      if (!wanted) return null;
+      const matches = sortNotes(state.notes.filter(
+        (n) => !isTrashed(n) && deriveTitle(n).trim().toLowerCase() === wanted
+      ));
+      return matches.length ? matches[0].id : null;
+    });
     initCrossTabSync();
     bindEvents();
     try {

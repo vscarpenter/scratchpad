@@ -1303,6 +1303,18 @@ body:not(.page-privacy) .theme-toggle:hover {
   list-style: none;
 }
 
+/* ---------- Wikilinks ---------- */
+.note-rendered a.wikilink {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-soft);
+  text-underline-offset: 2px;
+}
+.note-rendered a.wikilink.is-phantom {
+  color: var(--text-muted);
+  text-decoration-style: dashed;
+}
+
 /* ---------- Empty states ---------- */
 .center-state {
   margin: auto;
