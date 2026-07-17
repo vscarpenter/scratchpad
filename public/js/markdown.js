@@ -17,6 +17,20 @@
     window.marked.setOptions({ breaks: false, gfm: true });
   }
 
+  // GFM task-list checkboxes render as spans so the DOMPurify policy can keep
+  // forbidding <input>. App code makes them interactive in view mode; without
+  // it they are inert, which is the safe default.
+  if (window.marked && typeof window.marked.use === 'function') {
+    window.marked.use({
+      renderer: {
+        checkbox({ checked }) {
+          return '<span class="task-checkbox" role="checkbox" tabindex="0" aria-checked="' +
+            (checked ? 'true' : 'false') + '"></span>';
+        },
+      },
+    });
+  }
+
   function el(tag, options) {
     const node = document.createElement(tag);
     if (!options) return node;
