@@ -74,6 +74,7 @@ Key rules for anything in `public/css/app.css`:
 index.html               app entry
 about.html               about / support page
 privacy.html             privacy policy page
+guide.html               user guide / help page (reuses .page-privacy layout + .page-guide)
 terms.html               terms-of-use page (reuses .page-privacy class for layout)
 service-worker.js        root service worker (deployed no-store)
 deploy.sh                S3 sync + CloudFront invalidation
@@ -125,9 +126,9 @@ images, so the PNG is the one social scrapers actually see.
 
 ## Layout tripwires (don't unintentionally regress)
 
-All four pages share `app.css` but split into two layout modes that want
+All five pages share `app.css` but split into two layout modes that want
 opposite behavior: the app shell (`index.html`) and the `.page-privacy`
-content pages (`about.html`, `privacy.html`, `terms.html`). Three
+content pages (`about.html`, `guide.html`, `privacy.html`, `terms.html`). Three
 load-bearing rules in `app.css` make both work simultaneously — touch any
 of them carefully:
 
@@ -154,9 +155,9 @@ shouldn't be. If something doesn't render correctly in dark mode, fix the
 token usage rather than adding `[data-theme="dark"] {…}` rules.
 
 The inline `<head>` script in every page (`index.html`, `about.html`,
-`privacy.html`, `terms.html`) reads `localStorage['theme-preview']` and
-applies the attribute before any CSS parses, preventing flash of incorrect
-theme. It's byte-identical across all four pages (they share one CSP hash).
+`guide.html`, `privacy.html`, `terms.html`) reads `localStorage['theme-preview']`
+and applies the attribute before any CSS parses, preventing flash of incorrect
+theme. It's byte-identical across all five pages (they share one CSP hash).
 The toggle script at the bottom of each page cycles
 `auto → light → dark → auto`.
 
@@ -164,8 +165,8 @@ The toggle script at the bottom of each page cycles
 
 ### Version bumps
 Single source of truth: `public/js/version.js`. Edit the two constants
-(`SCRATCHPAD_VERSION`, `SCRATCHPAD_BUILD_DATE`) and all four pages
-(`index.html`, `about.html`, `privacy.html`, `terms.html`) pick up the new
+(`SCRATCHPAD_VERSION`, `SCRATCHPAD_BUILD_DATE`) and all five pages
+(`index.html`, `about.html`, `guide.html`, `privacy.html`, `terms.html`) pick up the new
 values via the `#app-version` and `#app-build-date` placeholders in their
 footers.
 
@@ -259,7 +260,7 @@ These files exist in the repo but **must not** end up in S3 / CloudFront:
 - `.git/`, `.verify/`, `.gitignore`
 
 The deploy script handles this by uploading only `public/**` (with
-`--delete`) plus the four HTML shells explicitly (`index.html`,
-`about.html`, `privacy.html`, `terms.html`) and the root
+`--delete`) plus the five HTML shells explicitly (`index.html`,
+`about.html`, `guide.html`, `privacy.html`, `terms.html`) and the root
 `service-worker.js`. Don't widen the upload scope without adjusting the
 exclusions.
