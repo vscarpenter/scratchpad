@@ -49,3 +49,63 @@ test.describe('task marker scanner', () => {
     expect(src.charAt(offsets[1])).toBe('x');
   });
 });
+
+test.describe('task toggling', () => {
+  test('click toggles the marker and persists across reload', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'toggle-1', title: 'Todos', body: '- [ ] first\n- [x] second' },
+    ]);
+    await page.locator('.note-row').first().click();
+    await page.locator('#note-rendered .task-checkbox').first().click();
+    await expect(page.locator('#note-rendered .task-checkbox').first()).toHaveAttribute('aria-checked', 'true');
+    await page.reload();
+    await expect(page.locator('#app-shell')).toBeVisible();
+    await page.locator('.note-row').first().click();
+    await expect(page.locator('#note-rendered .task-checkbox').first()).toHaveAttribute('aria-checked', 'true');
+    const stored = await page.evaluate(() => window.ScratchpadDB.get('toggle-1'));
+    expect(stored.body).toBe('- [x] first\n- [x] second');
+  });
+
+  test('rapid toggles coalesce into a single revision', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'toggle-2', title: 'Todos', body: '- [ ] only' },
+    ]);
+    await page.locator('.note-row').first().click();
+    const box = page.locator('#note-rendered .task-checkbox').first();
+    await box.click();
+    await expect(box).toHaveAttribute('aria-checked', 'true');
+    await box.click();
+    await expect(box).toHaveAttribute('aria-checked', 'false');
+    await box.click();
+    await expect(box).toHaveAttribute('aria-checked', 'true');
+    const revisions = await page.evaluate(() => window.ScratchpadDB.getRevisions('toggle-2'));
+    expect(revisions.length).toBe(1);
+  });
+
+  test('count mismatch renders checkboxes inert', async ({ page }) => {
+    // A 4-space-indented line at DOCUMENT START (no list before it) is an
+    // indented code block to marked — no checkbox rendered — but the line
+    // scanner counts it: 1 rendered vs 2 scanned -> every checkbox goes
+    // inert rather than guess the mapping. (Order matters: after a list,
+    // marked would parse the indented line as a nested task item.)
+    await seedRawNotes(page, [
+      { id: 'toggle-3', title: 'Odd', body: '    - [ ] looks like code\n\n- [ ] real' },
+    ]);
+    await page.locator('.note-row').first().click();
+    const box = page.locator('#note-rendered .task-checkbox').first();
+    await expect(box).toHaveAttribute('aria-disabled', 'true');
+    await box.click({ force: true });
+    const stored = await page.evaluate(() => window.ScratchpadDB.get('toggle-3'));
+    expect(stored.body).toContain('- [ ] real');
+  });
+
+  test('keyboard Space toggles', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'toggle-4', title: 'Todos', body: '- [ ] kb' },
+    ]);
+    await page.locator('.note-row').first().click();
+    await page.locator('#note-rendered .task-checkbox').first().focus();
+    await page.keyboard.press('Space');
+    await expect(page.locator('#note-rendered .task-checkbox').first()).toHaveAttribute('aria-checked', 'true');
+  });
+});

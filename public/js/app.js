@@ -1096,6 +1096,7 @@
       } else {
         els.rendered.hidden = false;
         Markdown.renderMarkdownInto(els.rendered, note.body || '');
+        syncTaskCheckboxes(note);
         if (scopeIncludes('body')) highlightElementText(els.rendered, state.search);
       }
       els.editBtn.hidden = trashed;
@@ -1992,6 +1993,89 @@
         const dlg = btn.closest('dialog');
         if (dlg) closeDialog(dlg);
       });
+    }
+  }
+
+  // -------- Programmatic note mutations --------
+  // Save path for writes that do not originate in the editor (task toggles,
+  // quick capture, link-rename rewrites). Reads the latest record from
+  // IndexedDB — never in-memory state — and writes through putNoteRecord so
+  // cross-tab behavior matches a manual save.
+  const TOGGLE_REVISION_WINDOW_MS = 5 * 60 * 1000;
+  const toggleRevisionAt = new Map();
+
+  async function mutateNoteBody(noteId, transform, opts) {
+    opts = opts || {};
+    const latestRaw = await DB.get(noteId);
+    if (!latestRaw) return null;
+    const latest = normalizeNote(latestRaw);
+    if (isTrashed(latest)) return null;
+    const nextBody = transform(latest.body || '');
+    if (typeof nextBody !== 'string' || nextBody === latest.body) return latest;
+    let snapshot = true;
+    if (opts.coalesceToggles) {
+      const last = toggleRevisionAt.get(noteId) || 0;
+      if (now() - last < TOGGLE_REVISION_WINDOW_MS) snapshot = false;
+      else toggleRevisionAt.set(noteId, now());
+    }
+    if (snapshot) await storeRevision(latest);
+    const nextNote = { ...latest, body: nextBody, updatedAt: nextUpdatedAt(latest) };
+    await putNoteRecord(nextNote);
+    const index = state.notes.findIndex((n) => n.id === noteId);
+    if (index >= 0) state.notes[index] = nextNote;
+    else state.notes.push(nextNote);
+    return nextNote;
+  }
+
+  // -------- Task toggles --------
+  // Rendered task checkboxes are interactive only when the scanner agrees
+  // with what marked rendered; any count mismatch marks them inert so a
+  // click can never flip the wrong line.
+  function syncTaskCheckboxes(note) {
+    const boxes = els.rendered.querySelectorAll('.task-checkbox');
+    if (!boxes.length) return;
+    const markers = Markdown.findTaskMarkers(note.body || '');
+    const interactive = markers.length === boxes.length && !isTrashed(note);
+    for (const box of boxes) {
+      box.setAttribute('aria-disabled', interactive ? 'false' : 'true');
+      if (!interactive) box.setAttribute('tabindex', '-1');
+    }
+  }
+
+  async function toggleTaskAt(index) {
+    const note = getNote(state.selectedId);
+    if (!note || isTrashed(note) || state.editing) return;
+    const updated = await withBusy('task-toggle', [], 'Could not update the task.', () =>
+      mutateNoteBody(note.id, (body) => {
+        const markers = Markdown.findTaskMarkers(body);
+        const marker = markers[index];
+        if (!marker) return body;
+        const next = body.charAt(marker.offset) === ' ' ? 'x' : ' ';
+        return body.slice(0, marker.offset) + next + body.slice(marker.offset + 1);
+      }, { coalesceToggles: true }));
+    if (updated) renderAll();
+  }
+
+  function taskCheckboxIndex(target) {
+    const box = target.closest && target.closest('.task-checkbox');
+    if (!box || box.getAttribute('aria-disabled') === 'true') return -1;
+    return Array.prototype.indexOf.call(els.rendered.querySelectorAll('.task-checkbox'), box);
+  }
+
+  function onRenderedClick(e) {
+    const index = taskCheckboxIndex(e.target);
+    if (index >= 0) {
+      e.preventDefault();
+      toggleTaskAt(index);
+    }
+  }
+
+  function onRenderedKey(e) {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    const index = taskCheckboxIndex(e.target);
+    if (index >= 0) {
+      e.preventDefault();
+      toggleTaskAt(index);
     }
   }
 
@@ -3350,6 +3434,8 @@
     els.historyBtn.addEventListener('click', openHistoryDialog);
 
     els.editor.addEventListener('input', markDirty);
+    els.rendered.addEventListener('click', onRenderedClick);
+    els.rendered.addEventListener('keydown', onRenderedKey);
     els.formatToolbar.addEventListener('mousedown', (e) => {
       const button = e.target.closest && e.target.closest('[data-format]');
       if (button) e.preventDefault();
