@@ -1348,6 +1348,40 @@ body:not(.page-privacy) .theme-toggle:hover {
   color: var(--accent);
 }
 
+/* ---------- Wikilink autocomplete ---------- */
+.editor-card {
+  position: relative;
+}
+.wikilink-suggest {
+  position: absolute;
+  z-index: 30;
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 40vh;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  padding: 4px;
+}
+.wikilink-suggest [role="option"] {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text-body);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.wikilink-suggest [role="option"][aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 /* ---------- Empty states ---------- */
 .center-state {
   margin: auto;
