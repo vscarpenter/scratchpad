@@ -194,6 +194,9 @@
     bulkTagInput: $('bulk-tag-input'),
     bulkApplyTag: $('bulk-apply-tag'),
     pinTemplate: $('tpl-pin-icon'),
+    linkRenameDialog: $('link-rename-dialog'),
+    linkRenameCopy: $('link-rename-copy'),
+    confirmLinkRename: $('confirm-link-rename'),
     quickCaptureDialog: $('quick-capture-dialog'),
     quickCaptureInput: $('quick-capture-input'),
     shareBtn: $('share-btn'),
@@ -1505,6 +1508,7 @@
         }
       }
       const baseNote = latest || note;
+      const previousDisplayTitle = deriveTitle(baseNote);
       const changed = (baseNote.title || '') !== nextTitle || (baseNote.body || '') !== nextBody;
       const nextNote = {
         ...baseNote,
@@ -1522,6 +1526,7 @@
       state.editing = false;
       state.dirty = false;
       renderAll();
+      await maybeOfferLinkRewrite(previousDisplayTitle, deriveTitle(nextNote), nextNote.id);
     });
   }
 
@@ -2169,6 +2174,45 @@
         on: { click: () => openNoteFromCommand(source.id) },
       })],
     })));
+  }
+
+  // -------- Rename-safe links --------
+  function replaceWikilinkTargets(body, oldTitle, newTitle) {
+    const escaped = oldTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp('\\[\\[\\s*' + escaped + '\\s*(\\|[^\\[\\]\\n]*)?\\]\\]', 'gi');
+    return body.replace(pattern, (match, alias) => '[[' + newTitle + (alias || '') + ']]');
+  }
+
+  // Called after a title change is persisted. Non-blocking: the save already
+  // happened; this only offers to keep other notes' links pointing here.
+  async function maybeOfferLinkRewrite(oldTitle, newTitle, noteId) {
+    const oldT = (oldTitle || '').trim();
+    const newT = (newTitle || '').trim();
+    if (!oldT || !newT || oldT.toLowerCase() === newT.toLowerCase()) return;
+    const sources = linkingNotesTo(oldT, noteId);
+    if (!sources.length) return;
+    els.linkRenameCopy.textContent =
+      sources.length + ' note' + (sources.length === 1 ? '' : 's') +
+      ' link' + (sources.length === 1 ? 's' : '') + ' to "' + oldT + '". Update them to "' + newT + '"?';
+    openDialog(els.linkRenameDialog);
+    const confirmed = await new Promise((resolve) => {
+      let decided = false;
+      const onConfirm = () => { decided = true; closeDialog(els.linkRenameDialog); };
+      const onClose = () => {
+        els.confirmLinkRename.removeEventListener('click', onConfirm);
+        resolve(decided);
+      };
+      els.confirmLinkRename.addEventListener('click', onConfirm, { once: true });
+      els.linkRenameDialog.addEventListener('close', onClose, { once: true });
+    });
+    if (!confirmed) return;
+    await withBusy('link-rename', [], 'Link update failed. The rename itself was saved.', async () => {
+      for (const source of sources) {
+        await mutateNoteBody(source.id, (body) => replaceWikilinkTargets(body, oldT, newT));
+      }
+      renderAll();
+      toast('Updated links in ' + sources.length + ' note' + (sources.length === 1 ? '' : 's') + '.');
+    });
   }
 
   // -------- Daily note --------
@@ -3620,12 +3664,14 @@
         return;
       }
       await withBusy('title-save', [els.titleInput], 'Title update failed.', async () => {
+        const previousDisplayTitle = deriveTitle(note);
         const nextNote = { ...note, title: v, updatedAt: now() };
         await putNoteRecord(nextNote);
         Object.assign(note, nextNote);
         state.dirty = false;
         renderSidebar();
         els.dirtyIndicator.hidden = true;
+        await maybeOfferLinkRewrite(previousDisplayTitle, deriveTitle(nextNote), note.id);
       });
     });
 

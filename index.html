@@ -608,6 +608,21 @@
     </div>
   </dialog>
 
+  <dialog id="link-rename-dialog" class="dialog" aria-labelledby="link-rename-title">
+    <div class="dialog-head">
+      <h2 id="link-rename-title">Update links?</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <p id="link-rename-copy"></p>
+      <p class="muted-copy">Updated notes keep a revision, so this is reversible.</p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Leave them</button>
+      <button id="confirm-link-rename" class="btn btn-primary" type="button">Update links</button>
+    </div>
+  </dialog>
+
   <dialog id="quick-capture-dialog" class="dialog quick-capture-dialog" aria-labelledby="quick-capture-title">
     <div class="dialog-head">
       <h2 id="quick-capture-title">Quick capture</h2>
