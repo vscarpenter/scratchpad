@@ -72,6 +72,7 @@
     trashView: $('trash-view'),
     manageTags: $('manage-tags'),
     newNote: $('new-note'),
+    todayNote: $('today-note'),
     bulkToggle: $('bulk-toggle'),
     commandPaletteBtn: $('command-palette-btn'),
     emptyNewNote: $('empty-new-note'),
@@ -2079,6 +2080,69 @@
     }
   }
 
+  // -------- Daily note --------
+  // Identity lives in the dailyDate field (local YYYY-MM-DD), not the title,
+  // so users can rename daily notes freely. A note titled "Daily template"
+  // customizes the seed body without any settings UI.
+  const DAILY_DEFAULT_BODY = '## Tasks\n\n## Notes\n';
+
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function findDailyNote(key) {
+    return sortNotes(state.notes.filter((n) => !isTrashed(n) && n.dailyDate === key))[0] || null;
+  }
+
+  function findDailyTemplate() {
+    return state.notes.find((n) => !isTrashed(n) && (n.title || '').trim().toLowerCase() === 'daily template') || null;
+  }
+
+  async function createDailyNote() {
+    const t = now();
+    const template = findDailyTemplate();
+    const note = normalizeNote({
+      id: uuid(),
+      title: new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+      body: template ? (template.body || '') : DAILY_DEFAULT_BODY,
+      tags: ['daily'],
+      pinned: false,
+      createdAt: t,
+      updatedAt: t,
+      deletedAt: null,
+      lastDraftAt: null,
+      dailyDate: todayKey(),
+    });
+    await putNoteRecord(note);
+    state.notes.push(note);
+    return note;
+  }
+
+  async function openTodayNote() {
+    const existing = findDailyNote(todayKey());
+    if (existing) {
+      await openNoteFromCommand(existing.id);
+      return existing;
+    }
+    if (state.editing && state.dirty) {
+      const ok = await confirmDiscard();
+      if (!ok) return null;
+      await discardCurrentDraft();
+    }
+    return withBusy('open-today', [els.todayNote], "Could not open today's note.", async () => {
+      const note = await createDailyNote();
+      state.view = 'active';
+      state.selectedId = note.id;
+      state.editing = false;
+      state.dirty = false;
+      state.mobileView = 'editor';
+      renderAll();
+      syncMobileView();
+      return note;
+    });
+  }
+
   function openEraseLocalDataDialog() {
     closeDialog(els.aboutDialog);
     els.eraseConfirmation.value = '';
@@ -2360,6 +2424,13 @@
         meta: 'Create a blank note',
         keywords: 'create write',
         run: createNote,
+      },
+      {
+        id: 'today-note',
+        label: "Open today's note",
+        meta: 'Daily note — created on first use',
+        keywords: 'today daily journal log',
+        run: openTodayNote,
       },
       {
         id: 'search-notes',
@@ -3391,6 +3462,7 @@
     els.manageTags.addEventListener('click', openTagManager);
 
     els.newNote.addEventListener('click', createNote);
+    els.todayNote.addEventListener('click', openTodayNote);
     els.bulkToggle.addEventListener('click', toggleBulkMode);
     els.commandPaletteBtn.addEventListener('click', openCommandPalette);
     els.emptyNewNote.addEventListener('click', createNote);
@@ -3616,6 +3688,12 @@
     if (meta && (e.key === 'n' || e.key === 'N')) {
       e.preventDefault();
       createNote();
+      return;
+    }
+
+    if (meta && e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+      e.preventDefault();
+      openTodayNote();
       return;
     }
 

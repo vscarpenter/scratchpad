@@ -39,3 +39,53 @@ test.describe('dailyDate field', () => {
     expect(after.dailyDate).toBe('2026-01-02');
   });
 });
+
+test.describe('daily note', () => {
+  test('palette command creates today note with defaults, reuses on repeat', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('today');
+    await page.locator('.command-palette-item', { hasText: "Open today's note" }).click();
+    await expect(page.locator('#note-rendered')).toBeVisible();
+    const first = await page.evaluate(async () => {
+      const all = await window.ScratchpadDB.getAll();
+      return all.find((n) => n.dailyDate);
+    });
+    const d = new Date();
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    expect(first.dailyDate).toBe(key);
+    expect(first.tags).toContain('daily');
+    expect(first.body).toBe('## Tasks\n\n## Notes\n');
+    // Second invocation reuses the same note.
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('today');
+    await page.locator('.command-palette-item', { hasText: "Open today's note" }).click();
+    const count = await page.evaluate(async () => {
+      const all = await window.ScratchpadDB.getAll();
+      return all.filter((n) => n.dailyDate).length;
+    });
+    expect(count).toBe(1);
+  });
+
+  test('Daily template note seeds the body; renamed daily note still found', async ({ page }) => {
+    const d = new Date();
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    await seedRawNotes(page, [
+      { id: 'tpl-1', title: 'Daily template', body: '## Agenda\n\n## Log\n' },
+      { id: 'day-old', title: 'Renamed by hand', body: 'existing', dailyDate: key },
+    ]);
+    // Existing daily note wins even though its title was renamed.
+    await page.locator('#today-note').click();
+    await expect(page.locator('#note-title-display')).toHaveText('Renamed by hand');
+    // Erase it, then creation should use the template body.
+    await page.evaluate(() => window.ScratchpadDB.remove('day-old'));
+    await page.reload();
+    await expect(page.locator('#app-shell')).toBeVisible();
+    await page.locator('#today-note').click();
+    const created = await page.evaluate(async () => {
+      const all = await window.ScratchpadDB.getAll();
+      return all.find((n) => n.dailyDate);
+    });
+    expect(created.body).toBe('## Agenda\n\n## Log\n');
+  });
+});
