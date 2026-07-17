@@ -191,6 +191,8 @@
     bulkTagInput: $('bulk-tag-input'),
     bulkApplyTag: $('bulk-apply-tag'),
     pinTemplate: $('tpl-pin-icon'),
+    quickCaptureDialog: $('quick-capture-dialog'),
+    quickCaptureInput: $('quick-capture-input'),
     shareBtn: $('share-btn'),
     shareDialog: $('share-dialog'),
     shareCopy: $('share-copy'),
@@ -2119,6 +2121,45 @@
     return note;
   }
 
+  // -------- Quick capture --------
+  function captureTimestamp() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function appendCaptureLine(body, line) {
+    const trimmed = (body || '').replace(/\s+$/, '');
+    return (trimmed ? trimmed + '\n' : '') + line + '\n';
+  }
+
+  function openQuickCapture() {
+    els.quickCaptureInput.value = '';
+    openDialog(els.quickCaptureDialog);
+    setTimeout(() => els.quickCaptureInput.focus(), 0);
+  }
+
+  async function submitQuickCapture() {
+    const text = els.quickCaptureInput.value.trim();
+    closeDialog(els.quickCaptureDialog);
+    if (!text) return;
+    const line = '- **' + captureTimestamp() + '** ' + text;
+    const target = findDailyNote(todayKey());
+    // Today's note open in this tab's editor: append to the live buffer so
+    // capture can never race the user's own unsaved edits.
+    if (target && state.selectedId === target.id && state.editing) {
+      els.editor.value = appendCaptureLine(els.editor.value, line);
+      els.editor.dispatchEvent(new Event('input', { bubbles: true }));
+      toast("Added to today's draft.");
+      return;
+    }
+    await withBusy('quick-capture', [], 'Capture failed. Your note was not changed.', async () => {
+      const note = target || await createDailyNote();
+      await mutateNoteBody(note.id, (body) => appendCaptureLine(body, line));
+      renderAll();
+      toast("Captured to today's note.");
+    });
+  }
+
   async function openTodayNote() {
     const existing = findDailyNote(todayKey());
     if (existing) {
@@ -2431,6 +2472,13 @@
         meta: 'Daily note — created on first use',
         keywords: 'today daily journal log',
         run: openTodayNote,
+      },
+      {
+        id: 'quick-capture',
+        label: 'Quick capture',
+        meta: "Append a timestamped line to today's note",
+        keywords: 'capture jot inbox quick add',
+        run: openQuickCapture,
       },
       {
         id: 'search-notes',
@@ -3661,6 +3709,12 @@
       renderCommandPaletteList();
     });
     els.commandPaletteInput.addEventListener('keydown', onCommandPaletteKey);
+    els.quickCaptureInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitQuickCapture();
+      }
+    });
 
     window.addEventListener('keydown', onGlobalKey);
     window.addEventListener('resize', debounce(syncMobileView, 100));
