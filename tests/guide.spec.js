@@ -64,6 +64,19 @@ test.describe('user guide page', () => {
     await expect(link).toHaveAttribute('target', '_blank');
   });
 
+  test('guide.html makes no cross-origin requests and ships in the offline shell', async ({ page }) => {
+    const external = [];
+    page.on('request', (req) => {
+      if (new URL(req.url()).origin !== 'http://127.0.0.1:8080') external.push(req.url());
+    });
+    await page.goto('/guide.html', { waitUntil: 'networkidle' });
+    expect(external).toEqual([]);
+    // The service worker's app shell must include the guide so it works offline.
+    const swSource = await page.evaluate(() =>
+      fetch('/public/service-worker.js').then((r) => r.text()));
+    expect(swSource).toContain("'/guide.html'");
+  });
+
   test('theme toggle cycles and persists across reload', async ({ page }) => {
     await page.goto('/guide.html');
     const toggle = page.locator('#theme-toggle');

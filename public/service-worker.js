@@ -9,6 +9,7 @@
     '/',
     '/index.html',
     '/about.html',
+    '/guide.html',
     '/privacy.html',
     '/terms.html',
     '/public/manifest.webmanifest',

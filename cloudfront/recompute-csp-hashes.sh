@@ -7,7 +7,7 @@
 # silently drift.
 #
 # Run this whenever you edit an inline <script> in index.html, about.html,
-# privacy.html, or terms.html. CSP rejects any inline script whose hash is not
+# guide.html, privacy.html, or terms.html. CSP rejects any inline script whose hash is not
 # listed, so a stale hash means the page silently breaks (theme guard fails to
 # fire, etc).
 #
@@ -36,7 +36,7 @@ fi
 
 cd "$REPO_ROOT"
 
-python3 - "${SOURCES[@]}" -- index.html about.html privacy.html terms.html <<'PY'
+python3 - "${SOURCES[@]}" -- index.html about.html guide.html privacy.html terms.html <<'PY'
 import sys, re, hashlib, base64, pathlib
 
 argv = sys.argv[1:]
