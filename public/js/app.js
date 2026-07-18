@@ -3985,6 +3985,13 @@
       syncMobileView();
     });
 
+    els.tagBar.addEventListener('mousedown', (e) => {
+      // When the tag input is open, keep it focused until a neighboring tag
+      // button's click fires. Otherwise Firefox can process the blur timer
+      // between pointer-down and click, collapsing the bar and detaching the
+      // intended target before its action runs.
+      if (!els.tagInput.hidden && e.target.closest('button')) e.preventDefault();
+    });
     els.tagInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
