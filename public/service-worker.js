@@ -29,6 +29,7 @@
     '/public/js/version.js',
     '/public/js/markdown.js',
     '/public/js/zip.js',
+    '/public/js/seed.js',
     '/public/js/app.js',
   ];
   const APP_SHELL_SET = new Set(APP_SHELL);
