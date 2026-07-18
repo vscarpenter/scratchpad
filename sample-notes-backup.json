@@ -1,0 +1,144 @@
+{
+  "app": "scratchpad",
+  "version": "3.1.1",
+  "schemaVersion": 2,
+  "exportedAt": "2026-07-18T15:00:00.000Z",
+  "notes": [
+    {
+      "id": "ab8f17c1-99eb-4375-be7b-9d88bd5f75b1",
+      "title": "Welcome to Scratchpad",
+      "tags": [
+        "getting-started",
+        "welcome"
+      ],
+      "pinned": true,
+      "createdAt": 1783173720000,
+      "updatedAt": 1784313600000,
+      "body": "# Welcome to Scratchpad\n\nThis is a **privacy-first, local-only** notes app. Everything you write lives in *this browser* — no account, no sync, no servers. To prove it, open your browser's network tab: after the page loads, Scratchpad makes **zero** network calls.\n\nThis sample backup is a guided tour. Poke at everything, then clear it and make the app yours.\n\n## Try these first\n\n- [x] Import this backup (you just did)\n- [ ] Click a [[Markdown Guide|wikilink]] to jump between notes\n- [ ] Open [[Project: Trailhead]] and check off a task\n- [ ] Pin or unpin a note to reorder the sidebar\n- [ ] Open the command palette with `Cmd/Ctrl + K`\n- [ ] Export your own backup from the ⋯ menu\n\n## What's in this backup\n\n| Note | Shows off |\n| --- | --- |\n| [[Markdown Guide]] | Every formatting trick |\n| [[Project: Trailhead]] | Task lists, tables, version history |\n| [[Kickoff Meeting]] | Meeting notes + action items |\n| [[Reading List]] | Checklists with links |\n| [[Weeknight Pasta]] | A note you'd actually keep |\n| [[Ideas Parking Lot]] | Backlinks and phantom links |\n\n> Notes that link to each other show up under **Linked from** at the bottom of a note. That's how Scratchpad quietly builds a web of your thinking.\n\nLearn more at [notes.vinny.dev](https://notes.vinny.dev)."
+    },
+    {
+      "id": "1665246b-ae8e-4f72-8819-6dc4a1b64c87",
+      "title": "Markdown Guide",
+      "tags": [
+        "reference",
+        "markdown"
+      ],
+      "pinned": false,
+      "createdAt": 1783174800000,
+      "updatedAt": 1783242720000,
+      "body": "# Markdown Guide\n\nScratchpad renders standard (GitHub-flavored) Markdown, and the output is sanitized — so pasting from anywhere is safe.\n\n## Text styling\n\nWrite **bold**, *italic*, ***both***, ~~strikethrough~~, and `inline code`. Break sections with a horizontal rule:\n\n---\n\n## Lists\n\nNested unordered lists:\n\n- Groceries\n  - Coffee\n  - Oat milk\n- Errands\n  - Post office\n\nOrdered lists:\n\n1. First\n2. Second\n3. Third\n\nTask lists are **interactive** — toggle the boxes right in the rendered note:\n\n- [x] Ship the thing\n- [x] Tell everyone\n- [ ] Rest\n\n## Quotes\n\n> \"The palest ink is better than the best memory.\"\n\n## Code\n\nInline `const x = 42;`, or fenced blocks with a language hint:\n\n```js\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n```\n\n```python\ndef total(items):\n    return sum(i.price for i in items)\n```\n\n## Tables\n\n| Feature | Supported | Notes |\n| --- | :---: | --- |\n| Headings | yes | `#` through `######` |\n| Tables | yes | like this one |\n| Task lists | yes | click to toggle |\n| Wikilinks | yes | `[[Note Title]]` |\n\n## Links\n\n- External links open in a new tab: [Inkwell design system](https://github.com/vscarpenter/inkwell)\n- Internal links use double brackets: [[Welcome to Scratchpad]]\n- And you can alias them: [[Reading List|what I'm reading]]\n\nThat's the whole toolbox. Back to [[Welcome to Scratchpad]]."
+    },
+    {
+      "id": "1200862c-8fed-4772-a7ae-67b97bcaa94f",
+      "title": "Project: Trailhead",
+      "tags": [
+        "project",
+        "work"
+      ],
+      "pinned": true,
+      "createdAt": 1783366200000,
+      "updatedAt": 1784322300000,
+      "body": "# Project: Trailhead\n\nA weekend side project: a trail-finder PWA that works offline. Tracking scope here so it doesn't live only in my head.\n\n**Status:** in progress · **Target:** end of August\n\n## Milestones\n\n- [x] Nail down the idea (see [[Kickoff Meeting]])\n- [x] Sketch the data model\n- [ ] Offline tile caching\n- [ ] Elevation profile chart\n- [ ] Ship a TestFlight build\n\n## Scope\n\n| Feature | Priority | Status |\n| --- | --- | --- |\n| Search trails by name | P0 | done |\n| Offline maps | P0 | building |\n| Save favorites | P1 | todo |\n| Share a route | P2 | someday |\n\n## Open questions\n\n- Which tile provider allows offline caching on the free tier?\n- Do I need accounts, or is local-only enough? (Leaning local-only — see how [[Welcome to Scratchpad]] does it.)\n\n## Notes\n\nReading up on the fundamentals — tracking books in [[Reading List]]."
+    },
+    {
+      "id": "a6256799-96d7-4e86-a4d6-4c3dd37d99ea",
+      "title": "Kickoff Meeting",
+      "tags": [
+        "work",
+        "meetings"
+      ],
+      "pinned": false,
+      "createdAt": 1783353600000,
+      "updatedAt": 1783356300000,
+      "body": "# Kickoff Meeting\n\n**Date:** 2026-07-06 · **Project:** [[Project: Trailhead]]\n\n## Attendees\n\n| Name | Role |\n| --- | --- |\n| Me | Everything |\n| Rubber duck | QA |\n\n## Decisions\n\n- Local-first, no backend for v1\n- PWA over native to start\n- Weekend cadence — ship something small every two weeks\n\n## Action items\n\n- [x] Register the domain\n- [ ] Pick a map tile provider\n- [ ] Draft the data model (moved to [[Project: Trailhead]])\n\n## Parking lot\n\nIdeas that came up but aren't for now live in [[Ideas Parking Lot]]."
+    },
+    {
+      "id": "8be9554f-43fb-4370-83d0-5036a630da72",
+      "title": "Reading List",
+      "tags": [
+        "reading",
+        "personal"
+      ],
+      "pinned": false,
+      "createdAt": 1782645300000,
+      "updatedAt": 1784153400000,
+      "body": "# Reading List\n\nBooks and articles queued up. Checking them off as I go.\n\n## Currently reading\n\n- [ ] *Offline-First Web Development* — halfway through\n- [x] *Designing Data-Intensive Applications* — worth the hype\n\n## Queue\n\n- [ ] *Refactoring* — Fowler\n- [ ] *The Design of Everyday Things*\n- [ ] [MDN: Progressive Web Apps](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)\n\n## Finished this year\n\n- [x] *Atomic Habits*\n- [x] *Deep Work*\n\nFeeding ideas into [[Project: Trailhead]]."
+    },
+    {
+      "id": "612547a9-d3e4-47f6-9c50-f66eb1a14441",
+      "title": "Weeknight Pasta",
+      "tags": [
+        "cooking",
+        "personal"
+      ],
+      "pinned": false,
+      "createdAt": 1781998800000,
+      "updatedAt": 1781998800000,
+      "body": "# Weeknight Pasta\n\nThe 20-minute one. Serves 2.\n\n## Ingredients\n\n| Item | Amount |\n| --- | --- |\n| Spaghetti | 200 g |\n| Garlic | 3 cloves |\n| Olive oil | 3 tbsp |\n| Chili flakes | to taste |\n| Parmesan | a generous handful |\n| Parsley | a small bunch |\n\n## Steps\n\n1. Boil the pasta in well-salted water. Reserve a cup of the water before draining.\n2. Gently warm the sliced garlic and chili in the olive oil — don't let it brown.\n3. Toss the drained pasta in the oil with a splash of pasta water until glossy.\n4. Off the heat, fold in the parmesan and parsley.\n\n> Reserve more pasta water than you think you need. It's the whole trick."
+    },
+    {
+      "id": "25d81395-03c7-48b0-9553-9835e4cdc3ce",
+      "title": "Ideas Parking Lot",
+      "tags": [
+        "ideas"
+      ],
+      "pinned": false,
+      "createdAt": 1783627200000,
+      "updatedAt": 1784208300000,
+      "body": "# Ideas Parking Lot\n\nHalf-formed things. No pressure to do any of them.\n\n- A CLI that turns [[Reading List]] into a yearly stats page\n- Elevation-aware routing for [[Project: Trailhead]]\n- A tiny habit tracker built on daily notes\n- [[Someday Project]] — no note exists yet, so this renders as a *phantom* link. Click it and Scratchpad offers to create the note.\n\nCross-pollinating from the [[Kickoff Meeting]] parking lot."
+    },
+    {
+      "id": "62bf1d23-67e0-4bc0-9033-0c51aefb8077",
+      "title": "Thu, Jul 16, 2026",
+      "tags": [
+        "daily"
+      ],
+      "pinned": false,
+      "dailyDate": "2026-07-16",
+      "createdAt": 1784189100000,
+      "updatedAt": 1784233800000,
+      "body": "## Tasks\n\n- [x] Morning walk\n- [x] Two hours on [[Project: Trailhead]]\n- [ ] Reply to emails\n- [ ] Grocery run — see [[Weeknight Pasta]]\n\n## Notes\n\nGood deep-work block this morning. Offline tile caching is trickier than expected; parked a note about it in [[Ideas Parking Lot]].\n\nFelt scattered after lunch. Tomorrow: start with the hardest thing first."
+    }
+  ],
+  "trashedNotes": [
+    {
+      "id": "f77de3c8-c7df-4ed7-a18f-84c180404a41",
+      "title": "",
+      "tags": [],
+      "pinned": false,
+      "createdAt": 1783936800000,
+      "updatedAt": 1783937040000,
+      "deletedAt": 1784019600000,
+      "body": "# Scratch thoughts\n\nA half-sentence I started and abandoned. It's sitting in the Trash so you can see how restore works — open **Trash** from the ⋯ menu and hit **Restore**."
+    }
+  ],
+  "revisions": [
+    {
+      "id": "dd9ee3ac-c7d1-4c7c-bcf3-77db4f235de8",
+      "noteId": "1200862c-8fed-4772-a7ae-67b97bcaa94f",
+      "title": "Project: Trailhead",
+      "tags": [
+        "project"
+      ],
+      "pinned": false,
+      "createdAt": 1783366200000,
+      "updatedAt": 1783367880000,
+      "savedAt": 1783367880000,
+      "body": "# Project: Trailhead\n\nA weekend side project idea: a trail-finder app. Capturing first thoughts.\n\n## Milestones\n\n- [ ] Nail down the idea\n- [ ] Sketch the data model"
+    },
+    {
+      "id": "205ae934-c0e2-4c4c-8570-d163ba199a4b",
+      "noteId": "1200862c-8fed-4772-a7ae-67b97bcaa94f",
+      "title": "Project: Trailhead",
+      "tags": [
+        "project",
+        "work"
+      ],
+      "pinned": true,
+      "createdAt": 1783366200000,
+      "updatedAt": 1783805400000,
+      "savedAt": 1783805400000,
+      "body": "# Project: Trailhead\n\nA weekend side project: a trail-finder PWA that works offline.\n\n**Status:** planning\n\n## Milestones\n\n- [x] Nail down the idea (see [[Kickoff Meeting]])\n- [ ] Sketch the data model\n- [ ] Offline tile caching"
+    }
+  ]
+}
