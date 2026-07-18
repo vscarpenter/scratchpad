@@ -2,6 +2,24 @@ const { test, expect } = require('@playwright/test');
 const { gotoApp, createAndSaveNote } = require('./helpers');
 
 test.describe('encrypted backups', () => {
+  test('shows and hides both export passphrase fields without losing their values', async ({ page }) => {
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Visible passphrase test', 'Body');
+    await page.locator('#open-about').click();
+    await page.locator('#export-encrypted-btn').click();
+
+    await page.locator('#backup-passphrase').fill('correct horse battery staple');
+    await page.locator('#backup-passphrase-confirm').fill('correct horse battery staple');
+    await page.locator('#backup-passphrase-show').check();
+    await expect(page.locator('#backup-passphrase')).toHaveAttribute('type', 'text');
+    await expect(page.locator('#backup-passphrase-confirm')).toHaveAttribute('type', 'text');
+    await expect(page.locator('#backup-passphrase')).toHaveValue('correct horse battery staple');
+
+    await page.locator('#backup-passphrase-show').uncheck();
+    await expect(page.locator('#backup-passphrase')).toHaveAttribute('type', 'password');
+    await expect(page.locator('#backup-passphrase-confirm')).toHaveAttribute('type', 'password');
+  });
+
   test('exports and restores a passphrase-protected backup locally', async ({ page }) => {
     test.slow();
     await gotoApp(page);

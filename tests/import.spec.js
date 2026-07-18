@@ -15,6 +15,25 @@ const validNote = {
 };
 
 test.describe('import — validation and conflicts', () => {
+  test('opens the system file chooser from the About import action', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator('#open-about').click();
+    const chooserPromise = page.waitForEvent('filechooser');
+    await page.locator('#import-btn').click();
+    const chooser = await chooserPromise;
+    await chooser.setFiles({
+      name: 'about-import.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify([
+        { id: 'about-imported', title: 'About import', body: 'Imported from About.' },
+      ])),
+    });
+
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('.note-row[data-id="about-imported"]')).toBeVisible();
+  });
+
   test('previews rejected notes and revisions without importing invalid entries', async ({ page }) => {
     await gotoApp(page);
 
