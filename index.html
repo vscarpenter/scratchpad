@@ -564,11 +564,25 @@
         placeholder="Search commands or notes..."
         autocomplete="off"
         spellcheck="false"
-        aria-label="Search commands"
+        role="combobox"
+        aria-label="Search commands and notes"
+        aria-autocomplete="list"
+        aria-expanded="false"
         aria-controls="command-palette-list"
+        aria-describedby="command-palette-instructions"
       />
-      <div id="command-palette-list" class="command-palette-list" role="listbox" aria-label="Commands"></div>
-      <p id="command-palette-empty" class="muted-copy" hidden>No commands found.</p>
+      <p id="command-palette-instructions" class="visually-hidden">
+        Type to filter. Use the Up and Down arrow keys to choose a result, then press Enter.
+      </p>
+      <div id="command-palette-list" class="command-palette-list" role="listbox" aria-label="Commands and notes"></div>
+      <p id="command-palette-empty" class="muted-copy" hidden>No commands or notes found.</p>
+      <p
+        id="command-palette-status"
+        class="visually-hidden"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      ></p>
     </div>
   </dialog>
 

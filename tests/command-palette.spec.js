@@ -42,20 +42,31 @@ test.describe('command palette', () => {
     ]);
 
     await page.locator('#command-palette-btn').click();
-    await page.locator('#command-palette-input').fill('zqx');
+    const input = page.locator('#command-palette-input');
+    await input.fill('zqx');
+    await expect(input).toHaveAttribute('role', 'combobox');
+    await expect(input).toHaveAttribute('aria-autocomplete', 'list');
+    await expect(input).toHaveAttribute('aria-expanded', 'true');
+    await expect(input).toBeFocused();
     await expect(page.locator('#command-palette-list [role="option"]')).toHaveCount(3);
     await expect(page.locator('#command-palette-list [role="option"]').first()).toHaveClass(/is-active/);
+    const firstOptionId = await page.locator('#command-palette-list [role="option"]').first().getAttribute('id');
+    await expect(input).toHaveAttribute('aria-activedescendant', firstOptionId);
+    await expect(page.locator('#command-palette-list button[role="option"]')).toHaveCount(0);
 
     // Clamp at the top: ArrowUp from the first item stays on the first item.
-    await page.locator('#command-palette-input').press('ArrowUp');
+    await input.press('ArrowUp');
     await expect(page.locator('#command-palette-list [role="option"]').first()).toHaveClass(/is-active/);
 
-    await page.locator('#command-palette-input').press('ArrowDown');
-    await page.locator('#command-palette-input').press('ArrowDown');
+    await input.press('ArrowDown');
+    await input.press('ArrowDown');
     await expect(page.locator('#command-palette-list [role="option"]').nth(2)).toHaveClass(/is-active/);
+    const lastOptionId = await page.locator('#command-palette-list [role="option"]').nth(2).getAttribute('id');
+    await expect(input).toHaveAttribute('aria-activedescendant', lastOptionId);
+    await expect(input).toBeFocused();
 
     // Clamp at the bottom: one more ArrowDown keeps the last item active.
-    await page.locator('#command-palette-input').press('ArrowDown');
+    await input.press('ArrowDown');
     await expect(page.locator('#command-palette-list [role="option"]').nth(2)).toHaveClass(/is-active/);
 
     // Notes are ordered most-recently-updated first, so the seeded list
@@ -74,5 +85,26 @@ test.describe('command palette', () => {
 
     await expect(page.locator('#command-palette-empty')).toBeVisible();
     await expect(page.locator('#command-palette-list [role="option"]')).toHaveCount(0);
+    await expect(page.locator('#command-palette-input')).not.toHaveAttribute('aria-activedescendant', /.+/);
+    await expect(page.locator('#command-palette-status')).toHaveText('No commands or notes found.');
+  });
+
+  test('Escape closes only the palette while a note has unsaved edits', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'palette-dirty', title: 'Dirty note', body: 'Saved body.' },
+    ]);
+    await page.locator('#edit-btn').click();
+    await page.locator('#note-editor').fill('Unsaved body.');
+
+    await page.locator('#command-palette-btn').click();
+    const input = page.locator('#command-palette-input');
+    await expect(input).toHaveAttribute('aria-expanded', 'true');
+    await input.press('Escape');
+
+    await expect(page.locator('#command-palette-dialog')).toBeHidden();
+    await expect(input).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#note-editor')).toBeVisible();
+    await expect(page.locator('#note-editor')).toHaveValue('Unsaved body.');
+    await expect(page.locator('#discard-dialog')).toBeHidden();
   });
 });

@@ -503,9 +503,32 @@ body:not(.page-privacy) .theme-toggle:hover {
   transition: background var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease;
 }
 .note-row:hover { background: var(--row-hover); }
-.note-row:focus-visible {
+
+.note-row-open {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.note-row-open:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+.note-row:not(.is-bulk) > :not(.note-row-open) {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.note-row:not(.is-bulk) .note-row-tag {
+  pointer-events: auto;
 }
 
 .note-row.is-active {
@@ -630,6 +653,15 @@ body:not(.page-privacy) .theme-toggle:hover {
 }
 .note-row-tag::before { content: none; }
 .note-row-tag:hover { background: var(--accent-soft-2); }
+.note-row-tag:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.note-row-tag.is-static {
+  pointer-events: none;
+  cursor: default;
+}
+.note-row-tag.is-static:hover { background: var(--accent-soft); }
 
 .search-hit {
   background: var(--accent-soft);

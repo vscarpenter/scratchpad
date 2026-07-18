@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 const { gotoApp, importJson, seedRawNotes } = require('./helpers');
+const { stat } = require('node:fs/promises');
 
 const validNote = {
   id: 'import-valid',
@@ -127,11 +128,104 @@ test.describe('import — validation and conflicts', () => {
     await expect(page.locator('#import-preview-dialog')).toBeHidden();
   });
 
-  test('rejects a backup file over the 2 MB size limit', async ({ page }) => {
+  test('round-trips a native backup larger than the generic import limits', async ({ page }) => {
+    test.slow();
+    await gotoApp(page);
+    const oversizedBody = 'x'.repeat(2 * 1024 * 1024 + 1);
+    const oversizedTitle = 'T'.repeat(241);
+    const oversizedTags = Array.from({ length: 21 }, (_, index) =>
+      index === 20 ? 'tag-' + 'z'.repeat(49) : `tag-${index}`
+    );
+    await page.evaluate(async ({ body, title, tags }) => {
+      const timestamp = Date.now();
+      await window.ScratchpadDB.put({
+        id: 'native-large-note',
+        title,
+        body,
+        tags,
+        pinned: false,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        deletedAt: null,
+        lastDraftAt: null,
+      });
+      await window.ScratchpadDB.putRevision({
+        id: 'native-large-revision',
+        noteId: 'native-large-note',
+        title,
+        body: body.slice(0, 200001),
+        tags,
+        pinned: false,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        savedAt: timestamp,
+        deletedAt: null,
+      });
+    }, { body: oversizedBody, title: oversizedTitle, tags: oversizedTags });
+
+    await page.locator('#open-about').click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#export-btn').click();
+    const path = await (await downloadPromise).path();
+    expect((await stat(path)).size).toBeGreaterThan(2 * 1024 * 1024);
+
+    await page.evaluate(() => window.ScratchpadDB.clearAllStores());
+    await page.reload();
+    await page.setInputFiles('#import-file', path);
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await expect(page.locator('#import-preview-counts dd').nth(2)).toHaveText('0');
+    await expect(page.locator('#import-preview-counts dd').nth(4)).toHaveText('0');
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('#import-preview-dialog')).toBeHidden();
+
+    const restored = await page.evaluate(async () => ({
+      notes: await window.ScratchpadDB.getAll(),
+      revisions: await window.ScratchpadDB.getAllRevisions(),
+    }));
+    expect(restored.notes).toHaveLength(1);
+    expect(restored.notes[0].title).toHaveLength(241);
+    expect(restored.notes[0].body).toHaveLength(2 * 1024 * 1024 + 1);
+    expect(restored.notes[0].tags).toHaveLength(21);
+    expect(restored.revisions).toHaveLength(1);
+    expect(restored.revisions[0].body).toHaveLength(200001);
+  });
+
+  test('does not truncate native backups at the generic record-count limits', async ({ page }) => {
+    test.slow();
+    await gotoApp(page);
+    const notes = Array.from({ length: 1001 }, (_, index) => ({
+      id: `native-note-${index}`,
+      title: `Native note ${index}`,
+      body: '',
+    }));
+    const revisions = Array.from({ length: 5001 }, (_, index) => ({
+      id: `native-revision-${index}`,
+      noteId: `native-note-${index % notes.length}`,
+      title: '',
+      body: `Revision ${index}`,
+      savedAt: 1710000000000 + index,
+    }));
+    await importJson(page, {
+      app: 'scratchpad',
+      schemaVersion: 2,
+      notes,
+      trashedNotes: [],
+      revisions,
+    });
+
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    const counts = page.locator('#import-preview-counts dd');
+    await expect(counts.nth(0)).toHaveText('1001');
+    await expect(counts.nth(2)).toHaveText('0');
+    await expect(counts.nth(3)).toHaveText('5001');
+    await expect(counts.nth(4)).toHaveText('0');
+  });
+
+  test('keeps the generic JSON size limit for non-backup imports', async ({ page }) => {
     await gotoApp(page);
     const oversized = { notes: [{ ...validNote, body: 'x'.repeat(3 * 1024 * 1024) }] };
     await page.setInputFiles('#import-file', {
-      name: 'oversized.json',
+      name: 'oversized-generic.json',
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(oversized)),
     });
@@ -147,20 +241,49 @@ test.describe('import — validation and conflicts', () => {
 
     await page.evaluate(() => {
       const db = /** @type {any} */ (window.ScratchpadDB);
-      const originalBulkPut = db.bulkPut.bind(db);
+      const originalImportRecords = db.importRecords.bind(db);
       /** @type {undefined | (() => void)} */
       let release;
-      db.bulkPut = (notes) => new Promise((resolve, reject) => {
-        release = () => originalBulkPut(notes).then(resolve, reject);
+      db.importRecords = (notes, revisions, revisionLimit) => new Promise((resolve, reject) => {
+        release = () => originalImportRecords(notes, revisions, revisionLimit).then(resolve, reject);
       });
-      /** @type {any} */ (window).__releaseImportBulkPut = () => release && release();
+      /** @type {any} */ (window).__releaseImportRecords = () => release && release();
     });
 
     await page.locator('#confirm-import').click();
     await expect(page.locator('#confirm-import')).toBeDisabled();
 
-    await page.evaluate(() => /** @type {any} */ (window).__releaseImportBulkPut());
+    await page.evaluate(() => /** @type {any} */ (window).__releaseImportRecords());
     await expect(page.locator('#import-preview-dialog')).toBeHidden();
     await expect(page.locator('.note-row')).toHaveCount(1);
+  });
+
+  test('rolls back note writes when a revision write fails', async ({ page }) => {
+    await gotoApp(page);
+    await importJson(page, { notes: [{ ...validNote, id: 'atomic-import-note' }] });
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+
+    await page.evaluate(() => {
+      const db = /** @type {any} */ (window.ScratchpadDB);
+      const originalImportRecords = db.importRecords.bind(db);
+      db.importRecords = (notes, _revisions, revisionLimit) => originalImportRecords(notes, [{
+        id: 'uncloneable-revision',
+        noteId: notes[0].id,
+        title: 'Cannot clone',
+        body: () => 'functions cannot be stored in IndexedDB',
+        savedAt: Date.now(),
+      }], revisionLimit);
+    });
+
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('.toast.is-error')).toContainText('No notes were changed');
+    await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await expect(page.locator('#confirm-import')).toBeEnabled();
+    const stored = await page.evaluate(async () => ({
+      notes: await window.ScratchpadDB.getAll(),
+      revisions: await window.ScratchpadDB.getAllRevisions(),
+    }));
+    expect(stored.notes).toEqual([]);
+    expect(stored.revisions).toEqual([]);
   });
 });
