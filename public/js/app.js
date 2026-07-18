@@ -4178,12 +4178,13 @@
   }
 
   // -------- Boot --------
-  // First run: send a brand-new visitor to the About page exactly once —
-  // only when they've never visited (no flag) AND have no notes yet. Existing
-  // users who predate the flag keep their place (they have notes); a returning
-  // user who cleared all their notes also stays (their flag survives). Clearing
-  // site data wipes both flag and notes, so it reads as a fresh first run.
-  // Fails open if localStorage is blocked so the app can never get stuck here.
+  // First run: seed a few starter notes, then send a brand-new visitor to the
+  // About page exactly once — only when they've never visited (no flag) AND have
+  // no notes yet. Existing users who predate the flag keep their place (they have
+  // notes); a returning user who cleared all their notes also stays (their flag
+  // survives), so seeding never recurs. Clearing site data wipes both flag and
+  // notes, so it reads as a fresh first run. Fails open if localStorage is blocked
+  // so the app can never get stuck here; a seeding error still lets boot proceed.
   async function maybeRedirectFirstRun() {
     let visited;
     try {
@@ -4204,6 +4205,13 @@
       return false;
     }
     if (count === 0) {
+      try {
+        if (window.ScratchpadSeed) {
+          await DB.bulkPut(window.ScratchpadSeed.buildFirstRunNotes(now()));
+        }
+      } catch (e) {
+        console.error('First-run seeding failed', e); // fail open — still redirect
+      }
       window.location.replace('about.html');
       return true;
     }
