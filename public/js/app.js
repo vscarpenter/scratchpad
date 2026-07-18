@@ -1964,6 +1964,7 @@
     const wasDirty = state.dirty;
     state.dirty = true;
     els.dirtyIndicator.hidden = false;
+    els.discardOverflowBtn.hidden = false;
     if (wasDirty) persistDraftDebounced();
     else persistDraftNow();
   }
@@ -2517,19 +2518,32 @@
   function confirmDiscard() {
     return new Promise((resolve) => {
       openDialog(els.discardDialog);
-      let decided = false;
-      const onConfirm = () => {
-        decided = true;
-        closeDialog(els.discardDialog);
-        resolve(true);
-      };
-      const onClose = () => {
-        if (decided) return;
+      let settled = false;
+      const dismissButtons = Array.from(els.discardDialog.querySelectorAll('[data-dialog-close]'));
+      const cleanup = () => {
         els.confirmDiscard.removeEventListener('click', onConfirm);
-        resolve(false);
+        els.discardDialog.removeEventListener('cancel', onDismiss);
+        els.discardDialog.removeEventListener('close', onClose);
+        for (const button of dismissButtons) button.removeEventListener('click', onDismiss);
       };
-      els.confirmDiscard.addEventListener('click', onConfirm, { once: true });
-      els.discardDialog.addEventListener('close', onClose, { once: true });
+      const finish = (discard, close) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (close) closeDialog(els.discardDialog);
+        resolve(discard);
+      };
+      const onConfirm = () => finish(true, true);
+      const onDismiss = () => finish(false, false);
+      const onClose = () => {
+        // A native close event is queued. If the dialog has already reopened,
+        // this event belongs to the previous confirmation and must be ignored.
+        if (!els.discardDialog.open) finish(false, false);
+      };
+      els.confirmDiscard.addEventListener('click', onConfirm);
+      els.discardDialog.addEventListener('cancel', onDismiss);
+      els.discardDialog.addEventListener('close', onClose);
+      for (const button of dismissButtons) button.addEventListener('click', onDismiss);
     });
   }
 
