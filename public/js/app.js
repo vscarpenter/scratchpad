@@ -191,6 +191,7 @@
     commandPaletteInput: $('command-palette-input'),
     commandPaletteList: $('command-palette-list'),
     commandPaletteEmpty: $('command-palette-empty'),
+    commandPaletteStatus: $('command-palette-status'),
     bulkTagDialog: $('bulk-tag-dialog'),
     bulkTagInput: $('bulk-tag-input'),
     bulkApplyTag: $('bulk-apply-tag'),
@@ -907,59 +908,89 @@
     const pinned = !!(note.pinned && !trashed);
     const time = trashed ? note.deletedAt : note.updatedAt;
     const excerpt = noteExcerpt(note);
+    const title = deriveTitle(note);
 
     const children = [
-      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64), 'title') }),
+      el('span', {
+        class: 'note-row-title',
+        attrs: { 'aria-hidden': 'true' },
+        children: highlightedChildren(truncate(title, 64), 'title'),
+      }),
     ];
 
     if (pinned) {
       const pinCorner = el('span', {
         class: 'note-row-pin-corner',
-        attrs: { 'aria-label': 'Pinned' },
+        attrs: { 'aria-hidden': 'true' },
       });
       pinCorner.appendChild(clonePinIcon());
       children.push(pinCorner);
     } else {
-      children.push(el('span', { class: 'note-row-when', text: formatRelativeDay(time) }));
+      children.push(el('span', {
+        class: 'note-row-when',
+        text: formatRelativeDay(time),
+        attrs: { 'aria-hidden': 'true' },
+      }));
     }
 
     if (excerpt) {
-      children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
+      children.push(el('span', {
+        class: 'note-row-excerpt',
+        attrs: { 'aria-hidden': 'true' },
+        children: highlightedChildren(excerpt, 'body'),
+      }));
     }
 
     if (pinned) {
-      children.push(el('span', { class: 'note-row-when', text: formatRelativeDay(time) }));
+      children.push(el('span', {
+        class: 'note-row-when',
+        text: formatRelativeDay(time),
+        attrs: { 'aria-hidden': 'true' },
+      }));
     }
 
     if (note.tags && note.tags.length) {
-      const tagButtons = note.tags.slice(0, 4).map((t) =>
-        el('button', {
-          class: 'note-row-tag',
-          attrs: { type: 'button', 'data-tag': t },
-          children: highlightedChildren(t, 'tags'),
+      const tagNodes = note.tags.slice(0, 4).map((tag) => trashed
+        ? el('span', {
+          class: 'note-row-tag is-static',
+          text: tag,
         })
-      );
-      children.push(el('span', { class: 'note-row-tags', children: tagButtons }));
+        : el('button', {
+          class: 'note-row-tag',
+          attrs: {
+            type: 'button',
+            'data-tag': tag,
+            'aria-label': 'Filter notes by tag ' + tag,
+          },
+          children: highlightedChildren(tag, 'tags'),
+          on: { click: () => setTagFilter(tag) },
+        }));
+      children.push(el('span', {
+        class: 'note-row-tags',
+        attrs: trashed
+          ? { 'aria-hidden': 'true' }
+          : { role: 'group', 'aria-label': 'Tags for ' + title },
+        children: tagNodes,
+      }));
     }
 
-    return el('button', {
+    const openButton = el('button', {
+      class: 'note-row-open',
+      attrs: {
+        type: 'button',
+        'aria-label': 'Open ' + title,
+        'aria-current': note.id === state.selectedId ? 'true' : null,
+      },
+      on: { click: () => selectNote(note.id) },
+    });
+
+    return el('div', {
       class: 'note-row' +
         (note.id === state.selectedId ? ' is-active' : '') +
         (trashed ? ' is-trashed' : '') +
         (pinned ? ' is-pinned' : ''),
-      attrs: { type: 'button', 'data-id': note.id },
-      children,
-      on: {
-        click: (e) => {
-          const tagBtn = e.target.closest('.note-row-tag');
-          if (tagBtn && state.view !== 'trash') {
-            e.stopPropagation();
-            setTagFilter(tagBtn.dataset.tag);
-            return;
-          }
-          selectNote(note.id);
-        },
-      },
+      attrs: { 'data-id': note.id },
+      children: [openButton, ...children],
     });
   }
 
@@ -1273,6 +1304,7 @@
   function ensureSelectionForView() {
     const visible = filteredNotes();
     const hasFilter = !!(state.search || state.tagFilter);
+    if (state.editing && state.dirty && selectedNoteIsInView()) return;
     if (selectedNoteIsInView() && (!hasFilter || visible.some((n) => n.id === state.selectedId))) return;
     const pinned = sortNotes(visible.filter((n) => n.pinned && !isTrashed(n)));
     const others = sortNotes(visible.filter((n) => !n.pinned || isTrashed(n)));
@@ -1997,6 +2029,10 @@
   }
 
   function closeDialog(dialog) {
+    if (dialog === els.commandPaletteDialog) {
+      els.commandPaletteInput.setAttribute('aria-expanded', 'false');
+      els.commandPaletteInput.removeAttribute('aria-activedescendant');
+    }
     if (typeof dialog.close === 'function') dialog.close();
     else dialog.removeAttribute('open');
   }
@@ -2856,27 +2892,65 @@
   function renderCommandPaletteList() {
     const items = filteredCommandItems();
     state.commandItems = items;
-    if (state.commandIndex >= items.length) state.commandIndex = Math.max(0, items.length - 1);
-    const rows = items.map((item, index) => el('button', {
+    if (!items.length) state.commandIndex = -1;
+    else if (state.commandIndex < 0 || state.commandIndex >= items.length) {
+      state.commandIndex = Math.max(0, items.length - 1);
+    }
+    const rows = items.map((item, index) => el('div', {
       class: 'command-palette-item' + (index === state.commandIndex ? ' is-active' : ''),
       attrs: {
-        type: 'button',
+        id: 'command-palette-option-' + index,
         role: 'option',
+        tabindex: '-1',
         'aria-selected': index === state.commandIndex ? 'true' : 'false',
       },
       children: [
         el('span', { class: 'command-palette-label', text: item.label }),
         el('span', { class: 'command-palette-meta', text: item.meta }),
       ],
-      on: { click: () => runCommandAt(index) },
+      on: {
+        click: () => runCommandAt(index),
+        mouseenter: () => setCommandPaletteIndex(index, false),
+        mousedown: (event) => event.preventDefault(),
+      },
     }));
     els.commandPaletteList.replaceChildren(...rows);
     els.commandPaletteEmpty.hidden = items.length > 0;
+    els.commandPaletteStatus.textContent = items.length
+      ? `${items.length} result${items.length === 1 ? '' : 's'} available.`
+      : 'No commands or notes found.';
+    syncCommandPaletteSelection(false);
+  }
+
+  function syncCommandPaletteSelection(scroll) {
+    const options = Array.from(els.commandPaletteList.querySelectorAll('[role="option"]'));
+    for (let index = 0; index < options.length; index += 1) {
+      const active = index === state.commandIndex;
+      options[index].classList.toggle('is-active', active);
+      options[index].setAttribute('aria-selected', active ? 'true' : 'false');
+    }
+    const active = options[state.commandIndex];
+    if (!active) {
+      els.commandPaletteInput.removeAttribute('aria-activedescendant');
+      return;
+    }
+    els.commandPaletteInput.setAttribute('aria-activedescendant', active.id);
+    if (scroll) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  function setCommandPaletteIndex(index, scroll) {
+    if (!state.commandItems.length) {
+      state.commandIndex = -1;
+    } else {
+      state.commandIndex = Math.max(0, Math.min(index, state.commandItems.length - 1));
+    }
+    syncCommandPaletteSelection(scroll);
   }
 
   function openCommandPalette() {
     state.commandIndex = 0;
     els.commandPaletteInput.value = '';
+    els.commandPaletteInput.setAttribute('aria-expanded', 'true');
     renderCommandPaletteList();
     openDialog(els.commandPaletteDialog);
     setTimeout(() => els.commandPaletteInput.focus(), 0);
@@ -2893,17 +2967,16 @@
   function onCommandPaletteKey(e) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      state.commandIndex = Math.min(state.commandItems.length - 1, state.commandIndex + 1);
-      renderCommandPaletteList();
+      setCommandPaletteIndex(state.commandIndex + 1, true);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      state.commandIndex = Math.max(0, state.commandIndex - 1);
-      renderCommandPaletteList();
+      setCommandPaletteIndex(state.commandIndex - 1, true);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       runCommandAt(state.commandIndex);
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
       closeDialog(els.commandPaletteDialog);
     }
   }
@@ -2979,7 +3052,10 @@
 
   async function buildBackupPayload() {
     const notes = (await DB.getAll()).map(normalizeNote);
-    const revisions = (await DB.getAllRevisions()).map((rev) => normalizeRevision(rev, rev.noteId)).filter(Boolean);
+    const noteIds = new Set(notes.map((note) => note.id));
+    const revisions = (await DB.getAllRevisions())
+      .map((rev) => normalizeRevision(rev, rev.noteId))
+      .filter((rev) => rev && noteIds.has(rev.noteId));
     return {
       app: 'scratchpad',
       version: window.SCRATCHPAD_VERSION || 'unknown',
@@ -3048,6 +3124,16 @@
 
   function isEncryptedBackup(data) {
     return !!data && data.format === ENCRYPTED_BACKUP_FORMAT && data.version === ENCRYPTED_BACKUP_VERSION;
+  }
+
+  function isNativeBackup(data) {
+    return !!data &&
+      !Array.isArray(data) &&
+      data.app === 'scratchpad' &&
+      data.schemaVersion === 2 &&
+      Array.isArray(data.notes) &&
+      Array.isArray(data.trashedNotes) &&
+      Array.isArray(data.revisions);
   }
 
   async function decryptBackupEnvelope(envelope, passphrase) {
@@ -3218,33 +3304,33 @@
     return label + ': ' + reason;
   }
 
-  function validateTags(rawTags, errors) {
+  function validateTags(rawTags, errors, preserveNativeLengths) {
     if (rawTags == null) return;
     if (!Array.isArray(rawTags)) {
       errors.push('tags must be an array');
       return;
     }
-    if (rawTags.length > NOTE_TAGS_MAX) errors.push('too many tags');
+    if (!preserveNativeLengths && rawTags.length > NOTE_TAGS_MAX) errors.push('too many tags');
     for (const tag of rawTags) {
       if (typeof tag !== 'string') {
         errors.push('tags must be text');
         continue;
       }
       const normalized = normalizeTag(tag);
-      if (normalized.length > NOTE_TAG_MAX) errors.push('tag is too long');
+      if (!preserveNativeLengths && normalized.length > NOTE_TAG_MAX) errors.push('tag is too long');
     }
   }
 
-  function validateImportText(raw, key, max, errors) {
+  function validateImportText(raw, key, max, errors, preserveNativeLengths) {
     if (raw[key] == null) return;
     if (typeof raw[key] !== 'string') {
       errors.push(key + ' must be text');
       return;
     }
-    if (raw[key].length > max) errors.push(key + ' is too long');
+    if (!preserveNativeLengths && raw[key].length > max) errors.push(key + ' is too long');
   }
 
-  function validateImportNote(raw, index) {
+  function validateImportNote(raw, index, preserveNativeLengths) {
     const label = 'Note ' + (index + 1);
     const errors = [];
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -3254,14 +3340,14 @@
     if (typeof raw.title !== 'string' && typeof raw.body !== 'string') {
       errors.push('title or body is required');
     }
-    validateImportText(raw, 'title', NOTE_TITLE_MAX, errors);
-    validateImportText(raw, 'body', NOTE_BODY_MAX, errors);
-    validateTags(raw.tags, errors);
+    validateImportText(raw, 'title', NOTE_TITLE_MAX, errors, preserveNativeLengths);
+    validateImportText(raw, 'body', NOTE_BODY_MAX, errors, preserveNativeLengths);
+    validateTags(raw.tags, errors, preserveNativeLengths);
     if (errors.length) return { error: importError(label, errors[0]) };
     return { note: normalizeNote(raw) };
   }
 
-  function validateImportRevision(raw, index, validNoteIds) {
+  function validateImportRevision(raw, index, validNoteIds, preserveNativeLengths) {
     const label = 'Revision ' + (index + 1);
     const errors = [];
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -3269,9 +3355,9 @@
     }
     if (typeof raw.noteId !== 'string' || !raw.noteId) errors.push('noteId is required');
     else if (!validNoteIds.has(raw.noteId)) errors.push('noteId does not match an imported note');
-    validateImportText(raw, 'title', NOTE_TITLE_MAX, errors);
-    validateImportText(raw, 'body', NOTE_BODY_MAX, errors);
-    validateTags(raw.tags, errors);
+    validateImportText(raw, 'title', NOTE_TITLE_MAX, errors, preserveNativeLengths);
+    validateImportText(raw, 'body', NOTE_BODY_MAX, errors, preserveNativeLengths);
+    validateTags(raw.tags, errors, preserveNativeLengths);
     if (errors.length) return { error: importError(label, errors[0]) };
     return { revision: normalizeRevision(raw, raw.noteId) };
   }
@@ -3361,14 +3447,18 @@
       toast('Choose one JSON or encrypted backup at a time.', { tone: 'error' });
       return;
     }
-    if (selected.some((file) => file.size > IMPORT_MAX_FILE_BYTES)) {
-      toast('Import failed: backup files must be 2 MB or smaller.', { tone: 'error' });
-      return;
-    }
     if (markdown.length) {
+      if (markdown.length > IMPORT_MAX_NOTES) {
+        toast(`Import failed: choose no more than ${IMPORT_MAX_NOTES} Markdown files at a time.`, { tone: 'error' });
+        return;
+      }
+      if (markdown.some((file) => file.size > IMPORT_MAX_FILE_BYTES)) {
+        toast('Import failed: Markdown files must be 2 MB or smaller.', { tone: 'error' });
+        return;
+      }
       const notes = [];
       try {
-        for (const file of markdown.slice(0, IMPORT_MAX_NOTES)) notes.push(parseMarkdownNote(await file.text()));
+        for (const file of markdown) notes.push(parseMarkdownNote(await file.text()));
       } catch (e) {
         console.error('Markdown import read failed', e);
         toast('Import failed: Scratchpad could not read those Markdown files.', { tone: 'error' });
@@ -3397,6 +3487,10 @@
       openEncryptedImportDialog(data);
       return;
     }
+    if (file.size > IMPORT_MAX_FILE_BYTES && !isNativeBackup(data)) {
+      toast('Import failed: backup files must be 2 MB or smaller.', { tone: 'error' });
+      return;
+    }
     presentImportData(data);
   }
 
@@ -3418,6 +3512,7 @@
         rejectedNotes: [importError('File', 'top-level JSON must be an object or array')],
       };
     }
+    const nativeBackup = isNativeBackup(data);
     let rawNotes = Array.isArray(data)
       ? data
       : []
@@ -3427,14 +3522,14 @@
     const seenIds = new Set();
     const notes = [];
     const rejectedNotes = [];
-    if (rawNotes.length > IMPORT_MAX_NOTES) {
+    if (!nativeBackup && rawNotes.length > IMPORT_MAX_NOTES) {
       for (let i = IMPORT_MAX_NOTES; i < rawNotes.length; i += 1) {
         rejectedNotes.push(importError('Note ' + (i + 1), 'import limit exceeded'));
       }
       rawNotes = rawNotes.slice(0, IMPORT_MAX_NOTES);
     }
     for (let i = 0; i < rawNotes.length; i += 1) {
-      const result = validateImportNote(rawNotes[i], i);
+      const result = validateImportNote(rawNotes[i], i, nativeBackup);
       if (result.error) {
         rejectedNotes.push(result.error);
         continue;
@@ -3450,14 +3545,14 @@
     const validNoteIds = new Set(notes.map((note) => note.id));
     const revisions = [];
     const rejectedRevisions = [];
-    if (rawRevisions.length > IMPORT_MAX_REVISIONS) {
+    if (!nativeBackup && rawRevisions.length > IMPORT_MAX_REVISIONS) {
       for (let i = IMPORT_MAX_REVISIONS; i < rawRevisions.length; i += 1) {
         rejectedRevisions.push(importError('Revision ' + (i + 1), 'import limit exceeded'));
       }
       rawRevisions = rawRevisions.slice(0, IMPORT_MAX_REVISIONS);
     }
     for (let i = 0; i < rawRevisions.length; i += 1) {
-      const result = validateImportRevision(rawRevisions[i], i, validNoteIds);
+      const result = validateImportRevision(rawRevisions[i], i, validNoteIds, nativeBackup);
       if (result.error) {
         rejectedRevisions.push(result.error);
         continue;
@@ -3533,10 +3628,13 @@
       const revisionsToImport = preview.revisions
         .filter((rev) => idMap.has(rev.noteId))
         .map((rev) => ({ ...rev, id: uuid(), noteId: idMap.get(rev.noteId) }));
-      if (notesToImport.length) await bulkPutNoteRecords(notesToImport);
-      if (revisionsToImport.length) await DB.bulkPutRevisions(revisionsToImport);
-      for (const noteId of new Set(revisionsToImport.map((rev) => rev.noteId))) {
-        await DB.pruneRevisions(noteId, REVISION_LIMIT);
+      await DB.importRecords(notesToImport, revisionsToImport, REVISION_LIMIT);
+      for (const note of notesToImport) {
+        broadcastChange({
+          type: 'note-changed',
+          noteId: note.id,
+          updatedAt: note.updatedAt,
+        });
       }
       state.importPreview = null;
       closeDialog(els.importPreviewDialog);
@@ -3984,6 +4082,10 @@
       renderCommandPaletteList();
     });
     els.commandPaletteInput.addEventListener('keydown', onCommandPaletteKey);
+    els.commandPaletteDialog.addEventListener('close', () => {
+      els.commandPaletteInput.setAttribute('aria-expanded', 'false');
+      els.commandPaletteInput.removeAttribute('aria-activedescendant');
+    });
     els.quickCaptureInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();

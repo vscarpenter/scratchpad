@@ -162,6 +162,56 @@
     });
   }
 
+  async function importRecords(notes, revisions, revisionLimit) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      let failure = null;
+      let t;
+      try {
+        t = db.transaction([STORES.notes, STORES.revisions], 'readwrite');
+      } catch (error) {
+        reject(error);
+        return;
+      }
+      const abortWith = (error) => {
+        if (!failure) failure = error;
+        try {
+          t.abort();
+        } catch (abortError) {
+          reject(failure || abortError);
+        }
+      };
+      t.oncomplete = () => resolve();
+      t.onerror = () => {
+        if (!failure && t.error) failure = t.error;
+      };
+      t.onabort = () => reject(failure || t.error || new Error('IndexedDB import aborted'));
+
+      try {
+        const noteStore = t.objectStore(STORES.notes);
+        const revisionStore = t.objectStore(STORES.revisions);
+        for (const note of notes) noteStore.put(note);
+        for (const revision of revisions) revisionStore.put(revision);
+
+        const keep = Math.max(0, Number.isFinite(revisionLimit) ? revisionLimit : 0);
+        const noteIds = new Set(revisions.map((revision) => revision.noteId));
+        for (const noteId of noteIds) {
+          const request = revisionStore.index('noteId').getAll(noteId);
+          request.onsuccess = () => {
+            try {
+              const rows = (request.result || []).sort((a, b) => b.savedAt - a.savedAt);
+              for (const revision of rows.slice(keep)) revisionStore.delete(revision.id);
+            } catch (error) {
+              abortWith(error);
+            }
+          };
+        }
+      } catch (error) {
+        abortWith(error);
+      }
+    });
+  }
+
   async function deleteNoteEverywhere(noteId) {
     const db = await open();
     return new Promise((resolve, reject) => {
@@ -208,6 +258,7 @@
     pruneRevisions,
     getAllRevisions,
     bulkPutRevisions,
+    importRecords,
     deleteNoteEverywhere,
     clearAllStores,
   };
