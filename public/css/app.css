@@ -635,6 +635,12 @@ body:not(.page-privacy) .theme-toggle:hover {
   gap: 6px;
 }
 
+.trash-retention-note {
+  font: 500 12px/1.4 var(--sans);
+  color: var(--text-muted);
+  padding: 8px 10px 0;
+}
+
 .trash-tools {
   display: flex;
   padding: 8px 8px 2px;
