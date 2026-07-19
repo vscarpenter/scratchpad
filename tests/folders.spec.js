@@ -89,3 +89,47 @@ test.describe('sidebar accordion', () => {
     await expect(rows.first()).toContainText('Old pinned');
   });
 });
+
+test.describe('folder crud', () => {
+  test('create via + New folder with color', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator('.new-folder-row').click();
+    await page.locator('#folder-name-input').fill('Projects');
+    await page.locator('input[name="folder-color"][value="sky"]').check();
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('.folder-head', { hasText: 'Projects' })).toBeVisible();
+    await expect(page.locator('.folder-head .folder-dot[data-color="sky"]')).toBeVisible();
+  });
+
+  test('validation: empty, reserved, duplicate', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.new-folder-row').click();
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('#folder-name-error')).toHaveText('Folder name is required.');
+    await page.locator('#folder-name-input').fill('notes');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('#folder-name-error')).toContainText('reserved');
+    await page.locator('#folder-name-input').fill('work');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('#folder-name-error')).toContainText('already exists');
+  });
+
+  test('rename via folder menu', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn').click();
+    await page.locator('#folder-menu [data-action="rename"]').click();
+    await page.locator('#folder-name-input').fill('Career');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('.folder-head', { hasText: 'Career' })).toBeVisible();
+  });
+
+  test('command palette creates folders', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('new folder');
+    await page.keyboard.press('Enter');
+    await page.locator('#folder-name-input').fill('FromPalette');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('.folder-head', { hasText: 'FromPalette' })).toBeVisible();
+  });
+});
