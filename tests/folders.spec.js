@@ -219,3 +219,36 @@ test.describe('move to folder', () => {
     await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
   });
 });
+
+test.describe('drag and drop', () => {
+  test.skip(({ browserName }) => browserName !== 'chromium', 'HTML5 DnD simulation is only reliable in Chromium');
+
+  test('drag note onto folder header moves it', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Dragged', body: 'x' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.note-row', { hasText: 'Dragged' })
+      .dragTo(page.locator('.folder-head[data-folder-id="f-1"]'));
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
+  });
+
+  test('drag onto collapsed folder moves without expanding', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Dragged', body: 'x' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.folder-head[data-folder-id="f-1"] .folder-toggle').click();
+    await page.locator('.note-row', { hasText: 'Dragged' })
+      .dragTo(page.locator('.folder-head[data-folder-id="f-1"]'));
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-toggle'))
+      .toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('drag folder header reorders folders', async ({ page }) => {
+    await seedFolders(page, [
+      { id: 'f-a', name: 'Alpha', sortOrder: 0 },
+      { id: 'f-b', name: 'Beta', sortOrder: 1 },
+    ]);
+    await page.locator('.folder-head[data-folder-id="f-b"]')
+      .dragTo(page.locator('.folder-head[data-folder-id="f-a"]'));
+    await expect(page.locator('.folder-head .folder-name').first()).toHaveText('Beta');
+  });
+});

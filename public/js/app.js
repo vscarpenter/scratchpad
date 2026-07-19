@@ -1385,11 +1385,57 @@
     }
     const head = el('div', {
       class: 'folder-head' + (collapsed ? ' is-collapsed' : ''),
-      attrs: { 'data-folder-id': folder ? folder.id : '' },
+      attrs: {
+        'data-folder-id': folder ? folder.id : '',
+        draggable: folder ? 'true' : null,
+      },
       children: headChildren,
+    });
+    if (folder) {
+      head.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('application/x-scratchpad-folder', folder.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+    }
+    head.addEventListener('dragover', (e) => {
+      const types = Array.from(e.dataTransfer.types || []);
+      const isNote = types.includes('application/x-scratchpad-note');
+      const isFolder = types.includes('application/x-scratchpad-folder') && !!folder;
+      if (!isNote && !isFolder) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      head.classList.add('is-drop-target');
+    });
+    head.addEventListener('dragleave', () => head.classList.remove('is-drop-target'));
+    head.addEventListener('drop', (e) => {
+      e.preventDefault();
+      head.classList.remove('is-drop-target');
+      const noteId = e.dataTransfer.getData('application/x-scratchpad-note');
+      if (noteId) {
+        moveNotesToFolder([noteId], folder ? folder.id : null);
+        return;
+      }
+      const draggedFolderId = e.dataTransfer.getData('application/x-scratchpad-folder');
+      if (draggedFolderId && folder && draggedFolderId !== folder.id) {
+        dropFolderOn(draggedFolderId, folder.id);
+      }
     });
     const rows = collapsed ? [] : notes.map(renderRow);
     return el('div', { class: 'note-section folder-section', children: [head, ...rows] });
+  }
+
+  async function dropFolderOn(draggedId, targetId) {
+    const ordered = sortedFolders().map((f) => f.id);
+    const from = ordered.indexOf(draggedId);
+    const to = ordered.indexOf(targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    ordered.splice(to, 0, ordered.splice(from, 1)[0]);
+    const t = now();
+    const renumbered = ordered.map((id, i) => ({ ...folderById(id), sortOrder: i, updatedAt: t }));
+    await DB.bulkPutFolders(renumbered);
+    broadcastChange({ type: 'folders-changed' });
+    await loadFolders();
+    renderAll();
   }
 
   function renderSection(label, notes, isPinnedSection) {
@@ -1481,12 +1527,20 @@
       on: { click: () => selectNote(note.id) },
     });
 
+    const draggable = state.view === 'active' && state.grouping === 'folders' && !state.bulkMode;
     return el('div', {
       class: 'note-row' +
         (note.id === state.selectedId ? ' is-active' : '') +
         (trashed ? ' is-trashed' : '') +
         (pinned ? ' is-pinned' : ''),
-      attrs: { 'data-id': note.id },
+      attrs: { 'data-id': note.id, draggable: draggable ? 'true' : null },
+      on: draggable ? {
+        dragstart: (e) => {
+          e.dataTransfer.setData('application/x-scratchpad-note', note.id);
+          e.dataTransfer.setData('text/plain', note.id);
+          e.dataTransfer.effectAllowed = 'move';
+        },
+      } : null,
       children: [openButton, ...children],
     });
   }
