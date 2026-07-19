@@ -3,11 +3,12 @@
   'use strict';
 
   const DB_NAME = 'scratchpad';
-  const DB_VERSION = 2;
+  const DB_VERSION = 3;
   const STORES = {
     notes: 'notes',
     drafts: 'drafts',
     revisions: 'revisions',
+    folders: 'folders',
   };
 
   let dbPromise = null;
@@ -32,6 +33,9 @@
           const revisions = db.createObjectStore(STORES.revisions, { keyPath: 'id' });
           revisions.createIndex('noteId', 'noteId');
           revisions.createIndex('updatedAt', 'updatedAt');
+        }
+        if (!db.objectStoreNames.contains(STORES.folders)) {
+          db.createObjectStore(STORES.folders, { keyPath: 'id' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -109,6 +113,33 @@
     return reqToPromise(store.getAll());
   }
 
+  async function getAllFolders() {
+    const store = await tx(STORES.folders, 'readonly');
+    return reqToPromise(store.getAll());
+  }
+
+  async function putFolder(folder) {
+    const store = await tx(STORES.folders, 'readwrite');
+    return reqToPromise(store.put(folder));
+  }
+
+  async function removeFolder(id) {
+    const store = await tx(STORES.folders, 'readwrite');
+    return reqToPromise(store.delete(id));
+  }
+
+  async function bulkPutFolders(folders) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction(STORES.folders, 'readwrite');
+      const store = t.objectStore(STORES.folders);
+      for (const folder of folders) store.put(folder);
+      t.oncomplete = () => resolve();
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error);
+    });
+  }
+
   async function getRevisions(noteId) {
     const db = await open();
     return new Promise((resolve, reject) => {
@@ -162,13 +193,14 @@
     });
   }
 
-  async function importRecords(notes, revisions, revisionLimit) {
+  async function importRecords(notes, revisions, revisionLimit, folders) {
+    folders = Array.isArray(folders) ? folders : [];
     const db = await open();
     return new Promise((resolve, reject) => {
       let failure = null;
       let t;
       try {
-        t = db.transaction([STORES.notes, STORES.revisions], 'readwrite');
+        t = db.transaction([STORES.notes, STORES.revisions, STORES.folders], 'readwrite');
       } catch (error) {
         reject(error);
         return;
@@ -192,6 +224,8 @@
         const revisionStore = t.objectStore(STORES.revisions);
         for (const note of notes) noteStore.put(note);
         for (const revision of revisions) revisionStore.put(revision);
+        const folderStore = t.objectStore(STORES.folders);
+        for (const folder of folders) folderStore.put(folder);
 
         const keep = Math.max(0, Number.isFinite(revisionLimit) ? revisionLimit : 0);
         const noteIds = new Set(revisions.map((revision) => revision.noteId));
@@ -232,10 +266,11 @@
   async function clearAllStores() {
     const db = await open();
     return new Promise((resolve, reject) => {
-      const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions], 'readwrite');
+      const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions, STORES.folders], 'readwrite');
       t.objectStore(STORES.notes).clear();
       t.objectStore(STORES.drafts).clear();
       t.objectStore(STORES.revisions).clear();
+      t.objectStore(STORES.folders).clear();
       t.oncomplete = () => resolve();
       t.onerror = () => reject(t.error);
       t.onabort = () => reject(t.error);
@@ -253,6 +288,10 @@
     putDraft,
     removeDraft,
     getAllDrafts,
+    getAllFolders,
+    putFolder,
+    removeFolder,
+    bulkPutFolders,
     getRevisions,
     putRevision,
     pruneRevisions,
