@@ -2407,14 +2407,16 @@
       const revisions = (await DB.getAllRevisions())
         .map((rev) => normalizeRevision(rev, rev.noteId))
         .filter((rev) => rev && selectedIds.has(rev.noteId));
+      const usedFolderIds = new Set(selected.map((note) => noteFolderId(note)).filter(Boolean));
       const payload = {
         app: 'scratchpad',
         version: window.SCRATCHPAD_VERSION || 'unknown',
-        schemaVersion: 2,
+        schemaVersion: 3,
         exportedAt: new Date().toISOString(),
         notes: selected.filter((note) => !isTrashed(note)),
         trashedNotes: selected.filter(isTrashed),
         revisions,
+        folders: sortedFolders().filter((f) => usedFolderIds.has(f.id)),
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `scratchpad-selected-${exportStamp()}.json`);
@@ -3668,14 +3670,19 @@
     const revisions = (await DB.getAllRevisions())
       .map((rev) => normalizeRevision(rev, rev.noteId))
       .filter((rev) => rev && noteIds.has(rev.noteId));
+    const folders = (await DB.getAllFolders())
+      .map((f, i) => normalizeFolder(f, i))
+      .filter(Boolean)
+      .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.createdAt - b.createdAt));
     return {
       app: 'scratchpad',
       version: window.SCRATCHPAD_VERSION || 'unknown',
-      schemaVersion: 2,
+      schemaVersion: 3,
       exportedAt: new Date().toISOString(),
       notes: notes.filter((n) => !isTrashed(n)),
       trashedNotes: notes.filter(isTrashed),
       revisions,
+      folders,
     };
   }
 
@@ -3738,14 +3745,16 @@
     return !!data && data.format === ENCRYPTED_BACKUP_FORMAT && data.version === ENCRYPTED_BACKUP_VERSION;
   }
 
+  // v2 backups predate folders; v3 adds an optional folders array.
   function isNativeBackup(data) {
     return !!data &&
       !Array.isArray(data) &&
       data.app === 'scratchpad' &&
-      data.schemaVersion === 2 &&
+      (data.schemaVersion === 2 || data.schemaVersion === 3) &&
       Array.isArray(data.notes) &&
       Array.isArray(data.trashedNotes) &&
-      Array.isArray(data.revisions);
+      Array.isArray(data.revisions) &&
+      (data.folders === undefined || Array.isArray(data.folders));
   }
 
   async function decryptBackupEnvelope(envelope, passphrase) {
@@ -3876,7 +3885,9 @@
       }
       const used = new Map();
       const files = notes.map((note) => {
-        const base = slugify(deriveTitle(note)) || 'untitled-note';
+        const folderId = noteFolderId(note);
+        const dir = folderId ? slugify(folderDisplayName(folderId)) + '/' : '';
+        const base = dir + (slugify(deriveTitle(note)) || 'untitled-note');
         const count = used.get(base) || 0;
         used.set(base, count + 1);
         const name = count ? `${base}-${count + 1}.md` : `${base}.md`;
@@ -4031,8 +4042,8 @@
 
   function presentImportData(data) {
     const preview = buildImportPreview(data);
-    if (!preview.notes.length) {
-      const rejected = preview.invalid + preview.invalidRevisions;
+    if (!preview.notes.length && !preview.folders.length) {
+      const rejected = preview.invalid + preview.invalidRevisions + preview.invalidFolders;
       toast(
         rejected ? `Import found no valid notes. Rejected ${rejected} invalid entr${rejected === 1 ? 'y' : 'ies'}.` : 'Import found no valid notes in that file.',
         { tone: 'error' }
@@ -4110,10 +4121,13 @@
     const empty = {
       notes: [],
       revisions: [],
+      folders: [],
       invalid: 0,
       invalidRevisions: 0,
+      invalidFolders: 0,
       rejectedNotes: [],
       rejectedRevisions: [],
+      rejectedFolders: [],
       newCount: 0,
       conflicts: 0,
     };
@@ -4172,13 +4186,39 @@
       revisions.push(result.revision);
     }
     const conflicts = notes.filter((note) => existingIds.has(note.id)).length;
+    let rawFolders = Array.isArray(data.folders) ? data.folders : [];
+    const folders = [];
+    const rejectedFolders = [];
+    const seenFolderIds = new Set();
+    if (rawFolders.length > IMPORT_MAX_FOLDERS) {
+      for (let i = IMPORT_MAX_FOLDERS; i < rawFolders.length; i += 1) {
+        rejectedFolders.push(importError('Folder ' + (i + 1), 'import limit exceeded'));
+      }
+      rawFolders = rawFolders.slice(0, IMPORT_MAX_FOLDERS);
+    }
+    for (let i = 0; i < rawFolders.length; i += 1) {
+      const folder = normalizeFolder(rawFolders[i], i);
+      if (!folder) {
+        rejectedFolders.push(importError('Folder ' + (i + 1), 'invalid folder'));
+        continue;
+      }
+      if (seenFolderIds.has(folder.id)) {
+        rejectedFolders.push(importError('Folder ' + (i + 1), 'duplicate id in import file'));
+        continue;
+      }
+      seenFolderIds.add(folder.id);
+      folders.push(folder);
+    }
     return {
       notes,
       revisions,
+      folders,
       invalid: rejectedNotes.length,
       invalidRevisions: rejectedRevisions.length,
+      invalidFolders: rejectedFolders.length,
       rejectedNotes,
       rejectedRevisions,
+      rejectedFolders,
       newCount: notes.length - conflicts,
       conflicts,
     };
@@ -4188,15 +4228,16 @@
     const rows = [
       ['New notes', preview.newCount],
       ['Conflicts', preview.conflicts],
-      ['Rejected entries', preview.invalid],
+      ['Rejected entries', preview.invalid + preview.invalidFolders],
       ['Revision snapshots', preview.revisions.length],
       ['Rejected revisions', preview.invalidRevisions],
+      ['Folders', preview.folders.length],
     ].map(([label, value]) => [
       el('dt', { text: label }),
       el('dd', { text: String(value) }),
     ]).flat();
     els.importPreviewCounts.replaceChildren(...rows);
-    const rejected = [...preview.rejectedNotes, ...preview.rejectedRevisions];
+    const rejected = [...preview.rejectedNotes, ...preview.rejectedFolders, ...preview.rejectedRevisions];
     if (rejected.length) {
       const shown = rejected.slice(0, 5);
       const items = shown.map((msg) => el('li', { text: msg }));
@@ -4240,7 +4281,27 @@
       const revisionsToImport = preview.revisions
         .filter((rev) => idMap.has(rev.noteId))
         .map((rev) => ({ ...rev, id: uuid(), noteId: idMap.get(rev.noteId) }));
-      await DB.importRecords(notesToImport, revisionsToImport, REVISION_LIMIT);
+      // Folders merge by id (overwrite); a new id with a clashing name gets a
+      // numeric suffix. Anything past FOLDERS_MAX is dropped.
+      const existingFolderIds = new Set(state.folders.map((f) => f.id));
+      const takenNames = new Set(state.folders.map((f) => f.name.toLowerCase()));
+      const foldersToImport = [];
+      for (const folder of preview.folders || []) {
+        if (existingFolderIds.has(folder.id)) {
+          foldersToImport.push(folder);
+          continue;
+        }
+        if (state.folders.length + foldersToImport.length >= FOLDERS_MAX) continue;
+        let name = folder.name;
+        let n = 2;
+        while (takenNames.has(name.toLowerCase())) {
+          name = (folder.name + ' ' + n).slice(0, FOLDER_NAME_MAX);
+          n += 1;
+        }
+        takenNames.add(name.toLowerCase());
+        foldersToImport.push({ ...folder, name });
+      }
+      await DB.importRecords(notesToImport, revisionsToImport, REVISION_LIMIT, foldersToImport);
       for (const note of notesToImport) {
         broadcastChange({
           type: 'note-changed',
@@ -4248,6 +4309,7 @@
           updatedAt: note.updatedAt,
         });
       }
+      if (foldersToImport.length) broadcastChange({ type: 'folders-changed' });
       state.importPreview = null;
       closeDialog(els.importPreviewDialog);
       await loadAll();
