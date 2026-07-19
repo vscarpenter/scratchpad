@@ -65,6 +65,7 @@
     bulkSelectedIds: new Set(),
     folderDialogId: null,
     folderMenuTargetId: null,
+    folderDeleteId: null,
     commandItems: [],
     commandIndex: 0,
     busy: new Set(),
@@ -141,6 +142,10 @@
     folderNameInput: $('folder-name-input'),
     folderNameError: $('folder-name-error'),
     folderDialogSave: $('folder-dialog-save'),
+    folderDeleteDialog: $('folder-delete-dialog'),
+    folderDeleteCopy: $('folder-delete-copy'),
+    folderDeleteKeep: $('folder-delete-keep'),
+    folderDeleteTrash: $('folder-delete-trash'),
     deleteDialog: $('delete-dialog'),
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
@@ -906,6 +911,72 @@
       default:
         break;
     }
+  }
+
+  function openFolderDeleteDialog(folderId) {
+    const folder = folderById(folderId);
+    if (!folder) return;
+    state.folderDeleteId = folderId;
+    const count = activeNotes().filter((n) => noteFolderId(n) === folderId).length;
+    els.folderDeleteCopy.textContent = count
+      ? '"' + folder.name + '" contains ' + count + ' note' + (count === 1 ? '' : 's') +
+        '. Keep them in Notes, or move them to Trash (recoverable for 30 days)?'
+      : '"' + folder.name + '" is empty. Delete it?';
+    els.folderDeleteTrash.hidden = count === 0;
+    els.folderDeleteKeep.textContent = count ? 'Keep notes (move to Notes)' : 'Delete folder';
+    openDialog(els.folderDeleteDialog);
+  }
+
+  async function applyFolderDelete(mode) {
+    const folderId = state.folderDeleteId;
+    const folder = folderById(folderId);
+    if (!folder) return;
+    const members = activeNotes().filter((n) => noteFolderId(n) === folderId);
+    const t = now();
+    const updated = members.map((note) => mode === 'trash'
+      ? { ...note, folderId: null, deletedAt: t, updatedAt: t, lastDraftAt: null }
+      : { ...note, folderId: null });
+    if (updated.length) {
+      await bulkPutNoteRecords(updated);
+      if (mode === 'trash') await Promise.all(updated.map((note) => DB.removeDraft(note.id)));
+      const nextById = new Map(updated.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      if (mode === 'trash' && state.selectedId && nextById.has(state.selectedId)) {
+        state.selectedId = null;
+        state.editing = false;
+        state.dirty = false;
+      }
+    }
+    await DB.removeFolder(folderId);
+    broadcastChange({ type: 'folders-changed' });
+    await loadFolders();
+    const keys = collapsedFolderKeys();
+    keys.delete(folderId);
+    writeCollapsedFolderKeys(keys);
+    state.folderDeleteId = null;
+    closeDialog(els.folderDeleteDialog);
+    renderAll();
+    toast(mode === 'trash' && updated.length
+      ? 'Folder deleted. ' + updated.length + ' note' + (updated.length === 1 ? '' : 's') + ' moved to Trash.'
+      : 'Folder deleted.');
+  }
+
+  async function moveFolder(folderId, delta) {
+    const ordered = sortedFolders();
+    const index = ordered.findIndex((f) => f.id === folderId);
+    const target = index + delta;
+    if (index < 0 || target < 0 || target >= ordered.length) return;
+    const next = [...ordered];
+    [next[index], next[target]] = [next[target], next[index]];
+    const t = now();
+    const renumbered = next.map((f, i) => ({ ...f, sortOrder: i, updatedAt: t }));
+    await DB.bulkPutFolders(renumbered);
+    broadcastChange({ type: 'folders-changed' });
+    await loadFolders();
+    renderAll();
   }
 
   async function runFolderMenuAction(action) {
@@ -4261,6 +4332,8 @@
       const item = e.target.closest('[role="menuitem"]');
       if (item) runFolderMenuAction(item.getAttribute('data-action'));
     });
+    els.folderDeleteKeep.addEventListener('click', () => { applyFolderDelete('keep'); });
+    els.folderDeleteTrash.addEventListener('click', () => { applyFolderDelete('trash'); });
     els.manageTags.addEventListener('click', openTagManager);
 
     els.newNote.addEventListener('click', createNote);
