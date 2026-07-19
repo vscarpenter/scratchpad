@@ -133,3 +133,40 @@ test.describe('folder crud', () => {
     await expect(page.locator('.folder-head', { hasText: 'FromPalette' })).toBeVisible();
   });
 });
+
+test.describe('folder delete and reorder', () => {
+  test('delete keeping notes moves them to Notes', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Keep me', body: 'x', folderId: 'f-1' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Doomed' }]);
+    await page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn').click();
+    await page.locator('#folder-menu [data-action="delete"]').click();
+    await page.locator('#folder-delete-keep').click();
+    await expect(page.locator('.folder-head', { hasText: 'Doomed' })).toBeHidden();
+    const notesSection = page.locator('.folder-section').last();
+    await expect(notesSection.locator('.note-row', { hasText: 'Keep me' })).toBeVisible();
+  });
+
+  test('delete trashing notes sends them to Trash', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Trash me', body: 'x', folderId: 'f-1' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Doomed' }]);
+    await page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn').click();
+    await page.locator('#folder-menu [data-action="delete"]').click();
+    await page.locator('#folder-delete-trash').click();
+    await page.locator('#trash-view').click();
+    await expect(page.locator('.note-row', { hasText: 'Trash me' })).toBeVisible();
+  });
+
+  test('move down reorders folders and persists', async ({ page }) => {
+    await seedFolders(page, [
+      { id: 'f-a', name: 'Alpha', sortOrder: 0 },
+      { id: 'f-b', name: 'Beta', sortOrder: 1 },
+    ]);
+    await page.locator('.folder-head[data-folder-id="f-a"] .folder-menu-btn').click();
+    await page.locator('#folder-menu [data-action="move-down"]').click();
+    const heads = page.locator('.folder-head .folder-name');
+    await expect(heads.nth(0)).toHaveText('Beta');
+    await expect(heads.nth(1)).toHaveText('Alpha');
+    await page.reload();
+    await expect(page.locator('.folder-head .folder-name').first()).toHaveText('Beta');
+  });
+});
