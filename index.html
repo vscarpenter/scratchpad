@@ -283,6 +283,40 @@
     </main>
   </div>
 
+  <div id="folder-menu" class="popover-menu folder-menu" role="menu" hidden>
+    <button role="menuitem" type="button" data-action="rename">Rename…</button>
+    <button role="menuitem" type="button" data-action="new-note">New note here</button>
+    <hr class="menu-divider"/>
+    <button role="menuitem" type="button" data-action="move-up">Move up</button>
+    <button role="menuitem" type="button" data-action="move-down">Move down</button>
+    <hr class="menu-divider"/>
+    <button role="menuitem" type="button" data-action="delete" class="is-destructive">Delete…</button>
+  </div>
+
+  <dialog id="folder-dialog" class="dialog" aria-labelledby="folder-dialog-title">
+    <div class="dialog-head">
+      <h2 id="folder-dialog-title">New folder</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <label class="field-label" for="folder-name-input">Name</label>
+      <input id="folder-name-input" class="input" type="text" maxlength="60" autocomplete="off" spellcheck="false" />
+      <p id="folder-name-error" class="field-error" role="alert" hidden></p>
+      <fieldset class="folder-swatches">
+        <legend class="field-label">Color</legend>
+        <label class="swatch"><input type="radio" name="folder-color" value="" checked /><span class="swatch-chip" data-color=""></span><span class="visually-hidden">None</span></label>
+        <label class="swatch"><input type="radio" name="folder-color" value="accent" /><span class="swatch-chip" data-color="accent"></span><span class="visually-hidden">Accent</span></label>
+        <label class="swatch"><input type="radio" name="folder-color" value="olive" /><span class="swatch-chip" data-color="olive"></span><span class="visually-hidden">Olive</span></label>
+        <label class="swatch"><input type="radio" name="folder-color" value="sky" /><span class="swatch-chip" data-color="sky"></span><span class="visually-hidden">Sky</span></label>
+        <label class="swatch"><input type="radio" name="folder-color" value="gray" /><span class="swatch-chip" data-color="gray"></span><span class="visually-hidden">Gray</span></label>
+      </fieldset>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button id="folder-dialog-save" class="btn btn-primary" type="button">Save</button>
+    </div>
+  </dialog>
+
   <dialog id="delete-dialog" class="dialog" aria-labelledby="delete-dialog-title">
     <div class="dialog-head">
       <h2 id="delete-dialog-title">Delete this note?</h2>

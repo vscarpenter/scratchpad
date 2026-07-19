@@ -75,6 +75,7 @@ async function importJson(page, payload, filename = 'scratchpad-import.json') {
 }
 
 async function seedFolders(page, folders) {
+  await gotoApp(page);
   await page.evaluate(async (rows) => {
     const base = Date.now();
     for (let i = 0; i < rows.length; i++) {

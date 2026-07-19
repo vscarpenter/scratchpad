@@ -63,6 +63,8 @@
     reloadForUpdate: false,
     bulkMode: false,
     bulkSelectedIds: new Set(),
+    folderDialogId: null,
+    folderMenuTargetId: null,
     commandItems: [],
     commandIndex: 0,
     busy: new Set(),
@@ -133,6 +135,12 @@
     emptyTrash: $('empty-trash'),
     clearSearchBtn: $('clear-search-btn'),
     emptyImportNotes: $('empty-import-notes'),
+    folderMenu: $('folder-menu'),
+    folderDialog: $('folder-dialog'),
+    folderDialogTitle: $('folder-dialog-title'),
+    folderNameInput: $('folder-name-input'),
+    folderNameError: $('folder-name-error'),
+    folderDialogSave: $('folder-dialog-save'),
     deleteDialog: $('delete-dialog'),
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
@@ -772,6 +780,145 @@
     renderSidebar();
   }
 
+  function folderNameError(name, excludeId) {
+    if (!name) return 'Folder name is required.';
+    if (name.toLowerCase() === RESERVED_FOLDER_NAME) return '"Notes" is reserved for the built-in folder.';
+    const clash = state.folders.some((f) => f.id !== excludeId && f.name.toLowerCase() === name.toLowerCase());
+    if (clash) return 'A folder with that name already exists.';
+    if (!excludeId && state.folders.length >= FOLDERS_MAX) return 'Folder limit reached (100).';
+    return null;
+  }
+
+  function openFolderDialog(folderId) {
+    state.folderDialogId = folderId || null;
+    const folder = folderId ? folderById(folderId) : null;
+    els.folderDialogTitle.textContent = folder ? 'Edit folder' : 'New folder';
+    els.folderNameInput.value = folder ? folder.name : '';
+    els.folderNameInput.removeAttribute('aria-invalid');
+    els.folderNameError.hidden = true;
+    els.folderNameError.textContent = '';
+    const color = folder && folder.color ? folder.color : '';
+    const radio = document.querySelector('input[name="folder-color"][value="' + color + '"]');
+    if (radio) radio.checked = true;
+    openDialog(els.folderDialog);
+    els.folderNameInput.focus();
+  }
+
+  async function saveFolderDialog() {
+    const name = normalizeFolderName(els.folderNameInput.value);
+    const error = folderNameError(name, state.folderDialogId);
+    if (error) {
+      els.folderNameError.textContent = error;
+      els.folderNameError.hidden = false;
+      els.folderNameInput.setAttribute('aria-invalid', 'true');
+      els.folderNameInput.focus();
+      return;
+    }
+    const selected = document.querySelector('input[name="folder-color"]:checked');
+    const color = selected && FOLDER_COLORS.has(selected.value) ? selected.value : null;
+    const existing = state.folderDialogId ? folderById(state.folderDialogId) : null;
+    const t = now();
+    const folder = existing
+      ? { ...existing, name, color, updatedAt: t }
+      : normalizeFolder({ name, color, sortOrder: state.folders.length, createdAt: t, updatedAt: t }, state.folders.length);
+    await DB.putFolder(folder);
+    broadcastChange({ type: 'folders-changed' });
+    await loadFolders();
+    state.folderDialogId = null;
+    closeDialog(els.folderDialog);
+    renderAll();
+    toast(existing ? 'Folder updated.' : 'Folder created.');
+  }
+
+  // -------- Folder menu (mirrors the editor overflow menu semantics) --------
+  function folderMenuItems() {
+    return Array.from(els.folderMenu.querySelectorAll('[role="menuitem"]'))
+      .filter((item) => !item.hidden);
+  }
+
+  function focusFolderMenuItem(index) {
+    const items = folderMenuItems();
+    if (!items.length) return;
+    const i = (index + items.length) % items.length;
+    items[i].focus();
+  }
+
+  function openFolderMenu(folderId, trigger) {
+    closeFolderMenu();
+    state.folderMenuTargetId = folderId;
+    const rect = trigger.getBoundingClientRect();
+    els.folderMenu.style.top = Math.round(rect.bottom + 4) + 'px';
+    els.folderMenu.style.left = Math.round(rect.left) + 'px';
+    els.folderMenu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', onFolderMenuOutsideClick, true);
+    document.addEventListener('keydown', onFolderMenuKey, true);
+    setTimeout(() => focusFolderMenuItem(0), 0);
+  }
+
+  function closeFolderMenu() {
+    if (els.folderMenu.hidden) return;
+    els.folderMenu.hidden = true;
+    state.folderMenuTargetId = null;
+    document.removeEventListener('click', onFolderMenuOutsideClick, true);
+    document.removeEventListener('keydown', onFolderMenuKey, true);
+    const open = document.querySelector('.folder-menu-btn[aria-expanded="true"]');
+    if (open) open.setAttribute('aria-expanded', 'false');
+  }
+
+  function onFolderMenuOutsideClick(e) {
+    if (els.folderMenu.contains(e.target)) return;
+    closeFolderMenu();
+  }
+
+  function onFolderMenuKey(e) {
+    const items = folderMenuItems();
+    const current = items.indexOf(document.activeElement);
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        closeFolderMenu();
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        focusFolderMenuItem(current < 0 ? 0 : current + 1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        focusFolderMenuItem(current < 0 ? items.length - 1 : current - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        e.stopPropagation();
+        focusFolderMenuItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        e.stopPropagation();
+        focusFolderMenuItem(items.length - 1);
+        break;
+      case 'Tab':
+        closeFolderMenu();
+        break;
+      default:
+        break;
+    }
+  }
+
+  async function runFolderMenuAction(action) {
+    const folderId = state.folderMenuTargetId;
+    closeFolderMenu();
+    if (!folderId) return;
+    if (action === 'rename') openFolderDialog(folderId);
+    else if (action === 'new-note') await createNote(folderId);
+    else if (action === 'move-up') await moveFolder(folderId, -1);
+    else if (action === 'move-down') await moveFolder(folderId, 1);
+    else if (action === 'delete') openFolderDeleteDialog(folderId);
+  }
+
   function isTrashed(note) {
     return !!(note && Number.isFinite(note.deletedAt));
   }
@@ -1026,6 +1173,15 @@
       children.push(renderFolderSection(folder, notesForFolder(notes, folder.id)));
     }
     children.push(renderFolderSection(null, notesForFolder(notes, null)));
+    children.push(el('button', {
+      class: 'new-folder-row',
+      attrs: { type: 'button' },
+      children: [
+        el('span', { class: 'new-folder-plus', attrs: { 'aria-hidden': 'true' }, text: '+' }),
+        el('span', { text: 'New folder' }),
+      ],
+      on: { click: () => openFolderDialog(null) },
+    }));
   }
 
   function folderMenuIcon() {
@@ -1079,6 +1235,7 @@
           title: 'Folder actions',
         },
         children: [folderMenuIcon()],
+        on: { click: (e) => openFolderMenu(folder.id, e.currentTarget) },
       }));
     }
     const head = el('div', {
@@ -3006,6 +3163,13 @@
         run: openTagManager,
       },
       {
+        id: 'new-folder',
+        label: 'New folder',
+        meta: 'Create a folder',
+        keywords: 'folder group organize create',
+        run: () => openFolderDialog(null),
+      },
+      {
         id: 'toggle-bulk',
         label: state.bulkMode ? 'Exit selection mode' : 'Select multiple notes',
         meta: 'Bulk actions',
@@ -4086,6 +4250,17 @@
     els.trashView.addEventListener('click', () => setView('trash'));
     els.groupFolders.addEventListener('click', () => setGrouping('folders'));
     els.groupRecent.addEventListener('click', () => setGrouping('recent'));
+    els.folderDialogSave.addEventListener('click', () => { saveFolderDialog(); });
+    els.folderNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveFolderDialog();
+      }
+    });
+    els.folderMenu.addEventListener('click', (e) => {
+      const item = e.target.closest('[role="menuitem"]');
+      if (item) runFolderMenuAction(item.getAttribute('data-action'));
+    });
     els.manageTags.addEventListener('click', openTagManager);
 
     els.newNote.addEventListener('click', createNote);
