@@ -127,39 +127,56 @@
           <rect class="mock-tab" x="186" y="196" width="78" height="26" rx="6" />
           <text class="mock-tab-label" x="225" y="213" text-anchor="middle">Tags</text>
 
-          <!-- separator -->
-          <line class="mock-hair" x1="20" y1="240" x2="264" y2="240" />
+          <!-- group-by toggle -->
+          <rect class="mock-tab mock-tab-active" x="20" y="232" width="64" height="22" rx="11" />
+          <text class="mock-tab-label-active" x="52" y="247" text-anchor="middle">Folders</text>
+          <rect class="mock-tab" x="90" y="232" width="64" height="22" rx="11" />
+          <text class="mock-tab-label" x="122" y="247" text-anchor="middle">Recent</text>
 
-          <!-- note row 1 (active) -->
-          <rect class="mock-note-row mock-note-row-active" x="14" y="252" width="256" height="64" rx="8" />
-          <line class="mock-note-accent" x1="14" y1="252" x2="14" y2="316" />
-          <text class="mock-note-title" x="26" y="272">Q2 product strategy</text>
-          <text class="mock-note-time" x="258" y="272" text-anchor="end">2h</text>
-          <text class="mock-note-excerpt" x="26" y="290">Pricing experiments, retention work,</text>
-          <text class="mock-note-excerpt" x="26" y="304">and the ship-list for July…</text>
+          <!-- folder: Work (expanded) -->
+          <path class="mock-folder-chevron" d="M23 266l5 5 5-5" />
+          <circle class="mock-folder-dot-accent" cx="44" cy="268" r="3.5" />
+          <text class="mock-folder-name" x="54" y="272">Work</text>
+          <text class="mock-folder-count" x="258" y="272" text-anchor="end">2</text>
 
-          <!-- note row 2 -->
-          <rect class="mock-note-row" x="14" y="324" width="256" height="56" rx="8" />
-          <text class="mock-note-title-dim" x="26" y="343">Coffee shop list</text>
-          <text class="mock-note-time" x="258" y="343" text-anchor="end">Mon</text>
-          <text class="mock-note-excerpt" x="26" y="361">Sightglass, Saint Frank, Ritual…</text>
+          <!-- note row 1 (active, in Work) -->
+          <rect class="mock-note-row mock-note-row-active" x="14" y="282" width="256" height="64" rx="8" />
+          <line class="mock-note-accent" x1="14" y1="282" x2="14" y2="346" />
+          <text class="mock-note-title" x="26" y="302">Q2 product strategy</text>
+          <text class="mock-note-time" x="258" y="302" text-anchor="end">2h</text>
+          <text class="mock-note-excerpt" x="26" y="320">Pricing experiments, retention work,</text>
+          <text class="mock-note-excerpt" x="26" y="334">and the ship-list for July…</text>
 
-          <!-- note row 3 -->
-          <rect class="mock-note-row" x="14" y="388" width="256" height="56" rx="8" />
-          <text class="mock-note-title-dim" x="26" y="407">Reading queue 2026</text>
-          <text class="mock-note-time" x="258" y="407" text-anchor="end">Fri</text>
-          <text class="mock-note-excerpt" x="26" y="425">A Pattern Language · The Beginning</text>
+          <!-- note row 2 (in Work) -->
+          <rect class="mock-note-row" x="14" y="352" width="256" height="50" rx="8" />
+          <text class="mock-note-title-dim" x="26" y="371">Hiring loop notes</text>
+          <text class="mock-note-time" x="258" y="371" text-anchor="end">Mon</text>
+          <text class="mock-note-excerpt" x="26" y="389">Panel formats that don't waste a day…</text>
 
-          <!-- note row 4 -->
-          <rect class="mock-note-row" x="14" y="452" width="256" height="56" rx="8" />
-          <text class="mock-note-title-dim" x="26" y="471">Garden notes</text>
-          <text class="mock-note-time" x="258" y="471" text-anchor="end">Apr 12</text>
-          <text class="mock-note-excerpt" x="26" y="489">Basil is finally happy. Tomatoes…</text>
+          <!-- folder: Ideas (collapsed) -->
+          <path class="mock-folder-chevron" d="M26 421l5 5-5 5" />
+          <circle class="mock-folder-dot-olive" cx="44" cy="426" r="3.5" />
+          <text class="mock-folder-name" x="54" y="430">Ideas</text>
+          <text class="mock-folder-count" x="258" y="430" text-anchor="end">5</text>
+
+          <!-- folder: Notes (built-in, expanded) -->
+          <path class="mock-folder-chevron" d="M23 453l5 5 5-5" />
+          <text class="mock-folder-name" x="44" y="459">Notes</text>
+          <text class="mock-folder-count" x="258" y="459" text-anchor="end">5</text>
+
+          <!-- note row (in Notes) -->
+          <rect class="mock-note-row" x="14" y="469" width="256" height="50" rx="8" />
+          <text class="mock-note-title-dim" x="26" y="488">Coffee shop list</text>
+          <text class="mock-note-time" x="258" y="488" text-anchor="end">Fri</text>
+          <text class="mock-note-excerpt" x="26" y="506">Sightglass, Saint Frank, Ritual…</text>
+
+          <!-- + new folder -->
+          <text class="mock-newfolder" x="24" y="541">+  New folder</text>
 
           <!-- editor area -->
-          <text class="mock-breadcrumb" x="310" y="76">notes / q2-product-strategy</text>
+          <text class="mock-breadcrumb" x="310" y="76">work / q2-product-strategy</text>
 
-          <text class="mock-eyebrow" x="310" y="116">NOTE · MARKDOWN</text>
+          <text class="mock-eyebrow" x="310" y="116">WORK · MARKDOWN</text>
           <text class="mock-doc-title" x="310" y="160">Q2 product strategy</text>
 
           <line class="mock-hair" x1="310" y1="186" x2="852" y2="186" />

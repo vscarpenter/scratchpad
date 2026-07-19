@@ -2770,6 +2770,13 @@ body:not(.page-privacy) .theme-toggle:hover {
 .mock-tag              { fill: var(--accent-tint); stroke: none; }
 .mock-tag-label        { font: 500 10px/1 var(--mono); fill: var(--accent); }
 
+.mock-folder-chevron    { stroke: var(--gray-500); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.mock-folder-dot-accent { fill: var(--accent); }
+.mock-folder-dot-olive  { fill: var(--olive); }
+.mock-folder-name       { font: 600 12px/1 var(--sans); fill: var(--slate); }
+.mock-folder-count      { font: 400 9.5px/1 var(--mono); fill: var(--gray-500); }
+.mock-newfolder         { font: 500 11px/1 var(--sans); fill: var(--gray-500); }
+
 /* ---------- Section scaffolding ---------- */
 .about-section {
   padding: 72px 0;
