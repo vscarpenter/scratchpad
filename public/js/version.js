@@ -3,8 +3,8 @@
 (function () {
   'use strict';
 
-  window.SCRATCHPAD_VERSION = '3.2.0';
-  window.SCRATCHPAD_BUILD_DATE = '2026-07-18';
+  window.SCRATCHPAD_VERSION = '3.3.0';
+  window.SCRATCHPAD_BUILD_DATE = '2026-07-19';
 
   function apply() {
     const v = document.getElementById('app-version');

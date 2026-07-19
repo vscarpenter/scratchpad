@@ -73,6 +73,9 @@ test.describe('note organization and empty states', () => {
       { id: 'sort-new', title: 'Newer note', body: 'New.', updatedAt: base },
     ]);
 
+    // The global Pinned section is a Recent-mode feature; in the default
+    // Folders grouping a pinned note floats to the top of its own folder.
+    await page.locator('#group-recent').click();
     await page.locator('.note-row[data-id="sort-old"]').getByRole('button', { name: 'Open Older note' }).click();
     await page.locator('#pin-toggle').click();
 
