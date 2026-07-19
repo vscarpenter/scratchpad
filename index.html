@@ -158,6 +158,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>
               </button>
               <div id="overflow-menu" class="popover-menu" role="menu" hidden>
+                <button id="move-note-overflow" role="menuitem" type="button" data-action="move">Move to folder…</button>
                 <button id="history-btn" role="menuitem" type="button" data-action="history">History</button>
                 <button id="export-overflow-btn" role="menuitem" type="button" data-action="export">Export Markdown ZIP</button>
                 <hr class="menu-divider"/>
@@ -315,6 +316,14 @@
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
       <button id="folder-dialog-save" class="btn btn-primary" type="button">Save</button>
     </div>
+  </dialog>
+
+  <dialog id="move-note-dialog" class="dialog" aria-labelledby="move-note-title">
+    <div class="dialog-head">
+      <h2 id="move-note-title">Move to folder</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body"><div id="move-folder-list" class="move-folder-list"></div></div>
   </dialog>
 
   <dialog id="folder-delete-dialog" class="dialog" aria-labelledby="folder-delete-title">

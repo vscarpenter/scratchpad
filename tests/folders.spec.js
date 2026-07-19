@@ -170,3 +170,52 @@ test.describe('folder delete and reorder', () => {
     await expect(page.locator('.folder-head .folder-name').first()).toHaveText('Beta');
   });
 });
+
+test.describe('move to folder', () => {
+  test('editor overflow move; updatedAt unchanged', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Mover', body: 'x' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    const before = await page.evaluate(async () => (await window.ScratchpadDB.get('n-1')).updatedAt);
+    await page.locator('.note-row', { hasText: 'Mover' }).click();
+    await page.locator('#overflow-btn').click();
+    await page.locator('#move-note-overflow').click();
+    await page.locator('#move-folder-list button', { hasText: 'Work' }).click();
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
+    const after = await page.evaluate(async () => (await window.ScratchpadDB.get('n-1')).updatedAt);
+    expect(after).toBe(before);
+  });
+
+  test('bulk move', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'n-1', title: 'One', body: 'x' },
+      { id: 'n-2', title: 'Two', body: 'x' },
+    ]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('#bulk-toggle').click();
+    await page.locator('.note-row', { hasText: 'One' }).locator('input[type="checkbox"]').check();
+    await page.locator('.note-row', { hasText: 'Two' }).locator('input[type="checkbox"]').check();
+    await page.locator('#bulk-move-folder').click();
+    await page.locator('#move-folder-list button', { hasText: 'Work' }).click();
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('2');
+  });
+
+  test('new note here lands in the folder', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn').click();
+    await page.locator('#folder-menu [data-action="new-note"]').click();
+    await page.locator('#note-title-input').fill('Born here');
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#note-eyebrow')).toContainText('Work');
+  });
+
+  test('palette move command files the selected note', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Palette mover', body: 'x' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.note-row', { hasText: 'Palette mover' }).click();
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('move note');
+    await page.keyboard.press('Enter');
+    await page.locator('#move-folder-list button', { hasText: 'Work' }).click();
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
+  });
+});

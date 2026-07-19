@@ -66,6 +66,7 @@
     folderDialogId: null,
     folderMenuTargetId: null,
     folderDeleteId: null,
+    moveTargetIds: null,
     commandItems: [],
     commandIndex: 0,
     busy: new Set(),
@@ -146,6 +147,9 @@
     folderDeleteCopy: $('folder-delete-copy'),
     folderDeleteKeep: $('folder-delete-keep'),
     folderDeleteTrash: $('folder-delete-trash'),
+    moveNoteDialog: $('move-note-dialog'),
+    moveFolderList: $('move-folder-list'),
+    moveNoteOverflow: $('move-note-overflow'),
     deleteDialog: $('delete-dialog'),
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
@@ -964,6 +968,70 @@
       : 'Folder deleted.');
   }
 
+  function openMoveDialog(noteIds) {
+    const ids = (noteIds || []).filter((id) => {
+      const n = getNote(id);
+      return n && !isTrashed(n);
+    });
+    if (!ids.length) return;
+    state.moveTargetIds = ids;
+    const single = ids.length === 1 ? getNote(ids[0]) : null;
+    const currentId = single ? noteFolderId(single) : undefined;
+    const options = [
+      ...sortedFolders().map((f) => ({ id: f.id, name: f.name, color: f.color })),
+      { id: null, name: 'Notes', color: null },
+    ];
+    const buttons = options.map((opt) => {
+      const disabled = single !== null && opt.id === currentId;
+      const children = [];
+      if (opt.color) {
+        children.push(el('span', { class: 'folder-dot', attrs: { 'data-color': opt.color, 'aria-hidden': 'true' } }));
+      }
+      children.push(el('span', { text: opt.name }));
+      return el('button', {
+        class: 'move-folder-option',
+        attrs: {
+          type: 'button',
+          disabled: disabled || null,
+          'aria-disabled': disabled ? 'true' : null,
+        },
+        children,
+        on: { click: () => moveNotesToFolder(state.moveTargetIds, opt.id) },
+      });
+    });
+    els.moveFolderList.replaceChildren(...buttons);
+    openDialog(els.moveNoteDialog);
+  }
+
+  // Filing a note is organizational metadata: it must not bump updatedAt
+  // (recency order) or create a revision.
+  async function moveNotesToFolder(noteIds, folderId) {
+    const changed = [];
+    for (const id of noteIds || []) {
+      const note = getNote(id);
+      if (!note || isTrashed(note) || noteFolderId(note) === folderId) continue;
+      changed.push({ ...note, folderId });
+    }
+    if (changed.length) {
+      await bulkPutNoteRecords(changed);
+      const nextById = new Map(changed.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+    }
+    state.moveTargetIds = null;
+    closeDialog(els.moveNoteDialog);
+    if (state.bulkMode) bulkClear();
+    renderAll();
+    toast(
+      changed.length
+        ? 'Moved ' + changed.length + ' note' + (changed.length === 1 ? '' : 's') + ' to ' + folderDisplayName(folderId) + '.'
+        : 'Notes were already there.',
+      { tone: changed.length ? 'success' : 'info' }
+    );
+  }
+
   async function moveFolder(folderId, delta) {
     const ordered = sortedFolders();
     const index = ordered.findIndex((f) => f.id === folderId);
@@ -1153,6 +1221,12 @@
           text: 'Add tag',
           attrs: { id: 'bulk-add-tag', type: 'button', disabled: selectedCount === 0 },
           on: { click: openBulkTagDialog },
+        }),
+        el('button', {
+          class: 'btn btn-secondary btn-sm',
+          text: 'Move to folder…',
+          attrs: { id: 'bulk-move-folder', type: 'button', disabled: selectedCount === 0 },
+          on: { click: () => openMoveDialog([...state.bulkSelectedIds]) },
         }),
         el('button', {
           class: 'btn btn-danger btn-sm',
@@ -1535,6 +1609,7 @@
     els.restoreBtn.hidden = !trashed;
     els.permanentDeleteBtn.hidden = !trashed;
     els.overflowBtn.hidden = trashed;
+    els.moveNoteOverflow.hidden = trashed;
     els.discardOverflowBtn.hidden = !(state.editing && state.dirty);
 
     const bodyEmpty = !(note.body || '').trim();
@@ -1858,7 +1933,9 @@
     await maybePromptDraftForSelected();
   }
 
-  async function createNote() {
+  // folderId is optional; direct event-handler bindings pass a click event
+  // here, which the typeof guard treats as "no folder".
+  async function createNote(folderId) {
     if (state.editing && state.dirty) {
       const ok = await confirmDiscard();
       if (!ok) return;
@@ -1871,6 +1948,7 @@
       body: '',
       tags: [],
       pinned: false,
+      folderId: typeof folderId === 'string' && folderId ? folderId : null,
       createdAt: t,
       updatedAt: t,
       deletedAt: null,
@@ -3298,6 +3376,17 @@
       },
     ];
 
+    const selectedNote = getNote(state.selectedId);
+    if (selectedNote && !isTrashed(selectedNote)) {
+      commands.push({
+        id: 'move-to-folder',
+        label: 'Move note to folder…',
+        meta: 'File the selected note',
+        keywords: 'folder move file organize',
+        run: () => openMoveDialog([selectedNote.id]),
+      });
+    }
+
     const notes = sortNotes(state.notes)
       .slice(0, 8)
       .map((note) => ({
@@ -3327,11 +3416,21 @@
     await maybePromptDraftForSelected();
   }
 
+  // Exact substring matches rank above fuzzy-only matches so typing a
+  // command's name verbatim always puts it first.
   function filteredCommandItems() {
     const q = els.commandPaletteInput.value;
-    return commandDefinitions()
-      .filter((item) => matchesQuery([item.label, item.meta, item.keywords].join(' '), q))
-      .slice(0, 12);
+    const nq = normalizeSearchText(q);
+    const all = commandDefinitions()
+      .filter((item) => matchesQuery([item.label, item.meta, item.keywords].join(' '), q));
+    if (!nq) return all.slice(0, 12);
+    const exact = [];
+    const fuzzy = [];
+    for (const item of all) {
+      const hay = normalizeSearchText([item.label, item.meta, item.keywords].join(' '));
+      (hay.includes(nq) ? exact : fuzzy).push(item);
+    }
+    return exact.concat(fuzzy).slice(0, 12);
   }
 
   function renderCommandPaletteList() {
@@ -4468,6 +4567,10 @@
     els.exportOverflowBtn.addEventListener('click', () => {
       closeOverflowMenu();
       exportMarkdownZip();
+    });
+    els.moveNoteOverflow.addEventListener('click', () => {
+      closeOverflowMenu();
+      if (state.selectedId) openMoveDialog([state.selectedId]);
     });
     els.discardOverflowBtn.addEventListener('click', async () => {
       closeOverflowMenu();
