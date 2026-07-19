@@ -49,6 +49,7 @@
     searchScope: 'all',
     tagFilter: null,
     view: 'active',
+    grouping: readGrouping(),
     mobileView: 'list', // 'list' | 'editor' - only meaningful on narrow viewports
     promptedDrafts: new Set(),
     pendingTagDelete: null,
@@ -80,6 +81,9 @@
     clearFilter: $('clear-filter'),
     activeNotesView: $('active-notes-view'),
     trashView: $('trash-view'),
+    groupToggle: $('group-toggle'),
+    groupFolders: $('group-folders'),
+    groupRecent: $('group-recent'),
     manageTags: $('manage-tags'),
     newNote: $('new-note'),
     todayNote: $('today-note'),
@@ -726,6 +730,48 @@
     state.folders = rows.map((f, i) => normalizeFolder(f, i)).filter(Boolean);
   }
 
+  function readGrouping() {
+    try {
+      return localStorage.getItem(GROUPING_KEY) === 'recent' ? 'recent' : 'folders';
+    } catch (e) {
+      return 'folders';
+    }
+  }
+
+  function setGrouping(mode) {
+    state.grouping = mode === 'recent' ? 'recent' : 'folders';
+    try {
+      localStorage.setItem(GROUPING_KEY, state.grouping);
+    } catch (e) { /* private mode / quota */ }
+    renderAll();
+  }
+
+  function collapsedFolderKeys() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(COLLAPSED_FOLDERS_KEY) || '[]');
+      return new Set(Array.isArray(raw) ? raw.filter((k) => typeof k === 'string') : []);
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  function writeCollapsedFolderKeys(keys) {
+    const valid = new Set(state.folders.map((f) => f.id));
+    valid.add(VIRTUAL_FOLDER_KEY);
+    const pruned = [...keys].filter((k) => valid.has(k));
+    try {
+      localStorage.setItem(COLLAPSED_FOLDERS_KEY, JSON.stringify(pruned));
+    } catch (e) { /* private mode / quota */ }
+  }
+
+  function toggleFolderCollapsed(key) {
+    const keys = collapsedFolderKeys();
+    if (keys.has(key)) keys.delete(key);
+    else keys.add(key);
+    writeCollapsedFolderKeys(keys);
+    renderSidebar();
+  }
+
   function isTrashed(note) {
     return !!(note && Number.isFinite(note.deletedAt));
   }
@@ -765,6 +811,12 @@
   function renderViewSwitch() {
     els.activeNotesView.classList.toggle('is-active', state.view === 'active');
     els.trashView.classList.toggle('is-active', state.view === 'trash');
+    if (!els.groupToggle) return;
+    els.groupToggle.hidden = state.view === 'trash';
+    els.groupFolders.classList.toggle('is-active', state.grouping === 'folders');
+    els.groupFolders.setAttribute('aria-pressed', state.grouping === 'folders' ? 'true' : 'false');
+    els.groupRecent.classList.toggle('is-active', state.grouping === 'recent');
+    els.groupRecent.setAttribute('aria-pressed', state.grouping === 'recent' ? 'true' : 'false');
   }
 
   function renderSearchScope() {
@@ -810,10 +862,15 @@
       if (sorted.length) children.push(renderSection('Trash', sorted));
     } else {
       if (state.bulkMode && sorted.length) children.push(renderBulkToolbar(sorted));
-      const buckets = bucketizeNotes(sorted);
-      for (const bucket of buckets) {
-        if (!bucket.notes.length) continue;
-        children.push(renderSection(bucket.label, bucket.notes, bucket.isPinnedSection));
+      const flat = !!(state.search.trim() || state.tagFilter);
+      if (state.grouping === 'folders' && !flat) {
+        renderFolderSections(children, sorted);
+      } else {
+        const buckets = bucketizeNotes(sorted);
+        for (const bucket of buckets) {
+          if (!bucket.notes.length) continue;
+          children.push(renderSection(bucket.label, bucket.notes, bucket.isPinnedSection));
+        }
       }
     }
 
@@ -953,6 +1010,84 @@
         }),
       ],
     });
+  }
+
+  function notesForFolder(notes, folderId) {
+    return notes
+      .filter((note) => noteFolderId(note) === folderId)
+      .sort((a, b) => {
+        if (!!b.pinned !== !!a.pinned) return a.pinned ? -1 : 1;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
+  }
+
+  function renderFolderSections(children, notes) {
+    for (const folder of sortedFolders()) {
+      children.push(renderFolderSection(folder, notesForFolder(notes, folder.id)));
+    }
+    children.push(renderFolderSection(null, notesForFolder(notes, null)));
+  }
+
+  function folderMenuIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '16');
+    svg.setAttribute('height', '16');
+    svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
+    for (const cx of [6, 12, 18]) {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', String(cx));
+      c.setAttribute('cy', '12');
+      c.setAttribute('r', '1.6');
+      svg.appendChild(c);
+    }
+    return svg;
+  }
+
+  function renderFolderSection(folder, notes) {
+    const key = folder ? folder.id : VIRTUAL_FOLDER_KEY;
+    const collapsed = collapsedFolderKeys().has(key);
+    const name = folder ? folder.name : 'Notes';
+    const toggleChildren = [
+      el('span', { class: 'folder-chevron', attrs: { 'aria-hidden': 'true' } }),
+    ];
+    if (folder && folder.color) {
+      toggleChildren.push(el('span', { class: 'folder-dot', attrs: { 'data-color': folder.color, 'aria-hidden': 'true' } }));
+    }
+    toggleChildren.push(el('span', { class: 'folder-name', text: name }));
+    toggleChildren.push(el('span', { class: 'folder-count', text: String(notes.length), attrs: { 'aria-hidden': 'true' } }));
+    const toggle = el('button', {
+      class: 'folder-toggle',
+      attrs: {
+        type: 'button',
+        'aria-expanded': collapsed ? 'false' : 'true',
+        'aria-label': (collapsed ? 'Expand ' : 'Collapse ') + name + ' (' + notes.length + ' note' + (notes.length === 1 ? '' : 's') + ')',
+      },
+      children: toggleChildren,
+      on: { click: () => toggleFolderCollapsed(key) },
+    });
+    const headChildren = [toggle];
+    if (folder) {
+      headChildren.push(el('button', {
+        class: 'icon-btn folder-menu-btn',
+        attrs: {
+          type: 'button',
+          'aria-haspopup': 'menu',
+          'aria-expanded': 'false',
+          'aria-label': 'Folder actions for ' + name,
+          title: 'Folder actions',
+        },
+        children: [folderMenuIcon()],
+      }));
+    }
+    const head = el('div', {
+      class: 'folder-head' + (collapsed ? ' is-collapsed' : ''),
+      attrs: { 'data-folder-id': folder ? folder.id : '' },
+      children: headChildren,
+    });
+    const rows = collapsed ? [] : notes.map(renderRow);
+    return el('div', { class: 'note-section folder-section', children: [head, ...rows] });
   }
 
   function renderSection(label, notes, isPinnedSection) {
@@ -3949,6 +4084,8 @@
     els.clearSearchBtn.addEventListener('click', clearAllFilters);
     els.activeNotesView.addEventListener('click', () => setView('active'));
     els.trashView.addEventListener('click', () => setView('trash'));
+    els.groupFolders.addEventListener('click', () => setGrouping('folders'));
+    els.groupRecent.addEventListener('click', () => setGrouping('recent'));
     els.manageTags.addEventListener('click', openTagManager);
 
     els.newNote.addEventListener('click', createNote);

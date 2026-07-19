@@ -368,6 +368,109 @@ body:not(.page-privacy) .theme-toggle:hover {
   background: var(--accent-soft);
 }
 
+/* ---------- Folders / Recent grouping toggle ---------- */
+.sidebar-group-toggle {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+}
+.sidebar-group-toggle .btn {
+  flex: 1;
+  height: 26px;
+  justify-content: center;
+  font: 500 12px/1 var(--sans);
+  color: var(--text-muted);
+}
+.sidebar-group-toggle .btn.is-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- Folder accordion ---------- */
+.folder-section { padding-top: 4px; }
+
+.folder-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  border-radius: var(--r-lg);
+}
+.folder-head.is-drop-target {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.folder-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  font-family: var(--sans);
+}
+.folder-toggle:hover { background: var(--row-hover); }
+.folder-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.folder-chevron {
+  width: 0;
+  height: 0;
+  flex: 0 0 auto;
+  border-left: 5px solid var(--text-muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transform: rotate(90deg);
+  transition: transform var(--t-fast) ease;
+}
+.folder-head.is-collapsed .folder-chevron { transform: rotate(0deg); }
+
+.folder-name {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 13px/1.2 var(--sans);
+  color: var(--ink);
+}
+
+.folder-count {
+  flex: 0 0 auto;
+  font: 500 11.5px/1 var(--sans);
+  color: var(--text-muted);
+}
+
+.folder-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.folder-dot[data-color="accent"] { background: var(--accent); }
+.folder-dot[data-color="olive"] { background: var(--olive); }
+.folder-dot[data-color="sky"] { background: var(--sky); }
+.folder-dot[data-color="gray"] { background: var(--gray-500); }
+
+.folder-menu-btn {
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity var(--t-fast) ease;
+}
+.folder-head:hover .folder-menu-btn,
+.folder-head:focus-within .folder-menu-btn,
+.folder-menu-btn[aria-expanded="true"] { opacity: 1; }
+@media (pointer: coarse) {
+  .folder-menu-btn { opacity: 1; }
+}
+
 /* ---------- Sidebar foot status chip ---------- */
 .sidebar-foot {
   flex: 0 0 auto;

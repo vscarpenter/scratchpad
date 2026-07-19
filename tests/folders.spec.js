@@ -43,3 +43,49 @@ test.describe('folder model', () => {
     await expect(page.locator('#note-eyebrow')).toContainText('Notes');
   });
 });
+
+test.describe('sidebar accordion', () => {
+  test('folders render as sections with counts, Notes last', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'n-1', title: 'In work', body: 'x', folderId: 'f-w' },
+      { id: 'n-2', title: 'Loose', body: 'x' },
+    ]);
+    await seedFolders(page, [{ id: 'f-w', name: 'Work' }]);
+    const heads = page.locator('.folder-head');
+    await expect(heads).toHaveCount(2);
+    await expect(heads.first()).toContainText('Work');
+    await expect(heads.first().locator('.folder-count')).toHaveText('1');
+    await expect(heads.last()).toContainText('Notes');
+  });
+
+  test('collapse persists across reload', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'In work', body: 'x', folderId: 'f-w' }]);
+    await seedFolders(page, [{ id: 'f-w', name: 'Work' }]);
+    const toggle = page.locator('.folder-head[data-folder-id="f-w"] .folder-toggle');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.note-row', { hasText: 'In work' })).toBeHidden();
+    await page.reload();
+    await expect(page.locator('.folder-head[data-folder-id="f-w"] .folder-toggle'))
+      .toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('Recent toggle restores date buckets and persists', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Fresh', body: 'x' }]);
+    await page.locator('#group-recent').click();
+    await expect(page.locator('.note-section-head').first()).toHaveText('Today');
+    await page.reload();
+    await expect(page.locator('#group-recent')).toHaveClass(/is-active/);
+  });
+
+  test('pinned note sorts first inside its folder in folders mode', async ({ page }) => {
+    const base = Date.now();
+    await seedRawNotes(page, [
+      { id: 'n-old-pinned', title: 'Old pinned', body: 'x', folderId: 'f-w', pinned: true, updatedAt: base - 60_000 },
+      { id: 'n-new', title: 'Newer plain', body: 'x', folderId: 'f-w', updatedAt: base },
+    ]);
+    await seedFolders(page, [{ id: 'f-w', name: 'Work' }]);
+    const rows = page.locator('.folder-section .note-row');
+    await expect(rows.first()).toContainText('Old pinned');
+  });
+});
