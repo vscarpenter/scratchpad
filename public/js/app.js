@@ -1131,6 +1131,10 @@
     pruneBulkSelection();
 
     if (state.view === 'trash') {
+      children.push(el('p', {
+        class: 'trash-retention-note',
+        text: 'Notes in Trash are deleted forever after 30 days.',
+      }));
       if (trashedNotes().length) {
         children.push(el('div', {
           class: 'trash-tools',
@@ -1845,6 +1849,16 @@
   }
 
   // -------- State mutations --------
+  // Tombstoned notes expire after TRASH_RETENTION_MS; the deletedAt stamp
+  // already records when trashing happened, so purge is a startup filter.
+  async function purgeExpiredTrash() {
+    const cutoff = now() - TRASH_RETENTION_MS;
+    const all = (await DB.getAll()).map(normalizeNote);
+    const expired = all.filter((n) => Number.isFinite(n.deletedAt) && n.deletedAt < cutoff);
+    for (const note of expired) await deleteNoteRecord(note.id);
+    return expired.length;
+  }
+
   async function loadAll() {
     await loadFolders();
     const all = await DB.getAll();
@@ -4868,6 +4882,7 @@
     initCrossTabSync();
     bindEvents();
     try {
+      await purgeExpiredTrash();
       await loadAll();
       await handleActionParam();
       registerServiceWorker();

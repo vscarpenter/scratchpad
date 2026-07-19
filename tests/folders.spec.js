@@ -252,3 +252,30 @@ test.describe('drag and drop', () => {
     await expect(page.locator('.folder-head .folder-name').first()).toHaveText('Beta');
   });
 });
+
+test.describe('trash retention', () => {
+  test('notes older than 30 days purge on load; younger survive', async ({ page }) => {
+    const now = Date.now();
+    await seedRawNotes(page, [
+      { id: 'n-old', title: 'Expired', body: 'x', deletedAt: now - 31 * 24 * 60 * 60 * 1000 },
+      { id: 'n-young', title: 'Recent trash', body: 'x', deletedAt: now - 29 * 24 * 60 * 60 * 1000 },
+    ]);
+    await page.reload();
+    await page.locator('#trash-view').click();
+    await expect(page.locator('.note-row', { hasText: 'Recent trash' })).toBeVisible();
+    await expect(page.locator('.note-row', { hasText: 'Expired' })).toHaveCount(0);
+    const gone = await page.evaluate(async () => ({
+      note: await window.ScratchpadDB.get('n-old'),
+      revs: await window.ScratchpadDB.getRevisions('n-old'),
+    }));
+    expect(gone.note).toBeFalsy();
+    expect(gone.revs).toEqual([]);
+  });
+
+  test('trash view shows the retention notice', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-t', title: 'In trash', body: 'x', deletedAt: Date.now() }]);
+    await page.locator('#trash-view').click();
+    await expect(page.locator('.trash-retention-note'))
+      .toHaveText('Notes in Trash are deleted forever after 30 days.');
+  });
+});
