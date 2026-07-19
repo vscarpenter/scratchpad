@@ -49,6 +49,7 @@ async function seedRawNotes(page, notes) {
       deletedAt: Number.isFinite(note.deletedAt) ? note.deletedAt : null,
       lastDraftAt: Number.isFinite(note.lastDraftAt) ? note.lastDraftAt : null,
       dailyDate: typeof note.dailyDate === 'string' ? note.dailyDate : null,
+      folderId: typeof note.folderId === 'string' ? note.folderId : null,
     }));
     await window.ScratchpadDB.bulkPut(notes);
   }, notes);
@@ -73,4 +74,24 @@ async function importJson(page, payload, filename = 'scratchpad-import.json') {
   });
 }
 
-module.exports = { gotoApp, seedNotes, seedRawNotes, createAndSaveNote, importJson };
+async function seedFolders(page, folders) {
+  await page.evaluate(async (rows) => {
+    const base = Date.now();
+    for (let i = 0; i < rows.length; i++) {
+      const f = rows[i];
+      await window.ScratchpadDB.putFolder({
+        id: f.id || `folder-${i}`,
+        name: f.name,
+        color: f.color || null,
+        sortOrder: Number.isFinite(f.sortOrder) ? f.sortOrder : i,
+        parentId: null,
+        createdAt: base - 1000,
+        updatedAt: base - 1000,
+      });
+    }
+  }, folders);
+  await page.reload();
+  await expect(page.locator('#app-shell')).toBeVisible();
+}
+
+module.exports = { gotoApp, seedNotes, seedRawNotes, createAndSaveNote, importJson, seedFolders };

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, createAndSaveNote } = require('./helpers');
+const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson } = require('./helpers');
 
 test.describe('folders DB layer', () => {
   test('putFolder/getAllFolders/removeFolder round-trip', async ({ page }) => {
@@ -26,5 +26,20 @@ test.describe('folders DB layer', () => {
     await seedRawNotes(page, [{ id: 'n-1', title: 'Kept', body: 'still here' }]);
     const count = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).length);
     expect(count).toBe(1);
+  });
+});
+
+test.describe('folder model', () => {
+  test('eyebrow shows the note folder name', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Filed', body: 'x', folderId: 'f-work' }]);
+    await seedFolders(page, [{ id: 'f-work', name: 'Work' }]);
+    await page.locator('.note-row', { hasText: 'Filed' }).click();
+    await expect(page.locator('#note-eyebrow')).toContainText('Work');
+  });
+
+  test('orphan folderId heals to Notes', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-2', title: 'Orphan', body: 'x', folderId: 'gone' }]);
+    await page.locator('.note-row', { hasText: 'Orphan' }).click();
+    await expect(page.locator('#note-eyebrow')).toContainText('Notes');
   });
 });
