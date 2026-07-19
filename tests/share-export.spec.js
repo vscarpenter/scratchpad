@@ -89,7 +89,7 @@ test.describe('sharing and portable exports', () => {
     const payload = JSON.parse((await downloadBuffer(download)).toString('utf8'));
 
     expect(download.suggestedFilename()).toMatch(/^scratchpad-.*\.json$/);
-    expect(payload).toMatchObject({ app: 'scratchpad', schemaVersion: 2 });
+    expect(payload).toMatchObject({ app: 'scratchpad', schemaVersion: 3 });
     expect(payload.notes.map((note) => note.id)).toEqual(['json-active']);
     expect(payload.trashedNotes.map((note) => note.id)).toEqual(['json-trash']);
     expect(payload.revisions.map((revision) => revision.id)).toEqual(['json-revision']);

@@ -279,3 +279,62 @@ test.describe('trash retention', () => {
       .toHaveText('Notes in Trash are deleted forever after 30 days.');
   });
 });
+
+test.describe('backups with folders', () => {
+  test('v3 export payload carries folders; round-trip restores them', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'n-1', title: 'Filed', body: 'x', folderId: 'f-1' }]);
+    await seedFolders(page, [{ id: 'f-1', name: 'Work', color: 'olive' }]);
+    const payload = await page.evaluate(async () => {
+      const notes = await window.ScratchpadDB.getAll();
+      const folders = await window.ScratchpadDB.getAllFolders();
+      return {
+        app: 'scratchpad', version: 'test', schemaVersion: 3, exportedAt: new Date().toISOString(),
+        notes: notes.filter((n) => !n.deletedAt), trashedNotes: [], revisions: [], folders,
+      };
+    });
+    await page.evaluate(() => window.ScratchpadDB.clearAllStores());
+    await page.reload();
+    await importJson(page, payload);
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('.folder-head', { hasText: 'Work' })).toBeVisible();
+    await expect(page.locator('.folder-head[data-folder-id] .folder-count').first()).toHaveText('1');
+  });
+
+  test('v2 backup still imports; notes land in Notes', async ({ page }) => {
+    await gotoApp(page);
+    await importJson(page, {
+      app: 'scratchpad', version: 'test', schemaVersion: 2, exportedAt: new Date().toISOString(),
+      notes: [{ id: 'n-v2', title: 'Legacy', body: 'x', tags: [], pinned: false, createdAt: 1, updatedAt: 1, deletedAt: null }],
+      trashedNotes: [], revisions: [],
+    });
+    await page.locator('#confirm-import').click();
+    const notesSection = page.locator('.folder-section').last();
+    await expect(notesSection.locator('.note-row', { hasText: 'Legacy' })).toBeVisible();
+  });
+
+  test('imported folder with clashing name gets a numeric suffix', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-mine', name: 'Work' }]);
+    await importJson(page, {
+      app: 'scratchpad', version: 'test', schemaVersion: 3, exportedAt: new Date().toISOString(),
+      notes: [{ id: 'n-x', title: 'Rider', body: 'x', tags: [], pinned: false, createdAt: 1, updatedAt: 1, deletedAt: null, folderId: 'f-theirs' }],
+      trashedNotes: [], revisions: [],
+      folders: [{ id: 'f-theirs', name: 'Work', color: null, sortOrder: 0, parentId: null, createdAt: 1, updatedAt: 1 }],
+    });
+    await page.locator('#confirm-import').click();
+    await expect(page.locator('.folder-head', { hasText: 'Work 2' })).toBeVisible();
+  });
+
+  test('exportAll payload is schemaVersion 3 with folders', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    const download = page.waitForEvent('download');
+    await page.locator('#open-about').click();
+    await page.locator('#export-btn').click();
+    const file = await download;
+    const stream = await file.createReadStream();
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    expect(data.schemaVersion).toBe(3);
+    expect(data.folders.map((f) => f.name)).toEqual(['Work']);
+  });
+});
