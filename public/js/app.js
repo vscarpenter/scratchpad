@@ -15,6 +15,15 @@
   const NOTE_TAG_MAX = 48;
   const NOTE_TAGS_MAX = 20;
   const SEARCH_SCOPES = new Set(['all', 'title', 'body', 'tags']);
+  const FOLDER_NAME_MAX = 60;
+  const FOLDERS_MAX = 100;
+  const IMPORT_MAX_FOLDERS = 100;
+  const FOLDER_COLORS = new Set(['accent', 'olive', 'sky', 'gray']);
+  const RESERVED_FOLDER_NAME = 'notes';
+  const GROUPING_KEY = 'scratchpad:notesGrouping';
+  const COLLAPSED_FOLDERS_KEY = 'scratchpad:collapsedFolders';
+  const VIRTUAL_FOLDER_KEY = '__notes__';
+  const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
   const LAST_BACKUP_KEY = 'scratchpad:lastBackupAt';
   const BACKUP_SNOOZE_KEY = 'scratchpad:backupReminderSnoozedUntil';
   const BACKUP_REMINDER_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -32,6 +41,7 @@
 
   const state = {
     notes: [],
+    folders: [],
     selectedId: null,
     editing: false,
     dirty: false,
@@ -288,6 +298,10 @@
         state.externalChanges.clear();
         renderAll();
         toast('Local data was erased in another tab.', { tone: 'info' });
+        return;
+      }
+      if (message.type === 'folders-changed') {
+        loadFolders().then(renderAll).catch((e) => console.warn('Cross-tab folder refresh failed', e));
         return;
       }
       if (!message.noteId) return;
@@ -637,6 +651,7 @@
       body: typeof n.body === 'string' ? n.body : '',
       tags: Array.isArray(n.tags) ? Array.from(new Set(n.tags.map(normalizeTag).filter(Boolean))) : [],
       pinned: !!n.pinned,
+      folderId: typeof n.folderId === 'string' && n.folderId ? n.folderId : null,
       createdAt: finiteTime(n.createdAt, t),
       updatedAt: finiteTime(n.updatedAt, t),
       deletedAt: Number.isFinite(n.deletedAt) ? n.deletedAt : null,
@@ -664,6 +679,51 @@
 
   function getNote(id) {
     return state.notes.find((n) => n.id === id) || null;
+  }
+
+  // -------- Folders --------
+  function normalizeFolderName(name) {
+    return String(name || '').replace(/\s+/g, ' ').trim().slice(0, FOLDER_NAME_MAX);
+  }
+
+  function normalizeFolder(f, index) {
+    if (!f || typeof f !== 'object') return null;
+    const t = now();
+    const name = normalizeFolderName(f.name);
+    if (!name || name.toLowerCase() === RESERVED_FOLDER_NAME) return null;
+    return {
+      id: typeof f.id === 'string' && f.id ? f.id : uuid(),
+      name,
+      color: FOLDER_COLORS.has(f.color) ? f.color : null,
+      sortOrder: Number.isFinite(f.sortOrder) ? f.sortOrder : (index || 0),
+      parentId: null,
+      createdAt: finiteTime(f.createdAt, t),
+      updatedAt: finiteTime(f.updatedAt, t),
+    };
+  }
+
+  function sortedFolders() {
+    return [...state.folders].sort((a, b) => (a.sortOrder - b.sortOrder) || (a.createdAt - b.createdAt));
+  }
+
+  function folderById(id) {
+    return state.folders.find((f) => f.id === id) || null;
+  }
+
+  // Orphaned folderIds (deleted folder, corrupt import) heal to the virtual
+  // "Notes" folder here rather than via a data migration.
+  function noteFolderId(note) {
+    return note && note.folderId && folderById(note.folderId) ? note.folderId : null;
+  }
+
+  function folderDisplayName(folderId) {
+    const folder = folderId ? folderById(folderId) : null;
+    return folder ? folder.name : 'Notes';
+  }
+
+  async function loadFolders() {
+    const rows = await DB.getAllFolders();
+    state.folders = rows.map((f, i) => normalizeFolder(f, i)).filter(Boolean);
   }
 
   function isTrashed(note) {
@@ -1176,8 +1236,8 @@
     const pinned = note.pinned && !trashed;
     let label;
     if (trashed) label = 'Note · trashed';
-    else if (pinned) label = 'Note · pinned';
-    else label = 'Note · draft';
+    else if (pinned) label = folderDisplayName(noteFolderId(note)) + ' · pinned';
+    else label = folderDisplayName(noteFolderId(note)) + ' · draft';
     els.noteEyebrow.textContent = label;
   }
 
@@ -1294,6 +1354,7 @@
 
   // -------- State mutations --------
   async function loadAll() {
+    await loadFolders();
     const all = await DB.getAll();
     state.notes = all.map(normalizeNote);
     ensureSelectionForView();
