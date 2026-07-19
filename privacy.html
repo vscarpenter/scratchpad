@@ -74,7 +74,12 @@
         <li>
           <strong>Your notes</strong> — kept in the browser's <em>IndexedDB</em> database named
           <code>scratchpad</code>, in an object store called <code>notes</code>. Each note holds
-          its id, title, body, tags, pinned flag, and timestamps.
+          its id, title, body, tags, pinned flag, folder, and timestamps.
+        </li>
+        <li>
+          <strong>Folders</strong> — kept in the same IndexedDB database, in a
+          <code>folders</code> object store. Each folder holds its id, name, optional color, and
+          sort position.
         </li>
         <li>
           <strong>Drafts and revision history</strong> — kept in the same IndexedDB database, in
@@ -83,7 +88,8 @@
         </li>
         <li>
           <strong>App preferences</strong> — small <em>localStorage</em> entries remember the theme,
-          first-visit state, and backup-reminder timing. They do not contain note content.
+          first-visit state, backup-reminder timing, and sidebar layout (how notes are grouped and
+          which folders are collapsed). They do not contain note content.
         </li>
         <li>
           <strong>Offline app files</strong> — the service worker may cache Scratchpad's own HTML,
@@ -124,9 +130,14 @@
         or import one or more <code>.md</code> files.
       </p>
       <p>
+        Deleting a note moves it to Trash, where it stays recoverable for 30 days. After that,
+        Scratchpad permanently removes the note along with its drafts and revision history.
+        "Delete forever" and "Empty Trash" remove notes immediately, with no recovery.
+      </p>
+      <p>
         Use <strong>About → Erase local data</strong> and type <code>ERASE</code> to remove every
-        note, draft, revision, and Scratchpad preference from this browser. Clearing site data in
-        browser settings has the same effect and also removes the offline app cache.
+        note, draft, revision, folder, and Scratchpad preference from this browser. Clearing site
+        data in browser settings has the same effect and also removes the offline app cache.
       </p>
 
       <h2>Hosting</h2>
