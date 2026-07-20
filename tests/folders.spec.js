@@ -114,6 +114,22 @@ test.describe('folder crud', () => {
     await expect(page.locator('#folder-name-error')).toContainText('already exists');
   });
 
+  test('folder menu opens as a compact popover anchored to its trigger', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    const trigger = page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn');
+    await trigger.click();
+    const menu = page.locator('#folder-menu');
+    await expect(menu).toBeVisible();
+    const menuBox = await menu.boundingBox();
+    const triggerBox = await trigger.boundingBox();
+    const viewport = page.viewportSize();
+    // Anchored under its trigger, content-sized — not stretched to the viewport edge.
+    expect(Math.abs(menuBox.x - triggerBox.x)).toBeLessThanOrEqual(1);
+    expect(menuBox.y).toBeGreaterThan(triggerBox.y + triggerBox.height);
+    expect(menuBox.width).toBeLessThan(320);
+    expect(menuBox.x + menuBox.width).toBeLessThan(viewport.width - 40);
+  });
+
   test('rename via folder menu', async ({ page }) => {
     await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
     await page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn').click();
@@ -336,5 +352,20 @@ test.describe('backups with folders', () => {
     const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     expect(data.schemaVersion).toBe(3);
     expect(data.folders.map((f) => f.name)).toEqual(['Work']);
+  });
+});
+
+test.describe('folder menu on mobile', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test('menu stays within the viewport when the trigger sits near the right edge', async ({ page }) => {
+    await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
+    await page.locator('.folder-head[data-folder-id="f-1"] .folder-menu-btn').click();
+    const menu = page.locator('#folder-menu');
+    await expect(menu).toBeVisible();
+    const box = await menu.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
   });
 });

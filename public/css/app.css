@@ -459,8 +459,10 @@ body:not(.page-privacy) .theme-toggle:hover {
 .folder-dot[data-color="sky"] { background: var(--sky); }
 .folder-dot[data-color="gray"] { background: var(--gray-500); }
 
-/* Global folder menu: positioned from JS against its trigger. */
-.folder-menu {
+/* Global folder menu: positioned from JS against its trigger. Double-class
+   selector so these overrides beat the later .popover-menu base rule
+   (equal-specificity single classes resolve by source order). */
+.popover-menu.folder-menu {
   position: fixed;
   right: auto;
   top: 0;
