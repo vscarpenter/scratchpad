@@ -856,9 +856,10 @@
     closeFolderMenu();
     state.folderMenuTargetId = folderId;
     const rect = trigger.getBoundingClientRect();
+    els.folderMenu.hidden = false; // unhide first so the menu has a measurable width
+    const maxLeft = window.innerWidth - els.folderMenu.offsetWidth - 8;
     els.folderMenu.style.top = Math.round(rect.bottom + 4) + 'px';
-    els.folderMenu.style.left = Math.round(rect.left) + 'px';
-    els.folderMenu.hidden = false;
+    els.folderMenu.style.left = Math.max(8, Math.min(Math.round(rect.left), maxLeft)) + 'px';
     trigger.setAttribute('aria-expanded', 'true');
     document.addEventListener('click', onFolderMenuOutsideClick, true);
     document.addEventListener('keydown', onFolderMenuKey, true);
