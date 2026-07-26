@@ -53,6 +53,18 @@ npx --yes serve@latest -l 8080 .
 
 Then visit <http://localhost:8080>.
 
+### Git hooks
+
+One-time setup for a fresh clone:
+
+```sh
+git config core.hooksPath scripts/hooks
+```
+
+This activates `scripts/hooks/pre-commit`, which blocks staged commits that
+write raw HTML into the DOM (`innerHTML`/`outerHTML` assignment,
+`insertAdjacentHTML(`) outside vendored code.
+
 ## Deploying to AWS S3 + CloudFront
 
 This is a vanilla static bundle. A one-shot `deploy.sh` ships it.
