@@ -57,8 +57,9 @@ Key rules for anything in `public/css/app.css`:
   `--accent-soft` chips clears 4.5:1.
 
 ### HTML/JS safety
-- **Never set `innerHTML` to untrusted content.** A pre-commit hook flags
-  `innerHTML` writes. For sanitized markdown rendering, use
+- **Never set `innerHTML` to untrusted content.** The pre-commit hook at
+  `scripts/hooks/pre-commit` flags staged `innerHTML`/`outerHTML` writes and
+  `insertAdjacentHTML(` calls. For sanitized markdown rendering, use
   `DOMPurify.sanitize(raw, { RETURN_DOM_FRAGMENT: true })` and append the
   fragment — see `public/js/app.js` `renderMarkdownInto()`.
 - **For clearing containers**, use `container.replaceChildren()`, not
