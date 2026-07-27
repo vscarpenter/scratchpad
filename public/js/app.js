@@ -3631,12 +3631,23 @@
   async function restoreRevision(rev) {
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
+    if (state.editing && state.dirty) {
+      // Restoring replaces the editor's content outright, same as any other
+      // action that would blow away an in-progress edit — close this dialog
+      // and reuse the discard confirmation rather than clobber silently.
+      closeDialog(els.historyDialog);
+      const ok = await confirmDiscard();
+      if (!ok) return;
+      await discardCurrentDraft();
+    }
     return withBusy('restore-revision', [], 'Revision restore failed.', async () => {
       const nextNote = {
         ...note,
         title: rev.title || '',
         body: rev.body || '',
-        updatedAt: now(),
+        tags: Array.isArray(rev.tags) ? [...rev.tags] : [],
+        pinned: !!rev.pinned,
+        updatedAt: nextUpdatedAt(note),
         lastDraftAt: null,
       };
       await storeRevision(note);
@@ -3647,6 +3658,7 @@
       state.dirty = false;
       closeDialog(els.historyDialog);
       renderAll();
+      toast('Revision restored.');
     });
   }
 

@@ -2005,6 +2005,10 @@ body:not(.page-privacy) .theme-toggle:hover {
   padding: 10px;
 }
 
+.history-row .btn {
+  margin-top: 8px;
+}
+
 .import-counts {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) auto;
