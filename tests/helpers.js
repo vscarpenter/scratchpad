@@ -95,4 +95,31 @@ async function seedFolders(page, folders) {
   await expect(page.locator('#app-shell')).toBeVisible();
 }
 
-module.exports = { gotoApp, seedNotes, seedRawNotes, createAndSaveNote, importJson, seedFolders };
+async function openListMenu(page) {
+  await page.locator('#list-menu-btn').click();
+  await expect(page.locator('#list-menu')).toBeVisible();
+}
+
+async function enterBulkMode(page) {
+  await openListMenu(page);
+  await page.locator('#bulk-toggle').click();
+  await expect(page.locator('#list-menu')).toBeHidden();
+}
+
+async function openTagManagerViaMenu(page) {
+  await openListMenu(page);
+  await page.locator('#manage-tags').click();
+  await expect(page.locator('#tag-manager-dialog')).toBeVisible();
+}
+
+module.exports = {
+  gotoApp,
+  seedNotes,
+  seedRawNotes,
+  createAndSaveNote,
+  importJson,
+  seedFolders,
+  openListMenu,
+  enterBulkMode,
+  openTagManagerViaMenu,
+};

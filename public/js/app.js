@@ -91,6 +91,10 @@
     groupFolders: $('group-folders'),
     groupRecent: $('group-recent'),
     manageTags: $('manage-tags'),
+    listHeader: $('list-header'),
+    listMenuBtn: $('list-menu-btn'),
+    listMenu: $('list-menu'),
+    newFolderMenuBtn: $('new-folder-menu-btn'),
     newNote: $('new-note'),
     todayNote: $('today-note'),
     bulkToggle: $('bulk-toggle'),
@@ -1117,8 +1121,8 @@
   function renderBulkToggle() {
     if (!els.bulkToggle) return;
     els.bulkToggle.classList.toggle('is-active', state.bulkMode);
-    els.bulkToggle.setAttribute('aria-pressed', state.bulkMode ? 'true' : 'false');
-    els.bulkToggle.textContent = state.bulkMode ? 'Done' : 'Select';
+    els.bulkToggle.setAttribute('aria-checked', state.bulkMode ? 'true' : 'false');
+    els.bulkToggle.textContent = state.bulkMode ? 'Done selecting' : 'Select notes';
   }
 
   function pruneBulkSelection() {
@@ -1171,7 +1175,8 @@
     if (!children.length || (state.view === 'trash' && !sorted.length)) {
       children.push(renderSidebarEmptyState());
     }
-    els.noteList.replaceChildren(...children);
+    // Pass the same header node back in so its listeners and els refs survive.
+    els.noteList.replaceChildren(els.listHeader, ...children);
     renderViewSwitch();
     renderSearchScope();
     renderBulkToggle();
@@ -1964,6 +1969,87 @@
       case 'Tab':
         // Tab leaves the menu: close it and let focus move on naturally.
         closeOverflowMenu();
+        break;
+      default:
+        break;
+    }
+  }
+
+  // -------- List overflow menu --------
+  // Same APG pattern as the editor overflow menu, for the sidebar's
+  // Manage tags / New folder / Select notes actions.
+  function listMenuItems() {
+    return Array.from(els.listMenu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
+      .filter((item) => !item.hidden && item.offsetParent !== null);
+  }
+
+  function focusListMenuItem(index) {
+    const items = listMenuItems();
+    if (!items.length) return;
+    const i = (index + items.length) % items.length;
+    items[i].focus();
+  }
+
+  function openListMenu() {
+    if (!els.listMenu.hidden) return;
+    els.listMenu.hidden = false;
+    els.listMenuBtn.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', onListMenuOutsideClick, true);
+    document.addEventListener('keydown', onListMenuKey, true);
+    setTimeout(() => focusListMenuItem(0), 0);
+  }
+
+  function closeListMenu(opts) {
+    if (els.listMenu.hidden) return;
+    els.listMenu.hidden = true;
+    els.listMenuBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onListMenuOutsideClick, true);
+    document.removeEventListener('keydown', onListMenuKey, true);
+    if (opts && opts.returnFocus) els.listMenuBtn.focus();
+  }
+
+  function toggleListMenu() {
+    if (els.listMenu.hidden) openListMenu();
+    else closeListMenu();
+  }
+
+  function onListMenuOutsideClick(e) {
+    if (els.listMenu.contains(e.target) || els.listMenuBtn.contains(e.target)) return;
+    closeListMenu();
+  }
+
+  function onListMenuKey(e) {
+    const items = listMenuItems();
+    const current = items.indexOf(document.activeElement);
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        closeListMenu({ returnFocus: true });
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        focusListMenuItem(current < 0 ? 0 : current + 1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        focusListMenuItem(current < 0 ? items.length - 1 : current - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        e.stopPropagation();
+        focusListMenuItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        e.stopPropagation();
+        focusListMenuItem(items.length - 1);
+        break;
+      case 'Tab':
+        // Tab leaves the menu: close it and let focus move on naturally.
+        closeListMenu();
         break;
       default:
         break;
@@ -4654,6 +4740,11 @@
     els.folderDeleteKeep.addEventListener('click', () => { applyFolderDelete('keep'); });
     els.folderDeleteTrash.addEventListener('click', () => { applyFolderDelete('trash'); });
     els.manageTags.addEventListener('click', openTagManager);
+    els.listMenuBtn.addEventListener('click', toggleListMenu);
+    els.listMenu.addEventListener('click', (e) => {
+      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeListMenu();
+    });
+    els.newFolderMenuBtn.addEventListener('click', () => openFolderDialog(null));
 
     els.newNote.addEventListener('click', createNote);
     els.todayNote.addEventListener('click', openTodayNote);

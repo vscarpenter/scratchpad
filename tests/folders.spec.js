@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson } = require('./helpers');
+const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson, enterBulkMode, openListMenu } = require('./helpers');
 
 test.describe('folders DB layer', () => {
   test('putFolder/getAllFolders/removeFolder round-trip', async ({ page }) => {
@@ -99,6 +99,16 @@ test.describe('folder crud', () => {
     await page.locator('#folder-dialog-save').click();
     await expect(page.locator('.folder-head', { hasText: 'Projects' })).toBeVisible();
     await expect(page.locator('.folder-head .folder-dot[data-color="sky"]')).toBeVisible();
+  });
+
+  test('create via the list overflow menu', async ({ page }) => {
+    await gotoApp(page);
+    await openListMenu(page);
+    await page.locator('#new-folder-menu-btn').click();
+    await expect(page.locator('#folder-dialog')).toBeVisible();
+    await page.locator('#folder-name-input').fill('Menu made');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('.folder-head', { hasText: 'Menu made' })).toBeVisible();
   });
 
   test('validation: empty, reserved, duplicate', async ({ page }) => {
@@ -207,7 +217,7 @@ test.describe('move to folder', () => {
       { id: 'n-2', title: 'Two', body: 'x' },
     ]);
     await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('.note-row', { hasText: 'One' }).locator('input[type="checkbox"]').check();
     await page.locator('.note-row', { hasText: 'Two' }).locator('input[type="checkbox"]').check();
     await page.locator('#bulk-move-folder').click();
