@@ -774,9 +774,20 @@ body:not(.page-privacy) {
 
 .note-row.is-active {
   background: var(--paper);
-  border-color: var(--accent-strong-border);
-  box-shadow: var(--shadow-card);
-  padding: 11px 12px;
+  border-color: var(--hairline-color);
+  box-shadow: var(--shadow-row-active);
+  padding-left: 14px;
+  overflow: hidden;
+}
+.note-row.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2.5px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
 }
 
 .note-row.is-bulk {
@@ -864,21 +875,18 @@ body:not(.page-privacy) {
   color: var(--text-secondary);
   font: 400 12px/1.45 var(--sans);
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.note-row.is-active .note-row-excerpt { -webkit-line-clamp: 2; }
 
-/* Tag chips show on the active/selected card only (per the Soft Glass spec). */
 .note-row-tags {
   grid-column: 1 / -1;
-  display: none;
+  display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 2px;
+  margin-top: 3px;
 }
-.note-row.is-active .note-row-tags { display: flex; }
 
 .note-row-tag {
   display: inline-flex;
@@ -903,6 +911,14 @@ body:not(.page-privacy) {
   cursor: default;
 }
 .note-row-tag.is-static:hover { background: var(--accent-soft); }
+
+.note-row-tag-more {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  font: 500 10px/1 var(--sans);
+  color: var(--text-muted);
+}
 
 .search-hit {
   background: var(--accent-soft);
