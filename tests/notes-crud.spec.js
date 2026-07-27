@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote } = require('./helpers');
+const { gotoApp, createAndSaveNote, openOverflowMenu } = require('./helpers');
 
 async function selectEditorText(page, text) {
   await page.locator('#note-editor').evaluate((editor, selectedText) => {
@@ -32,18 +32,19 @@ test.describe('notes — create, edit, persist', () => {
     await expect(page.locator('#note-rendered')).toContainText('Survives reload.');
   });
 
-  test('pin toggle flips aria-pressed and persists', async ({ page }) => {
+  test('pin toggle flips aria-checked and persists', async ({ page }) => {
     await gotoApp(page);
     await createAndSaveNote(page, 'Pin me', 'Pinned note body.');
 
     const pin = page.locator('#pin-toggle');
-    await expect(pin).toHaveAttribute('aria-pressed', 'false');
+    await expect(pin).toHaveAttribute('aria-checked', 'false');
+    await openOverflowMenu(page);
     await pin.click();
-    await expect(pin).toHaveAttribute('aria-pressed', 'true');
+    await expect(pin).toHaveAttribute('aria-checked', 'true');
 
     await page.reload();
     await page.locator('.note-row').first().click();
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'true');
   });
 
   test('format toolbar applies markdown to selected editor text', async ({ page }) => {
@@ -102,6 +103,7 @@ test.describe('notes — create, edit, persist', () => {
     await expect(page.locator('.note-row')).toHaveCount(1);
 
     await page.locator('.note-row').first().click();
+    await openOverflowMenu(page);
     await page.locator('#permanent-delete-btn').click();
     await page.locator('#confirm-permanent-delete').click();
     await expect(page.locator('.note-row')).toHaveCount(0);

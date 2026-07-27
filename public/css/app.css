@@ -61,6 +61,16 @@ body:not(.page-privacy) {
     min-height: 44px;
     padding-inline: 14px;
   }
+  /* The floating format pill scrolls sideways instead of wrapping. */
+  .fmt-chip {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .fmt-chip.fmt-text { padding: 0 12px; }
+  .editor-format {
+    max-width: 100%;
+    overflow-x: auto;
+  }
   .tag-pill {
     min-height: 44px;
     padding: 0 4px 0 12px;
@@ -115,6 +125,7 @@ body:not(.page-privacy) {
   .main,
   .dialog,
   .onboarding-panel,
+  .editor-format,
   .status-chip.is-floating {
     background: var(--glass-fallback);
   }
@@ -124,6 +135,7 @@ body:not(.page-privacy) {
   .main,
   .dialog,
   .onboarding-panel,
+  .editor-format,
   .status-chip.is-floating {
     background: var(--glass-fallback);
     -webkit-backdrop-filter: none;
@@ -980,7 +992,6 @@ body:not(.page-privacy) {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
   padding: 14px 18px 12px;
   border-bottom: 1px solid var(--hairline-color);
 }
@@ -1019,15 +1030,8 @@ body:not(.page-privacy) {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.toolbar-sep {
-  width: 1px;
-  height: 22px;
-  background: var(--gray-300);
-  margin: 0 4px;
+  flex: none;
 }
 
 .overflow-wrap {
@@ -1095,29 +1099,52 @@ body:not(.page-privacy) {
   background: var(--warning);
 }
 
+/* Floating format pill: sticks above the writing surface in edit mode. */
 .editor-format {
-  display: inline-flex;
+  position: sticky;
+  top: 6px;
+  z-index: var(--z-raised);
+  display: flex;
   align-items: center;
+  width: fit-content;
+  margin: 0 auto -14px;
   gap: 4px;
-  padding: 3px;
-  border-radius: var(--r-seg-track);
-  background: var(--control-fill);
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: var(--glass-bg-pill);
+  -webkit-backdrop-filter: blur(var(--glass-blur-pill));
+  backdrop-filter: blur(var(--glass-blur-pill));
+  border: var(--glass-border);
+  box-shadow: var(--shadow-pill-float);
 }
 .editor-format[hidden] { display: none; }
 .fmt-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 24px;
+  flex: none;
+  width: 28px;
+  height: 26px;
   padding: 0;
   border: 0;
-  border-radius: var(--r-code);
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--text-secondary);
   font: 700 12px/1 var(--sans);
   cursor: pointer;
   transition: background var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease;
+}
+.fmt-chip.fmt-text {
+  width: auto;
+  padding: 0 8px;
+  font: 600 11.5px/1 var(--sans);
+}
+.fmt-sep {
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 2px;
+  background: var(--gray-300);
 }
 .fmt-chip.fmt-italic { font: italic 600 12px/1 var(--serif); }
 .fmt-chip.fmt-code { font: 600 11px/1 var(--mono); }
@@ -1377,7 +1404,8 @@ body:not(.page-privacy) {
   background: var(--field-bg-textarea);
   border: 1px solid var(--hairline-color);
   border-radius: var(--r-textarea);
-  padding: 20px 22px;
+  /* 26px top clears the floating format pill overlapping the box by 14px. */
+  padding: 26px 22px 20px;
   box-shadow: var(--textarea-inset-shadow);
 }
 

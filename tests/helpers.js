@@ -106,6 +106,11 @@ async function enterBulkMode(page) {
   await expect(page.locator('#list-menu')).toBeHidden();
 }
 
+async function openOverflowMenu(page) {
+  await page.locator('#overflow-btn').click();
+  await expect(page.locator('#overflow-menu')).toBeVisible();
+}
+
 async function openTagManagerViaMenu(page) {
   await openListMenu(page);
   await page.locator('#manage-tags').click();
@@ -121,5 +126,6 @@ module.exports = {
   seedFolders,
   openListMenu,
   enterBulkMode,
+  openOverflowMenu,
   openTagManagerViaMenu,
 };

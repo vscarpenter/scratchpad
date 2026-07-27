@@ -81,6 +81,7 @@
     sidebar: $('sidebar'),
     main: $('main'),
     focusExitBtn: $('focus-exit-btn'),
+    focusModeBtn: $('focus-mode-btn'),
     search: $('search'),
     searchScope: $('search-scope'),
     activeFilter: $('active-filter'),
@@ -112,7 +113,6 @@
     editorDocHead: $('editor-doc-head'),
     editorCard: document.querySelector('.editor-card'),
     pinToggle: $('pin-toggle'),
-    pinIcon: $('pin-icon'),
     editBtn: $('edit-btn'),
     saveBtn: $('save-btn'),
     historyBtn: $('history-btn'),
@@ -1688,9 +1688,10 @@
     els.deleteBtn.hidden = trashed;
     els.restoreBtn.hidden = !trashed;
     els.permanentDeleteBtn.hidden = !trashed;
-    els.overflowBtn.hidden = trashed;
     els.moveNoteOverflow.hidden = trashed;
     els.duplicateOverflowBtn.hidden = trashed;
+    els.historyBtn.hidden = trashed;
+    els.exportOverflowBtn.hidden = trashed;
     els.discardOverflowBtn.hidden = !(state.editing && state.dirty);
 
     const bodyEmpty = !(note.body || '').trim();
@@ -1787,10 +1788,11 @@
   }
 
   function renderPinButton(note) {
-    els.pinToggle.setAttribute('aria-pressed', note.pinned ? 'true' : 'false');
+    els.pinToggle.setAttribute('aria-checked', note.pinned ? 'true' : 'false');
     els.pinToggle.classList.toggle('is-active', !!note.pinned);
     els.pinToggle.title = note.pinned ? 'Unpin note' : 'Pin note';
     els.pinToggle.setAttribute('aria-label', note.pinned ? 'Unpin note' : 'Pin note');
+    els.pinToggle.textContent = note.pinned ? 'Unpin note' : 'Pin note';
   }
 
   function renderTagPills(note, canEdit) {
@@ -1911,7 +1913,7 @@
   // role="menu" with APG keyboard semantics: focus moves into the menu on open,
   // Up/Down/Home/End cycle items, Esc closes and returns focus to the trigger.
   function overflowMenuItems() {
-    return Array.from(els.overflowMenu.querySelectorAll('[role="menuitem"]'))
+    return Array.from(els.overflowMenu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
       .filter((item) => !item.hidden && item.offsetParent !== null);
   }
 
@@ -2487,6 +2489,8 @@
   function applyFocusMode() {
     document.body.classList.toggle('focus-mode', state.focusMode);
     els.focusExitBtn.hidden = !state.focusMode;
+    els.focusModeBtn.setAttribute('aria-pressed', state.focusMode ? 'true' : 'false');
+    els.focusModeBtn.classList.toggle('is-active', state.focusMode);
   }
 
   function toggleBulkNote(id, selected) {
@@ -2748,6 +2752,21 @@
         nextStart = start + 1;
         nextEnd = nextStart + text.length;
       }
+    } else if (format === 'h2') {
+      const text = selected || 'Heading';
+      replacement = '## ' + text;
+      nextStart = start + 3;
+      nextEnd = nextStart + text.length;
+    } else if (format === 'list') {
+      const text = selected || 'List item';
+      replacement = '- ' + text;
+      nextStart = start + 2;
+      nextEnd = nextStart + text.length;
+    } else if (format === 'quote') {
+      const text = selected || 'Quote';
+      replacement = '> ' + text;
+      nextStart = start + 2;
+      nextEnd = nextStart + text.length;
     } else {
       return;
     }
@@ -4763,6 +4782,7 @@
     els.todayNote.addEventListener('click', openTodayNote);
     els.bulkToggle.addEventListener('click', toggleBulkMode);
     els.focusExitBtn.addEventListener('click', toggleFocusMode);
+    els.focusModeBtn.addEventListener('click', toggleFocusMode);
     els.commandPaletteBtn.addEventListener('click', openCommandPalette);
     els.emptyNewNote.addEventListener('click', createNote);
     els.emptyImportNotes.addEventListener('click', () => els.importFile.click());
@@ -4887,7 +4907,7 @@
       toggleOverflowMenu();
     });
     els.overflowMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"]')) closeOverflowMenu();
+      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeOverflowMenu();
     });
     els.exportOverflowBtn.addEventListener('click', () => {
       closeOverflowMenu();

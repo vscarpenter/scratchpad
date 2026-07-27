@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { seedRawNotes, openOverflowMenu } = require('./helpers');
 
 async function downloadBuffer(download) {
   const stream = await download.createReadStream();
@@ -25,6 +25,7 @@ test.describe('sharing and portable exports', () => {
       { id: 'share-copy', title: 'Share title', body: 'Body with **Markdown**.' },
     ]);
 
+    await openOverflowMenu(page);
     await page.locator('#share-btn').click();
     await expect(page.locator('#share-dialog')).toBeVisible();
     await page.locator('#share-copy').click();
@@ -47,6 +48,7 @@ test.describe('sharing and portable exports', () => {
       cdp.once('Page.frameScheduledNavigation', resolve);
     });
 
+    await openOverflowMenu(page);
     await page.locator('#share-btn').click();
     await expect(page.locator('#share-mailto-warning')).toBeVisible();
     await page.locator('#share-email').click();

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { seedRawNotes, openOverflowMenu } = require('./helpers');
 
 test.describe('revision history — pruning', () => {
   test('keeps only the 10 most recent revisions per note', async ({ page }) => {
@@ -103,8 +103,9 @@ test.describe('revision history — restore', () => {
     await page.locator('#tag-add-plus').click();
     await page.locator('#tag-input').fill('added');
     await page.locator('#tag-input').press('Enter');
+    await openOverflowMenu(page);
     await page.locator('#pin-toggle').click();
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by added' })).toBeVisible();
 
     await page.locator('#overflow-btn').click();
@@ -112,7 +113,7 @@ test.describe('revision history — restore', () => {
     await page.locator('#history-list .history-row button', { hasText: 'Restore' }).first().click();
 
     await expect(page.locator('#note-rendered')).toContainText('Original body');
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'false');
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by keep' })).toBeVisible();
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by added' })).toHaveCount(0);
 

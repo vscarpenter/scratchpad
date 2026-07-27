@@ -40,6 +40,16 @@ test.describe('accessibility — touch targets', () => {
     expect.soft(px(plusBox && plusBox.width), 'add tag plus width').toBeGreaterThanOrEqual(44);
     expect.soft(px(plusBox && plusBox.height), 'add tag plus height').toBeGreaterThanOrEqual(44);
 
+    // The floating format pill must keep 44px chips on coarse pointers.
+    await page.locator('#edit-btn').click();
+    await expect(page.locator('#editor-format')).toBeVisible();
+    for (const id of ['#format-bold', '#format-h2', '#format-quote']) {
+      const box = await page.locator(id).boundingBox();
+      expect.soft(px(box && box.height), `${id} height`).toBeGreaterThanOrEqual(44);
+    }
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#save-btn')).toBeHidden();
+
     await page.locator('#back-to-list').click();
     const listControls = [
       ['new note', page.locator('#new-note')],
