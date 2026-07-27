@@ -5314,6 +5314,12 @@
       return;
     }
 
+    if (meta && e.shiftKey && e.code === 'Space') {
+      e.preventDefault();
+      if (!els.quickCaptureDialog.open) openQuickCapture();
+      return;
+    }
+
     if (meta && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
       e.preventDefault();
       openCommandPalette();

@@ -228,6 +228,7 @@ reports whether it succeeded.
 | ------------------------------ | ----------------------------------------- |
 | `⌘/Ctrl` + `N`                 | New note                                  |
 | `⌘/Ctrl` + `Shift` + `D`       | Open today's note                         |
+| `⌘/Ctrl` + `Shift` + `Space`   | Quick capture                             |
 | `⌘/Ctrl` + `S`                 | Save (when editing)                       |
 | `⌘/Ctrl` + `K` or `/`          | Focus the search box                      |
 | `Esc`                          | Clear search when search is focused, or  |

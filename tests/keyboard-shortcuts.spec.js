@@ -28,6 +28,19 @@ test.describe('documented keyboard shortcuts', () => {
     await expect(page.locator('#command-palette-input')).toBeFocused();
   });
 
+  test('opens Quick Capture from its dedicated shortcut', async ({ page }) => {
+    await gotoApp(page);
+
+    await page.keyboard.press('Control+Shift+Space');
+
+    await expect(page.locator('#quick-capture-dialog')).toBeVisible();
+    await expect(page.locator('#quick-capture-input')).toBeFocused();
+
+    await page.locator('#quick-capture-input').fill('Keep this thought');
+    await page.keyboard.press('Control+Shift+Space');
+    await expect(page.locator('#quick-capture-input')).toHaveValue('Keep this thought');
+  });
+
   test('focuses search with Control+K or slash and Escape clears active filters', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'shortcut-filtered', title: 'Filtered note', body: 'Body.', tags: ['focus'] },
