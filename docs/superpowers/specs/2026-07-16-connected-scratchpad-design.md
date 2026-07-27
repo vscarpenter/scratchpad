@@ -87,6 +87,9 @@ dialog appends a timestamped entry from anywhere.
   note titled exactly `Daily template` (case-insensitive, untrashed) when one
   exists, else the built-in default body `## Tasks\n\n## Notes\n`. Template
   customization requires no settings UI.
+- As of the managed-folder extension, every `dailyDate` note is reconciled into
+  the stable `Daily Notes` folder without changing `updatedAt` or history. See
+  `docs/superpowers/specs/2026-07-27-daily-notes-folder-design.md`.
 - Entry points:
   - Command palette: `Open today's note` and `Quick capture`.
   - A "Today" inline-SVG icon button beside New note in the sidebar.
