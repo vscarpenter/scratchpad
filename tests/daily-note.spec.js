@@ -2,6 +2,8 @@
 const { test, expect } = require('@playwright/test');
 const { gotoApp, seedRawNotes } = require('./helpers');
 
+const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
+
 test.describe('dailyDate field', () => {
   test('survives an edit-and-save round trip', async ({ page }) => {
     await seedRawNotes(page, [
@@ -49,13 +51,19 @@ test.describe('daily note', () => {
     await expect(page.locator('#note-rendered')).toBeVisible();
     const first = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
-      return all.find((n) => n.dailyDate);
+      const folders = await window.ScratchpadDB.getAllFolders();
+      return {
+        note: all.find((n) => n.dailyDate),
+        folder: folders.find((f) => f.id === 'scratchpad-daily-notes'),
+      };
     });
     const d = new Date();
     const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    expect(first.dailyDate).toBe(key);
-    expect(first.tags).toContain('daily');
-    expect(first.body).toBe('## Tasks\n\n## Notes\n');
+    expect(first.folder.name).toBe('Daily Notes');
+    expect(first.note.dailyDate).toBe(key);
+    expect(first.note.folderId).toBe(DAILY_NOTES_FOLDER_ID);
+    expect(first.note.tags).toContain('daily');
+    expect(first.note.body).toBe('## Tasks\n\n## Notes\n');
     // Second invocation reuses the same note.
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('today');
@@ -87,6 +95,75 @@ test.describe('daily note', () => {
       return all.find((n) => n.dailyDate);
     });
     expect(created.body).toBe('## Agenda\n\n## Log\n');
+    expect(created.folderId).toBe(DAILY_NOTES_FOLDER_ID);
+  });
+
+  test('migrates existing active and trashed daily notes without changing recency', async ({ page }) => {
+    const originalUpdatedAt = Date.now() - 60_000;
+    await seedRawNotes(page, [
+      {
+        id: 'day-filed-elsewhere',
+        title: 'Filed elsewhere',
+        body: 'daily',
+        dailyDate: '2026-06-01',
+        folderId: 'f-work',
+        updatedAt: originalUpdatedAt,
+      },
+      {
+        id: 'day-in-trash',
+        title: 'Deleted day',
+        body: 'daily trash',
+        dailyDate: '2026-06-02',
+        folderId: 'f-work',
+        updatedAt: originalUpdatedAt,
+        deletedAt: Date.now(),
+      },
+      {
+        id: 'ordinary-work',
+        title: 'Ordinary',
+        body: 'not daily',
+        folderId: 'f-work',
+        updatedAt: originalUpdatedAt,
+      },
+    ]);
+    await page.evaluate(async () => {
+      await window.ScratchpadDB.putFolder({
+        id: 'f-work', name: 'Work', color: null, sortOrder: 1,
+        parentId: null, createdAt: 1, updatedAt: 1,
+      });
+    });
+    await page.reload();
+    await expect(page.locator('#app-shell')).toBeVisible();
+
+    const records = await page.evaluate(async () =>
+      Object.fromEntries((await window.ScratchpadDB.getAll()).map((note) => [note.id, note]))
+    );
+    expect(records['day-filed-elsewhere'].folderId).toBe(DAILY_NOTES_FOLDER_ID);
+    expect(records['day-filed-elsewhere'].updatedAt).toBe(originalUpdatedAt);
+    expect(records['day-in-trash'].folderId).toBe(DAILY_NOTES_FOLDER_ID);
+    expect(records['ordinary-work'].folderId).toBe('f-work');
+  });
+
+  test('daily notes cannot be moved and duplicate into ordinary Notes', async ({ page }) => {
+    const d = new Date();
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    await seedRawNotes(page, [
+      { id: 'day-managed', title: 'Managed day', body: 'daily', dailyDate: key },
+    ]);
+
+    const row = page.locator('.note-row[data-id="day-managed"]');
+    await expect(row).not.toHaveAttribute('draggable', 'true');
+    await row.click();
+    await page.locator('#overflow-btn').click();
+    await expect(page.locator('#move-note-overflow')).toBeHidden();
+    await page.locator('#duplicate-overflow-btn').click();
+
+    const records = await page.evaluate(async () => await window.ScratchpadDB.getAll());
+    const original = records.find((note) => note.id === 'day-managed');
+    const copy = records.find((note) => note.id !== 'day-managed');
+    expect(original.folderId).toBe(DAILY_NOTES_FOLDER_ID);
+    expect(copy.dailyDate).toBeNull();
+    expect(copy.folderId).toBeNull();
   });
 });
 
@@ -104,6 +181,7 @@ test.describe('quick capture', () => {
       const all = await window.ScratchpadDB.getAll();
       return all.find((n) => n.dailyDate);
     });
+    expect(note.folderId).toBe(DAILY_NOTES_FOLDER_ID);
     expect(note.body).toMatch(/- \*\*\d{2}:\d{2}\*\* remember the milk\n$/);
     // Second capture appends to the same note.
     await page.locator('#command-palette-btn').click();

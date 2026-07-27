@@ -55,13 +55,17 @@ test.describe('first-run redirect', () => {
 
     const summary = await page.evaluate(async () => {
       const notes = await window.ScratchpadDB.getAll();
+      const folders = await window.ScratchpadDB.getAllFolders();
       const d = new Date();
       const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const daily = notes.find((n) => n.dailyDate === key);
       return {
         count: notes.length,
         titles: notes.map((n) => n.title),
         pinned: notes.filter((n) => n.pinned).map((n) => n.title),
         dailyToday: notes.filter((n) => n.dailyDate === key).length,
+        dailyFolder: folders.find((folder) => folder.id === 'scratchpad-daily-notes'),
+        dailyFolderId: daily && daily.folderId,
       };
     });
     expect(summary.count).toBe(3);
@@ -69,6 +73,8 @@ test.describe('first-run redirect', () => {
     expect(summary.titles).toContain('Markdown Guide');
     expect(summary.pinned).toEqual(['Welcome to Scratchpad']);
     expect(summary.dailyToday).toBe(1);
+    expect(summary.dailyFolder.name).toBe('Daily Notes');
+    expect(summary.dailyFolderId).toBe('scratchpad-daily-notes');
   });
 
   test('seeded Welcome resolves its Markdown Guide link and keeps the phantom', async ({ page }) => {
