@@ -3137,3 +3137,146 @@ body:not(.page-privacy) .theme-toggle:hover {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   Print — Cmd+P / print-to-PDF on the app shell renders a clean copy of the
+   open note: title, byline, and rendered markdown body, full-width at a
+   readable measure. App chrome (sidebar, editor toolbar, tag-add controls,
+   dialogs, toasts, the PWA-update banner, wikilink autocomplete) is hidden.
+   Scoped to body:not(.page-privacy) on the structural rules below, so
+   about/guide/privacy/terms keep their normal document-flow print output.
+
+   Choices:
+   - Backlinks ("Linked from N notes") are hidden, not kept. The section is
+     a collapsed <details> by default; printing it either shows a bare
+     closed summary line or requires fighting the UA's details-collapse
+     rule, which is exactly the kind of awkward print output this file is
+     supposed to avoid. A single-note printout also reads cleaner without
+     cross-note navigation chrome mixed in.
+   - Edit mode prints the textarea's own content, unclipped and flowing,
+     with its inset "writing surface" box flattened to plain text — the
+     simplest correct handling without touching app.js. View mode (the
+     rendered markdown) is the polished target.
+   - Link hrefs are not appended via ::after: wikilinks resolve to
+     synthetic anchors like #note:<id> / #new:<title>, not real URLs, so
+     printing them would be noise, not information.
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 0.6in;
+  }
+
+  /* Reset the viewport-height cap + tinted wash so the note flows across
+     pages instead of clipping inside a fixed-height scroll box. */
+  body:not(.page-privacy) {
+    height: auto;
+    overflow: visible;
+    background: var(--paper);
+  }
+
+  /* Drop the reserved sidebar column so the note takes the full page width. */
+  body:not(.page-privacy) .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    padding: 0;
+  }
+
+  /* App chrome that never belongs on paper. */
+  #sidebar,
+  dialog,
+  .popover-menu,
+  #toast-region,
+  #pwa-update-notice,
+  #wikilink-suggest,
+  #backlinks-section {
+    display: none !important;
+  }
+
+  /* Editor header: back button, breadcrumb, dirty flag, pin/share/format/
+     edit/save/overflow — all navigation or action chrome, none of it is
+     the note itself. */
+  body:not(.page-privacy) .editor-head {
+    display: none !important;
+  }
+
+  /* Tag-add controls are chrome; the tag pills stay as note metadata. */
+  #tag-add-empty,
+  #tag-add-plus,
+  #tag-input {
+    display: none !important;
+  }
+
+  /* Flatten the frosted-glass main panel to a plain surface: no blur, no
+     shadow, no paint containment clipping a page break mid-note. */
+  body:not(.page-privacy) .main {
+    background: var(--paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    contain: none;
+    height: auto;
+  }
+
+  body:not(.page-privacy) .editor-view {
+    overflow: visible;
+    height: auto;
+  }
+
+  .editor-card,
+  .editor-card.is-editing {
+    overflow: visible;
+    height: auto;
+    padding: 0;
+  }
+
+  .note-doc-title {
+    font-size: 22pt;
+  }
+
+  .byline {
+    color: var(--text-secondary);
+  }
+
+  /* Rendered markdown body: bump for a comfortable print size and keep
+     code/tables/quotes from splitting awkwardly across a page break. */
+  .note-rendered {
+    font-size: 12pt;
+    line-height: 1.6;
+  }
+  .note-rendered h1 { font-size: 20pt; }
+  .note-rendered h2 { font-size: 15pt; }
+  .note-rendered h3 { font-size: 13pt; }
+  .note-rendered pre,
+  .note-rendered pre code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .note-rendered pre,
+  .note-rendered table,
+  .note-rendered blockquote {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .note-rendered h1,
+  .note-rendered h2,
+  .note-rendered h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Edit mode: the textarea is on screen instead of rendered markdown.
+     Print its content flowing, not as a bordered, scrollable inset box. */
+  .editor-card.is-editing .note-editor {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible;
+    height: auto;
+    white-space: pre-wrap;
+  }
+}
