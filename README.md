@@ -26,8 +26,8 @@ never leave it.
 - Tick task-list checkboxes right in the rendered note — `- [ ]` items are
   clickable in view mode and write back to the Markdown source.
 - Jump to today's note with one command; it is created on first use from a
-  note titled "Daily template" (or a minimal default). Quick capture appends
-  a timestamped line from anywhere.
+  note titled "Daily template" (or a minimal default) and kept in the managed
+  Daily Notes folder. Quick capture appends a timestamped line from anywhere.
 - Link notes with `[[Title]]` (autocompleted as you type); each note shows
   what links to it, and renaming a linked note offers to update references.
 - Search titles, bodies, and tags; pin important notes; and use bulk tagging,

@@ -72,7 +72,11 @@ never shuffles recency order or pollutes history. Drafts are untouched.
 Notes with `folderId: null` belong to the built-in "Notes" folder. It always
 exists, renders last in the folder list, and cannot be renamed, recolored,
 reordered, or deleted. New notes are created in it unless created via a
-folder's "New note here" action.
+folder's "New note here" action or the managed daily-note flow.
+
+The later managed-folder extension adds a deterministic `Daily Notes` folder
+outside the 100 user-folder allowance. See
+`docs/superpowers/specs/2026-07-27-daily-notes-folder-design.md`.
 
 ## Sidebar UI
 
@@ -177,7 +181,8 @@ immediate, no-recovery paths.
   non-finite sortOrder → list position). Folder id collisions overwrite by
   id (same as notes); a name collision with a *different* id gets a numeric
   suffix ("Name 2", incrementing until unique). Import limits gain
-  `IMPORT_MAX_FOLDERS = 100`.
+  `IMPORT_MAX_FOLDERS = 101` after the managed Daily Notes extension: 100 user
+  folders plus the managed folder.
 - **Encrypted backup:** wraps the same payload; its envelope version stays
   1, and its payload validation accepts inner `schemaVersion` 2 or 3.
 - **Markdown ZIP export:** notes are placed in per-folder subdirectories
@@ -185,7 +190,8 @@ immediate, no-recovery paths.
   current flat behavior.
 - **Cross-tab sync:** folder mutations broadcast on the existing
   BroadcastChannel exactly like note mutations; other tabs re-render.
-- **First-run seed notes:** unchanged, live in the virtual Notes folder.
+- **First-run seed notes:** Welcome and Markdown Guide live in virtual Notes;
+  the seeded daily note is reconciled into managed Daily Notes on app load.
 - **Guide page:** `guide.html` gets a short Folders section (create, move,
   reorder, delete semantics, 30-day trash window).
 - **Version:** `3.3.0` in `public/js/version.js` at ship time.

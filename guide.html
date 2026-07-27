@@ -126,7 +126,9 @@
       <p>
         The calendar button in the sidebar — or <kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">D</kbd>,
         or <em>Open today's note</em> in the command palette — jumps to today's note, creating it
-        the first time. Renaming a daily note is fine; Scratchpad tracks the date, not the title.
+        the first time. Scratchpad keeps every daily note in the
+        <strong>Daily Notes</strong> folder, including daily notes restored from an older backup.
+        Renaming a daily note is fine; Scratchpad tracks the date, not the title.
       </p>
       <p>
         Want your own structure for each day? Create a note titled exactly
@@ -167,11 +169,17 @@
 
       <h2 id="folders">Folders</h2>
       <p>
-        Folders group notes the way tags can't: each note lives in exactly one folder. Notes you
-        haven't filed sit in the built-in <strong>Notes</strong> folder, which is always there and
-        can't be renamed or deleted.
+        Folders group notes the way tags can't: each note lives in exactly one folder. Unfiled
+        notes sit in the built-in <strong>Notes</strong> folder. Daily notes live in the managed
+        <strong>Daily Notes</strong> folder. Both are always available and can't be renamed or
+        deleted.
       </p>
       <ul>
+        <li>
+          <strong>Daily Notes</strong> — Scratchpad creates this folder automatically and moves
+          existing daily notes into it without changing their edited dates. You can collapse or
+          reorder the folder, but daily notes stay inside it.
+        </li>
         <li>
           <strong>Create</strong> — the <strong>+ New folder</strong> row at the bottom of the
           list, or "New folder" in the command palette. Each folder can take an optional accent
