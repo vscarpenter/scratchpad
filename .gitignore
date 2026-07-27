@@ -55,3 +55,6 @@ yarn.lock
 # ---- Local verification artifacts ----
 # Screenshots from local browser-driven verification. Not part of the app.
 .verify/
+
+# ---- Session status dashboard (agent-generated, local only) ----
+status.html
