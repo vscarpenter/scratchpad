@@ -2,6 +2,8 @@
 const { test, expect } = require('@playwright/test');
 const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson, enterBulkMode, openListMenu, openBackupMenu } = require('./helpers');
 
+const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
+
 test.describe('folders DB layer', () => {
   test('putFolder/getAllFolders/removeFolder round-trip', async ({ page }) => {
     await gotoApp(page);
@@ -15,17 +17,21 @@ test.describe('folders DB layer', () => {
       ]);
       const all = (await window.ScratchpadDB.getAllFolders()).map((f) => f.name).sort();
       await window.ScratchpadDB.removeFolder('f-1');
-      const after = (await window.ScratchpadDB.getAllFolders()).map((f) => f.name);
+      const after = (await window.ScratchpadDB.getAllFolders()).map((f) => f.name).sort();
       return { all, after };
     });
-    expect(names.all).toEqual(['Ideas', 'Work']);
-    expect(names.after).toEqual(['Ideas']);
+    expect(names.all).toEqual(['Daily Notes', 'Ideas', 'Work']);
+    expect(names.after).toEqual(['Daily Notes', 'Ideas']);
   });
 
   test('upgrade to v3 preserves existing notes', async ({ page }) => {
     await seedRawNotes(page, [{ id: 'n-1', title: 'Kept', body: 'still here' }]);
     const count = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).length);
+    const dailyFolder = await page.evaluate(async () =>
+      (await window.ScratchpadDB.getAllFolders()).find((folder) => folder.id === 'scratchpad-daily-notes')
+    );
     expect(count).toBe(1);
+    expect(dailyFolder.name).toBe('Daily Notes');
   });
 });
 
@@ -50,11 +56,12 @@ test.describe('sidebar accordion', () => {
       { id: 'n-1', title: 'In work', body: 'x', folderId: 'f-w' },
       { id: 'n-2', title: 'Loose', body: 'x' },
     ]);
-    await seedFolders(page, [{ id: 'f-w', name: 'Work' }]);
+    await seedFolders(page, [{ id: 'f-w', name: 'Work', sortOrder: 1 }]);
     const heads = page.locator('.folder-head');
-    await expect(heads).toHaveCount(2);
-    await expect(heads.first()).toContainText('Work');
-    await expect(heads.first().locator('.folder-count')).toHaveText('1');
+    await expect(heads).toHaveCount(3);
+    await expect(heads.first()).toContainText('Daily Notes');
+    await expect(heads.first().locator('.folder-count')).toHaveText('0');
+    await expect(page.locator('.folder-head[data-folder-id="f-w"] .folder-count')).toHaveText('1');
     await expect(heads.last()).toContainText('Notes');
   });
 
@@ -119,6 +126,9 @@ test.describe('folder crud', () => {
     await page.locator('#folder-name-input').fill('notes');
     await page.locator('#folder-dialog-save').click();
     await expect(page.locator('#folder-name-error')).toContainText('reserved');
+    await page.locator('#folder-name-input').fill('daily notes');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('#folder-name-error')).toContainText('reserved');
     await page.locator('#folder-name-input').fill('work');
     await page.locator('#folder-dialog-save').click();
     await expect(page.locator('#folder-name-error')).toContainText('already exists');
@@ -158,6 +168,55 @@ test.describe('folder crud', () => {
     await page.locator('#folder-dialog-save').click();
     await expect(page.locator('.folder-head', { hasText: 'FromPalette' })).toBeVisible();
   });
+
+  test('managed Daily Notes folder keeps only reorder actions', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator(`.folder-head[data-folder-id="${DAILY_NOTES_FOLDER_ID}"] .folder-menu-btn`).click();
+    await expect(page.locator('#folder-menu [data-action="rename"]')).toBeHidden();
+    await expect(page.locator('#folder-menu [data-action="new-note"]')).toBeHidden();
+    await expect(page.locator('#folder-menu [data-action="delete"]')).toBeHidden();
+    await expect(page.locator('#folder-menu [data-action="move-up"]')).toBeVisible();
+    await expect(page.locator('#folder-menu [data-action="move-down"]')).toBeVisible();
+  });
+
+  test('adopts an existing Daily Notes folder and preserves its membership', async ({ page }) => {
+    await gotoApp(page);
+    await page.evaluate(async () => {
+      await window.ScratchpadDB.clearAllStores();
+      await window.ScratchpadDB.putFolder({
+        id: 'legacy-daily-folder', name: 'daily notes', color: 'olive', sortOrder: 3,
+        parentId: null, createdAt: 10, updatedAt: 20,
+      });
+      await window.ScratchpadDB.bulkPut([
+        {
+          id: 'legacy-daily', title: 'Legacy day', body: 'daily', tags: [],
+          pinned: false, folderId: null, dailyDate: '2026-05-01',
+          createdAt: 1, updatedAt: 2, deletedAt: null, lastDraftAt: null,
+        },
+        {
+          id: 'legacy-member', title: 'Existing member', body: 'keep filed', tags: [],
+          pinned: false, folderId: 'legacy-daily-folder', dailyDate: null,
+          createdAt: 1, updatedAt: 2, deletedAt: null, lastDraftAt: null,
+        },
+      ]);
+    });
+    await page.reload();
+    await expect(page.locator('#app-shell')).toBeVisible();
+
+    const state = await page.evaluate(async () => ({
+      folders: await window.ScratchpadDB.getAllFolders(),
+      notes: await window.ScratchpadDB.getAll(),
+    }));
+    expect(state.folders.find((folder) => folder.id === DAILY_NOTES_FOLDER_ID)).toMatchObject({
+      name: 'Daily Notes',
+      color: 'olive',
+      sortOrder: 3,
+      createdAt: 10,
+    });
+    expect(state.folders.some((folder) => folder.id === 'legacy-daily-folder')).toBe(false);
+    expect(state.notes.find((note) => note.id === 'legacy-daily').folderId).toBe(DAILY_NOTES_FOLDER_ID);
+    expect(state.notes.find((note) => note.id === 'legacy-member').folderId).toBe(DAILY_NOTES_FOLDER_ID);
+  });
 });
 
 test.describe('folder delete and reorder', () => {
@@ -184,16 +243,20 @@ test.describe('folder delete and reorder', () => {
 
   test('move down reorders folders and persists', async ({ page }) => {
     await seedFolders(page, [
-      { id: 'f-a', name: 'Alpha', sortOrder: 0 },
-      { id: 'f-b', name: 'Beta', sortOrder: 1 },
+      { id: 'f-a', name: 'Alpha', sortOrder: 1 },
+      { id: 'f-b', name: 'Beta', sortOrder: 2 },
     ]);
     await page.locator('.folder-head[data-folder-id="f-a"] .folder-menu-btn').click();
     await page.locator('#folder-menu [data-action="move-down"]').click();
-    const heads = page.locator('.folder-head .folder-name');
+    const heads = page.locator(
+      `.folder-head[data-folder-id]:not([data-folder-id="${DAILY_NOTES_FOLDER_ID}"]):not([data-folder-id=""]) .folder-name`
+    );
     await expect(heads.nth(0)).toHaveText('Beta');
     await expect(heads.nth(1)).toHaveText('Alpha');
     await page.reload();
-    await expect(page.locator('.folder-head .folder-name').first()).toHaveText('Beta');
+    await expect(page.locator(
+      `.folder-head[data-folder-id]:not([data-folder-id="${DAILY_NOTES_FOLDER_ID}"]):not([data-folder-id=""]) .folder-name`
+    ).first()).toHaveText('Beta');
   });
 });
 
@@ -205,6 +268,7 @@ test.describe('move to folder', () => {
     await page.locator('.note-row', { hasText: 'Mover' }).click();
     await page.locator('#overflow-btn').click();
     await page.locator('#move-note-overflow').click();
+    await expect(page.locator('#move-folder-list button', { hasText: 'Daily Notes' })).toHaveCount(0);
     await page.locator('#move-folder-list button', { hasText: 'Work' }).click();
     await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
     const after = await page.evaluate(async () => (await window.ScratchpadDB.get('n-1')).updatedAt);
@@ -323,7 +387,7 @@ test.describe('backups with folders', () => {
     await importJson(page, payload);
     await page.locator('#confirm-import').click();
     await expect(page.locator('.folder-head', { hasText: 'Work' })).toBeVisible();
-    await expect(page.locator('.folder-head[data-folder-id] .folder-count').first()).toHaveText('1');
+    await expect(page.locator('.folder-head[data-folder-id="f-1"] .folder-count')).toHaveText('1');
   });
 
   test('v2 backup still imports; notes land in Notes', async ({ page }) => {
@@ -336,6 +400,23 @@ test.describe('backups with folders', () => {
     await page.locator('#confirm-import').click();
     const notesSection = page.locator('.folder-section').last();
     await expect(notesSection.locator('.note-row', { hasText: 'Legacy' })).toBeVisible();
+  });
+
+  test('v2 daily notes reconcile into the managed folder after import', async ({ page }) => {
+    await gotoApp(page);
+    await importJson(page, {
+      app: 'scratchpad', version: 'test', schemaVersion: 2, exportedAt: new Date().toISOString(),
+      notes: [{
+        id: 'n-v2-daily', title: 'Legacy daily', body: 'x', tags: ['daily'],
+        pinned: false, createdAt: 1, updatedAt: 1, deletedAt: null,
+        dailyDate: '2026-06-03',
+      }],
+      trashedNotes: [], revisions: [],
+    });
+    await page.locator('#confirm-import').click();
+    await expect(page.locator(`.folder-head[data-folder-id="${DAILY_NOTES_FOLDER_ID}"] .folder-count`)).toHaveText('1');
+    const note = await page.evaluate(() => window.ScratchpadDB.get('n-v2-daily'));
+    expect(note.folderId).toBe(DAILY_NOTES_FOLDER_ID);
   });
 
   test('imported folder with clashing name gets a numeric suffix', async ({ page }) => {
@@ -361,7 +442,7 @@ test.describe('backups with folders', () => {
     for await (const chunk of stream) chunks.push(chunk);
     const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     expect(data.schemaVersion).toBe(3);
-    expect(data.folders.map((f) => f.name)).toEqual(['Work']);
+    expect(data.folders.map((f) => f.name).sort()).toEqual(['Daily Notes', 'Work']);
   });
 });
 

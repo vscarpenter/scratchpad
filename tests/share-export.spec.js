@@ -121,8 +121,8 @@ test.describe('sharing and portable exports', () => {
 
     expect(download.suggestedFilename()).toMatch(/^scratchpad-markdown-.*\.zip$/);
     expect(zip.subarray(0, 4).toString('hex')).toBe('504b0304');
+    expect(storedText).toContain('daily-notes/project-plan.md');
     expect(storedText).toContain('project-plan.md');
-    expect(storedText).toContain('project-plan-2.md');
     expect(storedText).toContain('title: "Project Plan"');
     expect(storedText).toContain('tags: ["alpha"]');
     expect(storedText).toContain('dailyDate: "2026-07-18"');

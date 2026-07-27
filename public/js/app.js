@@ -18,12 +18,14 @@
   const SEARCH_SCOPES = new Set(['all', 'title', 'body', 'tags']);
   const FOLDER_NAME_MAX = 60;
   const FOLDERS_MAX = 100;
-  const IMPORT_MAX_FOLDERS = 100;
+  const IMPORT_MAX_FOLDERS = FOLDERS_MAX + 1;
   const FOLDER_COLORS = new Set(['accent', 'olive', 'sky', 'gray']);
   const RESERVED_FOLDER_NAME = 'notes';
   const GROUPING_KEY = 'scratchpad:notesGrouping';
   const COLLAPSED_FOLDERS_KEY = 'scratchpad:collapsedFolders';
   const VIRTUAL_FOLDER_KEY = '__notes__';
+  const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
+  const DAILY_NOTES_FOLDER_NAME = 'Daily Notes';
   const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
   const LAST_BACKUP_KEY = 'scratchpad:lastBackupAt';
   const BACKUP_SNOOZE_KEY = 'scratchpad:backupReminderSnoozedUntil'; // legacy key, cleared on export
@@ -315,6 +317,15 @@
     renderAll();
   }
 
+  async function refreshNoteFolderFromDatabase(noteId) {
+    const note = getNote(noteId);
+    if (!note) return;
+    const stored = await DB.get(noteId);
+    if (!stored) return;
+    note.folderId = normalizeNote(stored).folderId;
+    renderAll();
+  }
+
   function initCrossTabSync() {
     if (typeof BroadcastChannel !== 'function') return;
     crossTabChannel = new BroadcastChannel(CROSS_TAB_CHANNEL);
@@ -336,6 +347,12 @@
         return;
       }
       if (!message.noteId) return;
+      if (message.type === 'note-folder-changed') {
+        refreshNoteFolderFromDatabase(message.noteId).catch((e) => {
+          console.warn('Cross-tab folder membership refresh failed', e);
+        });
+        return;
+      }
       if (state.selectedId === message.noteId && state.editing && state.dirty) {
         state.externalChanges.add(message.noteId);
         return;
@@ -741,6 +758,19 @@
     return state.folders.find((f) => f.id === id) || null;
   }
 
+  function isDailyNote(note) {
+    return !!(note && note.dailyDate);
+  }
+
+  function isDailyNotesFolder(folderOrId) {
+    const id = typeof folderOrId === 'string' ? folderOrId : folderOrId && folderOrId.id;
+    return id === DAILY_NOTES_FOLDER_ID;
+  }
+
+  function userFolderCount(folders) {
+    return (folders || state.folders).filter((folder) => !isDailyNotesFolder(folder)).length;
+  }
+
   // Orphaned folderIds (deleted folder, corrupt import) heal to the virtual
   // "Notes" folder here rather than via a data migration.
   function noteFolderId(note) {
@@ -755,6 +785,73 @@
   async function loadFolders() {
     const rows = await DB.getAllFolders();
     state.folders = rows.map((f, i) => normalizeFolder(f, i)).filter(Boolean);
+  }
+
+  // Daily Notes is a managed destination backed by the ordinary folders
+  // store. This reconciliation is intentionally idempotent: it can finish an
+  // interrupted adoption, heal imports, and run on every load without changing
+  // note recency or revision history.
+  async function ensureDailyNotesFolder() {
+    let managed = folderById(DAILY_NOTES_FOLDER_ID);
+    const legacyFolders = state.folders.filter((folder) =>
+      !isDailyNotesFolder(folder) &&
+      folder.name.toLowerCase() === DAILY_NOTES_FOLDER_NAME.toLowerCase()
+    );
+    let foldersChanged = false;
+
+    if (!managed) {
+      const legacy = legacyFolders[0] || null;
+      const ordered = sortedFolders();
+      const firstSortOrder = ordered.length
+        ? Math.min(...ordered.map((folder) => folder.sortOrder)) - 1
+        : 0;
+      const t = now();
+      managed = normalizeFolder({
+        id: DAILY_NOTES_FOLDER_ID,
+        name: DAILY_NOTES_FOLDER_NAME,
+        color: legacy ? legacy.color : null,
+        sortOrder: legacy ? legacy.sortOrder : firstSortOrder,
+        parentId: null,
+        createdAt: legacy ? legacy.createdAt : t,
+        updatedAt: legacy ? legacy.updatedAt : t,
+      }, 0);
+      await DB.putFolder(managed);
+      foldersChanged = true;
+    } else if (managed.name !== DAILY_NOTES_FOLDER_NAME) {
+      managed = { ...managed, name: DAILY_NOTES_FOLDER_NAME, updatedAt: now() };
+      await DB.putFolder(managed);
+      foldersChanged = true;
+    }
+
+    const legacyIds = new Set(legacyFolders.map((folder) => folder.id));
+    const changedNotes = state.notes
+      .filter((note) =>
+        (isDailyNote(note) && note.folderId !== DAILY_NOTES_FOLDER_ID) ||
+        legacyIds.has(note.folderId)
+      )
+      .map((note) => ({ ...note, folderId: DAILY_NOTES_FOLDER_ID }));
+
+    if (changedNotes.length) {
+      await bulkPutNoteRecords(changedNotes, 'note-folder-changed');
+      const nextById = new Map(changedNotes.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+    }
+
+    if (legacyFolders.length) {
+      for (const folder of legacyFolders) await DB.removeFolder(folder.id);
+      foldersChanged = true;
+    }
+
+    state.folders = state.folders
+      .filter((folder) => !legacyIds.has(folder.id))
+      .map((folder) => isDailyNotesFolder(folder) ? managed : folder);
+    if (!state.folders.some(isDailyNotesFolder)) state.folders.push(managed);
+
+    if (foldersChanged) broadcastChange({ type: 'folders-changed' });
+    return managed;
   }
 
   function readGrouping() {
@@ -802,13 +899,17 @@
   function folderNameError(name, excludeId) {
     if (!name) return 'Folder name is required.';
     if (name.toLowerCase() === RESERVED_FOLDER_NAME) return '"Notes" is reserved for the built-in folder.';
+    if (name.toLowerCase() === DAILY_NOTES_FOLDER_NAME.toLowerCase() && excludeId !== DAILY_NOTES_FOLDER_ID) {
+      return '"Daily Notes" is reserved for daily notes.';
+    }
     const clash = state.folders.some((f) => f.id !== excludeId && f.name.toLowerCase() === name.toLowerCase());
     if (clash) return 'A folder with that name already exists.';
-    if (!excludeId && state.folders.length >= FOLDERS_MAX) return 'Folder limit reached (100).';
+    if (!excludeId && userFolderCount() >= FOLDERS_MAX) return 'Folder limit reached (100).';
     return null;
   }
 
   function openFolderDialog(folderId) {
+    if (isDailyNotesFolder(folderId)) return;
     state.folderDialogId = folderId || null;
     const folder = folderId ? folderById(folderId) : null;
     els.folderDialogTitle.textContent = folder ? 'Edit folder' : 'New folder';
@@ -824,6 +925,7 @@
   }
 
   async function saveFolderDialog() {
+    if (isDailyNotesFolder(state.folderDialogId)) return;
     const name = normalizeFolderName(els.folderNameInput.value);
     const error = folderNameError(name, state.folderDialogId);
     if (error) {
@@ -862,9 +964,21 @@
     items[i].focus();
   }
 
+  function configureFolderMenu(folderId) {
+    const managed = isDailyNotesFolder(folderId);
+    for (const action of ['rename', 'new-note', 'delete']) {
+      const item = els.folderMenu.querySelector('[data-action="' + action + '"]');
+      if (item) item.hidden = managed;
+    }
+    for (const divider of els.folderMenu.querySelectorAll('.menu-divider')) {
+      divider.hidden = managed;
+    }
+  }
+
   function openFolderMenu(folderId, trigger) {
     closeFolderMenu();
     state.folderMenuTargetId = folderId;
+    configureFolderMenu(folderId);
     const rect = trigger.getBoundingClientRect();
     els.folderMenu.hidden = false; // unhide first so the menu has a measurable width
     const maxLeft = window.innerWidth - els.folderMenu.offsetWidth - 8;
@@ -929,6 +1043,7 @@
   }
 
   function openFolderDeleteDialog(folderId) {
+    if (isDailyNotesFolder(folderId)) return;
     const folder = folderById(folderId);
     if (!folder) return;
     state.folderDeleteId = folderId;
@@ -944,6 +1059,7 @@
 
   async function applyFolderDelete(mode) {
     const folderId = state.folderDeleteId;
+    if (isDailyNotesFolder(folderId)) return;
     const folder = folderById(folderId);
     if (!folder) return;
     const members = activeNotes().filter((n) => noteFolderId(n) === folderId);
@@ -952,7 +1068,7 @@
       ? { ...note, folderId: null, deletedAt: t, updatedAt: t, lastDraftAt: null }
       : { ...note, folderId: null });
     if (updated.length) {
-      await bulkPutNoteRecords(updated);
+      await bulkPutNoteRecords(updated, mode === 'trash' ? undefined : 'note-folder-changed');
       if (mode === 'trash') await Promise.all(updated.map((note) => DB.removeDraft(note.id)));
       const nextById = new Map(updated.map((note) => [note.id, note]));
       for (const note of state.notes) {
@@ -980,16 +1096,28 @@
   }
 
   function openMoveDialog(noteIds) {
-    const ids = (noteIds || []).filter((id) => {
+    const active = (noteIds || []).filter((id) => {
       const n = getNote(id);
       return n && !isTrashed(n);
     });
+    const blockedDaily = active.filter((id) => isDailyNote(getNote(id))).length;
+    const ids = active.filter((id) => !isDailyNote(getNote(id)));
+    if (blockedDaily) {
+      toast(
+        blockedDaily === 1
+          ? 'Daily notes stay in Daily Notes.'
+          : blockedDaily + ' daily notes stay in Daily Notes.',
+        { tone: 'info' }
+      );
+    }
     if (!ids.length) return;
     state.moveTargetIds = ids;
     const single = ids.length === 1 ? getNote(ids[0]) : null;
     const currentId = single ? noteFolderId(single) : undefined;
     const options = [
-      ...sortedFolders().map((f) => ({ id: f.id, name: f.name, color: f.color })),
+      ...sortedFolders()
+        .filter((folder) => !isDailyNotesFolder(folder))
+        .map((f) => ({ id: f.id, name: f.name, color: f.color })),
       { id: null, name: 'Notes', color: null },
     ];
     const buttons = options.map((opt) => {
@@ -1018,13 +1146,24 @@
   // (recency order) or create a revision.
   async function moveNotesToFolder(noteIds, folderId) {
     const changed = [];
+    let blockedDaily = 0;
+    let blockedOrdinary = 0;
     for (const id of noteIds || []) {
       const note = getNote(id);
-      if (!note || isTrashed(note) || noteFolderId(note) === folderId) continue;
+      if (!note || isTrashed(note)) continue;
+      if (isDailyNote(note) && folderId !== DAILY_NOTES_FOLDER_ID) {
+        blockedDaily += 1;
+        continue;
+      }
+      if (!isDailyNote(note) && isDailyNotesFolder(folderId)) {
+        blockedOrdinary += 1;
+        continue;
+      }
+      if (noteFolderId(note) === folderId) continue;
       changed.push({ ...note, folderId });
     }
     if (changed.length) {
-      await bulkPutNoteRecords(changed);
+      await bulkPutNoteRecords(changed, 'note-folder-changed');
       const nextById = new Map(changed.map((note) => [note.id, note]));
       for (const note of state.notes) {
         const nextNote = nextById.get(note.id);
@@ -1035,10 +1174,18 @@
     closeDialog(els.moveNoteDialog);
     if (state.bulkMode) bulkClear();
     renderAll();
+    let message;
+    if (changed.length) {
+      message = 'Moved ' + changed.length + ' note' + (changed.length === 1 ? '' : 's') + ' to ' + folderDisplayName(folderId) + '.';
+    } else if (blockedOrdinary) {
+      message = 'Only daily notes are stored in Daily Notes.';
+    } else if (blockedDaily) {
+      message = 'Daily notes stay in Daily Notes.';
+    } else {
+      message = 'Notes were already there.';
+    }
     toast(
-      changed.length
-        ? 'Moved ' + changed.length + ' note' + (changed.length === 1 ? '' : 's') + ' to ' + folderDisplayName(folderId) + '.'
-        : 'Notes were already there.',
+      message,
       { tone: changed.length ? 'success' : 'info' }
     );
   }
@@ -1062,6 +1209,7 @@
     const folderId = state.folderMenuTargetId;
     closeFolderMenu();
     if (!folderId) return;
+    if (isDailyNotesFolder(folderId) && !['move-up', 'move-down'].includes(action)) return;
     if (action === 'rename') openFolderDialog(folderId);
     else if (action === 'new-note') await createNote(folderId);
     else if (action === 'move-up') await moveFolder(folderId, -1);
@@ -1415,7 +1563,7 @@
     }
     head.addEventListener('dragover', (e) => {
       const types = Array.from(e.dataTransfer.types || []);
-      const isNote = types.includes('application/x-scratchpad-note');
+      const isNote = types.includes('application/x-scratchpad-note') && !isDailyNotesFolder(folder);
       const isFolder = types.includes('application/x-scratchpad-folder') && !!folder;
       if (!isNote && !isFolder) return;
       e.preventDefault();
@@ -1549,7 +1697,11 @@
       on: { click: () => selectNote(note.id) },
     });
 
-    const draggable = state.view === 'active' && state.grouping === 'folders' && !state.bulkMode;
+    const draggable =
+      state.view === 'active' &&
+      state.grouping === 'folders' &&
+      !state.bulkMode &&
+      !isDailyNote(note);
     return el('div', {
       class: 'note-row' +
         (note.id === state.selectedId ? ' is-active' : '') +
@@ -1690,7 +1842,7 @@
     els.deleteBtn.hidden = trashed;
     els.restoreBtn.hidden = !trashed;
     els.permanentDeleteBtn.hidden = !trashed;
-    els.moveNoteOverflow.hidden = trashed;
+    els.moveNoteOverflow.hidden = trashed || isDailyNote(note);
     els.duplicateOverflowBtn.hidden = trashed;
     els.historyBtn.hidden = trashed;
     els.exportOverflowBtn.hidden = trashed;
@@ -1890,6 +2042,7 @@
     await loadFolders();
     const all = await DB.getAll();
     state.notes = all.map(normalizeNote);
+    await ensureDailyNotesFolder();
     ensureSelectionForView();
     renderAll();
     await maybePromptDraftForSelected();
@@ -2202,13 +2355,17 @@
       await discardCurrentDraft();
     }
     const t = now();
+    const targetFolderId =
+      typeof folderId === 'string' && folderId && !isDailyNotesFolder(folderId)
+        ? folderId
+        : null;
     const note = {
       id: uuid(),
       title: '',
       body: '',
       tags: [],
       pinned: false,
-      folderId: typeof folderId === 'string' && folderId ? folderId : null,
+      folderId: targetFolderId,
       createdAt: t,
       updatedAt: t,
       deletedAt: null,
@@ -2257,6 +2414,7 @@
         id: uuid(),
         title: duplicateTitle(note),
         pinned: false,
+        folderId: isDailyNote(note) ? null : note.folderId,
         createdAt: t,
         updatedAt: t,
         deletedAt: null,
@@ -3243,12 +3401,14 @@
   async function createDailyNote() {
     const t = now();
     const template = findDailyTemplate();
+    const folder = await ensureDailyNotesFolder();
     const note = normalizeNote({
       id: uuid(),
       title: new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
       body: template ? (template.body || '') : DAILY_DEFAULT_BODY,
       tags: ['daily'],
       pinned: false,
+      folderId: folder.id,
       createdAt: t,
       updatedAt: t,
       deletedAt: null,
@@ -3739,7 +3899,7 @@
     ];
 
     const selectedNote = getNote(state.selectedId);
-    if (selectedNote && !isTrashed(selectedNote)) {
+    if (selectedNote && !isTrashed(selectedNote) && !isDailyNote(selectedNote)) {
       commands.push({
         id: 'move-to-folder',
         label: 'Move note to folder…',
@@ -4597,12 +4757,13 @@
       const existingFolderIds = new Set(state.folders.map((f) => f.id));
       const takenNames = new Set(state.folders.map((f) => f.name.toLowerCase()));
       const foldersToImport = [];
+      let importedUserFolderCount = userFolderCount();
       for (const folder of preview.folders || []) {
         if (existingFolderIds.has(folder.id)) {
           foldersToImport.push(folder);
           continue;
         }
-        if (state.folders.length + foldersToImport.length >= FOLDERS_MAX) continue;
+        if (!isDailyNotesFolder(folder) && importedUserFolderCount >= FOLDERS_MAX) continue;
         let name = folder.name;
         let n = 2;
         while (takenNames.has(name.toLowerCase())) {
@@ -4611,6 +4772,7 @@
         }
         takenNames.add(name.toLowerCase());
         foldersToImport.push({ ...folder, name });
+        if (!isDailyNotesFolder(folder)) importedUserFolderCount += 1;
       }
       await DB.importRecords(notesToImport, revisionsToImport, REVISION_LIMIT, foldersToImport);
       for (const note of notesToImport) {
