@@ -3,11 +3,12 @@ const { test, expect } = require('@playwright/test');
 
 const SECTION_IDS = [
   'first-five-minutes', 'markdown', 'task-lists', 'daily-notes', 'linking',
-  'organizing', 'backups', 'privacy-controls', 'offline', 'shortcuts',
+  'folders', 'organizing', 'history-drafts', 'backups', 'privacy-controls',
+  'offline', 'shortcuts',
 ];
 
 test.describe('user guide page', () => {
-  test('loads with title and all ten sections', async ({ page }) => {
+  test('loads with title and every TOC section', async ({ page }) => {
     await page.goto('/guide.html');
     await expect(page.locator('h1')).toContainText('How to use Scratchpad');
     for (const id of SECTION_IDS) {
