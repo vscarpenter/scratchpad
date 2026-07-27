@@ -166,6 +166,7 @@
   --shadow-lg:         0 20px 50px rgba(35, 42, 90, 0.12);
   --shadow-card-hover: 0 8px 20px rgba(35, 42, 90, 0.12);
   --shadow-card:       0 8px 20px rgba(35, 42, 90, 0.12);  /* active note card */
+  --shadow-row-active: 0 2px 8px rgba(35, 42, 90, 0.07);   /* selected note row */
   --shadow-empty:      0 30px 70px rgba(35, 42, 90, 0.16); /* empty-state card */
   --shadow-primary:    0 8px 18px rgba(78, 95, 216, 0.35);
   --shadow-primary-sm: 0 6px 14px rgba(78, 95, 216, 0.30);
@@ -300,6 +301,7 @@
     --shadow-lg:         0 20px 50px rgba(0, 0, 0, 0.55);
     --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.50);
     --shadow-card:       0 8px 20px rgba(0, 0, 0, 0.50);
+    --shadow-row-active: 0 2px 8px rgba(0, 0, 0, 0.40);
     --shadow-empty:      0 30px 70px rgba(0, 0, 0, 0.60);
     --shadow-primary:    0 8px 18px rgba(0, 0, 0, 0.45);
     --shadow-primary-sm: 0 6px 14px rgba(0, 0, 0, 0.40);
@@ -407,6 +409,7 @@
   --shadow-lg:         0 20px 50px rgba(0, 0, 0, 0.55);
   --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.50);
   --shadow-card:       0 8px 20px rgba(0, 0, 0, 0.50);
+  --shadow-row-active: 0 2px 8px rgba(0, 0, 0, 0.40);
   --shadow-empty:      0 30px 70px rgba(0, 0, 0, 0.60);
   --shadow-primary:    0 8px 18px rgba(0, 0, 0, 0.45);
   --shadow-primary-sm: 0 6px 14px rgba(0, 0, 0, 0.40);

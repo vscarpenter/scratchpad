@@ -14,6 +14,7 @@
   const NOTE_BODY_MAX = 200000;
   const NOTE_TAG_MAX = 48;
   const NOTE_TAGS_MAX = 20;
+  const MAX_ROW_TAGS = 2; // chips per note-list row before the +n counter
   const SEARCH_SCOPES = new Set(['all', 'title', 'body', 'tags']);
   const FOLDER_NAME_MAX = 60;
   const FOLDERS_MAX = 100;
@@ -1506,7 +1507,7 @@
     }
 
     if (note.tags && note.tags.length) {
-      const tagNodes = note.tags.slice(0, 4).map((tag) => trashed
+      const tagNodes = note.tags.slice(0, MAX_ROW_TAGS).map((tag) => trashed
         ? el('span', {
           class: 'note-row-tag is-static',
           text: tag,
@@ -1521,6 +1522,12 @@
           children: highlightedChildren(tag, 'tags'),
           on: { click: () => setTagFilter(tag) },
         }));
+      if (note.tags.length > MAX_ROW_TAGS) {
+        tagNodes.push(el('span', {
+          class: 'note-row-tag-more',
+          text: '+' + (note.tags.length - MAX_ROW_TAGS),
+        }));
+      }
       children.push(el('span', {
         class: 'note-row-tags',
         attrs: trashed
@@ -1581,13 +1588,19 @@
     ];
     if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
     if (note.tags && note.tags.length) {
-      const tagNodes = note.tags.slice(0, 4).map((t) =>
+      const tagNodes = note.tags.slice(0, MAX_ROW_TAGS).map((t) =>
         el('span', {
           class: 'note-row-tag',
           attrs: { 'data-tag': t },
           children: highlightedChildren(t, 'tags'),
         })
       );
+      if (note.tags.length > MAX_ROW_TAGS) {
+        tagNodes.push(el('span', {
+          class: 'note-row-tag-more',
+          text: '+' + (note.tags.length - MAX_ROW_TAGS),
+        }));
+      }
       children.push(el('span', { class: 'note-row-tags', children: tagNodes }));
     }
     return el('label', {
