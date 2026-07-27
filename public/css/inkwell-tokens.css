@@ -124,6 +124,7 @@
   --t-h1:      32px;
   --t-h2:      24px;
   --t-h3:      20px;
+  --measure-doc: 68ch;                 /* shared reading/writing measure */
   --t-lede:    17px;
   --t-body:    16px;
   --t-small:   14px;

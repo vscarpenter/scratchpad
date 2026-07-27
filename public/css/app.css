@@ -1372,8 +1372,8 @@ body:not(.page-privacy) {
 }
 
 .editor-doc-head {
-  max-width: 720px;
-  margin: 0 auto 22px;
+  max-width: var(--measure-doc);
+  margin: 0 auto 26px;
 }
 
 /* Soft Glass drops the eyebrow above the title. */
@@ -1391,8 +1391,8 @@ body:not(.page-privacy) {
 .note-doc-title {
   margin: 0 0 10px;
   padding: 0;
-  font: 700 32px/1.2 var(--sans);
-  letter-spacing: -0.02em;
+  font: 400 34px/1.18 var(--serif);
+  letter-spacing: -0.012em;
   color: var(--ink);
   word-break: break-word;
 }
@@ -1420,13 +1420,13 @@ body:not(.page-privacy) {
 .editor-doc-head .byline:empty { display: none; }
 
 .tag-bar {
-  max-width: 720px;
+  max-width: var(--measure-doc);
   margin: 0 auto;
 }
 
 .note-editor {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--measure-doc);
   min-height: 360px;
   height: 100%;
   border: 0;
@@ -1436,7 +1436,7 @@ body:not(.page-privacy) {
   padding: 0;
   margin: 0 auto;
   resize: none;
-  font: 400 14px/1.85 var(--mono);
+  font: 400 16.5px/1.75 var(--sans);
   color: var(--text-body);
 }
 .note-editor:focus { outline: 0; box-shadow: none; }
@@ -1452,6 +1452,9 @@ body:not(.page-privacy) {
   border-radius: var(--r-textarea);
   /* 26px top clears the floating format pill overlapping the box by 14px. */
   padding: 26px 22px 20px;
+  /* Padding plus the 1px borders, so the text content keeps the shared
+     measure and line breaks match the rendered view exactly. */
+  max-width: calc(var(--measure-doc) + 46px);
   box-shadow: var(--textarea-inset-shadow);
 }
 
@@ -1512,11 +1515,11 @@ body:not(.page-privacy) {
 /* ---------- Rendered markdown (scoped, Inkwell tokens only) ---------- */
 .note-rendered {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--measure-doc);
   margin: 0 auto;
   font-family: var(--sans);
   color: var(--text-body);
-  font-size: 15.5px;
+  font-size: 16.5px;
   line-height: 1.75;
 }
 .note-rendered h1,
@@ -1532,8 +1535,14 @@ body:not(.page-privacy) {
   margin: 1.5em 0 0.5em;
 }
 .note-rendered h1 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 0.2em; }
-.note-rendered h2 { font-size: 20px; line-height: 1.3; }
-.note-rendered h3 { font-size: 17px; line-height: 1.35; }
+/* Section headings pick up the serif voice; the title leads it. */
+.note-rendered h2,
+.note-rendered h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+}
+.note-rendered h2 { font-size: var(--t-h2); line-height: 1.3; }
+.note-rendered h3 { font-size: var(--t-h3); line-height: 1.35; }
 .note-rendered h4 { font-size: 15.5px; }
 .note-rendered p { margin: 0 0 1em; }
 .note-rendered a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
@@ -1619,11 +1628,11 @@ body:not(.page-privacy) {
   font-style: italic;
 }
 
-/* ---------- Editorial markdown: lede + pullquote (sans in Soft Glass) ---------- */
+/* ---------- Editorial markdown: lede + pullquote (sans in Soft Glass) ----------
+   The lede keeps only its muted color. Size, line height, and measure stay on
+   the shared body metrics so toggling Edit never re-wraps the first paragraph. */
 .note-rendered p.is-lede {
-  font: 400 17px/1.6 var(--sans);
   color: var(--text-secondary);
-  max-width: 60ch;
   margin: 0 0 18px;
 }
 
