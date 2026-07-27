@@ -46,25 +46,32 @@
   <div class="app-shell" id="app-shell">
     <aside class="sidebar" id="sidebar" aria-label="Notes">
       <div class="sidebar-head">
-        <div class="brand">
-          <h1 class="brand-title">
-            <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <rect class="brand-mark-bg" x="0" y="0" width="24" height="24" rx="5" />
-              <path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9" />
-            </svg>
-            <span class="brand-name">Scratchpad</span>
-          </h1>
-          <button id="theme-toggle" class="btn btn-ghost btn-sm theme-toggle" type="button" data-theme-icon="auto" aria-label="Toggle theme" title="Toggle theme">
-            <svg class="theme-icon theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"/></svg>
-            <svg class="theme-icon theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-            <svg class="theme-icon theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            <span id="theme-label" class="visually-hidden">auto</span>
-          </button>
+        <div class="sidebar-brand">
+          <div class="brand">
+            <h1 class="brand-title">
+              <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect class="brand-mark-bg" x="0" y="0" width="24" height="24" rx="5" />
+                <path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9" />
+              </svg>
+              <span class="brand-name">Scratchpad</span>
+            </h1>
+            <div class="brand-actions">
+              <button id="theme-toggle" class="btn btn-ghost btn-sm theme-toggle" type="button" data-theme-icon="auto" aria-label="Toggle theme" title="Toggle theme">
+                <svg class="theme-icon theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"/></svg>
+                <svg class="theme-icon theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                <svg class="theme-icon theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <span id="theme-label" class="visually-hidden">auto</span>
+              </button>
+              <button id="open-about" class="btn btn-ghost" type="button" aria-label="About Scratchpad" title="About Scratchpad">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
+              </button>
+            </div>
+          </div>
+          <p class="sidebar-kicker">
+            <span id="note-count">0</span> notes ·
+            <span class="accent">local-only</span>, never syncs
+          </p>
         </div>
-        <p class="sidebar-kicker">
-          <span id="note-count">0</span> notes ·
-          <span class="accent">local-only</span> · never syncs
-        </p>
 
         <div class="sidebar-search">
           <div class="search-control">
@@ -90,30 +97,40 @@
 
         <div class="sidebar-actions">
           <button id="new-note" class="btn btn-primary" type="button">New note</button>
-          <button id="bulk-toggle" class="btn btn-secondary" type="button" aria-pressed="false">Select</button>
           <button id="today-note" class="btn btn-ghost" type="button" aria-label="Open today's note" title="Open today's note">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/><path d="M12 15h.01"/></svg>
           </button>
           <button id="command-palette-btn" class="btn btn-ghost" type="button" aria-label="Open command palette" title="Open command palette">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h10"/><path d="M4 17h7"/><path d="M17 14l3 3-3 3"/></svg>
           </button>
-          <button id="open-about" class="btn btn-ghost" type="button" aria-label="About Scratchpad">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
-          </button>
         </div>
 
         <div class="sidebar-view-switch" aria-label="Note views">
           <button id="active-notes-view" class="btn btn-secondary btn-sm is-active" type="button">Notes</button>
           <button id="trash-view" class="btn btn-secondary btn-sm" type="button">Trash</button>
-          <button id="manage-tags" class="btn btn-secondary btn-sm" type="button">Tags</button>
-        </div>
-        <div id="group-toggle" class="sidebar-group-toggle" role="group" aria-label="Group notes by">
-          <button id="group-folders" class="btn btn-ghost btn-sm is-active" type="button" aria-pressed="true">Folders</button>
-          <button id="group-recent" class="btn btn-ghost btn-sm" type="button" aria-pressed="false">Recent</button>
         </div>
       </div>
 
-      <nav class="note-list" id="note-list" aria-label="Note list"></nav>
+      <nav class="note-list" id="note-list" aria-label="Note list">
+        <div class="list-header" id="list-header">
+          <div id="group-toggle" class="list-header-groups" role="group" aria-label="Group notes by">
+            <span class="list-header-chevron" aria-hidden="true"></span>
+            <button id="group-folders" class="list-header-tab is-active" type="button" aria-pressed="true">Folders</button>
+            <span class="list-header-sep" aria-hidden="true">/</span>
+            <button id="group-recent" class="list-header-tab" type="button" aria-pressed="false">Recent</button>
+          </div>
+          <div class="overflow-wrap list-header-overflow">
+            <button id="list-menu-btn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="List options" title="List options">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>
+            </button>
+            <div id="list-menu" class="popover-menu" role="menu" hidden>
+              <button id="manage-tags" role="menuitem" type="button">Manage tags…</button>
+              <button id="new-folder-menu-btn" role="menuitem" type="button">New folder…</button>
+              <button id="bulk-toggle" role="menuitemcheckbox" aria-checked="false" type="button">Select notes</button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
       <div class="sidebar-foot">
         <span class="status-chip">
