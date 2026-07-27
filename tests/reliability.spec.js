@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { createAndSaveNote, gotoApp, seedRawNotes } = require('./helpers');
+const { createAndSaveNote, gotoApp, seedRawNotes, openTagManagerViaMenu } = require('./helpers');
 
 test.describe('reliability — drafts, history, and failed writes', () => {
   test('keeps the editor open and reports an error when saving fails', async ({ page }) => {
@@ -60,8 +60,7 @@ test.describe('reliability — drafts, history, and failed writes', () => {
       { id: 'untagged', title: 'Plain note', body: 'Plain body.', tags: [] },
     ]);
 
-    await page.locator('#manage-tags').click();
-    await expect(page.locator('#tag-manager-dialog')).toBeVisible();
+    await openTagManagerViaMenu(page);
     await page.locator('#tag-manager-list .tag-rename-input').fill('new-tag');
     await page.locator('#tag-manager-list button', { hasText: 'Rename' }).click();
     await expect(page.locator('#tag-manager-list .tag-rename-input')).toHaveValue('new-tag');
@@ -79,7 +78,7 @@ test.describe('reliability — drafts, history, and failed writes', () => {
       { id: 'delete-tag-b', title: 'Note B', body: 'Body B.', tags: ['doomed', 'keeper'] },
     ]);
 
-    await page.locator('#manage-tags').click();
+    await openTagManagerViaMenu(page);
     const doomedRow = page.locator('#tag-manager-list .tag-manager-row').filter({
       has: page.locator('.tag-rename-input[value="doomed"]'),
     });
@@ -102,7 +101,7 @@ test.describe('reliability — drafts, history, and failed writes', () => {
       { id: 'merge-note', title: 'Merge note', body: 'Body.', tags: ['alpha', 'beta'] },
     ]);
 
-    await page.locator('#manage-tags').click();
+    await openTagManagerViaMenu(page);
     const alphaRow = page.locator('#tag-manager-list .tag-manager-row').filter({
       has: page.locator('.tag-rename-input[value="alpha"]'),
     });

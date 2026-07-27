@@ -43,9 +43,11 @@ test.describe('accessibility — touch targets', () => {
     await page.locator('#back-to-list').click();
     const listControls = [
       ['new note', page.locator('#new-note')],
+      ['today note', page.locator('#today-note')],
+      ['command palette', page.locator('#command-palette-btn')],
       ['active view', page.locator('#active-notes-view')],
       ['trash view', page.locator('#trash-view')],
-      ['tag manager', page.locator('#manage-tags')],
+      ['list menu trigger', page.locator('#list-menu-btn')],
       ['about button', page.locator('#open-about')],
       ['theme toggle', page.locator('#theme-toggle')],
     ];
@@ -55,6 +57,17 @@ test.describe('accessibility — touch targets', () => {
       const box = await locator.boundingBox();
       expect.soft(px(box && box.width), `${name} width`).toBeGreaterThanOrEqual(44);
       expect.soft(px(box && box.height), `${name} height`).toBeGreaterThanOrEqual(44);
+    }
+
+    const searchBox = await page.locator('.search-control').boundingBox();
+    expect.soft(px(searchBox && searchBox.height), 'search field height').toBeGreaterThanOrEqual(44);
+
+    // Tags, New folder, and Select live in the list overflow menu now;
+    // its items must keep 44px hit targets on coarse pointers too.
+    await page.locator('#list-menu-btn').click();
+    for (const id of ['#manage-tags', '#new-folder-menu-btn', '#bulk-toggle']) {
+      const box = await page.locator(id).boundingBox();
+      expect.soft(px(box && box.height), `${id} height`).toBeGreaterThanOrEqual(44);
     }
   });
 });

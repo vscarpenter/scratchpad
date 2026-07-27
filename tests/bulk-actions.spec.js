@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { seedRawNotes, enterBulkMode } = require('./helpers');
 
 test.describe('bulk actions', () => {
   test('moves selected notes to Trash and restores them', async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe('bulk actions', () => {
       { id: 'bulk-c', title: 'Bulk C', body: 'Body C.' },
     ]);
 
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('[data-id="bulk-a"] input[type="checkbox"]').check();
     await page.locator('[data-id="bulk-b"] input[type="checkbox"]').check();
     await expect(page.locator('#bulk-selected-count')).toHaveText('2 selected');
@@ -35,7 +35,7 @@ test.describe('bulk actions', () => {
       { id: 'bulk-tag-b', title: 'Tag B', body: 'Body B.' },
     ]);
 
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('[data-id="bulk-tag-a"] input[type="checkbox"]').check();
     await page.locator('[data-id="bulk-tag-b"] input[type="checkbox"]').check();
     await page.locator('#bulk-add-tag').click();
@@ -54,7 +54,7 @@ test.describe('bulk actions', () => {
       { id: 'select-c', title: 'Select C', body: 'Body C.' },
     ]);
 
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('#bulk-select-all').click();
     await expect(page.locator('#bulk-selected-count')).toHaveText('3 selected');
     for (const id of ['select-a', 'select-b', 'select-c']) {
@@ -74,7 +74,7 @@ test.describe('bulk actions', () => {
       { id: 'export-b', title: 'Export B', body: 'Leave me out.' },
     ]);
 
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('[data-id="export-a"] input[type="checkbox"]').check();
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#bulk-export-json').click();
@@ -94,7 +94,7 @@ test.describe('bulk actions', () => {
     ]);
 
     await page.locator('#trash-view').click();
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('[data-id="delete-forever-a"] input[type="checkbox"]').check();
 
     page.once('dialog', (dialog) => dialog.accept());
@@ -111,7 +111,7 @@ test.describe('bulk actions', () => {
     ]);
 
     await page.locator('#trash-view').click();
-    await page.locator('#bulk-toggle').click();
+    await enterBulkMode(page);
     await page.locator('[data-id="keep-forever-a"] input[type="checkbox"]').check();
 
     page.once('dialog', (dialog) => dialog.dismiss());

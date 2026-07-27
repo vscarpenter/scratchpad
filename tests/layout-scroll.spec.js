@@ -36,7 +36,7 @@ test.describe('sidebar layout — scroll containment', () => {
     // Every action control must end inside the sidebar's right edge —
     // regression guard for the Today button overflowing the actions row
     // and clipping the About icon.
-    for (const id of ['#new-note', '#bulk-toggle', '#today-note', '#command-palette-btn', '#open-about']) {
+    for (const id of ['#new-note', '#today-note', '#command-palette-btn', '#open-about', '#theme-toggle']) {
       const box = await page.locator(id).boundingBox();
       if (!box) throw new Error(id + ' has no bounding box');
       expect(box.x + box.width, id + ' overflows sidebar').toBeLessThanOrEqual(sidebar.x + sidebar.width + 0.5);
@@ -44,5 +44,19 @@ test.describe('sidebar layout — scroll containment', () => {
     // And the primary button must have room for one-line text.
     const newNote = await page.locator('#new-note').boundingBox();
     expect(newNote.width).toBeGreaterThanOrEqual(110);
+  });
+
+  test('sidebar header chrome stays within its 217px budget', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await seedNotes(page, 5);
+
+    const head = await page.locator('.sidebar-head').boundingBox();
+    if (!head) throw new Error('sidebar head has no bounding box');
+    expect(head.height).toBeLessThanOrEqual(217);
+
+    // The restored kicker carries the live note count and the privacy line.
+    await expect(page.locator('.sidebar-kicker')).toBeVisible();
+    await expect(page.locator('#note-count')).toHaveText('5');
+    await expect(page.locator('.sidebar-kicker')).toContainText('local-only');
   });
 });
