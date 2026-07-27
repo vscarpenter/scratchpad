@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes } = require('./helpers');
+const { gotoApp, seedRawNotes, openOverflowMenu } = require('./helpers');
 
 test.describe('note organization and empty states', () => {
   test('adds, normalizes, filters, removes, and persists inline tags', async ({ page }) => {
@@ -77,6 +77,7 @@ test.describe('note organization and empty states', () => {
     // Folders grouping a pinned note floats to the top of its own folder.
     await page.locator('#group-recent').click();
     await page.locator('.note-row[data-id="sort-old"]').getByRole('button', { name: 'Open Older note' }).click();
+    await openOverflowMenu(page);
     await page.locator('#pin-toggle').click();
 
     await expect(page.locator('.note-section').first().locator('.note-section-head')).toHaveText('Pinned');
@@ -88,7 +89,7 @@ test.describe('note organization and empty states', () => {
     await page.reload();
     await expect(page.locator('.note-row').first()).toHaveAttribute('data-id', 'sort-old');
     await page.locator('.note-row[data-id="sort-old"]').getByRole('button', { name: 'Open Older note' }).click();
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'true');
   });
 
   test('restores one trashed note and empties the rest only after confirmation', async ({ page }) => {
@@ -100,6 +101,7 @@ test.describe('note organization and empty states', () => {
 
     await page.locator('#trash-view').click();
     await page.locator('.note-row[data-id="trash-keep"]').getByRole('button', { name: 'Open Restore me' }).click();
+    await openOverflowMenu(page);
     await page.locator('#restore-btn').click();
     await expect(page.locator('#active-notes-view')).toHaveClass(/is-active/);
     await expect(page.locator('#note-title-display')).toHaveText('Restore me');
