@@ -31,6 +31,22 @@ test.describe('shared static-page behavior', () => {
     });
   }
 
+  test('the theme control keeps its text-button width on every content page', async ({ page }) => {
+    // Regression guard: the app shell styles .theme-toggle as a 28px square
+    // icon button. Content pages render "Theme: auto" as text, so inheriting
+    // that rule collapses the control. The square rules must stay scoped to
+    // body:not(.page-privacy).
+    for (const pageInfo of PAGES) {
+      await page.goto(pageInfo.path);
+      const toggle = page.locator('#theme-toggle');
+      await expect(toggle).toBeVisible();
+      const box = await toggle.boundingBox();
+      expect(box.width, `${pageInfo.path} theme toggle width`).toBeGreaterThan(60);
+      const clipped = await toggle.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+      expect(clipped, `${pageInfo.path} theme toggle text clipped`).toBe(false);
+    }
+  });
+
   test('the About call to action returns a visited user to the app', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
     await page.goto('/about.html');
