@@ -24,6 +24,23 @@ test.describe('mobile navigation — list/editor view switching', () => {
     await expect(page.locator('#app-shell')).not.toHaveClass(/mobile-editor/);
   });
 
+  test('tapping the already-selected note still opens the editor', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'mobile-a', title: 'Mobile A', body: 'Body A.' },
+    ]);
+
+    await page.locator('[data-id="mobile-a"]').click();
+    await expect(page.locator('#app-shell')).toHaveClass(/mobile-editor/);
+
+    await page.locator('#back-to-list').click();
+    await expect(page.locator('#app-shell')).toHaveClass(/mobile-list/);
+
+    // The note stays selected after Back, so this tap hits selectNote()'s
+    // early-return path. It must still switch the mobile view to the editor.
+    await page.locator('[data-id="mobile-a"]').click();
+    await expect(page.locator('#app-shell')).toHaveClass(/mobile-editor/);
+  });
+
   test('creating a note switches straight to the editor view', async ({ page }) => {
     await gotoApp(page);
     await expect(page.locator('#app-shell')).toHaveClass(/mobile-list/);
