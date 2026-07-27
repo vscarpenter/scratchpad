@@ -61,6 +61,17 @@ body:not(.page-privacy) {
     min-height: 44px;
     padding-inline: 14px;
   }
+  .status-chip { min-height: 44px; }
+  /* The floating format pill scrolls sideways instead of wrapping. */
+  .fmt-chip {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .fmt-chip.fmt-text { padding: 0 12px; }
+  .editor-format {
+    max-width: 100%;
+    overflow-x: auto;
+  }
   .tag-pill {
     min-height: 44px;
     padding: 0 4px 0 12px;
@@ -115,6 +126,7 @@ body:not(.page-privacy) {
   .main,
   .dialog,
   .onboarding-panel,
+  .editor-format,
   .status-chip.is-floating {
     background: var(--glass-fallback);
   }
@@ -124,6 +136,7 @@ body:not(.page-privacy) {
   .main,
   .dialog,
   .onboarding-panel,
+  .editor-format,
   .status-chip.is-floating {
     background: var(--glass-fallback);
     -webkit-backdrop-filter: none;
@@ -614,10 +627,12 @@ body:not(.page-privacy) {
   gap: 7px;
   height: 26px;
   padding: 0 11px;
+  border: 0;
   border-radius: var(--r-pill);
   background: var(--control-fill);
   font: 500 11px/1 var(--sans);
   color: var(--text-secondary);
+  cursor: pointer;
 }
 .status-chip .status-dot {
   width: 6px;
@@ -625,6 +640,49 @@ body:not(.page-privacy) {
   border-radius: var(--r-pill);
   background: var(--success);
   flex: none;
+}
+
+/* Backup states, driven by days since the last recorded export. */
+.status-chip[data-backup-state="healthy"] {
+  background: var(--success-tint);
+  color: var(--success-text);
+}
+.status-chip[data-backup-state="healthy"] .status-dot { background: var(--success); }
+.status-chip[data-backup-state="aging"] {
+  background: var(--warning-tint);
+  color: var(--warning-dark);
+}
+.status-chip[data-backup-state="aging"] .status-dot { background: var(--warning); }
+.status-chip[data-backup-state="missing"] {
+  background: var(--rust-tint);
+  color: var(--rust);
+  font-weight: 600;
+}
+.status-chip[data-backup-state="missing"] .status-dot { background: var(--rust); }
+
+.backup-caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-bottom: 5px solid var(--text-muted);
+}
+
+/* The backup menu opens upward from the chip in the sidebar foot.
+   Doubled class beats the later .popover-menu base rule's top/right. */
+.popover-menu.popover-menu-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: auto;
+}
+
+.backup-menu-meta {
+  margin: 2px 0 0;
+  padding: 6px 10px 4px;
+  font: 400 11px/1.4 var(--sans);
+  color: var(--text-muted);
 }
 .status-chip.is-floating {
   position: fixed;
@@ -980,7 +1038,6 @@ body:not(.page-privacy) {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
   padding: 14px 18px 12px;
   border-bottom: 1px solid var(--hairline-color);
 }
@@ -1019,15 +1076,8 @@ body:not(.page-privacy) {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.toolbar-sep {
-  width: 1px;
-  height: 22px;
-  background: var(--gray-300);
-  margin: 0 4px;
+  flex: none;
 }
 
 .overflow-wrap {
@@ -1095,29 +1145,52 @@ body:not(.page-privacy) {
   background: var(--warning);
 }
 
+/* Floating format pill: sticks above the writing surface in edit mode. */
 .editor-format {
-  display: inline-flex;
+  position: sticky;
+  top: 6px;
+  z-index: var(--z-raised);
+  display: flex;
   align-items: center;
+  width: fit-content;
+  margin: 0 auto -14px;
   gap: 4px;
-  padding: 3px;
-  border-radius: var(--r-seg-track);
-  background: var(--control-fill);
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: var(--glass-bg-pill);
+  -webkit-backdrop-filter: blur(var(--glass-blur-pill));
+  backdrop-filter: blur(var(--glass-blur-pill));
+  border: var(--glass-border);
+  box-shadow: var(--shadow-pill-float);
 }
 .editor-format[hidden] { display: none; }
 .fmt-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 24px;
+  flex: none;
+  width: 28px;
+  height: 26px;
   padding: 0;
   border: 0;
-  border-radius: var(--r-code);
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--text-secondary);
   font: 700 12px/1 var(--sans);
   cursor: pointer;
   transition: background var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease;
+}
+.fmt-chip.fmt-text {
+  width: auto;
+  padding: 0 8px;
+  font: 600 11.5px/1 var(--sans);
+}
+.fmt-sep {
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 2px;
+  background: var(--gray-300);
 }
 .fmt-chip.fmt-italic { font: italic 600 12px/1 var(--serif); }
 .fmt-chip.fmt-code { font: 600 11px/1 var(--mono); }
@@ -1299,8 +1372,8 @@ body:not(.page-privacy) {
 }
 
 .editor-doc-head {
-  max-width: 720px;
-  margin: 0 auto 22px;
+  max-width: var(--measure-doc);
+  margin: 0 auto 26px;
 }
 
 /* Soft Glass drops the eyebrow above the title. */
@@ -1318,8 +1391,8 @@ body:not(.page-privacy) {
 .note-doc-title {
   margin: 0 0 10px;
   padding: 0;
-  font: 700 32px/1.2 var(--sans);
-  letter-spacing: -0.02em;
+  font: 400 34px/1.18 var(--serif);
+  letter-spacing: -0.012em;
   color: var(--ink);
   word-break: break-word;
 }
@@ -1347,13 +1420,13 @@ body:not(.page-privacy) {
 .editor-doc-head .byline:empty { display: none; }
 
 .tag-bar {
-  max-width: 720px;
+  max-width: var(--measure-doc);
   margin: 0 auto;
 }
 
 .note-editor {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--measure-doc);
   min-height: 360px;
   height: 100%;
   border: 0;
@@ -1363,7 +1436,7 @@ body:not(.page-privacy) {
   padding: 0;
   margin: 0 auto;
   resize: none;
-  font: 400 14px/1.85 var(--mono);
+  font: 400 16.5px/1.75 var(--sans);
   color: var(--text-body);
 }
 .note-editor:focus { outline: 0; box-shadow: none; }
@@ -1377,7 +1450,11 @@ body:not(.page-privacy) {
   background: var(--field-bg-textarea);
   border: 1px solid var(--hairline-color);
   border-radius: var(--r-textarea);
-  padding: 20px 22px;
+  /* 26px top clears the floating format pill overlapping the box by 14px. */
+  padding: 26px 22px 20px;
+  /* Padding plus the 1px borders, so the text content keeps the shared
+     measure and line breaks match the rendered view exactly. */
+  max-width: calc(var(--measure-doc) + 46px);
   box-shadow: var(--textarea-inset-shadow);
 }
 
@@ -1438,11 +1515,11 @@ body:not(.page-privacy) {
 /* ---------- Rendered markdown (scoped, Inkwell tokens only) ---------- */
 .note-rendered {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--measure-doc);
   margin: 0 auto;
   font-family: var(--sans);
   color: var(--text-body);
-  font-size: 15.5px;
+  font-size: 16.5px;
   line-height: 1.75;
 }
 .note-rendered h1,
@@ -1458,8 +1535,14 @@ body:not(.page-privacy) {
   margin: 1.5em 0 0.5em;
 }
 .note-rendered h1 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 0.2em; }
-.note-rendered h2 { font-size: 20px; line-height: 1.3; }
-.note-rendered h3 { font-size: 17px; line-height: 1.35; }
+/* Section headings pick up the serif voice; the title leads it. */
+.note-rendered h2,
+.note-rendered h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+}
+.note-rendered h2 { font-size: var(--t-h2); line-height: 1.3; }
+.note-rendered h3 { font-size: var(--t-h3); line-height: 1.35; }
 .note-rendered h4 { font-size: 15.5px; }
 .note-rendered p { margin: 0 0 1em; }
 .note-rendered a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
@@ -1545,11 +1628,11 @@ body:not(.page-privacy) {
   font-style: italic;
 }
 
-/* ---------- Editorial markdown: lede + pullquote (sans in Soft Glass) ---------- */
+/* ---------- Editorial markdown: lede + pullquote (sans in Soft Glass) ----------
+   The lede keeps only its muted color. Size, line height, and measure stay on
+   the shared body metrics so toggling Edit never re-wraps the first paragraph. */
 .note-rendered p.is-lede {
-  font: 400 17px/1.6 var(--sans);
   color: var(--text-secondary);
-  max-width: 60ch;
   margin: 0 0 18px;
 }
 
@@ -1792,45 +1875,6 @@ body:not(.page-privacy) {
 }
 .about-dialog-meta a:hover { color: var(--accent); }
 .about-dialog-meta .sep { color: var(--gray-300); }
-.about-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 16px 0;
-}
-
-.backup-reminder {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 16px 0;
-  padding: 12px;
-  border: var(--border-hair);
-  border-left: 2px solid var(--warning);
-  border-radius: var(--r-sm);
-  background: var(--ivory);
-}
-
-.backup-reminder[hidden] {
-  display: none;
-}
-
-.backup-reminder .about-subhead {
-  margin-top: 0;
-}
-
-.backup-reminder p {
-  margin: 0;
-  color: var(--gray-700);
-  line-height: 1.45;
-}
-
-.backup-reminder-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .diagnostics-panel {
   margin: 16px 0;
 }

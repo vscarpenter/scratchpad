@@ -24,7 +24,7 @@ test.describe('duplicate note', () => {
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by work' })).toBeVisible();
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by planning' })).toBeVisible();
     await expect(page.locator('#note-eyebrow')).toContainText('Work');
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'false');
   });
 
   test('duplicates a note via the command palette', async ({ page }) => {
@@ -69,13 +69,13 @@ test.describe('duplicate note', () => {
       { id: 'pinned-source', title: 'Pinned original', body: 'Pinned body.', pinned: true },
     ]);
     await page.locator('.note-row[data-id="pinned-source"]').click();
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'true');
 
     await page.locator('#overflow-btn').click();
     await page.locator('#duplicate-overflow-btn').click();
 
     await expect(page.locator('#note-title-display')).toHaveText('Pinned original (copy)');
-    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'false');
 
     // The original note is still pinned; only the copy starts unpinned.
     const original = await page.evaluate(async () => window.ScratchpadDB.get('pinned-source'));
@@ -89,7 +89,12 @@ test.describe('duplicate note', () => {
     await page.locator('#trash-view').click();
     await page.locator('.note-row[data-id="trashed-source"]').click();
 
-    await expect(page.locator('#overflow-btn')).toBeHidden();
+    // The overflow menu stays available in Trash (it hosts Restore and
+    // Delete forever now), but the duplicate action must not appear.
+    await page.locator('#overflow-btn').click();
+    await expect(page.locator('#overflow-menu')).toBeVisible();
+    await expect(page.locator('#duplicate-overflow-btn')).toBeHidden();
+    await page.keyboard.press('Escape');
 
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('duplicate note');

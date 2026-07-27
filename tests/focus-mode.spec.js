@@ -63,7 +63,23 @@ test.describe('focus mode — distraction-free writing', () => {
     await expect(page.locator('#focus-exit-btn')).toBeHidden();
   });
 
-  test('the floating exit button leaves focus mode', async ({ page }) => {
+  test('the rail button enters focus mode and syncs its pressed state', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'focus-rail-button', title: 'Enter via rail', body: 'body text' }]);
+    await page.locator('.note-row[data-id="focus-rail-button"]').click();
+
+    const railBtn = page.locator('#focus-mode-btn');
+    await expect(railBtn).toHaveAttribute('aria-pressed', 'false');
+    await railBtn.click();
+    await expect(page.locator('body')).toHaveClass(/focus-mode/);
+    await expect(railBtn).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#focus-exit-btn')).toBeVisible();
+
+    await page.locator('#focus-exit-btn').click();
+    await expect(page.locator('body')).not.toHaveClass(/focus-mode/);
+    await expect(railBtn).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('focus mode exits from its floating button', async ({ page }) => {
     await seedRawNotes(page, [{ id: 'focus-exit-button', title: 'Exit via button', body: 'body text' }]);
     await page.locator('.note-row[data-id="focus-exit-button"]').click();
 
