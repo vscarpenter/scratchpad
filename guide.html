@@ -67,6 +67,7 @@
         <a href="#linking">Linking notes</a>
         <a href="#folders">Folders</a>
         <a href="#organizing">Finding &amp; organizing</a>
+        <a href="#history-drafts">History &amp; drafts</a>
         <a href="#backups">Backups</a>
         <a href="#privacy-controls">Privacy controls</a>
         <a href="#offline">Offline &amp; installing</a>
@@ -216,6 +217,10 @@
         </li>
         <li><strong>Pins</strong> keep important notes at the top of the list.</li>
         <li>
+          <strong>Duplicate</strong>, in the note's ⋯ menu, copies the current note along
+          with its tags and folder. The copy arrives unpinned, titled "… (copy)".
+        </li>
+        <li>
           <strong>Select</strong> enters bulk mode: tag, pin, or trash several notes in one go.
         </li>
         <li>
@@ -225,6 +230,22 @@
         <li>
           <strong>The command palette</strong> (<kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">P</kbd>)
           runs every action and jumps to recent notes from the keyboard.
+        </li>
+      </ul>
+
+      <h2 id="history-drafts">History &amp; drafts</h2>
+      <p>Two safety nets run quietly while you write:</p>
+      <ul>
+        <li>
+          <strong>Revision history</strong> — every save stores a snapshot, and Scratchpad
+          keeps the last 10 per note. Open <strong>History</strong> from the note's ⋯ menu
+          to browse them, and <strong>Restore</strong> to bring one back. Restoring saves
+          your current version as a revision first, so a restore is always reversible.
+        </li>
+        <li>
+          <strong>Draft recovery</strong> — while you edit, changes autosave as a draft.
+          If the tab closes or reloads before you save, Scratchpad offers the draft back
+          the next time you open that note.
         </li>
       </ul>
 
@@ -250,6 +271,11 @@
           <strong>Import</strong> — accepts a JSON backup, an encrypted backup, or one or more
           Markdown files. Every import shows a preview first, and you choose how conflicts are
           handled: keep both, replace, or skip.
+        </li>
+        <li>
+          <strong>Print or save as PDF</strong> — <kbd class="kbd">⌘/Ctrl</kbd>
+          <kbd class="kbd">P</kbd> prints just the open note: no sidebar, no buttons,
+          print-sized type.
         </li>
       </ul>
       <p>
