@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, openOverflowMenu } = require('./helpers');
+const { seedRawNotes, openOverflowMenu, openBackupMenu } = require('./helpers');
 
 async function downloadBuffer(download) {
   const stream = await download.createReadStream();
@@ -84,7 +84,7 @@ test.describe('sharing and portable exports', () => {
       });
     }, now);
 
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#export-btn').click();
     const download = await downloadPromise;
@@ -138,7 +138,7 @@ test.describe('sharing and portable exports', () => {
     let downloaded = false;
     page.on('download', () => { downloaded = true; });
 
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-markdown-btn').click();
 
     await expect(page.locator('.toast')).toContainText('No active notes to export.');

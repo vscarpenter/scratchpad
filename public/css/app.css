@@ -61,6 +61,7 @@ body:not(.page-privacy) {
     min-height: 44px;
     padding-inline: 14px;
   }
+  .status-chip { min-height: 44px; }
   /* The floating format pill scrolls sideways instead of wrapping. */
   .fmt-chip {
     min-width: 44px;
@@ -626,10 +627,12 @@ body:not(.page-privacy) {
   gap: 7px;
   height: 26px;
   padding: 0 11px;
+  border: 0;
   border-radius: var(--r-pill);
   background: var(--control-fill);
   font: 500 11px/1 var(--sans);
   color: var(--text-secondary);
+  cursor: pointer;
 }
 .status-chip .status-dot {
   width: 6px;
@@ -637,6 +640,49 @@ body:not(.page-privacy) {
   border-radius: var(--r-pill);
   background: var(--success);
   flex: none;
+}
+
+/* Backup states, driven by days since the last recorded export. */
+.status-chip[data-backup-state="healthy"] {
+  background: var(--success-tint);
+  color: var(--success-text);
+}
+.status-chip[data-backup-state="healthy"] .status-dot { background: var(--success); }
+.status-chip[data-backup-state="aging"] {
+  background: var(--warning-tint);
+  color: var(--warning-dark);
+}
+.status-chip[data-backup-state="aging"] .status-dot { background: var(--warning); }
+.status-chip[data-backup-state="missing"] {
+  background: var(--rust-tint);
+  color: var(--rust);
+  font-weight: 600;
+}
+.status-chip[data-backup-state="missing"] .status-dot { background: var(--rust); }
+
+.backup-caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-bottom: 5px solid var(--text-muted);
+}
+
+/* The backup menu opens upward from the chip in the sidebar foot.
+   Doubled class beats the later .popover-menu base rule's top/right. */
+.popover-menu.popover-menu-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: auto;
+}
+
+.backup-menu-meta {
+  margin: 2px 0 0;
+  padding: 6px 10px 4px;
+  font: 400 11px/1.4 var(--sans);
+  color: var(--text-muted);
 }
 .status-chip.is-floating {
   position: fixed;
@@ -1820,45 +1866,6 @@ body:not(.page-privacy) {
 }
 .about-dialog-meta a:hover { color: var(--accent); }
 .about-dialog-meta .sep { color: var(--gray-300); }
-.about-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 16px 0;
-}
-
-.backup-reminder {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 16px 0;
-  padding: 12px;
-  border: var(--border-hair);
-  border-left: 2px solid var(--warning);
-  border-radius: var(--r-sm);
-  background: var(--ivory);
-}
-
-.backup-reminder[hidden] {
-  display: none;
-}
-
-.backup-reminder .about-subhead {
-  margin-top: 0;
-}
-
-.backup-reminder p {
-  margin: 0;
-  color: var(--gray-700);
-  line-height: 1.45;
-}
-
-.backup-reminder-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .diagnostics-panel {
   margin: 16px 0;
 }

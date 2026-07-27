@@ -1,11 +1,11 @@
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote } = require('./helpers');
+const { gotoApp, createAndSaveNote, openBackupMenu } = require('./helpers');
 
 test.describe('encrypted backups', () => {
   test('shows and hides both export passphrase fields without losing their values', async ({ page }) => {
     await gotoApp(page);
     await createAndSaveNote(page, 'Visible passphrase test', 'Body');
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-encrypted-btn').click();
 
     await page.locator('#backup-passphrase').fill('correct horse battery staple');
@@ -25,7 +25,7 @@ test.describe('encrypted backups', () => {
     await gotoApp(page);
     await createAndSaveNote(page, 'Encrypted note', 'Only the owner should read this.');
 
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-encrypted-btn').click();
     await expect(page.locator('#backup-passphrase-dialog')).toBeVisible();
     await page.locator('#backup-passphrase').fill('correct horse battery staple');
@@ -52,7 +52,7 @@ test.describe('encrypted backups', () => {
     test.slow();
     await gotoApp(page);
     await createAndSaveNote(page, 'Wrong passphrase test', 'Secret');
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-encrypted-btn').click();
     await page.locator('#backup-passphrase').fill('correct horse battery staple');
     await page.locator('#backup-passphrase-confirm').fill('correct horse battery staple');
@@ -70,7 +70,7 @@ test.describe('encrypted backups', () => {
   test('rejects passphrases under 12 characters and mismatched confirmations', async ({ page }) => {
     await gotoApp(page);
     await createAndSaveNote(page, 'Passphrase validation', 'Body');
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-encrypted-btn').click();
 
     await page.locator('#backup-passphrase').fill('short');
