@@ -150,6 +150,7 @@
     moveNoteDialog: $('move-note-dialog'),
     moveFolderList: $('move-folder-list'),
     moveNoteOverflow: $('move-note-overflow'),
+    duplicateOverflowBtn: $('duplicate-overflow-btn'),
     deleteDialog: $('delete-dialog'),
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
@@ -1669,6 +1670,7 @@
     els.permanentDeleteBtn.hidden = !trashed;
     els.overflowBtn.hidden = trashed;
     els.moveNoteOverflow.hidden = trashed;
+    els.duplicateOverflowBtn.hidden = trashed;
     els.discardOverflowBtn.hidden = !(state.editing && state.dirty);
 
     const bodyEmpty = !(note.body || '').trim();
@@ -2034,6 +2036,51 @@
       state.mobileView = 'editor';
       syncMobileView();
       setTimeout(() => els.editor.focus(), 0);
+    });
+  }
+
+  // Untitled notes derive their sidebar title from the body (see deriveTitle),
+  // so suffixing an empty title field would leave the duplicate showing the
+  // exact same row text as the original with no sign it's a copy. Suffixing
+  // the derived title instead — and storing it as the copy's explicit title —
+  // keeps the duplicate visibly distinct in the sidebar either way.
+  function duplicateTitle(note) {
+    const base = deriveTitle(note);
+    const suffix = ' (copy)';
+    const trimmedBase = base.length + suffix.length > NOTE_TITLE_MAX
+      ? base.slice(0, NOTE_TITLE_MAX - suffix.length)
+      : base;
+    return trimmedBase + suffix;
+  }
+
+  async function duplicateCurrentNote() {
+    const note = getNote(state.selectedId);
+    if (!note || isTrashed(note)) return;
+    if (state.editing && state.dirty) {
+      const ok = await confirmDiscard();
+      if (!ok) return;
+      await discardCurrentDraft();
+    }
+    return withBusy('duplicate-note', [els.overflowBtn], 'Could not duplicate the note.', async () => {
+      const t = now();
+      const copy = normalizeNote({
+        ...note,
+        id: uuid(),
+        title: duplicateTitle(note),
+        pinned: false,
+        createdAt: t,
+        updatedAt: t,
+        deletedAt: null,
+        lastDraftAt: null,
+        dailyDate: null,
+      });
+      await putNoteRecord(copy);
+      state.notes.push(copy);
+      state.selectedId = copy.id;
+      state.editing = false;
+      state.dirty = false;
+      renderAll();
+      toast('Note duplicated.');
     });
   }
 
@@ -3456,6 +3503,13 @@
         keywords: 'folder move file organize',
         run: () => openMoveDialog([selectedNote.id]),
       });
+      commands.push({
+        id: 'duplicate-note',
+        label: 'Duplicate note',
+        meta: 'Create a copy of the selected note',
+        keywords: 'copy clone duplicate',
+        run: duplicateCurrentNote,
+      });
     }
 
     const notes = sortNotes(state.notes)
@@ -4714,6 +4768,10 @@
     els.moveNoteOverflow.addEventListener('click', () => {
       closeOverflowMenu();
       if (state.selectedId) openMoveDialog([state.selectedId]);
+    });
+    els.duplicateOverflowBtn.addEventListener('click', () => {
+      closeOverflowMenu();
+      duplicateCurrentNote();
     });
     els.discardOverflowBtn.addEventListener('click', async () => {
       closeOverflowMenu();
