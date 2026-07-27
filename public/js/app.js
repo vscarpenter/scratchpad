@@ -51,6 +51,7 @@
     view: 'active',
     grouping: readGrouping(),
     mobileView: 'list', // 'list' | 'editor' - only meaningful on narrow viewports
+    focusMode: false, // distraction-free writing; runtime-only, never persisted or restored on reload
     promptedDrafts: new Set(),
     pendingTagDelete: null,
     importPreview: null,
@@ -78,6 +79,7 @@
     shell: $('app-shell'),
     sidebar: $('sidebar'),
     main: $('main'),
+    focusExitBtn: $('focus-exit-btn'),
     search: $('search'),
     searchScope: $('search-scope'),
     activeFilter: $('active-filter'),
@@ -2374,6 +2376,20 @@
     renderAll();
   }
 
+  // Focus mode only swaps which chrome is visible (CSS class + a floating
+  // exit button) — it never touches note content, editing state, or dirty
+  // tracking, so there's nothing to re-render and no risk to drafts or
+  // cross-tab sync.
+  function toggleFocusMode() {
+    state.focusMode = !state.focusMode;
+    applyFocusMode();
+  }
+
+  function applyFocusMode() {
+    document.body.classList.toggle('focus-mode', state.focusMode);
+    els.focusExitBtn.hidden = !state.focusMode;
+  }
+
   function toggleBulkNote(id, selected) {
     if (selected) state.bulkSelectedIds.add(id);
     else state.bulkSelectedIds.delete(id);
@@ -3435,6 +3451,13 @@
         meta: 'Create a folder',
         keywords: 'folder group organize create',
         run: () => openFolderDialog(null),
+      },
+      {
+        id: 'toggle-focus-mode',
+        label: state.focusMode ? 'Exit focus mode' : 'Enter focus mode',
+        meta: 'Distraction-free writing',
+        keywords: 'focus zen distraction hide sidebar minimal writing',
+        run: toggleFocusMode,
       },
       {
         id: 'toggle-bulk',
@@ -4635,6 +4658,7 @@
     els.newNote.addEventListener('click', createNote);
     els.todayNote.addEventListener('click', openTodayNote);
     els.bulkToggle.addEventListener('click', toggleBulkMode);
+    els.focusExitBtn.addEventListener('click', toggleFocusMode);
     els.commandPaletteBtn.addEventListener('click', openCommandPalette);
     els.emptyNewNote.addEventListener('click', createNote);
     els.emptyImportNotes.addEventListener('click', () => els.importFile.click());
@@ -4902,6 +4926,12 @@
     if (meta && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
       e.preventDefault();
       openCommandPalette();
+      return;
+    }
+
+    if (meta && e.shiftKey && (e.key === 'f' || e.key === 'F')) {
+      e.preventDefault();
+      toggleFocusMode();
       return;
     }
 

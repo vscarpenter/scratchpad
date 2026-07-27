@@ -2593,6 +2593,10 @@ body:not(.page-privacy) .theme-toggle:hover {
   .tag-manager-row .btn {
     justify-content: center;
   }
+  /* Focus mode is desktop-only (see the min-width:768px block below); force
+     the exit button off here too so a toggle left on before a resize down
+     can't leave a functionless floating button on a narrow viewport. */
+  .focus-exit-btn { display: none; }
 }
 
 /* =====================================================================
@@ -3161,6 +3165,44 @@ body:not(.page-privacy) .theme-toggle:hover {
      synthetic anchors like #note:<id> / #new:<title>, not real URLs, so
      printing them would be noise, not information.
    ========================================================================== */
+
+/* ---------- Focus mode (distraction-free writing) ----------
+   Same technique the print stylesheet above uses to drop the sidebar
+   column, but toggled by a body class (state.focusMode) instead of an
+   @media print block. The title, markdown toolbar, and edit/save controls
+   are deliberately left alone — people still need to write and save.
+   Scoped to the desktop breakpoint: the app is already single-pane below
+   768px, so the toggle is a deliberate no-op there. */
+@media (min-width: 768px) {
+  body.focus-mode .app-shell {
+    grid-template-columns: 1fr;
+  }
+  body.focus-mode .sidebar,
+  body.focus-mode #note-breadcrumb,
+  body.focus-mode #note-byline,
+  body.focus-mode #tag-bar,
+  body.focus-mode #backlinks-section {
+    display: none;
+  }
+  /* The breadcrumb normally pushes editor-actions to the right via its own
+     margin-right: auto; carry that over so hiding it doesn't yank the
+     toolbar and save/edit controls flush left. */
+  body.focus-mode .editor-actions {
+    margin-left: auto;
+  }
+}
+
+/* Bottom-left, not top-right: the editor-head toolbar and save/edit
+   controls live up there, and a fixed button would sit on top of them.
+   The sidebar's own floating status chip normally lives here, but it's
+   hidden along with the rest of the sidebar in focus mode. */
+.focus-exit-btn {
+  position: fixed;
+  left: 30px;
+  bottom: 30px;
+  z-index: var(--z-sticky);
+}
+
 @media print {
   @page {
     margin: 0.6in;
