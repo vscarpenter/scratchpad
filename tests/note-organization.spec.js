@@ -119,6 +119,49 @@ test.describe('note organization and empty states', () => {
     expect(notes[0].deletedAt).toBeNull();
   });
 
+  test('every row carries excerpt and tag metadata without layout shift', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'meta-a', title: 'Meta A', body: 'A long enough body to earn a two-line excerpt in the sidebar list, with plenty of words to wrap.', tags: ['alpha'] },
+      { id: 'meta-b', title: 'Meta B', body: 'Second body, also long enough to spill across two rendered excerpt lines in the sidebar.', tags: ['ops', 'aws'] },
+    ]);
+
+    // meta-b is newest so the app auto-selects it; meta-a starts inactive.
+    // Metadata must render on the inactive row, not just the selected one.
+    const rowA = page.locator('.note-row[data-id="meta-a"]');
+    await expect(rowA).not.toHaveClass(/is-active/);
+    await expect(rowA.locator('.note-row-tag', { hasText: 'alpha' })).toBeVisible();
+    const clamp = await rowA.locator('.note-row-excerpt').evaluate((el) => getComputedStyle(el).webkitLineClamp);
+    expect(clamp).toBe('2');
+
+    // Selecting a row must not change its height (no list shift while arrowing).
+    const before = await rowA.boundingBox();
+    await rowA.getByRole('button', { name: 'Open Meta A' }).click();
+    await expect(rowA).toHaveClass(/is-active/);
+    const after = await rowA.boundingBox();
+    expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(1);
+
+    // Tag chips on inactive rows filter directly.
+    const rowB = page.locator('.note-row[data-id="meta-b"]');
+    await expect(rowB).not.toHaveClass(/is-active/);
+    await rowB.locator('.note-row-tag', { hasText: 'ops' }).click();
+    await expect(page.locator('#active-filter-tag')).toHaveText('#ops');
+  });
+
+  test('caps row tags at two chips plus a counter', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'many-tags', title: 'Many tags', body: 'Body.', tags: ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8'] },
+    ]);
+
+    const row = page.locator('.note-row[data-id="many-tags"]');
+    await expect(row.locator('.note-row-tag')).toHaveCount(2);
+    await expect(row.locator('.note-row-tag-more')).toHaveText('+6');
+
+    // Eight tags must not widen the row past the sidebar.
+    const sidebar = await page.locator('#sidebar').boundingBox();
+    const box = await row.boundingBox();
+    expect(box.x + box.width).toBeLessThanOrEqual(sidebar.x + sidebar.width + 0.5);
+  });
+
   test('creates a note from the empty-state action', async ({ page }) => {
     await gotoApp(page);
     await expect(page.locator('#empty-no-notes')).toBeVisible();
