@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<style>
+  body { margin: 0; background: #F3F4F8; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-wrap: pretty; }
+  a { color: #4E5FD8; text-decoration: none; }
+  a:hover { color: #4553C4; text-decoration: underline; text-underline-offset: 3px; }
+  [data-opt]:target [data-badge] { background: #4E5FD8; color: #fff; }
+</style>
+</helmet>
+
+<section id="brief" style="padding:44px 48px 34px;border-bottom:1px solid rgba(28,30,40,.08)">
+  <div style="max-width:900px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:center;gap:11px">
+      <svg viewBox="0 0 24 24" style="width:26px;height:26px;background:linear-gradient(135deg,#5B6CE4,#4E5FD8);border-radius:9px;box-shadow:0 4px 10px rgba(78,95,216,.35)"><path d="M7 8h10M7 13h7M7 18h9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none" /></svg>
+      <h1 style="margin:0;font:700 22px/1.2 system-ui;letter-spacing:-.02em;color:#1C1E28">Scratchpad — UI review</h1>
+      <span style="font:500 11px/1 ui-monospace,Menlo,monospace;color:#5D6170;background:rgba(28,30,40,.05);padding:5px 9px;border-radius:999px">vscarpenter/scratchpad @ main</span>
+    </div>
+
+    <p style="margin:0;font:400 16px/1.6 system-ui;color:#33353F;max-width:74ch">Read before writing anything: <code style="font:400 14px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">index.html</code>, all 3,325 lines of <code style="font:400 14px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">app.css</code>, Inkwell tokens v3.0.0 “Soft Glass”, <code style="font:400 14px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">inkwell-components.css</code>, <code style="font:400 14px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">PRODUCT.md</code>, and your existing <code style="font:400 14px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">ui-design-suggestions.md</code>. Every mockup below is drawn with real token values — no new colors, no web fonts, no build step.</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px">
+      <div style="flex:1 1 300px;background:#fff;border:1px solid rgba(28,30,40,.07);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(35,42,90,.06)">
+        <p style="margin:0 0 8px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#3B7A4B">What's already good</p>
+        <p style="margin:0;font:400 14px/1.6 system-ui;color:#33353F">Token discipline is unusually strong — the dark cascade is byte-parallel and AA-checked, and almost nothing in <code style="font:400 12.5px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">app.css</code> is a one-off value. The two-pane glass shell reads calm. Command palette, focus mode, daily note, wikilinks and revision history are genuinely power-user grade.</p>
+      </div>
+      <div style="flex:1 1 300px;background:#fff;border:1px solid rgba(28,30,40,.07);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(35,42,90,.06)">
+        <p style="margin:0 0 8px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#A2701F">The through-line of all five</p>
+        <p style="margin:0;font:400 14px/1.6 system-ui;color:#33353F">The app has grown a lot of capability, and nearly all of it landed in two places: the sidebar header and the About dialog. The header now costs ~290px before the first note, and About is doing six jobs at once. The chrome has started competing with the writing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="t1" style="padding:40px 48px 44px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 26px">
+    <a href="#t1" data-badge style="font:600 10px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none">1</a>
+    <span style="font:600 13px/1.2 system-ui;color:#1C1E28">Five ideas, highest impact first</span>
+    <span style="font:400 12px/1.2 system-ui;color:#9A9EAD">each shown as today vs. proposed, at 1:1</span>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start">
+
+    <div data-opt id="1a" style="flex:none;width:1150px;background:#fff;border:1px solid rgba(28,30,40,.08);border-radius:18px;box-shadow:0 1px 3px rgba(35,42,90,.06);overflow:hidden;scroll-margin-top:16px">
+      <div style="padding:22px 26px 18px;border-bottom:1px solid rgba(28,30,40,.06)">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:9px">
+          <a href="#1a" data-badge style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none">1a</a>
+          <h2 style="margin:0;font:700 19px/1.25 system-ui;letter-spacing:-.015em;color:#1C1E28">Collapse the five-row sidebar header into two</h2>
+        </div>
+        <p style="margin:0;font:400 14.5px/1.6 system-ui;color:#5D6170;max-width:88ch">The header stacks brand, search, a two-row action block, a segmented view switch and a Folders/Recent pair — <strong style="color:#1C1E28;font-weight:600">≈290px of chrome in a 302px-wide column</strong>, using three different toggle idioms back to back. “Tags” also sits inside the view segmented control even though it opens a dialog rather than switching views, so the control lies about what it does.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="padding:24px 26px;border-right:1px solid rgba(28,30,40,.06)">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#9A9EAD">Today</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;justify-content:center">
+            <div style="width:302px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);overflow:hidden;position:relative">
+              <div style="padding:16px 14px 10px;display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <svg viewBox="0 0 24 24" style="width:26px;height:26px;background:linear-gradient(135deg,#5B6CE4,#4E5FD8);border-radius:9px;box-shadow:0 4px 10px rgba(78,95,216,.35)"><path d="M7 8h10M7 13h7M7 18h9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none" /></svg>
+                    <span style="font:700 16px/1 system-ui;letter-spacing:-.01em;color:#1C1E28">Scratchpad</span>
+                  </div>
+                  <span style="width:28px;height:28px;border-radius:999px;background:rgba(28,30,40,.05);display:flex;align-items:center;justify-content:center;color:#5D6170;font:400 13px/1 system-ui">◐</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;background:rgba(255,255,255,.85);border:1px solid rgba(28,30,40,.07);border-radius:12px;box-shadow:inset 0 1px 2px rgba(28,30,40,.03)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9EAD" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                  <span style="flex:1;font:400 13.5px/1 system-ui;color:#9A9EAD">Search</span>
+                  <span style="font:500 11px/1 system-ui;color:#9A9EAD;background:rgba(28,30,40,.05);border-radius:7px;padding:3px 6px">⌘K</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <div style="flex:1 1 100%;height:40px;border-radius:12px;background:#4E5FD8;box-shadow:0 8px 18px rgba(78,95,216,.35);display:flex;align-items:center;justify-content:center;font:600 14px/1 system-ui;color:#fff">New note</div>
+                  <div style="height:40px;padding:0 18px;border-radius:999px;background:rgba(28,30,40,.05);display:flex;align-items:center;font:600 14px/1 system-ui;color:#1C1E28">Select</div>
+                  <div style="margin-left:auto;display:flex;gap:8px">
+                    <div style="width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5D6170" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></svg></div>
+                    <div style="width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5D6170" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h7M17 14l3 3-3 3" /></svg></div>
+                    <div style="width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5D6170" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" /></svg></div>
+                  </div>
+                </div>
+                <div style="display:flex;background:rgba(28,30,40,.05);border-radius:11px;padding:3px;gap:2px">
+                  <div style="flex:1;height:28px;border-radius:8px;background:#fff;box-shadow:0 2px 6px rgba(28,30,40,.10);display:flex;align-items:center;justify-content:center;font:600 12.5px/1 system-ui;color:#1C1E28">Notes</div>
+                  <div style="flex:1;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:500 12.5px/1 system-ui;color:#5D6170">Trash</div>
+                  <div style="flex:1;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:500 12.5px/1 system-ui;color:#5D6170">Tags</div>
+                </div>
+                <div style="display:flex;gap:2px;margin-top:6px">
+                  <div style="flex:1;height:26px;border-radius:999px;background:#EBEEFC;display:flex;align-items:center;justify-content:center;font:500 12px/1 system-ui;color:#4E5FD8">Folders</div>
+                  <div style="flex:1;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;font:500 12px/1 system-ui;color:#9A9EAD">Recent</div>
+                </div>
+              </div>
+              <div style="padding:8px 8px 0;display:flex;flex-direction:column;gap:6px">
+                <div style="padding:9px 12px;border-radius:14px">
+                  <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Deploy checklist</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">2m</span></div>
+                  <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Invalidate /index.html and the css bundle after…</div>
+                </div>
+                <div style="padding:9px 12px;border-radius:14px">
+                  <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">IndexedDB migration</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">1h</span></div>
+                  <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">v4 adds a folders store; onupgradeneeded has to…</div>
+                </div>
+                <div style="height:22px;background:linear-gradient(180deg,rgba(243,244,248,0),rgba(243,244,248,.9))"></div>
+              </div>
+              <div style="position:absolute;left:0;top:0;width:4px;height:290px;background:#B04A3F;opacity:.75"></div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:center"><span style="font:600 10px/1 system-ui;color:#B04A3F;background:rgba(176,74,63,.10);padding:5px 9px;border-radius:999px">≈290px of header before the first note</span></div>
+        </div>
+        <div style="padding:24px 26px">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#4E5FD8">Proposed</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;justify-content:center">
+            <div style="width:302px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);overflow:hidden;position:relative">
+              <div style="padding:16px 14px 10px;display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <svg viewBox="0 0 24 24" style="width:26px;height:26px;background:linear-gradient(135deg,#5B6CE4,#4E5FD8);border-radius:9px;box-shadow:0 4px 10px rgba(78,95,216,.35)"><path d="M7 8h10M7 13h7M7 18h9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none" /></svg>
+                    <div>
+                      <div style="font:700 16px/1 system-ui;letter-spacing:-.01em;color:#1C1E28">Scratchpad</div>
+                      <div style="margin-top:4px;font:500 11px/1 system-ui;color:#9A9EAD">24 notes · <span style="color:#4E5FD8">local-only</span>, never syncs</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <span style="width:28px;height:28px;border-radius:999px;background:rgba(28,30,40,.05);display:flex;align-items:center;justify-content:center;color:#5D6170;font:400 13px/1 system-ui">◐</span>
+                    <span style="width:28px;height:28px;border-radius:999px;background:rgba(28,30,40,.05);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5D6170" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" /></svg></span>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;background:rgba(255,255,255,.85);border:1px solid rgba(28,30,40,.07);border-radius:12px;box-shadow:inset 0 1px 2px rgba(28,30,40,.03)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9EAD" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                  <span style="flex:1;font:400 13.5px/1 system-ui;color:#9A9EAD">Search notes</span>
+                  <span style="font:500 11px/1 system-ui;color:#9A9EAD;background:rgba(28,30,40,.05);border-radius:7px;padding:3px 6px">⌘K</span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;height:40px;border-radius:12px;background:#4E5FD8;box-shadow:0 8px 18px rgba(78,95,216,.35);display:flex;align-items:center;justify-content:center;font:600 14px/1 system-ui;color:#fff">New note</div>
+                  <div style="width:40px;height:40px;border-radius:999px;background:rgba(28,30,40,.05);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5D6170" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></svg></div>
+                  <div style="width:40px;height:40px;border-radius:999px;background:rgba(28,30,40,.05);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5D6170" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h7M17 14l3 3-3 3" /></svg></div>
+                </div>
+                <div style="display:flex;background:rgba(28,30,40,.05);border-radius:11px;padding:3px;gap:2px">
+                  <div style="flex:1;height:28px;border-radius:8px;background:#fff;box-shadow:0 2px 6px rgba(28,30,40,.10);display:flex;align-items:center;justify-content:center;font:600 12.5px/1 system-ui;color:#1C1E28">Notes</div>
+                  <div style="flex:1;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:500 12.5px/1 system-ui;color:#5D6170">Trash</div>
+                </div>
+              </div>
+              <div style="padding:6px 8px 0;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:6px;padding:4px 10px 6px;border-bottom:1px solid rgba(28,30,40,.06)">
+                  <span style="width:0;height:0;border-left:5px solid #9A9EAD;border-top:4px solid transparent;border-bottom:4px solid transparent;transform:rotate(90deg)"></span>
+                  <span style="font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#5D6170">Folders</span>
+                  <span style="font:500 10.5px/1 system-ui;color:#C9CBD4">/</span>
+                  <span style="font:500 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD">Recent</span>
+                  <span style="margin-left:auto;font:600 13px/1 system-ui;color:#9A9EAD;letter-spacing:.06em">⋯</span>
+                </div>
+                <div style="padding:9px 12px;border-radius:14px">
+                  <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Deploy checklist</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">2m</span></div>
+                  <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Invalidate /index.html and the css bundle after…</div>
+                </div>
+                <div style="padding:9px 12px;border-radius:14px">
+                  <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">IndexedDB migration</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">1h</span></div>
+                  <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">v4 adds a folders store; onupgradeneeded has to…</div>
+                </div>
+                <div style="padding:9px 12px;border-radius:14px">
+                  <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Talk outline: local-first</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">Yest.</span></div>
+                  <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Open with the trust argument, not the feature list…</div>
+                </div>
+                <div style="height:22px;background:linear-gradient(180deg,rgba(243,244,248,0),rgba(243,244,248,.9))"></div>
+              </div>
+              <div style="position:absolute;left:0;top:0;width:4px;height:217px;background:#57B26A;opacity:.8"></div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:center"><span style="font:600 10px/1 system-ui;color:#3B7A4B;background:rgba(87,178,106,.14);padding:5px 9px;border-radius:999px">≈217px · one more note above the fold</span></div>
+        </div>
+      </div>
+      <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 26px 22px;background:rgba(28,30,40,.02);border-top:1px solid rgba(28,30,40,.06);display:flex;flex-wrap:wrap;gap:26px">
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">What moved.</strong> Note count + the privacy line become a kicker under the wordmark (the element already exists in the DOM, just <code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">display:none</code>). About joins the theme toggle in the brand row. Select moves into the list's <span style="letter-spacing:.06em">⋯</span> menu alongside Manage tags and New folder — it's a list mode, so it belongs to the list.</p>
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">Why it's also prettier.</strong> One toggle idiom instead of three, and the header now has a clear rhythm: identity → find → act → scope. The Folders/Recent pair becomes a quiet text control inside the list header, where sort belongs.</p>
+      </div>
+      </sc-if>
+    </div>
+
+    <div data-opt id="1b" style="flex:none;width:1150px;background:#fff;border:1px solid rgba(28,30,40,.08);border-radius:18px;box-shadow:0 1px 3px rgba(35,42,90,.06);overflow:hidden;scroll-margin-top:16px">
+      <div style="padding:22px 26px 18px;border-bottom:1px solid rgba(28,30,40,.06)">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:9px">
+          <a href="#1b" data-badge style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none">1b</a>
+          <h2 style="margin:0;font:700 19px/1.25 system-ui;letter-spacing:-.015em;color:#1C1E28">Turn the footer slogan into a live backup status</h2>
+        </div>
+        <p style="margin:0;font:400 14.5px/1.6 system-ui;color:#5D6170;max-width:88ch">In a local-only app, export <em>is</em> the durability story — and all four export paths live behind an <span style="letter-spacing:.02em">ⓘ</span> button labelled “About Scratchpad”, next to diagnostics, an erase-everything zone, and the shortcut list. Meanwhile the permanent footer repeats a promise the user already read. Trade the slogan for the one fact that changes: when they last backed up.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="padding:24px 26px;border-right:1px solid rgba(28,30,40,.06)">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#9A9EAD">Today</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:16px">
+            <div style="width:302px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:10px 14px 12px">
+              <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:rgba(28,30,40,.05);font:500 11px/1 system-ui;color:#5D6170"><span style="width:6px;height:6px;border-radius:999px;background:#57B26A"></span>Local-only · never syncs</span>
+            </div>
+            <div style="width:100%;max-width:430px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.95);border-radius:20px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:18px 20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font:700 15px/1 system-ui;color:#1C1E28">About Scratchpad</span><span style="font:400 15px/1 system-ui;color:#9A9EAD">×</span></div>
+              <p style="margin:0 0 12px;font:400 12.5px/1.55 system-ui;color:#5D6170">Scratchpad keeps everything you write in <strong style="color:#1C1E28">this browser only</strong>, using IndexedDB…</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+                <span style="height:30px;padding:0 12px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;font:600 12px/1 system-ui;color:#1C1E28">Export backup (JSON)</span>
+                <span style="height:30px;padding:0 12px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;font:600 12px/1 system-ui;color:#1C1E28">Export encrypted</span>
+                <span style="height:30px;padding:0 12px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;font:600 12px/1 system-ui;color:#1C1E28">Markdown ZIP</span>
+                <span style="height:30px;padding:0 12px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;font:600 12px/1 system-ui;color:#1C1E28">Import notes</span>
+              </div>
+              <div style="border-top:1px solid rgba(28,30,40,.07);padding-top:10px;display:flex;flex-direction:column;gap:5px">
+                <span style="font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD">Local diagnostics · Erase local data · Shortcuts</span>
+                <span style="font:400 11.5px/1.5 system-ui;color:#C9CBD4">Last backup · Storage · Revisions · Drafts · Offline cache…</span>
+              </div>
+              <div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;font:600 10px/1 system-ui;color:#B04A3F;background:rgba(176,74,63,.10);padding:5px 9px;border-radius:999px">One dialog, six jobs</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:24px 26px">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#4E5FD8">Proposed</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:14px">
+            <div style="width:302px;position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+              <div style="width:100%;background:#fff;border:1px solid rgba(28,30,40,.07);border-radius:12px;box-shadow:0 8px 20px rgba(35,42,90,.10);padding:4px;display:flex;flex-direction:column">
+                <span style="padding:8px 10px;border-radius:8px;background:rgba(28,30,40,.05);font:500 13px/1 system-ui;color:#1C1E28">Export backup (JSON)</span>
+                <span style="padding:8px 10px;font:400 13px/1 system-ui;color:#1C1E28">Export encrypted backup…</span>
+                <span style="padding:8px 10px;font:400 13px/1 system-ui;color:#1C1E28">Export Markdown ZIP</span>
+                <hr style="border:0;border-top:1px solid rgba(28,30,40,.06);margin:4px 2px" />
+                <span style="padding:8px 10px;font:400 13px/1 system-ui;color:#1C1E28">Import notes…</span>
+                <span style="padding:6px 10px 8px;font:400 11px/1.4 system-ui;color:#9A9EAD">24 notes · 1.2 MB · storage protected</span>
+              </div>
+              <div style="width:100%;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:10px 14px 12px">
+                <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:rgba(28,30,40,.05);font:500 11px/1 system-ui;color:#5D6170"><span style="width:6px;height:6px;border-radius:999px;background:#57B26A"></span>Backed up 3 days ago<span style="color:#9A9EAD;font-size:9px">▴</span></span>
+              </div>
+            </div>
+            <div style="width:100%;max-width:430px;display:flex;flex-direction:column;gap:8px;padding-top:6px">
+              <p style="margin:0;font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD">Three states, same chip</p>
+              <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:rgba(87,178,106,.12);font:500 11px/1 system-ui;color:#3B7A4B;width:fit-content"><span style="width:6px;height:6px;border-radius:999px;background:#57B26A"></span>Backed up 3 days ago</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:rgba(232,162,61,.14);font:500 11px/1 system-ui;color:#A2701F;width:fit-content"><span style="width:6px;height:6px;border-radius:999px;background:#E8A23D"></span>Last backup 12 days ago</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:999px;background:rgba(176,74,63,.10);font:600 11px/1 system-ui;color:#B04A3F;width:fit-content"><span style="width:6px;height:6px;border-radius:999px;background:#B04A3F"></span>Never backed up — export now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 26px 22px;background:rgba(28,30,40,.02);border-top:1px solid rgba(28,30,40,.06);display:flex;flex-wrap:wrap;gap:26px">
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">All existing parts.</strong> The date is already tracked (<code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">#diagnostic-last-backup</code>), the popover pattern is already built (<code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">.popover-menu</code>), and the health tints are tokens. The backup-reminder banner in About can then retire — the chip is a standing, non-nagging reminder.</p>
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">Why it's also prettier.</strong> The footer stops being decorative. Colour finally means something — the only chromatic accent in the sidebar is a real status. And About shrinks to what it should be: explainer, diagnostics, danger zone.</p>
+      </div>
+      </sc-if>
+    </div>
+
+    <div data-opt id="1c" style="flex:none;width:1150px;background:#fff;border:1px solid rgba(28,30,40,.08);border-radius:18px;box-shadow:0 1px 3px rgba(35,42,90,.06);overflow:hidden;scroll-margin-top:16px">
+      <div style="padding:22px 26px 18px;border-bottom:1px solid rgba(28,30,40,.06)">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:9px">
+          <a href="#1c" data-badge style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none">1c</a>
+          <h2 style="margin:0;font:700 19px/1.25 system-ui;letter-spacing:-.015em;color:#1C1E28">Let every row carry its metadata, not just the selected one</h2>
+        </div>
+        <p style="margin:0;font:400 14.5px/1.6 system-ui;color:#5D6170;max-width:88ch">Right now <code style="font:400 12.5px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">.note-row-tags { display: none }</code> except on <code style="font:400 12.5px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">.is-active</code>, and the excerpt is clamped to one line until a row is active. So the list is only informative about the note you're already reading — and tags, the main organising device, are invisible exactly when you're scanning for one.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="padding:24px 26px;border-right:1px solid rgba(28,30,40,.06)">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#9A9EAD">Today</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;justify-content:center">
+            <div style="width:302px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:8px 8px 16px;display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD;padding:6px 8px 2px">Pinned</div>
+              <div style="padding:11px 12px;border-radius:14px;background:#fff;border:1px solid rgba(78,95,216,.35);box-shadow:0 8px 20px rgba(35,42,90,.12)">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Deploy checklist — CloudFront</span></div>
+                <div style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:4px">2 min ago</div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:4px">Invalidate /index.html and /public/css/*. Recompute the CSP hash after every app.js change, then</div>
+                <div style="display:flex;gap:5px;margin-top:5px"><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">ops</span><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">deploy</span></div>
+              </div>
+              <div style="font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD;padding:10px 8px 2px">Recent</div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">IndexedDB migration notes</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">1h</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">v4 adds a folders store; onupgradeneeded has to backfill</div>
+              </div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">2026-07-27</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">3h</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">09:14 — reviewed the toolbar wrap bug. 11:02 — call with</div>
+              </div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Talk outline: local-first</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">Yest.</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Open with the trust argument, not the feature list. Demo</div>
+              </div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Postgres index sizing</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">Jul 24</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Bloat check query; reindex concurrently is fine on 14+</div>
+              </div>
+              <div style="margin:6px 4px 0;font:600 10px/1 system-ui;color:#B04A3F;background:rgba(176,74,63,.10);padding:5px 9px;border-radius:999px;width:fit-content">No tags, 1-line excerpt, unless active</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:24px 26px">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#4E5FD8">Proposed</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;justify-content:center">
+            <div style="width:302px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:8px 8px 16px;display:flex;flex-direction:column;gap:5px">
+              <div style="font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD;padding:6px 8px 2px">Pinned</div>
+              <div style="position:relative;padding:10px 12px 10px 14px;border-radius:14px;background:#fff;border:1px solid rgba(28,30,40,.06);box-shadow:0 2px 8px rgba(35,42,90,.07);overflow:hidden">
+                <span style="position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:999px;background:#4E5FD8"></span>
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Deploy checklist — CloudFront</span><span style="font:500 10.5px/1 system-ui;color:#5D6170;margin-top:3px">2m</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px">Invalidate /index.html and /public/css/*. Recompute the CSP hash after every app.js</div>
+                <div style="display:flex;gap:5px;margin-top:5px;align-items:center"><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">ops</span><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">deploy</span><span style="font:500 10px/1 system-ui;color:#9A9EAD">+1</span></div>
+              </div>
+              <div style="font:600 10.5px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#9A9EAD;padding:10px 8px 2px">Recent</div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">IndexedDB migration notes</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">1h</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px">v4 adds a folders store; onupgradeneeded has to backfill every note with a null folderId</div>
+                <div style="display:flex;gap:5px;margin-top:5px"><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">scratchpad</span><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">db</span></div>
+              </div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">2026-07-27</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">3h</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px">09:14 — reviewed the toolbar wrap bug. 11:02 — call with Dan re: launch copy.</div>
+                <div style="display:flex;gap:5px;margin-top:5px"><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">daily</span></div>
+              </div>
+              <div style="padding:10px 12px;border-radius:14px">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:600 13.5px/1.3 system-ui;color:#1C1E28">Talk outline: local-first</span><span style="font:500 10.5px/1 system-ui;color:#9A9EAD;margin-top:3px">Yest.</span></div>
+                <div style="font:400 12px/1.45 system-ui;color:#5D6170;margin-top:3px">Open with the trust argument, not the feature list. Demo the offline drop last.</div>
+                <div style="display:flex;gap:5px;margin-top:5px"><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">writing</span><span style="height:18px;padding:0 8px;border-radius:999px;background:#EBEEFC;font:600 10px/18px system-ui;color:#4E5FD8">talk</span></div>
+              </div>
+              <div style="margin:6px 4px 0;font:600 10px/1 system-ui;color:#3B7A4B;background:rgba(87,178,106,.14);padding:5px 9px;border-radius:999px;width:fit-content">Same info on every row · quieter “you are here”</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 26px 22px;background:rgba(28,30,40,.02);border-top:1px solid rgba(28,30,40,.06);display:flex;flex-wrap:wrap;gap:26px">
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">The trade.</strong> Rows get ~18px taller, so you see roughly one fewer at a time — <a href="#1a">1a</a> pays that back and then some. Cap visible tags at two plus a <code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">+n</code> so a heavily tagged note can't blow out the row.</p>
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">Why it's also prettier.</strong> The active row currently gets an indigo border <em>and</em> a 20px-blur card shadow — the heaviest object on screen for something that just means “here”. A 2.5px accent rail plus a soft shadow says the same thing at a fraction of the visual weight, and stops the list flickering between two densities as you arrow through it.</p>
+      </div>
+      </sc-if>
+    </div>
+
+    <div data-opt id="1d" style="flex:none;width:1150px;background:#fff;border:1px solid rgba(28,30,40,.08);border-radius:18px;box-shadow:0 1px 3px rgba(35,42,90,.06);overflow:hidden;scroll-margin-top:16px">
+      <div style="padding:22px 26px 18px;border-bottom:1px solid rgba(28,30,40,.06)">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:9px">
+          <a href="#1d" data-badge style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none">1d</a>
+          <h2 style="margin:0;font:700 19px/1.25 system-ui;letter-spacing:-.015em;color:#1C1E28">Stop the page from reflowing when you press Edit</h2>
+        </div>
+        <p style="margin:0;font:400 14.5px/1.6 system-ui;color:#5D6170;max-width:88ch">Reading is 32px bold sans over sans body; editing is <code style="font:400 12.5px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">14px/1.85 var(--mono)</code>. Every ⌘S changes typeface, size, line-height and line breaks — the one moment the tool is least invisible. Separately, <code style="font:400 12.5px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">--serif</code> is defined in the tokens and used nowhere, while PRODUCT.md asks for “serif headings and generous whitespace”.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="padding:24px 26px;border-right:1px solid rgba(28,30,40,.06)">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#9A9EAD">Today · read, then edit</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:24px 26px">
+              <h3 style="margin:0 0 10px;font:700 32px/1.2 system-ui;letter-spacing:-.02em;color:#1C1E28">Talk outline: local-first</h3>
+              <p style="margin:0 0 16px;font:400 12.5px/1.4 system-ui;color:#9A9EAD">Edited 12 minutes ago · 340 words</p>
+              <p style="margin:0 0 10px;font:400 15px/1.6 system-ui;color:#33353F">Open with the trust argument, not the feature list. People don't adopt a notes app because it has folders; they adopt it because they believe it will still be theirs next year.</p>
+              <p style="margin:0;font:400 15px/1.6 system-ui;color:#33353F">Demo the offline drop last — pull the wifi mid-sentence and keep typing.</p>
+            </div>
+            <div style="background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:24px 26px">
+              <div style="background:rgba(255,255,255,.7);border:1px solid rgba(28,30,40,.06);border-radius:16px;padding:16px 18px;box-shadow:inset 0 1px 3px rgba(28,30,40,.04)">
+                <p style="margin:0;font:400 14px/1.85 ui-monospace,'SF Mono',Menlo,monospace;color:#33353F">Open with the trust argument, not the feature list. People don't adopt a notes app because it has folders; they adopt it because they believe it will still be theirs next year.</p>
+              </div>
+              <div style="margin-top:12px;display:inline-flex;font:600 10px/1 system-ui;color:#B04A3F;background:rgba(176,74,63,.10);padding:5px 9px;border-radius:999px">Different family, size, leading and line breaks</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:24px 26px">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#4E5FD8">Proposed · read, then edit</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:24px 26px">
+              <h3 style="margin:0 0 10px;font:400 34px/1.18 'Iowan Old Style',Palatino,'Palatino Linotype','Source Serif Pro',Georgia,serif;letter-spacing:-.012em;color:#1C1E28">Talk outline: local-first</h3>
+              <p style="margin:0 0 18px;font:400 12.5px/1.4 system-ui;color:#9A9EAD">Edited 12 minutes ago · 340 words</p>
+              <p style="margin:0 0 12px;font:400 16.5px/1.75 system-ui;color:#33353F">Open with the trust argument, not the feature list. People don't adopt a notes app because it has folders; they adopt it because they believe it will still be theirs next year.</p>
+              <p style="margin:0;font:400 16.5px/1.75 system-ui;color:#33353F">Demo the offline drop last — pull the wifi mid-sentence and keep typing.</p>
+            </div>
+            <div style="background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);padding:24px 26px">
+              <div style="background:rgba(255,255,255,.7);border:1px solid rgba(28,30,40,.06);border-radius:16px;padding:16px 18px;box-shadow:inset 0 1px 3px rgba(28,30,40,.04)">
+                <p style="margin:0;font:400 16.5px/1.75 system-ui;color:#33353F">Open with the trust argument, not the feature list. People don't adopt a notes app because it has folders; they adopt it because they believe it will still be theirs next year.</p>
+              </div>
+              <div style="margin-top:12px;display:inline-flex;font:600 10px/1 system-ui;color:#3B7A4B;background:rgba(87,178,106,.14);padding:5px 9px;border-radius:999px">Identical metrics — nothing moves on ⌘S</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 26px 22px;background:rgba(28,30,40,.02);border-top:1px solid rgba(28,30,40,.06);display:flex;flex-wrap:wrap;gap:26px">
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">The rule.</strong> Serif for the note title and rendered <code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">h2/h3</code> — all system faces, so no web font and no CSP change. Body 16.5px/1.75 with a 68ch measure, and the textarea uses <em>the same</em> family, size, leading and measure. Mono survives where it earns it: code spans, code blocks, the <code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">kbd</code> hints.</p>
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">If you'd rather keep mono for writing</strong> — plenty of markdown-fluent people would — then keep it, but match the metrics (mono 15px/1.75 sits at the same rhythm) so the reflow still disappears. That's the part that matters; the serif is the upside.</p>
+      </div>
+      </sc-if>
+    </div>
+
+    <div data-opt id="1e" style="flex:none;width:1150px;background:#fff;border:1px solid rgba(28,30,40,.08);border-radius:18px;box-shadow:0 1px 3px rgba(35,42,90,.06);overflow:hidden;scroll-margin-top:16px">
+      <div style="padding:22px 26px 18px;border-bottom:1px solid rgba(28,30,40,.06)">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:9px">
+          <a href="#1e" data-badge style="font:600 10.5px/1 ui-monospace,Menlo,monospace;padding:4px 8px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none">1e</a>
+          <h2 style="margin:0;font:700 19px/1.25 system-ui;letter-spacing:-.015em;color:#1C1E28">Split the editor rail: document actions up top, formatting by the text</h2>
+        </div>
+        <p style="margin:0;font:400 14.5px/1.6 system-ui;color:#5D6170;max-width:88ch">One <code style="font:400 12.5px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:2px 6px;border-radius:7px">flex-wrap: wrap</code> row holds Back, breadcrumb, unsaved chip, pin, share, a divider, four format chips, Edit/Save, Restore, Delete forever and overflow. Entering edit mode adds ~120px of chips, so the rail reshuffles or wraps to two lines exactly when you're trying to type. Focus mode — the best thing in the app — has no button at all.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="padding:24px 26px;border-right:1px solid rgba(28,30,40,.06)">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#9A9EAD">Today · edit mode at 1100px</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px">
+            <div style="background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 18px 12px;border-bottom:1px solid rgba(28,30,40,.06)">
+                <span style="height:32px;padding:0 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;font:600 13px/1 system-ui;color:#5D6170"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 18l-6-6 6-6" /></svg>Back</span>
+                <span style="height:28px;padding:0 12px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;font:500 12px/1 system-ui;color:#5D6170;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis">notes › Writing › Talk outline</span>
+                <span style="margin-left:auto;height:24px;padding:0 10px;border-radius:999px;background:rgba(232,162,61,.14);display:inline-flex;align-items:center;gap:6px;font:600 11px/1 system-ui;color:#A2701F"><span style="width:5px;height:5px;border-radius:999px;background:#E8A23D"></span>Unsaved</span>
+                <span style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 17v5M9 4h6l-1 6 3 3H7l3-3-1-6z" /></svg></span>
+                <span style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg></span>
+                <span style="width:1px;height:22px;background:#C9CBD4;margin:0 4px"></span>
+                <span style="display:inline-flex;gap:4px;padding:3px;border-radius:11px;background:rgba(28,30,40,.05)">
+                  <span style="width:26px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font:700 12px/1 system-ui;color:#5D6170">B</span>
+                  <span style="width:26px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font:italic 600 12px/1 Georgia,serif;color:#5D6170">I</span>
+                  <span style="width:26px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font:600 11px/1 ui-monospace,Menlo,monospace;color:#5D6170">&lt;/&gt;</span>
+                  <span style="width:26px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg></span>
+                </span>
+                <span style="height:32px;padding:0 14px;border-radius:999px;background:#4E5FD8;box-shadow:0 6px 14px rgba(78,95,216,.30);display:inline-flex;align-items:center;font:600 13px/1 system-ui;color:#fff">Save</span>
+                <span style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170;font:600 15px/1 system-ui;letter-spacing:.08em">⋯</span>
+              </div>
+              <div style="padding:22px 26px 26px">
+                <div style="background:rgba(255,255,255,.7);border:1px solid rgba(28,30,40,.06);border-radius:16px;padding:16px 18px;box-shadow:inset 0 1px 3px rgba(28,30,40,.04);min-height:96px">
+                  <p style="margin:0;font:400 14px/1.85 ui-monospace,'SF Mono',Menlo,monospace;color:#33353F">Open with the trust argument, not the feature list.</p>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:inline-flex;font:600 10px/1 system-ui;color:#B04A3F;background:rgba(176,74,63,.10);padding:5px 9px;border-radius:999px">11 controls, one wrapping row, no focus-mode entry</div>
+          </div>
+        </div>
+        <div style="padding:24px 26px">
+          <p style="margin:0 0 14px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#4E5FD8">Proposed · same width, edit mode</p>
+          <div style="background:radial-gradient(900px 500px at 8% -5%,rgba(96,112,226,.16),transparent 60%),radial-gradient(800px 480px at 100% 108%,rgba(236,166,140,.14),transparent 55%),#F3F4F8;border-radius:16px;padding:18px">
+            <div style="background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 20px 50px rgba(35,42,90,.12);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:8px;padding:14px 18px 12px;border-bottom:1px solid rgba(28,30,40,.06)">
+                <span style="width:30px;height:30px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;justify-content:center;color:#5D6170"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 18l-6-6 6-6" /></svg></span>
+                <span style="height:28px;padding:0 12px;border-radius:999px;background:rgba(28,30,40,.05);display:inline-flex;align-items:center;font:500 12px/1 system-ui;color:#5D6170;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis">Writing › <strong style="color:#1C1E28;font-weight:600">Talk outline</strong></span>
+                <span style="margin-left:auto;height:24px;padding:0 10px;border-radius:999px;background:rgba(232,162,61,.14);display:inline-flex;align-items:center;gap:6px;font:600 11px/1 system-ui;color:#A2701F"><span style="width:5px;height:5px;border-radius:999px;background:#E8A23D"></span>Unsaved</span>
+                <span style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170" title="Focus mode"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" /></svg></span>
+                <span style="height:32px;padding:0 14px;border-radius:999px;background:#4E5FD8;box-shadow:0 6px 14px rgba(78,95,216,.30);display:inline-flex;align-items:center;font:600 13px/1 system-ui;color:#fff">Save</span>
+                <span style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170;font:600 15px/1 system-ui;letter-spacing:.08em">⋯</span>
+              </div>
+              <div style="padding:22px 26px 26px;position:relative">
+                <div style="display:flex;justify-content:center;margin-bottom:-14px;position:relative;z-index:2">
+                  <span style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(35,42,90,.10)">
+                    <span style="width:28px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font:700 12px/1 system-ui;color:#5D6170">B</span>
+                    <span style="width:28px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font:italic 600 13px/1 'Iowan Old Style',Palatino,Georgia,serif;color:#5D6170">I</span>
+                    <span style="width:28px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font:600 11px/1 ui-monospace,Menlo,monospace;color:#5D6170">&lt;/&gt;</span>
+                    <span style="width:28px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:#5D6170"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg></span>
+                    <span style="width:1px;height:18px;background:rgba(28,30,40,.10);margin:4px 3px"></span>
+                    <span style="height:26px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;font:600 11.5px/1 system-ui;color:#5D6170">H2</span>
+                    <span style="height:26px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;font:600 11.5px/1 system-ui;color:#5D6170">List</span>
+                    <span style="height:26px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;font:600 11.5px/1 system-ui;color:#5D6170">Quote</span>
+                  </span>
+                </div>
+                <div style="background:rgba(255,255,255,.7);border:1px solid rgba(28,30,40,.06);border-radius:16px;padding:26px 18px 16px;box-shadow:inset 0 1px 3px rgba(28,30,40,.04);min-height:96px">
+                  <p style="margin:0;font:400 16.5px/1.75 system-ui;color:#33353F">Open with the trust argument, not the feature list.</p>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:inline-flex;font:600 10px/1 system-ui;color:#3B7A4B;background:rgba(87,178,106,.14);padding:5px 9px;border-radius:999px">Rail never changes width · formatting sits where the text is</div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 26px 22px;background:rgba(28,30,40,.02);border-top:1px solid rgba(28,30,40,.06);display:flex;flex-wrap:wrap;gap:26px">
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">What moved.</strong> Pin and Share go into <span style="letter-spacing:.06em">⋯</span> (which already holds Move, Duplicate, History, Export, Delete). Focus mode gets the one icon slot they vacate. Restore / Delete-forever only exist in Trash, so they can live in <span style="letter-spacing:.06em">⋯</span> too and stop budgeting width in the common case. The rail becomes fixed: back, breadcrumb, state, focus, primary, overflow.</p>
+        <p style="flex:1 1 300px;margin:0;font:400 13.5px/1.6 system-ui;color:#33353F"><strong style="font-weight:600">Why it's also prettier.</strong> Drop <code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">flex-wrap</code> and the toolbar can never break into two lines. The floating format pill reuses the glass-pill treatment already in the tokens (<code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">--glass-bg-pill</code>, <code style="font:400 12px/1 ui-monospace,Menlo,monospace;background:rgba(28,30,40,.05);padding:1px 5px;border-radius:6px">--shadow-pill-float</code>), and there's finally room for the three markdown affordances people actually reach for.</p>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <div style="margin:30px 0 0;max-width:900px;background:rgba(232,162,61,.10);border:1px solid rgba(232,162,61,.30);border-radius:14px;padding:18px 20px">
+    <p style="margin:0 0 7px;font:600 11px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:#A2701F">One thing to decide before any of this</p>
+    <p style="margin:0;font:400 14px/1.65 system-ui;color:#33353F">PRODUCT.md names “glassmorphism, gradient hero text, purple-to-blue everything” as an anti-reference, and asks for serif headings and restraint. Inkwell 3.0 “Soft Glass” is frosted panels, a gradient brand glyph, a two-hue wash, and a glowing indigo shadow under every primary button — its own header says it “deliberately retires the flat no-shadow surface”. Both are coherent; they just aren't the same product. The five ideas above work either way, but <a href="#1d">1d</a> is the one that makes the answer visible, so it's worth settling first: is Soft Glass the direction, or is the product doc?</p>
+  </div>
+
+  <p style="margin:22px 0 0;font:400 12.5px/1.6 system-ui;color:#5D6170">Try next: “build <a href="#1a">1a</a> and <a href="#1b">1b</a> as a real sidebar prototype” · “show <a href="#1d">1d</a> with mono kept for editing” · “I want to see the flat, no-glass version of the whole shell”</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAnnotations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Review doc&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showAnnotations: this.props.showAnnotations ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>

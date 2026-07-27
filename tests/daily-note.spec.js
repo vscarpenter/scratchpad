@@ -174,7 +174,7 @@ test.describe('quick capture', () => {
     await page.locator('#command-palette-input').fill('capture');
     await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
     await page.locator('#quick-capture-input').fill('remember the milk');
-    await page.keyboard.press('Enter');
+    await page.locator('#quick-capture-submit').click();
     // The dialog closes before the async write; the toast marks completion.
     await expect(page.locator('.toast', { hasText: "Captured to today's note." }).last()).toBeVisible();
     const note = await page.evaluate(async () => {

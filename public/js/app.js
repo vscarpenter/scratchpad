@@ -244,6 +244,7 @@
     confirmLinkRename: $('confirm-link-rename'),
     quickCaptureDialog: $('quick-capture-dialog'),
     quickCaptureInput: $('quick-capture-input'),
+    quickCaptureSubmit: $('quick-capture-submit'),
     shareBtn: $('share-btn'),
     shareDialog: $('share-dialog'),
     shareCopy: $('share-copy'),
@@ -5278,6 +5279,7 @@
         submitQuickCapture();
       }
     });
+    els.quickCaptureSubmit.addEventListener('click', submitQuickCapture);
 
     window.addEventListener('keydown', onGlobalKey);
     window.addEventListener('resize', debounce(syncMobileView, 100));
