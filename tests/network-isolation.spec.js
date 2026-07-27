@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote, importJson } = require('./helpers');
+const { gotoApp, createAndSaveNote, importJson, openBackupMenu } = require('./helpers');
 
 /**
  * Privacy guarantee: after page load, the app makes zero network calls,
@@ -55,7 +55,7 @@ test.describe('network isolation', () => {
     await createAndSaveNote(page, 'Export me', 'Nothing leaves this browser.');
 
     const downloadPromise = page.waitForEvent('download');
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-btn').click();
     await downloadPromise;
 

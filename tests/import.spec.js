@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, importJson, seedRawNotes } = require('./helpers');
+const { gotoApp, importJson, seedRawNotes, openBackupMenu } = require('./helpers');
 const { stat } = require('node:fs/promises');
 
 const validNote = {
@@ -15,9 +15,9 @@ const validNote = {
 };
 
 test.describe('import — validation and conflicts', () => {
-  test('opens the system file chooser from the About import action', async ({ page }) => {
+  test('opens the system file chooser from the backup menu import action', async ({ page }) => {
     await gotoApp(page);
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     const chooserPromise = page.waitForEvent('filechooser');
     await page.locator('#import-btn').click();
     const chooser = await chooserPromise;
@@ -182,7 +182,7 @@ test.describe('import — validation and conflicts', () => {
       });
     }, { body: oversizedBody, title: oversizedTitle, tags: oversizedTags });
 
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#export-btn').click();
     const path = await (await downloadPromise).path();

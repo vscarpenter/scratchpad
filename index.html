@@ -68,7 +68,7 @@
             </div>
           </div>
           <p class="sidebar-kicker">
-            <span id="note-count">0</span> notes ·
+            <span id="note-count">0</span> <span id="note-count-noun">notes</span> ·
             <span class="accent">local-only</span>, never syncs
           </p>
         </div>
@@ -133,9 +133,22 @@
       </nav>
 
       <div class="sidebar-foot">
-        <span class="status-chip">
-          <span class="status-dot" aria-hidden="true"></span>Local-only · never syncs
-        </span>
+        <div class="overflow-wrap backup-wrap">
+          <button id="backup-chip" class="status-chip" type="button" aria-haspopup="menu" aria-expanded="false" data-backup-state="missing">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="backup-chip-label">Never backed up. Export now.</span>
+            <span class="backup-caret" aria-hidden="true"></span>
+          </button>
+          <div id="backup-menu" class="popover-menu popover-menu-up" role="menu" hidden>
+            <button id="export-btn" role="menuitem" type="button">Export backup (JSON)</button>
+            <button id="export-encrypted-btn" role="menuitem" type="button">Export encrypted backup…</button>
+            <button id="export-markdown-btn" role="menuitem" type="button">Export Markdown ZIP</button>
+            <hr class="menu-divider"/>
+            <button id="import-btn" role="menuitem" type="button">Import notes…</button>
+            <p id="backup-menu-meta" class="backup-menu-meta"></p>
+          </div>
+          <input id="import-file" type="file" accept="application/json,.json,text/markdown,.md,.markdown,.scratchpad" multiple hidden />
+        </div>
       </div>
     </aside>
 
@@ -428,28 +441,10 @@
         Nothing is uploaded, synced, or transmitted. There are no accounts, trackers, or analytics.
       </p>
       <p>
-        Clearing site data (or using private browsing) will erase your notes. Back up regularly with
-        <em>Export</em>, and restore with <em>Import</em>.
+        Clearing site data (or using private browsing) will erase your notes. Back up with
+        <em>Export</em> and restore with <em>Import</em>, both behind the backup chip at the
+        bottom of the sidebar.
       </p>
-
-      <section id="backup-reminder" class="backup-reminder" aria-labelledby="backup-reminder-title" hidden>
-        <div>
-          <h3 id="backup-reminder-title" class="about-subhead">Backup reminder</h3>
-          <p id="backup-reminder-copy">No backup recorded for this browser.</p>
-        </div>
-        <div class="backup-reminder-actions">
-          <button id="backup-reminder-export" class="btn btn-primary btn-sm" type="button">Export backup</button>
-          <button id="backup-reminder-snooze" class="btn btn-secondary btn-sm" type="button">Remind later</button>
-        </div>
-      </section>
-
-      <div class="about-row">
-        <button id="export-btn" class="btn btn-secondary" type="button">Export backup (JSON)</button>
-        <button id="export-encrypted-btn" class="btn btn-secondary" type="button">Export encrypted backup</button>
-        <button id="export-markdown-btn" class="btn btn-secondary" type="button">Export Markdown ZIP</button>
-        <button id="import-btn" class="btn btn-secondary" type="button">Import notes</button>
-        <input id="import-file" type="file" accept="application/json,.json,text/markdown,.md,.markdown,.scratchpad" multiple hidden />
-      </div>
 
       <section id="diagnostics-panel" class="diagnostics-panel" aria-labelledby="diagnostics-title">
         <h3 id="diagnostics-title" class="about-subhead">Local diagnostics</h3>

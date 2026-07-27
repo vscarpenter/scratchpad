@@ -26,9 +26,10 @@
   const VIRTUAL_FOLDER_KEY = '__notes__';
   const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
   const LAST_BACKUP_KEY = 'scratchpad:lastBackupAt';
-  const BACKUP_SNOOZE_KEY = 'scratchpad:backupReminderSnoozedUntil';
-  const BACKUP_REMINDER_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
-  const BACKUP_SNOOZE_MS = 24 * 60 * 60 * 1000;
+  const BACKUP_SNOOZE_KEY = 'scratchpad:backupReminderSnoozedUntil'; // legacy key, cleared on export
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const BACKUP_HEALTHY_MS = 7 * DAY_MS;
+  const BACKUP_AGING_MS = 30 * DAY_MS;
   const ENCRYPTED_BACKUP_FORMAT = 'scratchpad-encrypted-backup';
   const ENCRYPTED_BACKUP_VERSION = 1;
   const ENCRYPTED_BACKUP_ITERATIONS = 600000;
@@ -104,6 +105,7 @@
     emptyNewNote: $('empty-new-note'),
     noteList: $('note-list'),
     noteCount: $('note-count'),
+    noteCountNoun: $('note-count-noun'),
     backToList: $('back-to-list'),
     breadcrumb: $('note-breadcrumb'),
     titleDisplay: $('note-title-display'),
@@ -179,10 +181,10 @@
     exportMarkdownBtn: $('export-markdown-btn'),
     importBtn: $('import-btn'),
     importFile: $('import-file'),
-    backupReminder: $('backup-reminder'),
-    backupReminderCopy: $('backup-reminder-copy'),
-    backupReminderExport: $('backup-reminder-export'),
-    backupReminderSnooze: $('backup-reminder-snooze'),
+    backupChip: $('backup-chip'),
+    backupChipLabel: $('backup-chip-label'),
+    backupMenu: $('backup-menu'),
+    backupMenuMeta: $('backup-menu-meta'),
     diagnosticActiveNotes: $('diagnostic-active-notes'),
     diagnosticTrashedNotes: $('diagnostic-trashed-notes'),
     diagnosticRevisions: $('diagnostic-revisions'),
@@ -1906,7 +1908,9 @@
 
   function updateNoteCount() {
     if (!els.noteCount) return;
-    els.noteCount.textContent = String(activeNotes().length);
+    const count = activeNotes().length;
+    els.noteCount.textContent = String(count);
+    if (els.noteCountNoun) els.noteCountNoun.textContent = count === 1 ? 'note' : 'notes';
   }
 
   // -------- Overflow menu (#6) --------
@@ -2071,11 +2075,93 @@
     }
   }
 
+  // -------- Backup menu (sidebar foot) --------
+  // Same APG pattern again; opens upward from the backup status chip.
+  function backupMenuItems() {
+    return Array.from(els.backupMenu.querySelectorAll('[role="menuitem"]'))
+      .filter((item) => !item.hidden && item.offsetParent !== null);
+  }
+
+  function focusBackupMenuItem(index) {
+    const items = backupMenuItems();
+    if (!items.length) return;
+    const i = (index + items.length) % items.length;
+    items[i].focus();
+  }
+
+  function openBackupMenu() {
+    if (!els.backupMenu.hidden) return;
+    els.backupMenu.hidden = false;
+    els.backupChip.setAttribute('aria-expanded', 'true');
+    renderBackupMenuMeta();
+    document.addEventListener('click', onBackupMenuOutsideClick, true);
+    document.addEventListener('keydown', onBackupMenuKey, true);
+    setTimeout(() => focusBackupMenuItem(0), 0);
+  }
+
+  function closeBackupMenu(opts) {
+    if (els.backupMenu.hidden) return;
+    els.backupMenu.hidden = true;
+    els.backupChip.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onBackupMenuOutsideClick, true);
+    document.removeEventListener('keydown', onBackupMenuKey, true);
+    if (opts && opts.returnFocus) els.backupChip.focus();
+  }
+
+  function toggleBackupMenu() {
+    if (els.backupMenu.hidden) openBackupMenu();
+    else closeBackupMenu();
+  }
+
+  function onBackupMenuOutsideClick(e) {
+    if (els.backupMenu.contains(e.target) || els.backupChip.contains(e.target)) return;
+    closeBackupMenu();
+  }
+
+  function onBackupMenuKey(e) {
+    const items = backupMenuItems();
+    const current = items.indexOf(document.activeElement);
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        closeBackupMenu({ returnFocus: true });
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        focusBackupMenuItem(current < 0 ? 0 : current + 1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        focusBackupMenuItem(current < 0 ? items.length - 1 : current - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        e.stopPropagation();
+        focusBackupMenuItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        e.stopPropagation();
+        focusBackupMenuItem(items.length - 1);
+        break;
+      case 'Tab':
+        // Tab leaves the menu: close it and let focus move on naturally.
+        closeBackupMenu();
+        break;
+      default:
+        break;
+    }
+  }
+
   function renderAll() {
     ensureSelectionForView();
     renderSidebar();
     renderActiveFilter();
     updateNoteCount();
+    renderBackupChip();
 
     const base = currentBaseNotes();
     if (state.view === 'trash' && base.length === 0) {
@@ -3319,32 +3405,50 @@
     return 'Last backup ' + formatFullTimestamp(ms);
   }
 
-  function backupReminderDue() {
-    if (!activeNotes().length) return false;
-    const snoozedUntil = readStoredTime(BACKUP_SNOOZE_KEY);
-    if (snoozedUntil && snoozedUntil > now()) return false;
-    const last = lastBackupAt();
-    return !last || now() - last > BACKUP_REMINDER_INTERVAL_MS;
+  function formatDaysAgo(elapsedMs) {
+    const days = Math.floor(elapsedMs / DAY_MS);
+    if (days <= 0) return 'today';
+    if (days === 1) return 'yesterday';
+    return days + ' days ago';
   }
 
-  function renderBackupReminder() {
-    if (!els.backupReminder) return;
+  function renderBackupChip() {
+    if (!els.backupChip) return;
     const last = lastBackupAt();
-    els.backupReminderCopy.textContent = last
-      ? formatBackupStatus(last) + '. Export a fresh JSON backup to keep another copy outside this browser.'
-      : 'No backup recorded for this browser. Export a JSON backup before clearing site data or switching devices.';
-    els.backupReminder.hidden = !backupReminderDue();
+    const elapsed = last ? now() - last : null;
+    let backupState = 'missing';
+    let label = 'Never backed up. Export now.';
+    if (last && elapsed <= BACKUP_HEALTHY_MS) {
+      backupState = 'healthy';
+      label = 'Backed up ' + formatDaysAgo(elapsed);
+    } else if (last && elapsed <= BACKUP_AGING_MS) {
+      backupState = 'aging';
+      label = 'Last backup ' + formatDaysAgo(elapsed);
+    }
+    els.backupChip.dataset.backupState = backupState;
+    els.backupChipLabel.textContent = label;
   }
 
-  function snoozeBackupReminder() {
-    writeStoredTime(BACKUP_SNOOZE_KEY, now() + BACKUP_SNOOZE_MS);
-    renderBackupReminder();
+  async function renderBackupMenuMeta() {
+    if (!els.backupMenuMeta) return;
+    const count = activeNotes().length;
+    const parts = [count === 1 ? '1 note' : count + ' notes'];
+    if (navigator.storage && typeof navigator.storage.estimate === 'function') {
+      try {
+        const estimate = await navigator.storage.estimate();
+        parts.push(formatBytes(estimate.usage || 0));
+      } catch (e) { /* size stays out of the line */ }
+    }
+    const protection = await storageProtectionStatus();
+    if (protection === 'Persistent') parts.push('storage protected');
+    else if (protection === 'Best effort') parts.push('best-effort storage');
+    els.backupMenuMeta.textContent = parts.join(' · ');
   }
 
   function recordBackupDownload() {
     writeStoredTime(LAST_BACKUP_KEY, now());
     localStorage.removeItem(BACKUP_SNOOZE_KEY);
-    renderBackupReminder();
+    renderBackupChip();
     renderDiagnostics();
   }
 
@@ -3439,7 +3543,6 @@
   }
 
   function openAboutDialog() {
-    renderBackupReminder();
     renderDiagnostics();
     openDialog(els.aboutDialog);
   }
@@ -4935,10 +5038,14 @@
     });
 
     els.openAbout.addEventListener('click', openAboutDialog);
-    els.exportBtn.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
+    els.exportBtn.addEventListener('click', () => { exportAll(); });
     els.exportEncryptedBtn.addEventListener('click', openEncryptedExportDialog);
-    els.exportMarkdownBtn.addEventListener('click', () => { closeDialog(els.aboutDialog); exportMarkdownZip(); });
+    els.exportMarkdownBtn.addEventListener('click', () => { exportMarkdownZip(); });
     els.importBtn.addEventListener('click', () => els.importFile.click());
+    els.backupChip.addEventListener('click', toggleBackupMenu);
+    els.backupMenu.addEventListener('click', (e) => {
+      if (e.target.closest('[role="menuitem"]')) closeBackupMenu();
+    });
     els.protectStorageBtn.addEventListener('click', requestStorageProtection);
     els.checkUpdatesBtn.addEventListener('click', () => withBusy(
       'check-updates',
@@ -4969,8 +5076,6 @@
       button.addEventListener('click', clearPassphraseSession);
     }
     els.backupPassphraseDialog.addEventListener('cancel', clearPassphraseSession);
-    els.backupReminderExport.addEventListener('click', () => { closeDialog(els.aboutDialog); exportAll(); });
-    els.backupReminderSnooze.addEventListener('click', snoozeBackupReminder);
     els.importFile.addEventListener('change', async () => {
       const files = els.importFile.files;
       if (files && files.length) await importFromFiles(files);

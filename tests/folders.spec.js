@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson, enterBulkMode, openListMenu } = require('./helpers');
+const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson, enterBulkMode, openListMenu, openBackupMenu } = require('./helpers');
 
 test.describe('folders DB layer', () => {
   test('putFolder/getAllFolders/removeFolder round-trip', async ({ page }) => {
@@ -353,7 +353,7 @@ test.describe('backups with folders', () => {
   test('exportAll payload is schemaVersion 3 with folders', async ({ page }) => {
     await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
     const download = page.waitForEvent('download');
-    await page.locator('#open-about').click();
+    await openBackupMenu(page);
     await page.locator('#export-btn').click();
     const file = await download;
     const stream = await file.createReadStream();
