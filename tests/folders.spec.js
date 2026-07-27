@@ -217,6 +217,33 @@ test.describe('folder crud', () => {
     expect(state.notes.find((note) => note.id === 'legacy-daily').folderId).toBe(DAILY_NOTES_FOLDER_ID);
     expect(state.notes.find((note) => note.id === 'legacy-member').folderId).toBe(DAILY_NOTES_FOLDER_ID);
   });
+
+  test('managed folder does not consume one of the 100 user folder slots', async ({ page }) => {
+    await gotoApp(page);
+    await page.evaluate(async () => {
+      const base = Date.now();
+      const folders = Array.from({ length: 99 }, (_, index) => ({
+        id: `quota-${index}`,
+        name: `Quota ${index}`,
+        color: null,
+        sortOrder: index + 1,
+        parentId: null,
+        createdAt: base + index,
+        updatedAt: base + index,
+      }));
+      await window.ScratchpadDB.bulkPutFolders(folders);
+    });
+    await page.reload();
+    await page.locator('.new-folder-row').click();
+    await page.locator('#folder-name-input').fill('One hundred');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('.folder-head', { hasText: 'One hundred' })).toBeVisible();
+
+    await page.locator('.new-folder-row').click();
+    await page.locator('#folder-name-input').fill('One too many');
+    await page.locator('#folder-dialog-save').click();
+    await expect(page.locator('#folder-name-error')).toHaveText('Folder limit reached (100).');
+  });
 });
 
 test.describe('folder delete and reorder', () => {

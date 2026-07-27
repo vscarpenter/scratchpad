@@ -1,7 +1,36 @@
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote } = require('./helpers');
+const { gotoApp, createAndSaveNote, seedRawNotes, seedFolders } = require('./helpers');
 
 test.describe('cross-tab note conflicts', () => {
+  test('folder-only changes preserve a dirty editor without creating a save conflict', async ({ context, page }) => {
+    await seedRawNotes(page, [
+      { id: 'folder-only-shared', title: 'Folder only shared', body: 'Original body' },
+    ]);
+    await seedFolders(page, [{ id: 'f-work', name: 'Work', sortOrder: 1 }]);
+
+    const other = await context.newPage();
+    await gotoApp(other);
+
+    await page.locator('.note-row[data-id="folder-only-shared"]').click();
+    await page.locator('#edit-btn').click();
+    await page.locator('#note-editor').fill('Unsaved body stays here');
+
+    await other.locator('.note-row[data-id="folder-only-shared"]').click();
+    await other.locator('#overflow-btn').click();
+    await other.locator('#move-note-overflow').click();
+    await other.locator('#move-folder-list button', { hasText: 'Work' }).click();
+
+    await expect(page.locator('#note-editor')).toHaveValue('Unsaved body stays here');
+    await expect(page.locator('#note-eyebrow')).toContainText('Work');
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#save-btn')).toBeHidden();
+    await expect(page.locator('#save-conflict-dialog')).toBeHidden();
+
+    const stored = await page.evaluate(() => window.ScratchpadDB.get('folder-only-shared'));
+    expect(stored.body).toBe('Unsaved body stays here');
+    expect(stored.folderId).toBe('f-work');
+  });
+
   test('offers conflict choices instead of silently overwriting another tab', async ({ context, page }) => {
     await gotoApp(page);
     await createAndSaveNote(page, 'Shared note', 'Original body');
