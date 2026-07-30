@@ -91,6 +91,7 @@
     activeFilterTag: $('active-filter-tag'),
     clearFilter: $('clear-filter'),
     activeNotesView: $('active-notes-view'),
+    archiveView: $('archive-view'),
     trashView: $('trash-view'),
     groupToggle: $('group-toggle'),
     groupFolders: $('group-folders'),
@@ -120,6 +121,8 @@
     editBtn: $('edit-btn'),
     saveBtn: $('save-btn'),
     historyBtn: $('history-btn'),
+    archiveNoteBtn: $('archive-note-btn'),
+    unarchiveNoteBtn: $('unarchive-note-btn'),
     restoreBtn: $('restore-btn'),
     permanentDeleteBtn: $('permanent-delete-btn'),
     deleteBtn: $('delete-btn'),
@@ -143,8 +146,12 @@
     editorEmptyState: $('editor-empty-state'),
     editorView: $('editor-view'),
     emptyNoNotes: $('empty-no-notes'),
+    emptyNoNotesTitle: $('empty-no-notes-title'),
+    emptyNoNotesCopy: $('empty-no-notes-copy'),
+    emptyViewArchive: $('empty-view-archive'),
     emptyNoResults: $('empty-no-results'),
     emptyPickOne: $('empty-pick-one'),
+    emptyArchive: $('empty-archive'),
     emptyTrash: $('empty-trash'),
     clearSearchBtn: $('clear-search-btn'),
     emptyImportNotes: $('empty-import-notes'),
@@ -400,7 +407,8 @@
   // appending a toast announces it. Callers must not fire a toast while a modal
   // <dialog> is open (a native dialog's top layer would cover it) — close the
   // dialog first. tone: 'success' | 'info' | 'error'. Errors persist with a
-  // dismiss button; everything else auto-dismisses.
+  // dismiss button; everything else auto-dismisses. Callers may add one
+  // explicit action, such as Undo for a lifecycle transition.
   function toast(message, opts) {
     if (!els.toastRegion) return;
     opts = opts || {};
@@ -429,6 +437,28 @@
         attrs: { type: 'button', 'aria-label': 'Dismiss' },
         on: { click: remove },
       }));
+    }
+
+    if (opts.actionLabel && typeof opts.action === 'function') {
+      const actionButton = el('button', {
+        class: 'toast-action',
+        text: opts.actionLabel,
+        attrs: { type: 'button' },
+        on: {
+          click: async () => {
+            actionButton.disabled = true;
+            try {
+              await opts.action();
+              remove();
+            } catch (e) {
+              actionButton.disabled = false;
+              console.warn('Toast action failed', e);
+              toast('Undo failed. Your note was not changed.', { tone: 'error' });
+            }
+          },
+        },
+      });
+      node.appendChild(actionButton);
     }
 
     els.toastRegion.appendChild(node);
@@ -535,8 +565,19 @@
     return Math.ceil(seconds / 60) + 'm';
   }
 
-  // Buckets active-view notes for the sidebar: Pinned, Today, Yesterday,
-  // This week, Earlier. Sort within buckets is already done by caller.
+  function lifecycleTime(note) {
+    if (isTrashed(note)) return note.deletedAt;
+    if (isArchived(note)) return note.archivedAt;
+    return note.updatedAt;
+  }
+
+  function lifecycleTimeLabel(note) {
+    const relative = formatRelativeDay(lifecycleTime(note));
+    return isArchived(note) ? 'Archived ' + relative : relative;
+  }
+
+  // Buckets current-view notes for the sidebar. Pins lead only in Active;
+  // Archive is grouped by the moment a note entered Archive.
   function bucketizeNotes(notes) {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
@@ -550,11 +591,11 @@
     const earlier = [];
 
     for (const note of notes) {
-      if (note.pinned && !isTrashed(note)) {
+      if (note.pinned && !isTrashed(note) && !isArchived(note)) {
         pinned.push(note);
         continue;
       }
-      const ts = isTrashed(note) ? note.deletedAt : note.updatedAt;
+      const ts = lifecycleTime(note);
       if (ts >= todayStart) todayBucket.push(note);
       else if (ts >= yesterdayStart) yesterdayBucket.push(note);
       else if (ts >= weekStart) thisWeek.push(note);
@@ -703,6 +744,7 @@
       folderId: typeof n.folderId === 'string' && n.folderId ? n.folderId : null,
       createdAt: finiteTime(n.createdAt, t),
       updatedAt: finiteTime(n.updatedAt, t),
+      archivedAt: Number.isFinite(n.archivedAt) ? n.archivedAt : null,
       deletedAt: Number.isFinite(n.deletedAt) ? n.deletedAt : null,
       lastDraftAt: Number.isFinite(n.lastDraftAt) ? n.lastDraftAt : null,
       dailyDate: typeof n.dailyDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(n.dailyDate) ? n.dailyDate : null,
@@ -1222,8 +1264,16 @@
     return !!(note && Number.isFinite(note.deletedAt));
   }
 
+  function isArchived(note) {
+    return !!(note && !isTrashed(note) && Number.isFinite(note.archivedAt));
+  }
+
   function activeNotes() {
-    return state.notes.filter((n) => !isTrashed(n));
+    return state.notes.filter((n) => !isTrashed(n) && !isArchived(n));
+  }
+
+  function archivedNotes() {
+    return state.notes.filter(isArchived);
   }
 
   function trashedNotes() {
@@ -1231,12 +1281,20 @@
   }
 
   function currentBaseNotes() {
-    return state.view === 'trash' ? trashedNotes() : activeNotes();
+    if (state.view === 'trash') return trashedNotes();
+    if (state.view === 'archive') return archivedNotes();
+    return activeNotes();
+  }
+
+  function noteLifecycleView(note) {
+    if (isTrashed(note)) return 'trash';
+    if (isArchived(note)) return 'archive';
+    return 'active';
   }
 
   function selectedNoteIsInView() {
     const note = getNote(state.selectedId);
-    return !!note && (state.view === 'trash' ? isTrashed(note) : !isTrashed(note));
+    return !!note && noteLifecycleView(note) === state.view;
   }
 
   // -------- Sidebar rendering --------
@@ -1251,11 +1309,12 @@
   }
 
   function sortNotes(list) {
-    return [...list].sort((a, b) => b.updatedAt - a.updatedAt);
+    return [...list].sort((a, b) => lifecycleTime(b) - lifecycleTime(a));
   }
 
   function renderViewSwitch() {
     els.activeNotesView.classList.toggle('is-active', state.view === 'active');
+    els.archiveView.classList.toggle('is-active', state.view === 'archive');
     els.trashView.classList.toggle('is-active', state.view === 'trash');
     if (!els.groupToggle) return;
     els.groupToggle.hidden = state.view === 'trash';
@@ -1414,8 +1473,19 @@
 
   function renderSidebarEmptyState() {
     const hasActiveNotes = activeNotes().length > 0;
+    const hasArchivedNotes = archivedNotes().length > 0;
     const hasTrash = trashedNotes().length > 0;
     const searching = !!state.search.trim() || !!state.tagFilter;
+
+    if (state.view === 'archive' && !hasArchivedNotes) {
+      return el('div', {
+        class: 'sidebar-empty',
+        children: [
+          el('p', { class: 'sidebar-empty-title', text: 'Archive is empty' }),
+          el('p', { class: 'sidebar-empty-copy', text: 'Archived notes will appear here.' }),
+        ],
+      });
+    }
 
     if (state.view === 'trash' && !hasTrash) {
       return el('div', {
@@ -1427,7 +1497,7 @@
       });
     }
 
-    if (hasActiveNotes && searching) {
+    if (currentBaseNotes().length && searching) {
       return el('div', {
         class: 'sidebar-empty',
         children: [
@@ -1443,11 +1513,17 @@
       });
     }
 
+    const hasOnlyArchivedNotes = !hasActiveNotes && hasArchivedNotes;
     return el('div', {
       class: 'sidebar-empty',
       children: [
-        el('p', { class: 'sidebar-empty-title', text: 'No notes yet' }),
-        el('p', { class: 'sidebar-empty-copy', text: 'Create a note or import a backup to begin.' }),
+        el('p', { class: 'sidebar-empty-title', text: hasOnlyArchivedNotes ? 'No active notes' : 'No notes yet' }),
+        el('p', {
+          class: 'sidebar-empty-copy',
+          text: hasOnlyArchivedNotes
+            ? 'Your archived notes are still available.'
+            : 'Create a note or import a backup to begin.',
+        }),
         el('div', {
           class: 'sidebar-empty-actions',
           children: [
@@ -1463,6 +1539,12 @@
               attrs: { type: 'button' },
               on: { click: () => els.importFile.click() },
             }),
+            hasOnlyArchivedNotes ? el('button', {
+              class: 'btn btn-secondary btn-sm',
+              text: 'View Archive',
+              attrs: { type: 'button' },
+              on: { click: () => setView('archive') },
+            }) : null,
           ],
         }),
       ],
@@ -1613,8 +1695,9 @@
   function renderRow(note) {
     if (state.bulkMode) return renderBulkRow(note);
     const trashed = isTrashed(note);
+    const archived = isArchived(note);
     const pinned = !!(note.pinned && !trashed);
-    const time = trashed ? note.deletedAt : note.updatedAt;
+    const effectivePinned = pinned && !archived;
     const excerpt = noteExcerpt(note);
     const title = deriveTitle(note);
 
@@ -1636,7 +1719,7 @@
     } else {
       children.push(el('span', {
         class: 'note-row-when',
-        text: formatRelativeDay(time),
+        text: lifecycleTimeLabel(note),
         attrs: { 'aria-hidden': 'true' },
       }));
     }
@@ -1652,7 +1735,7 @@
     if (pinned) {
       children.push(el('span', {
         class: 'note-row-when',
-        text: formatRelativeDay(time),
+        text: lifecycleTimeLabel(note),
         attrs: { 'aria-hidden': 'true' },
       }));
     }
@@ -1707,7 +1790,9 @@
       class: 'note-row' +
         (note.id === state.selectedId ? ' is-active' : '') +
         (trashed ? ' is-trashed' : '') +
-        (pinned ? ' is-pinned' : ''),
+        (archived ? ' is-archived' : '') +
+        (effectivePinned ? ' is-pinned' : '') +
+        (archived && pinned ? ' is-pin-dormant' : ''),
       attrs: { 'data-id': note.id, draggable: draggable ? 'true' : null },
       on: draggable ? {
         dragstart: (e) => {
@@ -1722,8 +1807,8 @@
 
   function renderBulkRow(note) {
     const trashed = isTrashed(note);
-    const pinned = !!(note.pinned && !trashed);
-    const time = trashed ? note.deletedAt : note.updatedAt;
+    const archived = isArchived(note);
+    const pinned = !!(note.pinned && !trashed && !archived);
     const excerpt = noteExcerpt(note);
     const selected = state.bulkSelectedIds.has(note.id);
     const checkbox = el('input', {
@@ -1739,7 +1824,7 @@
     const children = [
       el('span', { class: 'note-row-check', children: [checkbox] }),
       el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64), 'title') }),
-      el('span', { class: 'note-row-when', text: formatRelativeDay(time) }),
+      el('span', { class: 'note-row-when', text: lifecycleTimeLabel(note) }),
     ];
     if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
     if (note.tags && note.tags.length) {
@@ -1762,6 +1847,7 @@
       class: 'note-row is-bulk' +
         (note.id === state.selectedId ? ' is-active' : '') +
         (trashed ? ' is-trashed' : '') +
+        (archived ? ' is-archived' : '') +
         (pinned ? ' is-pinned' : '') +
         (selected ? ' is-selected' : ''),
       attrs: { 'data-id': note.id },
@@ -1775,6 +1861,7 @@
     els.emptyNoNotes.hidden = which !== 'no-notes';
     els.emptyNoResults.hidden = which !== 'no-results';
     els.emptyPickOne.hidden = which !== 'pick-one';
+    els.emptyArchive.hidden = which !== 'archive';
     els.emptyTrash.hidden = which !== 'trash';
   }
 
@@ -1782,7 +1869,17 @@
     els.emptyNoNotes.hidden = true;
     els.emptyNoResults.hidden = true;
     els.emptyPickOne.hidden = true;
+    els.emptyArchive.hidden = true;
     els.emptyTrash.hidden = true;
+  }
+
+  function renderNoActiveNotesState() {
+    const hasArchivedNotes = archivedNotes().length > 0;
+    els.emptyNoNotesTitle.textContent = hasArchivedNotes ? 'No active notes' : 'No notes yet';
+    els.emptyNoNotesCopy.textContent = hasArchivedNotes
+      ? 'Your archived notes are still available.'
+      : 'Create a note, restore a backup, or review the privacy model before you start. Nothing leaves this browser.';
+    els.emptyViewArchive.hidden = !hasArchivedNotes;
   }
 
   let lastRenderedNoteId = null;
@@ -1800,6 +1897,7 @@
     }
 
     const trashed = isTrashed(note);
+    const archived = isArchived(note);
     if (trashed) state.editing = false;
     hideAllEmpties();
     els.editorView.hidden = false;
@@ -1841,6 +1939,8 @@
     els.pinToggle.hidden = trashed;
     els.shareBtn.hidden = trashed;
     els.deleteBtn.hidden = trashed;
+    els.archiveNoteBtn.hidden = trashed || archived;
+    els.unarchiveNoteBtn.hidden = trashed || !archived;
     els.restoreBtn.hidden = !trashed;
     els.permanentDeleteBtn.hidden = !trashed;
     els.moveNoteOverflow.hidden = trashed || isDailyNote(note);
@@ -1886,12 +1986,16 @@
 
   function renderBreadcrumb(note) {
     const trashed = isTrashed(note);
-    const pinned = note.pinned && !trashed;
+    const archived = isArchived(note);
+    const pinned = note.pinned && !trashed && !archived;
     let primary;
     let secondary;
     if (trashed) {
       primary = 'trash';
       secondary = truncate(deriveTitle(note), 32);
+    } else if (archived) {
+      primary = 'archive';
+      secondary = folderDisplayName(noteFolderId(note));
     } else if (pinned) {
       primary = 'notes';
       secondary = 'pinned';
@@ -1908,9 +2012,11 @@
 
   function renderEyebrow(note) {
     const trashed = isTrashed(note);
-    const pinned = note.pinned && !trashed;
+    const archived = isArchived(note);
+    const pinned = note.pinned && !trashed && !archived;
     let label;
     if (trashed) label = 'Note · trashed';
+    else if (archived) label = folderDisplayName(noteFolderId(note));
     else if (pinned) label = folderDisplayName(noteFolderId(note)) + ' · pinned';
     else label = folderDisplayName(noteFolderId(note)) + ' · draft';
     els.noteEyebrow.textContent = label;
@@ -1921,12 +2027,19 @@
     const created = formatBylineDate(note.createdAt);
     const updated = formatBylineDate(note.updatedAt);
     const wordLabel = words + ' word' + (words === 1 ? '' : 's');
-    const parts = [
-      'Created ' + created,
-      'Updated ' + updated,
-      wordLabel,
-      formatReadTime(words) + ' read',
-    ];
+    const parts = isArchived(note)
+      ? [
+        'Archived ' + formatBylineDate(note.archivedAt),
+        'Last edited ' + updated,
+        wordLabel,
+        formatReadTime(words) + ' read',
+      ]
+      : [
+        'Created ' + created,
+        'Updated ' + updated,
+        wordLabel,
+        formatReadTime(words) + ' read',
+      ];
     els.noteByline.textContent = parts.join(' · ');
   }
 
@@ -1945,9 +2058,12 @@
   function renderPinButton(note) {
     els.pinToggle.setAttribute('aria-checked', note.pinned ? 'true' : 'false');
     els.pinToggle.classList.toggle('is-active', !!note.pinned);
-    els.pinToggle.title = note.pinned ? 'Unpin note' : 'Pin note';
-    els.pinToggle.setAttribute('aria-label', note.pinned ? 'Unpin note' : 'Pin note');
-    els.pinToggle.textContent = note.pinned ? 'Unpin note' : 'Pin note';
+    const label = isArchived(note)
+      ? (note.pinned ? 'Do not pin when active' : 'Pin when active')
+      : (note.pinned ? 'Unpin note' : 'Pin note');
+    els.pinToggle.title = label;
+    els.pinToggle.setAttribute('aria-label', label);
+    els.pinToggle.textContent = label;
   }
 
   function renderTagPills(note, canEdit) {
@@ -2316,10 +2432,13 @@
     renderActiveFilter();
     updateNoteCount();
     renderBackupChip();
+    renderNoActiveNotesState();
 
     const base = currentBaseNotes();
     if (state.view === 'trash' && base.length === 0) {
       showEmpty('trash');
+    } else if (state.view === 'archive' && base.length === 0) {
+      showEmpty('archive');
     } else if (state.view === 'active' && activeNotes().length === 0) {
       showEmpty('no-notes');
     } else if (filteredNotes().length === 0) {
@@ -2369,6 +2488,7 @@
       folderId: targetFolderId,
       createdAt: t,
       updatedAt: t,
+      archivedAt: null,
       deletedAt: null,
       lastDraftAt: null,
     };
@@ -2418,12 +2538,14 @@
         folderId: isDailyNote(note) ? null : note.folderId,
         createdAt: t,
         updatedAt: t,
+        archivedAt: null,
         deletedAt: null,
         lastDraftAt: null,
         dailyDate: null,
       });
       await putNoteRecord(copy);
       state.notes.push(copy);
+      state.view = 'active';
       state.selectedId = copy.id;
       state.editing = false;
       state.dirty = false;
@@ -2582,6 +2704,39 @@
     await DB.pruneRevisions(note.id, REVISION_LIMIT);
   }
 
+  async function applyArchiveState(note, archivedAt) {
+    const nextNote = { ...note, archivedAt };
+    await putNoteRecord(nextNote, 'note-lifecycle-changed');
+    Object.assign(note, nextNote);
+    state.view = noteLifecycleView(note);
+    state.selectedId = note.id;
+    renderAll();
+  }
+
+  async function setCurrentArchiveState(shouldArchive) {
+    const note = getNote(state.selectedId);
+    if (!note || isTrashed(note) || isArchived(note) === shouldArchive) return;
+    const previousArchivedAt = note.archivedAt;
+    const nextArchivedAt = shouldArchive ? now() : null;
+    const controls = shouldArchive ? [els.archiveNoteBtn] : [els.unarchiveNoteBtn];
+    const errorMessage = shouldArchive
+      ? 'Archive failed. The note is still in Notes.'
+      : 'Unarchive failed. The note is still in Archive.';
+
+    return withBusy('archive-state', controls, errorMessage, async () => {
+      await applyArchiveState(note, nextArchivedAt);
+      toast(shouldArchive ? 'Archived.' : 'Unarchived.', {
+        duration: 8000,
+        actionLabel: 'Undo',
+        action: async () => {
+          const current = getNote(note.id);
+          if (!current || isTrashed(current)) return;
+          await applyArchiveState(current, previousArchivedAt);
+        },
+      });
+    });
+  }
+
   async function moveCurrentToTrash() {
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
@@ -2609,10 +2764,10 @@
     const note = getNote(state.selectedId);
     if (!note || !isTrashed(note)) return;
     return withBusy('restore', [els.restoreBtn], 'Restore failed. The note is still in Trash.', async () => {
-      const nextNote = { ...note, deletedAt: null, updatedAt: now() };
+      const nextNote = { ...note, deletedAt: null };
       await putNoteRecord(nextNote);
       Object.assign(note, nextNote);
-      state.view = 'active';
+      state.view = noteLifecycleView(note);
       state.selectedId = note.id;
       renderAll();
       toast('Note restored.');
@@ -5021,6 +5176,7 @@
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);
     els.activeNotesView.addEventListener('click', () => setView('active'));
+    els.archiveView.addEventListener('click', () => setView('archive'));
     els.trashView.addEventListener('click', () => setView('trash'));
     els.groupFolders.addEventListener('click', () => setGrouping('folders'));
     els.groupRecent.addEventListener('click', () => setGrouping('recent'));
@@ -5052,6 +5208,7 @@
     els.commandPaletteBtn.addEventListener('click', openCommandPalette);
     els.emptyNewNote.addEventListener('click', createNote);
     els.emptyImportNotes.addEventListener('click', () => els.importFile.click());
+    els.emptyViewArchive.addEventListener('click', () => setView('archive'));
 
     els.titleInput.addEventListener('input', handleTitleInput);
     els.titleInput.addEventListener('blur', async () => {
@@ -5114,6 +5271,8 @@
     els.shareEmail.addEventListener('click', emailShare);
 
     els.deleteBtn.addEventListener('click', () => openDialog(els.deleteDialog));
+    els.archiveNoteBtn.addEventListener('click', () => setCurrentArchiveState(true));
+    els.unarchiveNoteBtn.addEventListener('click', () => setCurrentArchiveState(false));
     els.confirmDelete.addEventListener('click', async () => {
       closeDialog(els.deleteDialog);
       await moveCurrentToTrash();

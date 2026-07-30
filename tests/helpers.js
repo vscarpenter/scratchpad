@@ -46,6 +46,7 @@ async function seedRawNotes(page, notes) {
       pinned: !!note.pinned,
       createdAt: Number.isFinite(note.createdAt) ? note.createdAt : base - (rawNotes.length - index) * 1000,
       updatedAt: Number.isFinite(note.updatedAt) ? note.updatedAt : base - (rawNotes.length - index) * 1000,
+      archivedAt: Number.isFinite(note.archivedAt) ? note.archivedAt : null,
       deletedAt: Number.isFinite(note.deletedAt) ? note.deletedAt : null,
       lastDraftAt: Number.isFinite(note.lastDraftAt) ? note.lastDraftAt : null,
       dailyDate: typeof note.dailyDate === 'string' ? note.dailyDate : null,
