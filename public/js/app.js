@@ -195,6 +195,7 @@
     backupMenu: $('backup-menu'),
     backupMenuMeta: $('backup-menu-meta'),
     diagnosticActiveNotes: $('diagnostic-active-notes'),
+    diagnosticArchivedNotes: $('diagnostic-archived-notes'),
     diagnosticTrashedNotes: $('diagnostic-trashed-notes'),
     diagnosticRevisions: $('diagnostic-revisions'),
     diagnosticDrafts: $('diagnostic-drafts'),
@@ -334,6 +335,20 @@
     renderAll();
   }
 
+  async function refreshNoteLifecycleFromDatabase(noteId) {
+    const note = getNote(noteId);
+    if (!note) return;
+    const stored = await DB.get(noteId);
+    if (!stored) return;
+    const normalized = normalizeNote(stored);
+    note.archivedAt = normalized.archivedAt;
+    if (state.selectedId === noteId) state.view = noteLifecycleView(note);
+    renderAll();
+    toast(isArchived(note) ? 'Note archived in another tab.' : 'Note unarchived in another tab.', {
+      tone: 'info',
+    });
+  }
+
   function initCrossTabSync() {
     if (typeof BroadcastChannel !== 'function') return;
     crossTabChannel = new BroadcastChannel(CROSS_TAB_CHANNEL);
@@ -358,6 +373,12 @@
       if (message.type === 'note-folder-changed') {
         refreshNoteFolderFromDatabase(message.noteId).catch((e) => {
           console.warn('Cross-tab folder membership refresh failed', e);
+        });
+        return;
+      }
+      if (message.type === 'note-lifecycle-changed') {
+        refreshNoteLifecycleFromDatabase(message.noteId).catch((e) => {
+          console.warn('Cross-tab lifecycle refresh failed', e);
         });
         return;
       }
@@ -1090,9 +1111,14 @@
     const folder = folderById(folderId);
     if (!folder) return;
     state.folderDeleteId = folderId;
-    const count = activeNotes().filter((n) => noteFolderId(n) === folderId).length;
+    const activeCount = activeNotes().filter((n) => noteFolderId(n) === folderId).length;
+    const archivedCount = archivedNotes().filter((n) => noteFolderId(n) === folderId).length;
+    const count = activeCount + archivedCount;
+    const countDetails = archivedCount
+      ? activeCount + ' active and ' + archivedCount + ' archived'
+      : String(activeCount);
     els.folderDeleteCopy.textContent = count
-      ? '"' + folder.name + '" contains ' + count + ' note' + (count === 1 ? '' : 's') +
+      ? '"' + folder.name + '" contains ' + countDetails + ' note' + (count === 1 ? '' : 's') +
         '. Keep them in Notes, or move them to Trash (recoverable for 30 days)?'
       : '"' + folder.name + '" is empty. Delete it?';
     els.folderDeleteTrash.hidden = count === 0;
@@ -1105,7 +1131,7 @@
     if (isDailyNotesFolder(folderId)) return;
     const folder = folderById(folderId);
     if (!folder) return;
-    const members = activeNotes().filter((n) => noteFolderId(n) === folderId);
+    const members = preservedNotes().filter((n) => noteFolderId(n) === folderId);
     const t = now();
     const updated = members.map((note) => mode === 'trash'
       ? { ...note, folderId: null, deletedAt: t, updatedAt: t, lastDraftAt: null }
@@ -1276,6 +1302,10 @@
     return state.notes.filter(isArchived);
   }
 
+  function preservedNotes() {
+    return state.notes.filter((note) => !isTrashed(note));
+  }
+
   function trashedNotes() {
     return state.notes.filter(isTrashed);
   }
@@ -1318,6 +1348,7 @@
     els.trashView.classList.toggle('is-active', state.view === 'trash');
     if (!els.groupToggle) return;
     els.groupToggle.hidden = state.view === 'trash';
+    els.newFolderMenuBtn.hidden = state.view === 'archive';
     els.groupFolders.classList.toggle('is-active', state.grouping === 'folders');
     els.groupFolders.setAttribute('aria-pressed', state.grouping === 'folders' ? 'true' : 'false');
     els.groupRecent.classList.toggle('is-active', state.grouping === 'recent');
@@ -1453,6 +1484,16 @@
           on: { click: () => openMoveDialog([...state.bulkSelectedIds]) },
         }),
         el('button', {
+          class: 'btn btn-secondary btn-sm',
+          text: state.view === 'archive' ? 'Unarchive' : 'Archive',
+          attrs: {
+            id: state.view === 'archive' ? 'bulk-unarchive' : 'bulk-archive',
+            type: 'button',
+            disabled: selectedCount === 0,
+          },
+          on: { click: () => bulkSetArchiveState(state.view !== 'archive') },
+        }),
+        el('button', {
           class: 'btn btn-danger btn-sm',
           text: 'Move to Trash',
           attrs: { id: 'bulk-move-trash', type: 'button', disabled: selectedCount === 0 },
@@ -1555,16 +1596,21 @@
     return notes
       .filter((note) => noteFolderId(note) === folderId)
       .sort((a, b) => {
-        if (!!b.pinned !== !!a.pinned) return a.pinned ? -1 : 1;
-        return (b.updatedAt || 0) - (a.updatedAt || 0);
+        if (state.view === 'active' && !!b.pinned !== !!a.pinned) return a.pinned ? -1 : 1;
+        return lifecycleTime(b) - lifecycleTime(a);
       });
   }
 
   function renderFolderSections(children, notes) {
+    const browseOnly = state.view === 'archive';
     for (const folder of sortedFolders()) {
-      children.push(renderFolderSection(folder, notesForFolder(notes, folder.id)));
+      const folderNotes = notesForFolder(notes, folder.id);
+      if (browseOnly && !folderNotes.length) continue;
+      children.push(renderFolderSection(folder, folderNotes, browseOnly));
     }
-    children.push(renderFolderSection(null, notesForFolder(notes, null)));
+    const unfiled = notesForFolder(notes, null);
+    if (!browseOnly || unfiled.length) children.push(renderFolderSection(null, unfiled, browseOnly));
+    if (browseOnly) return;
     children.push(el('button', {
       class: 'new-folder-row',
       attrs: { type: 'button' },
@@ -1593,7 +1639,7 @@
     return svg;
   }
 
-  function renderFolderSection(folder, notes) {
+  function renderFolderSection(folder, notes, browseOnly) {
     const key = folder ? folder.id : VIRTUAL_FOLDER_KEY;
     const collapsed = collapsedFolderKeys().has(key);
     const name = folder ? folder.name : 'Notes';
@@ -1616,7 +1662,7 @@
       on: { click: () => toggleFolderCollapsed(key) },
     });
     const headChildren = [toggle];
-    if (folder) {
+    if (folder && !browseOnly) {
       headChildren.push(el('button', {
         class: 'icon-btn folder-menu-btn',
         attrs: {
@@ -1634,39 +1680,41 @@
       class: 'folder-head' + (collapsed ? ' is-collapsed' : ''),
       attrs: {
         'data-folder-id': folder ? folder.id : '',
-        draggable: folder ? 'true' : null,
+        draggable: folder && !browseOnly ? 'true' : null,
       },
       children: headChildren,
     });
-    if (folder) {
+    if (folder && !browseOnly) {
       head.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('application/x-scratchpad-folder', folder.id);
         e.dataTransfer.effectAllowed = 'move';
       });
     }
-    head.addEventListener('dragover', (e) => {
-      const types = Array.from(e.dataTransfer.types || []);
-      const isNote = types.includes('application/x-scratchpad-note') && !isDailyNotesFolder(folder);
-      const isFolder = types.includes('application/x-scratchpad-folder') && !!folder;
-      if (!isNote && !isFolder) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      head.classList.add('is-drop-target');
-    });
-    head.addEventListener('dragleave', () => head.classList.remove('is-drop-target'));
-    head.addEventListener('drop', (e) => {
-      e.preventDefault();
-      head.classList.remove('is-drop-target');
-      const noteId = e.dataTransfer.getData('application/x-scratchpad-note');
-      if (noteId) {
-        moveNotesToFolder([noteId], folder ? folder.id : null);
-        return;
-      }
-      const draggedFolderId = e.dataTransfer.getData('application/x-scratchpad-folder');
-      if (draggedFolderId && folder && draggedFolderId !== folder.id) {
-        dropFolderOn(draggedFolderId, folder.id);
-      }
-    });
+    if (!browseOnly) {
+      head.addEventListener('dragover', (e) => {
+        const types = Array.from(e.dataTransfer.types || []);
+        const isNote = types.includes('application/x-scratchpad-note') && !isDailyNotesFolder(folder);
+        const isFolder = types.includes('application/x-scratchpad-folder') && !!folder;
+        if (!isNote && !isFolder) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        head.classList.add('is-drop-target');
+      });
+      head.addEventListener('dragleave', () => head.classList.remove('is-drop-target'));
+      head.addEventListener('drop', (e) => {
+        e.preventDefault();
+        head.classList.remove('is-drop-target');
+        const noteId = e.dataTransfer.getData('application/x-scratchpad-note');
+        if (noteId) {
+          moveNotesToFolder([noteId], folder ? folder.id : null);
+          return;
+        }
+        const draggedFolderId = e.dataTransfer.getData('application/x-scratchpad-folder');
+        if (draggedFolderId && folder && draggedFolderId !== folder.id) {
+          dropFolderOn(draggedFolderId, folder.id);
+        }
+      });
+    }
     const rows = collapsed ? [] : notes.map(renderRow);
     return el('div', { class: 'note-section folder-section', children: [head, ...rows] });
   }
@@ -1775,7 +1823,7 @@
       class: 'note-row-open',
       attrs: {
         type: 'button',
-        'aria-label': 'Open ' + title,
+        'aria-label': 'Open ' + title + (archived && note.pinned ? ', pinned when active' : ''),
         'aria-current': note.id === state.selectedId ? 'true' : null,
       },
       on: { click: () => selectNote(note.id) },
@@ -2059,7 +2107,7 @@
     els.pinToggle.setAttribute('aria-checked', note.pinned ? 'true' : 'false');
     els.pinToggle.classList.toggle('is-active', !!note.pinned);
     const label = isArchived(note)
-      ? (note.pinned ? 'Do not pin when active' : 'Pin when active')
+      ? (note.pinned ? 'Unpin when active' : 'Pin when active')
       : (note.pinned ? 'Unpin note' : 'Pin note');
     els.pinToggle.title = label;
     els.pinToggle.setAttribute('aria-label', label);
@@ -2170,8 +2218,12 @@
     const hasFilter = !!(state.search || state.tagFilter);
     if (state.editing && state.dirty && selectedNoteIsInView()) return;
     if (selectedNoteIsInView() && (!hasFilter || visible.some((n) => n.id === state.selectedId))) return;
-    const pinned = sortNotes(visible.filter((n) => n.pinned && !isTrashed(n)));
-    const others = sortNotes(visible.filter((n) => !n.pinned || isTrashed(n)));
+    const pinned = state.view === 'active'
+      ? sortNotes(visible.filter((n) => n.pinned && !isTrashed(n)))
+      : [];
+    const others = state.view === 'active'
+      ? sortNotes(visible.filter((n) => !n.pinned || isTrashed(n)))
+      : sortNotes(visible);
     const next = pinned.concat(others)[0] || currentBaseNotes()[0] || null;
     state.selectedId = next ? next.id : null;
   }
@@ -2853,7 +2905,15 @@
 
   function setTagFilter(tag) {
     state.tagFilter = tag ? normalizeTag(tag) : null;
-    state.view = 'active';
+    if (state.tagFilter) {
+      const activeHasTag = activeNotes().some((note) => (note.tags || []).includes(state.tagFilter));
+      const archiveHasTag = archivedNotes().some((note) => (note.tags || []).includes(state.tagFilter));
+      if (state.view === 'trash' || (state.view === 'active' && !activeHasTag && archiveHasTag)) {
+        state.view = activeHasTag ? 'active' : 'archive';
+      } else if (state.view === 'archive' && !archiveHasTag && activeHasTag) {
+        state.view = 'active';
+      }
+    }
     renderAll();
   }
 
@@ -2924,6 +2984,7 @@
       }
       if (state.selectedId && nextById.has(state.selectedId)) state.selectedId = null;
       state.bulkSelectedIds.clear();
+      state.bulkMode = false;
       state.editing = false;
       state.dirty = false;
       renderAll();
@@ -2935,8 +2996,7 @@
     const selected = selectedBulkNotes().filter(isTrashed);
     if (!selected.length) return;
     return withBusy('bulk-restore', [], 'Restore failed. Selected notes are still in Trash.', async () => {
-      const t = now();
-      const nextNotes = selected.map((note) => ({ ...note, deletedAt: null, updatedAt: t }));
+      const nextNotes = selected.map((note) => ({ ...note, deletedAt: null }));
       await bulkPutNoteRecords(nextNotes);
       const nextById = new Map(nextNotes.map((note) => [note.id, note]));
       for (const note of state.notes) {
@@ -2944,7 +3004,7 @@
         if (nextNote) Object.assign(note, nextNote);
       }
       state.bulkSelectedIds.clear();
-      state.view = 'active';
+      state.bulkMode = false;
       renderAll();
       toast('Restored ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + '.');
     });
@@ -2961,6 +3021,7 @@
       state.notes = state.notes.filter((note) => !selectedIds.has(note.id));
       if (state.selectedId && selectedIds.has(state.selectedId)) state.selectedId = null;
       state.bulkSelectedIds.clear();
+      state.bulkMode = false;
       renderAll();
       toast('Deleted ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + ' forever.');
     });
@@ -2978,7 +3039,7 @@
       const payload = {
         app: 'scratchpad',
         version: window.SCRATCHPAD_VERSION || 'unknown',
-        schemaVersion: 3,
+        schemaVersion: 4,
         exportedAt: new Date().toISOString(),
         notes: selected.filter((note) => !isTrashed(note)),
         trashedNotes: selected.filter(isTrashed),
@@ -2988,6 +3049,48 @@
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `scratchpad-selected-${exportStamp()}.json`);
       toast('Selected notes exported.');
+    });
+  }
+
+  async function bulkSetArchiveState(shouldArchive) {
+    const selected = selectedBulkNotes().filter((note) =>
+      !isTrashed(note) && isArchived(note) !== shouldArchive
+    );
+    if (!selected.length) return;
+    const previous = new Map(selected.map((note) => [note.id, note.archivedAt]));
+    const nextArchivedAt = shouldArchive ? now() : null;
+    return withBusy('bulk-archive-state', [], 'Archive update failed. Selected notes were not changed.', async () => {
+      const nextNotes = selected.map((note) => ({ ...note, archivedAt: nextArchivedAt }));
+      await bulkPutNoteRecords(nextNotes, 'note-lifecycle-changed');
+      const nextById = new Map(nextNotes.map((note) => [note.id, note]));
+      for (const note of state.notes) {
+        const nextNote = nextById.get(note.id);
+        if (nextNote) Object.assign(note, nextNote);
+      }
+      if (state.selectedId && nextById.has(state.selectedId)) state.selectedId = null;
+      state.bulkSelectedIds.clear();
+      state.bulkMode = false;
+      renderAll();
+      const label = shouldArchive ? 'Archived ' : 'Unarchived ';
+      toast(label + selected.length + ' note' + (selected.length === 1 ? '.' : 's.'), {
+        duration: 8000,
+        actionLabel: 'Undo',
+        action: async () => {
+          const restored = [];
+          for (const [id, archivedAt] of previous) {
+            const stored = await DB.get(id);
+            if (!stored || isTrashed(stored)) continue;
+            restored.push({ ...normalizeNote(stored), archivedAt });
+          }
+          if (restored.length) await bulkPutNoteRecords(restored, 'note-lifecycle-changed');
+          const restoredById = new Map(restored.map((note) => [note.id, note]));
+          for (const note of state.notes) {
+            const restoredNote = restoredById.get(note.id);
+            if (restoredNote) Object.assign(note, restoredNote);
+          }
+          renderAll();
+        },
+      });
     });
   }
 
@@ -3361,7 +3464,7 @@
     els.backlinksList.replaceChildren(...sources.map((source) => el('li', {
       children: [el('button', {
         class: 'backlink-btn',
-        text: deriveTitle(source),
+        text: deriveTitle(source) + (isArchived(source) ? ' · Archived' : ''),
         attrs: { type: 'button' },
         on: { click: () => openNoteFromCommand(source.id) },
       })],
@@ -3431,7 +3534,7 @@
     }
     els.wikilinkSuggest.replaceChildren(...items.map((note, index) => el('button', {
       class: 'wikilink-option',
-      text: deriveTitle(note),
+      text: deriveTitle(note) + (isArchived(note) ? ' — Archived' : ''),
       attrs: {
         type: 'button',
         role: 'option',
@@ -3551,7 +3654,7 @@
   }
 
   function findDailyTemplate() {
-    return state.notes.find((n) => !isTrashed(n) && (n.title || '').trim().toLowerCase() === 'daily template') || null;
+    return activeNotes().find((n) => (n.title || '').trim().toLowerCase() === 'daily template') || null;
   }
 
   async function createDailyNote() {
@@ -3747,7 +3850,7 @@
 
   async function renderBackupMenuMeta() {
     if (!els.backupMenuMeta) return;
-    const count = activeNotes().length;
+    const count = preservedNotes().length;
     const parts = [count === 1 ? '1 note' : count + ' notes'];
     if (navigator.storage && typeof navigator.storage.estimate === 'function') {
       try {
@@ -3837,6 +3940,7 @@
   async function renderDiagnostics() {
     if (!els.diagnosticActiveNotes) return;
     els.diagnosticActiveNotes.textContent = String(activeNotes().length);
+    els.diagnosticArchivedNotes.textContent = String(archivedNotes().length);
     els.diagnosticTrashedNotes.textContent = String(trashedNotes().length);
     els.diagnosticStorage.textContent = 'Checking...';
     try {
@@ -4032,6 +4136,13 @@
         run: () => setView('active'),
       },
       {
+        id: 'view-archive',
+        label: 'View Archive',
+        meta: 'Show archived notes',
+        keywords: 'archived reference completed',
+        run: () => setView('archive'),
+      },
+      {
         id: 'view-trash',
         label: 'View Trash',
         meta: 'Show deleted notes',
@@ -4055,6 +4166,15 @@
     ];
 
     const selectedNote = getNote(state.selectedId);
+    if (selectedNote && !isTrashed(selectedNote)) {
+      commands.push({
+        id: isArchived(selectedNote) ? 'unarchive-note' : 'archive-note',
+        label: isArchived(selectedNote) ? 'Unarchive note' : 'Archive note',
+        meta: isArchived(selectedNote) ? 'Return the selected note to Notes' : 'Move the selected note to Archive',
+        keywords: 'archive unarchive lifecycle',
+        run: () => setCurrentArchiveState(!isArchived(selectedNote)),
+      });
+    }
     if (selectedNote && !isTrashed(selectedNote) && !isDailyNote(selectedNote)) {
       commands.push({
         id: 'move-to-folder',
@@ -4077,7 +4197,11 @@
       .map((note) => ({
         id: 'note-' + note.id,
         label: deriveTitle(note),
-        meta: isTrashed(note) ? 'Open note in Trash' : 'Open note',
+        meta: isTrashed(note)
+          ? 'Open note in Trash'
+          : isArchived(note)
+            ? 'Open note in Archive'
+            : 'Open note',
         keywords: [note.body || '', (note.tags || []).join(' ')].join(' '),
         run: () => openNoteFromCommand(note.id),
       }));
@@ -4092,7 +4216,7 @@
       if (!ok) return;
       await discardCurrentDraft();
     }
-    state.view = isTrashed(note) ? 'trash' : 'active';
+    state.view = noteLifecycleView(note);
     state.selectedId = note.id;
     state.editing = false;
     state.dirty = false;
@@ -4304,7 +4428,7 @@
     return {
       app: 'scratchpad',
       version: window.SCRATCHPAD_VERSION || 'unknown',
-      schemaVersion: 3,
+      schemaVersion: 4,
       exportedAt: new Date().toISOString(),
       notes: notes.filter((n) => !isTrashed(n)),
       trashedNotes: notes.filter(isTrashed),
@@ -4372,12 +4496,12 @@
     return !!data && data.format === ENCRYPTED_BACKUP_FORMAT && data.version === ENCRYPTED_BACKUP_VERSION;
   }
 
-  // v2 backups predate folders; v3 adds an optional folders array.
+  // v2 backups predate folders; v3 adds folders; v4 adds Archive provenance.
   function isNativeBackup(data) {
     return !!data &&
       !Array.isArray(data) &&
       data.app === 'scratchpad' &&
-      (data.schemaVersion === 2 || data.schemaVersion === 3) &&
+      (data.schemaVersion === 2 || data.schemaVersion === 3 || data.schemaVersion === 4) &&
       Array.isArray(data.notes) &&
       Array.isArray(data.trashedNotes) &&
       Array.isArray(data.revisions) &&
@@ -4505,15 +4629,17 @@
 
   async function exportMarkdownZip() {
     return withBusy('export-markdown', [els.exportMarkdownBtn, els.exportOverflowBtn], 'Markdown export failed.', async () => {
-      const notes = activeNotes();
+      const notes = preservedNotes();
       if (!notes.length) {
-        toast('No active notes to export.', { tone: 'info' });
+        toast('No notes to export.', { tone: 'info' });
         return;
       }
       const used = new Map();
       const files = notes.map((note) => {
         const folderId = noteFolderId(note);
-        const dir = folderId ? slugify(folderDisplayName(folderId)) + '/' : '';
+        const archiveDir = isArchived(note) ? 'archive/' : '';
+        const folderDir = folderId ? slugify(folderDisplayName(folderId)) + '/' : '';
+        const dir = archiveDir + folderDir;
         const base = dir + (slugify(deriveTitle(note)) || 'untitled-note');
         const count = used.get(base) || 0;
         used.set(base, count + 1);
@@ -4533,6 +4659,7 @@
       'tags: [' + (note.tags || []).map((tag) => JSON.stringify(tag)).join(', ') + ']',
       'pinned: ' + (!!note.pinned ? 'true' : 'false'),
       ...(note.dailyDate ? ['dailyDate: ' + JSON.stringify(note.dailyDate)] : []),
+      ...(isArchived(note) ? ['archivedAt: ' + JSON.stringify(new Date(note.archivedAt).toISOString())] : []),
       'createdAt: ' + JSON.stringify(new Date(note.createdAt).toISOString()),
       'updatedAt: ' + JSON.stringify(new Date(note.updatedAt).toISOString()),
       '---',
@@ -4646,6 +4773,7 @@
     const body = bodyLines.join('\n');
     const createdAt = Date.parse(metadata.createdAt);
     const updatedAt = Date.parse(metadata.updatedAt);
+    const archivedAt = Date.parse(metadata.archivedAt);
     const tags = Array.isArray(metadata.tags)
       ? metadata.tags
       : typeof metadata.tags === 'string'
@@ -4659,6 +4787,7 @@
       pinned: metadata.pinned === true,
       createdAt: Number.isFinite(createdAt) ? createdAt : now(),
       updatedAt: Number.isFinite(updatedAt) ? updatedAt : (Number.isFinite(createdAt) ? createdAt : now()),
+      archivedAt: Number.isFinite(archivedAt) ? archivedAt : null,
       deletedAt: null,
       lastDraftAt: null,
       dailyDate: typeof metadata.dailyDate === 'string' ? metadata.dailyDate : null,
@@ -4791,6 +4920,7 @@
         rejectedNotes.push(importError('Note ' + (i + 1), 'duplicate id in import file'));
         continue;
       }
+      if (nativeBackup && data.schemaVersion < 4) result.note.archivedAt = null;
       seenIds.add(result.note.id);
       notes.push(result.note);
     }
@@ -4953,8 +5083,13 @@
   // -------- Tag management --------
   function tagStats() {
     const map = new Map();
-    for (const note of activeNotes()) {
-      for (const tag of note.tags || []) map.set(tag, (map.get(tag) || 0) + 1);
+    for (const note of preservedNotes()) {
+      for (const tag of note.tags || []) {
+        const counts = map.get(tag) || { active: 0, archived: 0 };
+        if (isArchived(note)) counts.archived += 1;
+        else counts.active += 1;
+        map.set(tag, counts);
+      }
     }
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }
@@ -4967,19 +5102,23 @@
   function renderTagManager() {
     const stats = tagStats();
     if (!stats.length) {
-      els.tagManagerList.replaceChildren(el('p', { class: 'muted-copy', text: 'No active tags yet.' }));
+      els.tagManagerList.replaceChildren(el('p', { class: 'muted-copy', text: 'No tags yet.' }));
       return;
     }
-    const rows = stats.map(([tag, count]) => renderTagManagerRow(tag, count));
+    const rows = stats.map(([tag, counts]) => renderTagManagerRow(tag, counts));
     els.tagManagerList.replaceChildren(...rows);
   }
 
-  function renderTagManagerRow(tag, count) {
+  function renderTagManagerRow(tag, counts) {
+    const count = counts.active + counts.archived;
     const input = el('input', {
       class: 'input tag-rename-input',
       attrs: { type: 'text', value: tag, 'aria-label': 'Rename ' + tag },
     });
-    const countNode = el('span', { class: 'tag-count', text: count + (count === 1 ? ' note' : ' notes') });
+    const parts = [];
+    if (counts.active) parts.push(counts.active + ' active');
+    if (counts.archived) parts.push(counts.archived + ' archived');
+    const countNode = el('span', { class: 'tag-count', text: parts.join(' · ') });
     const rename = el('button', {
       class: 'btn btn-secondary btn-sm',
       text: 'Rename',
@@ -5012,7 +5151,7 @@
     return withBusy('rename-tag', [], 'Tag rename failed.', async () => {
       const changed = [];
       const nextById = new Map();
-      for (const note of activeNotes()) {
+      for (const note of preservedNotes()) {
         if (!(note.tags || []).includes(oldTag)) continue;
         const nextNote = {
           ...note,
@@ -5035,7 +5174,7 @@
 
   function openTagDelete(tag, count) {
     state.pendingTagDelete = tag;
-    els.tagDeleteCopy.textContent = 'This removes #' + tag + ' from ' + count + (count === 1 ? ' active note.' : ' active notes.');
+    els.tagDeleteCopy.textContent = 'This removes #' + tag + ' from ' + count + (count === 1 ? ' note.' : ' notes.');
     openDialog(els.tagDeleteDialog);
   }
 
@@ -5045,7 +5184,7 @@
     return withBusy('delete-tag', [els.confirmTagDelete], 'Tag delete failed.', async () => {
       const changed = [];
       const nextById = new Map();
-      for (const note of activeNotes()) {
+      for (const note of preservedNotes()) {
         if (!(note.tags || []).includes(tag)) continue;
         const nextNote = {
           ...note,

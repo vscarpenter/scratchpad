@@ -11,7 +11,13 @@ test.describe('Archive lifecycle', () => {
     const base = Date.now();
     await seedRawNotes(page, [
       { id: 'active', title: 'Active note', body: 'working' },
-      { id: 'archive-old', title: 'Older archive', body: 'old', archivedAt: base - 60_000 },
+      {
+        id: 'archive-old',
+        title: 'Older archive',
+        body: 'old',
+        pinned: true,
+        archivedAt: base - 60_000,
+      },
       { id: 'archive-new', title: 'Newer archive', body: 'new', archivedAt: base },
       {
         id: 'archive-trash',
@@ -29,6 +35,10 @@ test.describe('Archive lifecycle', () => {
     await expect(page.locator('.note-row')).toHaveCount(2);
     await expect(page.locator('.note-row').first()).toHaveAttribute('data-id', 'archive-new');
     await expect(page.locator('.note-row[data-id="archive-new"] .note-row-when')).toContainText('Archived');
+    await expect(page.locator('.note-row[data-id="archive-old"] .note-row-open')).toHaveAttribute(
+      'aria-label',
+      /pinned when active/
+    );
     await expect(page.locator('.note-row[data-id="archive-trash"]')).toHaveCount(0);
 
     await page.locator('#trash-view').click();
@@ -157,5 +167,44 @@ test.describe('Archive lifecycle', () => {
     expect(copy.archivedAt).toBeNull();
     expect(copy.folderId).toBe('project-folder');
     expect(copy.pinned).toBe(false);
+  });
+
+  test('Unarchive follows the note to Notes without changing its edit timestamp', async ({ page }) => {
+    const updatedAt = Date.now() - 86_400_000;
+    await seedRawNotes(page, [{
+      id: 'unarchive-me',
+      title: 'Unarchive me',
+      body: 'Reference',
+      pinned: true,
+      updatedAt,
+      archivedAt: Date.now(),
+    }]);
+
+    await page.locator('#archive-view').click();
+    await page.locator('.note-row[data-id="unarchive-me"]').click();
+    await openOverflowMenu(page);
+    await expect(page.locator('#pin-toggle')).toHaveText('Unpin when active');
+    await page.locator('#unarchive-note-btn').click();
+
+    await expect(page.locator('#active-notes-view')).toHaveClass(/is-active/);
+    await expect(page.locator('#note-title-display')).toHaveText('Unarchive me');
+    const note = await page.evaluate(() => window.ScratchpadDB.get('unarchive-me'));
+    expect(note.archivedAt).toBeNull();
+    expect(note.updatedAt).toBe(updatedAt);
+  });
+
+  test('search remains scoped to the selected lifecycle while its query persists', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'search-active', title: 'Needle active', body: 'Working' },
+      { id: 'search-archive', title: 'Needle archived', body: 'Reference', archivedAt: Date.now() },
+    ]);
+
+    await page.locator('#search').fill('needle');
+    await expect(page.locator('.note-row[data-id="search-active"]')).toBeVisible();
+    await expect(page.locator('.note-row[data-id="search-archive"]')).toHaveCount(0);
+    await page.locator('#archive-view').click();
+    await expect(page.locator('#search')).toHaveValue('needle');
+    await expect(page.locator('.note-row[data-id="search-active"]')).toHaveCount(0);
+    await expect(page.locator('.note-row[data-id="search-archive"]')).toBeVisible();
   });
 });
