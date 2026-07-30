@@ -74,7 +74,8 @@
         <li>
           <strong>Your notes</strong> — kept in the browser's <em>IndexedDB</em> database named
           <code>scratchpad</code>, in an object store called <code>notes</code>. Each note holds
-          its id, title, body, tags, pinned flag, folder, and timestamps.
+          its id, title, body, tags, pinned flag, folder, and timestamps, including Archive and
+          Trash lifecycle dates when applicable.
         </li>
         <li>
           <strong>Folders</strong> — kept in the same IndexedDB database, in a
@@ -123,11 +124,15 @@
 
       <h2>Your data, your control</h2>
       <p>
-        Use <strong>About → Export backup (JSON)</strong> for a portable copy of your notes, Trash,
-        and revision history. An encrypted backup protects the same data with a passphrase using
-        the browser's local cryptography APIs. The passphrase and encryption key are never stored;
-        a forgotten passphrase cannot be recovered. You can also export active notes as Markdown
-        or import one or more <code>.md</code> files.
+        Use <strong>About → Export backup (JSON)</strong> for a portable copy of Notes, Archive,
+        Trash provenance, folders, and revision history. An encrypted backup protects the same
+        data with a passphrase using the browser's local cryptography APIs. The passphrase and
+        encryption key are never stored; a forgotten passphrase cannot be recovered. You can also
+        export active and archived notes as Markdown or import one or more <code>.md</code> files.
+      </p>
+      <p>
+        Archiving a note does not delete it or start a retention clock. Archived notes stay in
+        this browser indefinitely until you unarchive, trash, or permanently erase them.
       </p>
       <p>
         Deleting a note moves it to Trash, where it stays recoverable for 30 days. After that,
