@@ -922,6 +922,11 @@ body:not(.page-privacy) {
   display: inline-flex;
 }
 
+.note-row.is-pin-dormant .note-row-pin-corner {
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
 .note-row.is-pinned .note-row-when {
   grid-column: 1 / -1;
   grid-row: auto;
@@ -2539,6 +2544,20 @@ body:not(.page-privacy) {
   cursor: pointer;
 }
 .toast-dismiss:hover { color: var(--slate); }
+.toast-action {
+  margin-left: 4px;
+  padding: 2px 4px;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font: 650 12.5px/1 var(--sans);
+  cursor: pointer;
+}
+.toast-action:hover { color: var(--accent-hover); }
+.toast-action:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
 @media (prefers-reduced-motion: reduce) {
   .toast {
     transform: none;
