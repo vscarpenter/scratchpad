@@ -11,7 +11,7 @@
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="Scratchpad" />
   <meta property="og:title" content="User guide — Scratchpad" />
-  <meta property="og:description" content="How to use every Scratchpad feature: Markdown, task lists, daily notes, wikilinks, backups, and offline." />
+  <meta property="og:description" content="How to use every Scratchpad feature: Markdown, Archive, daily notes, wikilinks, backups, and offline." />
   <meta property="og:url" content="https://notes.vinny.dev/guide.html" />
   <meta property="og:image" content="https://notes.vinny.dev/public/og-banner.png" />
   <meta property="og:image:type" content="image/png" />
@@ -20,7 +20,7 @@
   <meta property="og:image:alt" content="Scratchpad: private notes that never leave your browser." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="User guide — Scratchpad" />
-  <meta name="twitter:description" content="How to use every Scratchpad feature: Markdown, task lists, daily notes, wikilinks, backups, and offline." />
+  <meta name="twitter:description" content="How to use every Scratchpad feature: Markdown, Archive, daily notes, wikilinks, backups, and offline." />
   <meta name="twitter:image" content="https://notes.vinny.dev/public/og-banner.png" />
 
   <script>
@@ -66,6 +66,7 @@
         <a href="#daily-notes">Daily notes &amp; capture</a>
         <a href="#linking">Linking notes</a>
         <a href="#folders">Folders</a>
+        <a href="#archive-trash">Archive &amp; Trash</a>
         <a href="#organizing">Finding &amp; organizing</a>
         <a href="#history-drafts">History &amp; drafts</a>
         <a href="#backups">Backups</a>
@@ -128,12 +129,14 @@
         or <em>Open today's note</em> in the command palette — jumps to today's note, creating it
         the first time. Scratchpad keeps every daily note in the
         <strong>Daily Notes</strong> folder, including daily notes restored from an older backup.
-        Renaming a daily note is fine; Scratchpad tracks the date, not the title.
+        Renaming or archiving a daily note is fine; Scratchpad tracks the date, not the title.
+        Opening today or using Quick capture finds an archived Daily Note without creating a
+        duplicate or unarchiving it.
       </p>
       <p>
         Want your own structure for each day? Create a note titled exactly
         <strong>Daily template</strong> — its body becomes the starting point for every new daily
-        note. No settings required.
+        note. Only an active template applies; archive it to make it dormant.
       </p>
       <p>
         <em>Quick capture</em> (<kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">Space</kbd>,
@@ -158,7 +161,8 @@
         </li>
         <li>
           <strong>Backlinks.</strong> Below each note, <em>Linked from N notes</em> lists every
-          note that links here. It's computed live, so restoring from Trash or importing never
+          active or archived note that links here. Archived targets remain resolved and open
+          directly in Archive. It's computed live, so restoring from Trash or importing never
           leaves it stale.
         </li>
         <li>
@@ -206,12 +210,41 @@
         </li>
         <li>
           <strong>Delete</strong> — deleting a folder asks what to do with its notes: keep them
-          (they return to Notes) or move them to Trash.
+          (active and archived members become unfiled without changing lifecycle) or move them
+          to Trash.
+        </li>
+      </ul>
+
+      <h2 id="archive-trash">Archive &amp; Trash</h2>
+      <p>
+        The sidebar separates <strong>Notes</strong>, <strong>Archive</strong>, and
+        <strong>Trash</strong>. Archive is for finished or infrequently needed work: it hides a
+        note from Notes without deleting it or starting a retention clock.
+      </p>
+      <ul>
+        <li>
+          <strong>Archive / Unarchive</strong> — use the note's ⋯ menu, selection mode, or the
+          command palette. The action is immediate and its toast offers Undo.
+        </li>
+        <li>
+          <strong>Archived notes stay useful</strong> — edit, tag, move, share, link, check tasks,
+          review history, and export them normally. Pins are remembered but stay dormant until
+          the note returns to Notes.
+        </li>
+        <li>
+          <strong>Restore is different from Unarchive</strong> — Restore removes a note from
+          Trash and returns it to whichever state it had before deletion. Unarchive deliberately
+          moves an archived note back to Notes.
+        </li>
+        <li>
+          <strong>Trash expires</strong> — a deleted note stays recoverable for 30 days, then is
+          removed for good. Delete forever and Empty Trash remain immediate, no-recovery actions.
         </li>
       </ul>
       <p>
-        Trash now empties itself: a deleted note stays recoverable for 30 days, then it's removed
-        for good. "Delete forever" and "Empty Trash" remain the immediate, no-recovery options.
+        Search stays inside the selected lifecycle view and keeps its query when you switch.
+        Archive supports the same Folders / Recent grouping, with folders presented as
+        browse-only sections.
       </p>
 
       <h2 id="organizing">Finding &amp; organizing</h2>
@@ -222,7 +255,7 @@
         </li>
         <li>
           <strong>Tags</strong> — add them under a note's title; click a tag to filter by it.
-          The <strong>Tags</strong> view renames, merges, or deletes tags everywhere at once.
+          Manage tags renames, merges, or deletes tags across Notes and Archive at once.
         </li>
         <li><strong>Pins</strong> keep important notes at the top of the list.</li>
         <li>
@@ -230,7 +263,8 @@
           with its tags and folder. The copy arrives unpinned, titled "… (copy)".
         </li>
         <li>
-          <strong>Select</strong> enters bulk mode: tag, pin, or trash several notes in one go.
+          <strong>Select</strong> enters bulk mode: tag, move, archive or unarchive, export, or
+          trash several notes in one go.
         </li>
         <li>
           <strong>Trash</strong> holds deleted notes for 30 days, then removes them for good.
@@ -238,7 +272,8 @@
         </li>
         <li>
           <strong>The command palette</strong> (<kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">P</kbd>)
-          runs every action and jumps to recent notes from the keyboard.
+          runs every action, opens Archive, and identifies whether note results live in Notes,
+          Archive, or Trash.
         </li>
       </ul>
 
@@ -265,16 +300,17 @@
       </p>
       <ul>
         <li>
-          <strong>Export backup (JSON)</strong> — the full-fidelity format: notes, Trash, and
-          revision history. Use this one for restores.
+          <strong>Export backup (JSON)</strong> — the full-fidelity schema-v4 format: Notes,
+          Archive, Trash provenance, folders, and revision history. Use this one for restores.
         </li>
         <li>
           <strong>Export encrypted backup</strong> — the same data, protected by a passphrase.
           Encryption happens in the browser; a forgotten passphrase cannot be recovered.
         </li>
         <li>
-          <strong>Export Markdown ZIP</strong> — readable <code>.md</code> copies of active notes,
-          for use anywhere.
+          <strong>Export Markdown ZIP</strong> — readable <code>.md</code> copies of active and
+          archived notes. Archived files live under <code>archive/</code> and include
+          <code>archivedAt</code> frontmatter.
         </li>
         <li>
           <strong>Import</strong> — accepts a JSON backup, an encrypted backup, or one or more
