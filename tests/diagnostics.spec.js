@@ -3,11 +3,12 @@ const { test, expect } = require('@playwright/test');
 const { seedRawNotes } = require('./helpers');
 
 test.describe('local diagnostics', () => {
-  test('reports note, trash, revision, draft, and storage health', async ({ page }) => {
+  test('reports active, archived, trash, revision, draft, and storage health', async ({ page }) => {
     const deletedAt = Date.now() - 1000;
     await seedRawNotes(page, [
       { id: 'diag-active-a', title: 'Active A', body: 'Body A.' },
       { id: 'diag-active-b', title: 'Active B', body: 'Body B.' },
+      { id: 'diag-archive', title: 'Archived', body: 'Archive body.', archivedAt: Date.now() },
       { id: 'diag-trash', title: 'Trashed', body: 'Trash body.', deletedAt },
     ]);
     await page.evaluate(async () => {
@@ -33,6 +34,7 @@ test.describe('local diagnostics', () => {
 
     await page.locator('#open-about').click();
     await expect(page.locator('#diagnostic-active-notes')).toHaveText('2');
+    await expect(page.locator('#diagnostic-archived-notes')).toHaveText('1');
     await expect(page.locator('#diagnostic-trashed-notes')).toHaveText('1');
     await expect(page.locator('#diagnostic-revisions')).toHaveText('1');
     await expect(page.locator('#diagnostic-drafts')).toHaveText('1');

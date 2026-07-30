@@ -31,7 +31,8 @@ never leave it.
 - Link notes with `[[Title]]` (autocompleted as you type); each note shows
   what links to it, and renaming a linked note offers to update references.
 - Search titles, bodies, and tags; pin important notes; and use bulk tagging,
-  Trash, and restore tools.
+  Archive, Trash, and restore tools. Archive clears finished work from Notes
+  without starting Trash's 30-day deletion clock.
 - Import one or many Markdown files, including Scratchpad frontmatter, or use
   validated JSON imports with a conflict preview.
 - Export full JSON backups, encrypted backups, selected notes, or a Markdown
@@ -152,6 +153,10 @@ pages pick both values up automatically via the footer placeholders.
   saved snapshots per note.
 - Deleted notes are kept in Trash by setting `deletedAt` on the note. They are
   removed permanently only when you choose delete forever or empty Trash.
+- Archived notes stay indefinitely with an `archivedAt` timestamp. They keep
+  their folder, tags, links, revisions, and dormant pin, and remain editable.
+  Restore returns a trashed note to its prior Notes or Archive state;
+  Unarchive explicitly returns an archived note to Notes.
 - The theme preference uses `localStorage` under the key `theme-preview`.
 - First-visit state and backup-reminder timestamps use small `localStorage`
   entries. They never contain note content.
@@ -172,12 +177,15 @@ remove the database and offline app cache.
 ### Backups
 
 Use **About → Export backup (JSON)** for the full-fidelity restore format. The
-backup includes metadata (`app`, `version`, `schemaVersion`, `exportedAt`),
-active notes, trashed notes, and revision snapshots. Drafts are intentionally
-excluded.
+schema-v4 backup includes metadata (`app`, `version`, `schemaVersion`,
+`exportedAt`), active and archived notes, trashed notes with their prior
+lifecycle provenance, and revision snapshots. Drafts are intentionally
+excluded. Version 2 and 3 backups remain importable.
 
-Use **About → Export Markdown ZIP** for readable `.md` copies of active notes.
-Each file includes frontmatter with title, tags, pinned state, and timestamps.
+Use **About → Export Markdown ZIP** for readable `.md` copies of active and
+archived notes. Archived files live below `archive/`. Each file includes
+frontmatter with title, tags, pinned state, and timestamps; archived notes add
+`archivedAt`.
 
 Use **About → Export encrypted backup** to encrypt the full JSON payload in
 the browser with AES-256-GCM. The key is derived from a passphrase with
@@ -192,9 +200,10 @@ conflicts.
 
 Markdown import accepts one or more `.md` or `.markdown` files. Scratchpad
 understands its own exported frontmatter fields (`title`, `tags`, `pinned`,
-`createdAt`, and `updatedAt`) and derives a title from the first heading when
-frontmatter is absent. Encrypted `.scratchpad` files are decrypted locally,
-then go through the same preview and validation path as JSON.
+`dailyDate`, `archivedAt`, `createdAt`, and `updatedAt`) and derives a title
+from the first heading when frontmatter is absent. Encrypted `.scratchpad`
+files are decrypted locally, then go through the same preview and validation
+path as JSON.
 
 ## Vendored libraries
 

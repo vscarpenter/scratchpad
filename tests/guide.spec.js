@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 
 const SECTION_IDS = [
   'first-five-minutes', 'markdown', 'task-lists', 'daily-notes', 'linking',
-  'folders', 'organizing', 'history-drafts', 'backups', 'privacy-controls',
+  'folders', 'archive-trash', 'organizing', 'history-drafts', 'backups', 'privacy-controls',
   'offline', 'shortcuts',
 ];
 
