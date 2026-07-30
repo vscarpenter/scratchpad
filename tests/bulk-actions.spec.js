@@ -20,6 +20,7 @@ test.describe('bulk actions', () => {
     await expect(page.locator('#note-count')).toHaveText('1');
 
     await page.locator('#trash-view').click();
+    await enterBulkMode(page);
     await page.locator('#bulk-select-all').click();
     await expect(page.locator('#bulk-selected-count')).toHaveText('2 selected');
     await page.locator('#bulk-restore').click();
