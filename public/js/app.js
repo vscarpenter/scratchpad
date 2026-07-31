@@ -81,6 +81,11 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     shell: $('app-shell'),
+    chronicleRail: $('chronicle-rail'),
+    chronicleMonth: $('chronicle-month'),
+    chronicleDays: $('chronicle-days'),
+    chronicleToday: $('chronicle-today'),
+    chronicleListDate: $('chronicle-list-date'),
     sidebar: $('sidebar'),
     main: $('main'),
     focusExitBtn: $('focus-exit-btn'),
@@ -115,6 +120,9 @@
     titleInput: $('note-title-input'),
     noteEyebrow: $('note-eyebrow'),
     noteByline: $('note-byline'),
+    editorDateSpine: $('editor-date-spine'),
+    editorDateNumber: $('editor-date-number'),
+    editorDateDay: $('editor-date-day'),
     editorDocHead: $('editor-doc-head'),
     editorCard: document.querySelector('.editor-card'),
     pinToggle: $('pin-toggle'),
@@ -2044,12 +2052,15 @@
     } else if (archived) {
       primary = 'archive';
       secondary = folderDisplayName(noteFolderId(note));
+    } else if (isDailyNote(note)) {
+      primary = 'daily notes';
+      secondary = truncate(deriveTitle(note), 32);
     } else if (pinned) {
       primary = 'notes';
       secondary = 'pinned';
     } else {
-      primary = 'notes';
-      secondary = (note.title || '').trim() || (note.body || '').trim() ? 'note' : 'draft';
+      primary = folderDisplayName(noteFolderId(note)).toLowerCase();
+      secondary = truncate(deriveTitle(note), 32);
     }
     els.breadcrumb.replaceChildren(
       document.createTextNode(primary),
@@ -2062,11 +2073,13 @@
     const trashed = isTrashed(note);
     const archived = isArchived(note);
     const pinned = note.pinned && !trashed && !archived;
+    const readTime = formatReadTime(wordCount(note.body || '')) + ' read';
     let label;
-    if (trashed) label = 'Note · trashed';
-    else if (archived) label = folderDisplayName(noteFolderId(note));
-    else if (pinned) label = folderDisplayName(noteFolderId(note)) + ' · pinned';
-    else label = folderDisplayName(noteFolderId(note)) + ' · draft';
+    if (trashed) label = 'Note · trashed · ' + readTime;
+    else if (archived) label = folderDisplayName(noteFolderId(note)) + ' · archived · ' + readTime;
+    else if (isDailyNote(note)) label = 'Daily note · ' + readTime;
+    else if (pinned) label = folderDisplayName(noteFolderId(note)) + ' · pinned · ' + readTime;
+    else label = folderDisplayName(noteFolderId(note)) + ' · draft · ' + readTime;
     els.noteEyebrow.textContent = label;
   }
 
@@ -2233,6 +2246,75 @@
     const count = activeNotes().length;
     els.noteCount.textContent = String(count);
     if (els.noteCountNoun) els.noteCountNoun.textContent = count === 1 ? 'note' : 'notes';
+  }
+
+  function localDateKey(date) {
+    return date.getFullYear() + '-' +
+      String(date.getMonth() + 1).padStart(2, '0') + '-' +
+      String(date.getDate()).padStart(2, '0');
+  }
+
+  function localDateFromKey(key) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key || '');
+    if (!match) return null;
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function chronicleDateForNote(note) {
+    if (note && note.dailyDate) {
+      const dailyDate = localDateFromKey(note.dailyDate);
+      if (dailyDate) return dailyDate;
+    }
+    return new Date(note && Number.isFinite(note.createdAt) ? note.createdAt : now());
+  }
+
+  function renderChronicle() {
+    if (!els.chronicleDays) return;
+    const selected = getNote(state.selectedId);
+    const contextDate = chronicleDateForNote(selected);
+    const activeKey = selected ? localDateKey(contextDate) : todayKey();
+    const today = new Date();
+    const dayButtons = [];
+
+    els.chronicleMonth.textContent = today.toLocaleDateString([], { month: 'long' });
+    els.chronicleListDate.textContent = contextDate.toLocaleDateString([], {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+    els.editorDateNumber.textContent = String(contextDate.getDate());
+    els.editorDateDay.textContent = contextDate.toLocaleDateString([], { weekday: 'short' });
+    els.editorDateSpine.title = contextDate.toLocaleDateString([], {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    for (let offset = 4; offset >= 0; offset -= 1) {
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset, 12);
+      const key = localDateKey(date);
+      dayButtons.push(el('button', {
+        class: 'chronicle-day' + (key === activeKey ? ' is-active' : ''),
+        attrs: {
+          type: 'button',
+          'data-date': key,
+          'aria-current': key === activeKey ? 'date' : null,
+          'aria-label': 'Open daily note for ' + date.toLocaleDateString([], {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          }),
+        },
+        children: [
+          el('b', { text: String(date.getDate()) }),
+          el('small', { text: date.toLocaleDateString([], { weekday: 'short' }) }),
+        ],
+        on: { click: (event) => openDailyNote(key, event.currentTarget) },
+      }));
+    }
+    els.chronicleDays.replaceChildren(...dayButtons);
   }
 
   // -------- Overflow menu (#6) --------
@@ -2483,6 +2565,7 @@
     renderSidebar();
     renderActiveFilter();
     updateNoteCount();
+    renderChronicle();
     renderBackupChip();
     renderNoActiveNotesState();
 
@@ -3645,8 +3728,7 @@
   const DAILY_DEFAULT_BODY = '## Tasks\n\n## Notes\n';
 
   function todayKey() {
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return localDateKey(new Date());
   }
 
   function findDailyNote(key) {
@@ -3657,13 +3739,15 @@
     return activeNotes().find((n) => (n.title || '').trim().toLowerCase() === 'daily template') || null;
   }
 
-  async function createDailyNote() {
+  async function createDailyNote(dateKey) {
     const t = now();
+    const key = dateKey || todayKey();
+    const date = localDateFromKey(key) || new Date();
     const template = findDailyTemplate();
     const folder = await ensureDailyNotesFolder();
     const note = normalizeNote({
       id: uuid(),
-      title: new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+      title: date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
       body: template ? (template.body || '') : DAILY_DEFAULT_BODY,
       tags: ['daily'],
       pinned: false,
@@ -3672,7 +3756,7 @@
       updatedAt: t,
       deletedAt: null,
       lastDraftAt: null,
-      dailyDate: todayKey(),
+      dailyDate: key,
     });
     await putNoteRecord(note);
     state.notes.push(note);
@@ -3718,8 +3802,9 @@
     });
   }
 
-  async function openTodayNote() {
-    const existing = findDailyNote(todayKey());
+  async function openDailyNote(dateKey, trigger) {
+    const key = dateKey || todayKey();
+    const existing = findDailyNote(key);
     if (existing) {
       await openNoteFromCommand(existing.id);
       return existing;
@@ -3729,8 +3814,10 @@
       if (!ok) return null;
       await discardCurrentDraft();
     }
-    return withBusy('open-today', [els.todayNote], "Could not open today's note.", async () => {
-      const note = await createDailyNote();
+    const controls = [trigger];
+    if (key === todayKey()) controls.push(els.todayNote, els.chronicleToday);
+    return withBusy('open-daily-' + key, controls.filter(Boolean), 'Could not open that daily note.', async () => {
+      const note = await createDailyNote(key);
       state.view = 'active';
       state.selectedId = note.id;
       state.editing = false;
@@ -3740,6 +3827,10 @@
       syncMobileView();
       return note;
     });
+  }
+
+  async function openTodayNote() {
+    return openDailyNote(todayKey(), els.todayNote);
   }
 
   function openEraseLocalDataDialog() {
@@ -5341,6 +5432,7 @@
 
     els.newNote.addEventListener('click', createNote);
     els.todayNote.addEventListener('click', openTodayNote);
+    els.chronicleToday.addEventListener('click', openTodayNote);
     els.bulkToggle.addEventListener('click', toggleBulkMode);
     els.focusExitBtn.addEventListener('click', toggleFocusMode);
     els.focusModeBtn.addEventListener('click', toggleFocusMode);

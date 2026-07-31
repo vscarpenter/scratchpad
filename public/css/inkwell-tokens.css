@@ -1,8 +1,8 @@
 /* =====================================================================
    Inkwell — design tokens & dark-mode cascade.
-   Version: 3.0.0 — "Soft Glass"
-   Palette: lifted indigo (#4E5FD8) over a faintly tinted wash;
-   frosted glass panels, pills, squircles, soft shadows.
+   Version: 3.1.0 — "Porcelain Chronicle"
+   Palette: restrained indigo (#5661B3) over cool porcelain surfaces;
+   chronological wayfinding, opaque panels, and editorial document depth.
 
    This file contains ONLY:
      • :root custom-property declarations
@@ -22,11 +22,8 @@
 
 :root {
   /* ---------- Wash (page background) ---------- */
-  --wash-base: #F3F4F8;
-  --wash-app:
-    radial-gradient(900px 500px at 8% -5%, rgba(96, 112, 226, 0.16), transparent 60%),
-    radial-gradient(800px 480px at 100% 108%, rgba(236, 166, 140, 0.14), transparent 55%),
-    var(--wash-base);
+  --wash-base: #EFF1F7;
+  --wash-app: var(--wash-base);
   --wash-hero:
     radial-gradient(1100px 600px at 20% -10%, rgba(96, 112, 226, 0.20), transparent 60%),
     radial-gradient(900px 560px at 105% 40%, rgba(236, 166, 140, 0.18), transparent 55%),
@@ -34,56 +31,61 @@
 
   /* ---------- Surfaces ---------- */
   --ivory: var(--wash-base);   /* page base (legacy alias) */
-  --paper: #FFFFFF;            /* opaque card surface: active row, chip-on-white */
-  --slate: #1C1E28;            /* primary text / ink (legacy alias) */
-  --oat:   #ECEDF3;            /* tertiary surface */
+  --paper: #FFFEFE;            /* opaque card surface: active row, document */
+  --slate: #25283A;            /* primary text / ink (legacy alias) */
+  --oat:   #E9EBF4;            /* tertiary surface */
+  --surface-canvas: var(--ivory);
+  --surface-rail: color-mix(in srgb, var(--paper) 88%, var(--ivory));
+  --surface-list: color-mix(in srgb, var(--paper) 42%, var(--ivory));
+  --surface-document: var(--paper);
+  --surface-document-stage: var(--ivory);
 
   /* ---------- Glass ---------- */
-  --glass-bg:          rgba(255, 255, 255, 0.66);
-  --glass-bg-strong:   rgba(255, 255, 255, 0.72);  /* empty-state card */
-  --glass-bg-pill:     rgba(255, 255, 255, 0.72);  /* floating pills / nav */
+  --glass-bg:          rgba(255, 254, 254, 0.92);
+  --glass-bg-strong:   rgba(255, 254, 254, 0.96);  /* empty-state card */
+  --glass-bg-pill:     rgba(255, 254, 254, 0.94);  /* floating pills / nav */
   --glass-blur:        26px;
   --glass-blur-strong: 28px;
   --glass-blur-pill:   22px;
-  --glass-border:        1px solid rgba(255, 255, 255, 0.90);
-  --glass-border-strong: 1px solid rgba(255, 255, 255, 0.95);
-  --glass-shadow:   0 20px 50px rgba(35, 42, 90, 0.12);
-  --glass-fallback: rgba(255, 255, 255, 0.94);      /* opaque, no-blur fallback */
+  --glass-border:        1px solid #D9DBEA;
+  --glass-border-strong: 1px solid #CBD0E0;
+  --glass-shadow:   0 24px 56px rgba(55, 61, 105, 0.09), 0 4px 12px rgba(55, 61, 105, 0.05);
+  --glass-fallback: rgba(255, 254, 254, 0.98);      /* opaque, no-blur fallback */
 
   /* ---------- Text ---------- */
-  --ink:            #1C1E28;
-  --text-secondary: #5D6170;
-  --text-muted:     #9A9EAD;   /* timestamps, placeholders, meta — decorative secondary */
-  --text-body:      #33353F;
-  --text-quote:     #3A3F63;
+  --ink:            #25283A;
+  --text-secondary: #484B61;
+  --text-muted:     #73788C;   /* timestamps, placeholders, meta — decorative secondary */
+  --text-body:      #3F4358;
+  --text-quote:     #444A66;
 
   /* ---------- Lines & fills ---------- */
-  --hairline-color:      rgba(28, 30, 40, 0.06);
-  --hairline-color-2:    rgba(28, 30, 40, 0.07);
-  --control-fill:        rgba(28, 30, 40, 0.05);
-  --control-fill-hover:  rgba(28, 30, 40, 0.09);
-  --row-hover:           rgba(28, 30, 40, 0.04);
-  --code-fill:           rgba(28, 30, 40, 0.05);
-  --field-bg:            rgba(255, 255, 255, 0.85);
-  --field-bg-textarea:   rgba(255, 255, 255, 0.70);
-  --field-inset-shadow:  inset 0 1px 2px rgba(28, 30, 40, 0.03);
-  --textarea-inset-shadow: inset 0 1px 3px rgba(28, 30, 40, 0.04);
-  --idle-border:         #C9CBD4;   /* checkbox idle, dashed add-tag */
-  --meta-dot:            #C9CBD4;
+  --hairline-color:      #E1E3EF;
+  --hairline-color-2:    #D9DBEA;
+  --control-fill:        rgba(37, 40, 58, 0.05);
+  --control-fill-hover:  rgba(37, 40, 58, 0.09);
+  --row-hover:           rgba(37, 40, 58, 0.04);
+  --code-fill:           rgba(37, 40, 58, 0.05);
+  --field-bg:            rgba(255, 254, 254, 0.92);
+  --field-bg-textarea:   rgba(255, 254, 254, 0.84);
+  --field-inset-shadow:  inset 0 1px 2px rgba(37, 40, 58, 0.03);
+  --textarea-inset-shadow: inset 0 1px 3px rgba(37, 40, 58, 0.04);
+  --idle-border:         #CBD0E0;   /* checkbox idle, dashed add-tag */
+  --meta-dot:            #CBD0E0;
 
-  /* ---------- Accent (lifted indigo) ---------- */
-  --accent:               #4E5FD8;
-  --accent-d:             #4553C4;                 /* hover/pressed */
+  /* ---------- Accent (Porcelain Indigo) ---------- */
+  --accent:               #5661B3;
+  --accent-d:             #414B91;                 /* hover/pressed */
   --on-accent:            #FFFFFF;                 /* text/icon on accent fill */
   --accent-text:          var(--accent);           /* accent text/glyph ON an accent tint */
-  --accent-soft:          #EBEEFC;                 /* chip / soft tint bg */
-  --accent-soft-2:        #DDE2FB;                 /* squircle gradient end */
-  --accent-grad:          linear-gradient(135deg, #5B6CE4, #4E5FD8);
-  --accent-2:             #7A8AD1;                  /* lighter indigo — About display-text gradient */
+  --accent-soft:          #E8EAFA;                 /* chip / soft tint bg */
+  --accent-soft-2:        #D9DDF4;                 /* stronger current-state tint */
+  --accent-grad:          var(--accent);
+  --accent-2:             #727CC5;                  /* lighter indigo — About display-text gradient */
   --glyph-ink:            #FFFFFF;                  /* brand-glyph strokes: white in both themes */
   --accent-tint:          var(--accent-soft);      /* legacy alias (badge-accent bg) */
-  --accent-focus-ring:    rgba(78, 95, 216, 0.25); /* focus halo */
-  --accent-strong-border: rgba(78, 95, 216, 0.35); /* active-card border */
+  --accent-focus-ring:    rgba(86, 97, 179, 0.25); /* focus halo */
+  --accent-strong-border: rgba(86, 97, 179, 0.35); /* active-card border */
 
   /* ---------- Semantic ---------- */
   --success:      #57B26A;
@@ -110,9 +112,9 @@
   /* ---------- Neutral scale (remapped to Soft Glass) ---------- */
   --gray-100: rgba(28, 30, 40, 0.05);  /* control fill / row hover (semi over glass) */
   --gray-200: rgba(28, 30, 40, 0.09);  /* stronger hover (circle icon buttons) */
-  --gray-300: #C9CBD4;                 /* visible element border, idle states, meta dots */
-  --gray-500: #9A9EAD;                 /* muted text */
-  --gray-700: #5D6170;                 /* secondary text */
+  --gray-300: #CBD0E0;                 /* visible element border, idle states, meta dots */
+  --gray-500: #73788C;                 /* muted text */
+  --gray-700: #484B61;                 /* secondary text */
 
   /* ---------- Typography ---------- */
   /* Ink-and-Chrome split: --serif carries the document (note title, rendered
@@ -129,7 +131,7 @@
   --t-h1:      32px;
   --t-h2:      24px;
   --t-h3:      20px;
-  --measure-doc: 68ch;                 /* shared reading/writing measure */
+  --measure-doc: 620px;                /* shared reading/writing measure */
   --t-lede:    17px;
   --t-body:    16px;
   --t-small:   14px;
@@ -271,7 +273,7 @@
     --accent-text:          #8F9EE1;                 /* lifted for 4.5+ on accent-soft over --paper */
     --accent-soft:          rgba(122, 138, 209, 0.16);
     --accent-soft-2:        rgba(122, 138, 209, 0.22);
-    --accent-grad:          linear-gradient(135deg, #7A8AD1, #6273C0);
+    --accent-grad:          var(--accent);
     --accent-tint:          var(--accent-soft);
     --accent-focus-ring:    rgba(122, 138, 209, 0.35);
     --accent-strong-border: rgba(122, 138, 209, 0.50);
@@ -380,7 +382,7 @@
   --accent-text:          #8F9EE1;                 /* lifted for 4.5+ on accent-soft over --paper */
   --accent-soft:          rgba(122, 138, 209, 0.16);
   --accent-soft-2:        rgba(122, 138, 209, 0.22);
-  --accent-grad:          linear-gradient(135deg, #7A8AD1, #6273C0);
+  --accent-grad:          var(--accent);
   --accent-tint:          var(--accent-soft);
   --accent-focus-ring:    rgba(122, 138, 209, 0.35);
   --accent-strong-border: rgba(122, 138, 209, 0.50);

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="description" content="Scratchpad — a private, local-only notes app. Your data never leaves this browser." />
   <meta name="referrer" content="no-referrer" />
-  <meta name="theme-color" content="#3B4A8C" />
+  <meta name="theme-color" content="#5661B3" />
   <title>Scratchpad</title>
 
   <meta property="og:type" content="website" />
@@ -44,6 +44,18 @@
 </head>
 <body>
   <div class="app-shell" id="app-shell">
+    <nav class="chronicle-rail" id="chronicle-rail" aria-label="Daily notes by date">
+      <div class="chronicle-brand" aria-label="Scratchpad">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <rect class="brand-mark-bg" x="0" y="0" width="24" height="24" rx="5" />
+          <path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9" />
+        </svg>
+        <span class="visually-hidden">Scratchpad</span>
+      </div>
+      <p class="chronicle-month" id="chronicle-month"></p>
+      <div class="chronicle-days" id="chronicle-days"></div>
+      <button class="chronicle-today" id="chronicle-today" type="button">Today</button>
+    </nav>
     <aside class="sidebar" id="sidebar" aria-label="Notes">
       <div class="sidebar-head">
         <div class="sidebar-brand">
@@ -55,6 +67,13 @@
               </svg>
               <span class="brand-name">Scratchpad</span>
             </h1>
+            <div class="chronicle-sidebar-heading">
+              <h2 id="chronicle-list-date">Today</h2>
+              <p class="sidebar-kicker">
+                <span id="note-count">0</span> <span id="note-count-noun">notes</span> ·
+                <span class="accent">all stored locally</span>
+              </p>
+            </div>
             <div class="brand-actions">
               <button id="theme-toggle" class="btn btn-ghost btn-sm theme-toggle" type="button" data-theme-icon="auto" aria-label="Toggle theme" title="Toggle theme">
                 <svg class="theme-icon theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"/></svg>
@@ -67,10 +86,6 @@
               </button>
             </div>
           </div>
-          <p class="sidebar-kicker">
-            <span id="note-count">0</span> <span id="note-count-noun">notes</span> ·
-            <span class="accent">local-only</span>, never syncs
-          </p>
         </div>
 
         <div class="sidebar-search">
@@ -97,13 +112,15 @@
 
         <div class="sidebar-actions">
           <button id="new-note" class="btn btn-primary" type="button">New note</button>
-          <button id="today-note" class="btn btn-ghost" type="button" aria-label="Open today's note" title="Open today's note">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/><path d="M12 15h.01"/></svg>
-          </button>
           <button id="command-palette-btn" class="btn btn-ghost" type="button" aria-label="Open command palette" title="Open command palette">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h10"/><path d="M4 17h7"/><path d="M17 14l3 3-3 3"/></svg>
           </button>
         </div>
+
+        <button id="today-note" class="chronicle-daily-card" type="button" aria-label="Open today's daily note">
+          <span class="chronicle-daily-title">Today’s note</span>
+          <span class="chronicle-daily-copy">Morning thoughts, decisions, and loose ends in one local page.</span>
+        </button>
 
         <div class="sidebar-view-switch" aria-label="Note views">
           <button id="active-notes-view" class="btn btn-secondary btn-sm is-active" type="button">Notes</button>
@@ -196,6 +213,10 @@
         </header>
 
         <article class="card editor-card">
+          <div class="editor-date-spine" id="editor-date-spine" aria-hidden="true">
+            <strong id="editor-date-number"></strong>
+            <span id="editor-date-day"></span>
+          </div>
           <div class="editor-doc-head" id="editor-doc-head">
             <p class="eyebrow" id="note-eyebrow">Note · draft</p>
             <h2 id="note-title-display" class="note-doc-title">Untitled note</h2>

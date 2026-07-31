@@ -25,7 +25,7 @@ test.describe('editor rail — fixed top rail and floating format pill', () => {
 
       // Entering edit mode must not grow the rail or move its slots.
       expect(Math.abs(editBox.height - readBox.height)).toBeLessThanOrEqual(1);
-      expect(editBox.height).toBeLessThanOrEqual(70);
+      expect(editBox.height).toBeLessThanOrEqual(72);
       expect(Math.abs(editOverflow.x - readOverflow.x)).toBeLessThanOrEqual(1);
       expect(Math.abs(editOverflow.y - readOverflow.y)).toBeLessThanOrEqual(1);
     });

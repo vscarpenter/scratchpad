@@ -46,17 +46,17 @@ test.describe('sidebar layout — scroll containment', () => {
     expect(newNote.width).toBeGreaterThanOrEqual(110);
   });
 
-  test('sidebar header chrome stays within its 217px budget', async ({ page }) => {
+  test('Chronicle sidebar header stays within its 330px budget', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await seedNotes(page, 5);
 
     const head = await page.locator('.sidebar-head').boundingBox();
     if (!head) throw new Error('sidebar head has no bounding box');
-    expect(head.height).toBeLessThanOrEqual(217);
+    expect(head.height).toBeLessThanOrEqual(330);
 
-    // The restored kicker carries the live note count and the privacy line.
+    // The Chronicle date heading carries the live note count and local-storage promise.
     await expect(page.locator('.sidebar-kicker')).toBeVisible();
     await expect(page.locator('#note-count')).toHaveText('5');
-    await expect(page.locator('.sidebar-kicker')).toContainText('local-only');
+    await expect(page.locator('.sidebar-kicker')).toContainText('stored locally');
   });
 });
