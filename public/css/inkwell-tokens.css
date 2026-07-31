@@ -75,6 +75,7 @@
   --accent:               #4E5FD8;
   --accent-d:             #4553C4;                 /* hover/pressed */
   --on-accent:            #FFFFFF;                 /* text/icon on accent fill */
+  --accent-text:          var(--accent);           /* accent text/glyph ON an accent tint */
   --accent-soft:          #EBEEFC;                 /* chip / soft tint bg */
   --accent-soft-2:        #DDE2FB;                 /* squircle gradient end */
   --accent-grad:          linear-gradient(135deg, #5B6CE4, #4E5FD8);
@@ -267,6 +268,7 @@
     --accent:               #8593D6;                 /* lifted to clear AA (4.5+) on accent-soft chips */
     --accent-d:             #6273C0;
     --on-accent:            #0E1016;
+    --accent-text:          #8F9EE1;                 /* lifted for 4.5+ on accent-soft over --paper */
     --accent-soft:          rgba(122, 138, 209, 0.16);
     --accent-soft-2:        rgba(122, 138, 209, 0.22);
     --accent-grad:          linear-gradient(135deg, #7A8AD1, #6273C0);
@@ -375,6 +377,7 @@
   --accent:               #8593D6;                 /* lifted to clear AA (4.5+) on accent-soft chips */
   --accent-d:             #6273C0;
   --on-accent:            #0E1016;
+  --accent-text:          #8F9EE1;                 /* lifted for 4.5+ on accent-soft over --paper */
   --accent-soft:          rgba(122, 138, 209, 0.16);
   --accent-soft-2:        rgba(122, 138, 209, 0.22);
   --accent-grad:          linear-gradient(135deg, #7A8AD1, #6273C0);

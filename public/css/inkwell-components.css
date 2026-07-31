@@ -357,7 +357,7 @@ kbd, .kbd {
   border-radius: var(--r-pill);
 }
 .badge-neutral { background: var(--gray-100);    color: var(--gray-700); }
-.badge-accent  { background: var(--accent-tint); color: var(--accent); }
+.badge-accent  { background: var(--accent-tint); color: var(--accent-text); }
 .badge-success { background: var(--success-tint); color: var(--success-text); }
 .badge-warning { background: var(--warning-tint); color: var(--warning-dark); }
 .badge-danger  { background: var(--rust); color: var(--paper); }
@@ -527,7 +527,7 @@ kbd, .kbd {
 .chip-dot.safe .dot      { background: var(--success); }
 .chip-dot.medium    { background: var(--control-fill); color: var(--text-secondary); }
 .chip-dot.medium .dot    { background: var(--text-muted); }
-.chip-dot.attention { background: var(--accent-soft); color: var(--accent); }
+.chip-dot.attention { background: var(--accent-soft); color: var(--accent-text); }
 .chip-dot.attention .dot { background: var(--accent); }
 
 /* ---------- Alert / banner ---------- */
