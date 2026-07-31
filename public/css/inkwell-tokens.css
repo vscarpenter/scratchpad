@@ -114,8 +114,12 @@
   --gray-700: #5D6170;                 /* secondary text */
 
   /* ---------- Typography ---------- */
+  /* Ink-and-Chrome split: --serif carries the document (note title, rendered
+     h2/h3, page titles, wordmark); --sans carries the chrome (buttons, rows,
+     chips, labels, dialogs); --mono is metadata only (timestamps, counts,
+     tags, shortcuts, code) and never prose. See DESIGN.md § Typography. */
   --serif: "Iowan Old Style", "Palatino", "Palatino Linotype",
-           "Source Serif Pro", Georgia, serif;   /* retained; unused by Soft Glass */
+           "Source Serif Pro", Georgia, serif;
   --sans:  system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono:  ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
 
@@ -368,7 +372,7 @@
   --idle-border:        #4A4D5A;
   --meta-dot:           #4A4D5A;
 
-  --accent:               #7A8AD1;
+  --accent:               #8593D6;                 /* lifted to clear AA (4.5+) on accent-soft chips */
   --accent-d:             #6273C0;
   --on-accent:            #0E1016;
   --accent-soft:          rgba(122, 138, 209, 0.16);
