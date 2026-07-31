@@ -1,0 +1,634 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-31T00:00:00Z",
+  "title": "Design System: Scratchpad",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Lifted Indigo",
+        "canonical": "#4E5FD8",
+        "tonalRamp": [
+          "#080043",
+          "#1B177C",
+          "#323AAB",
+          "#4E5FD8",
+          "#6F86FE",
+          "#9BAFFF",
+          "#C6D2FF",
+          "#E9EEFF"
+        ]
+      },
+      "accent-deep": {
+        "role": "primary",
+        "displayName": "Indigo Deep",
+        "canonical": "#4553C4",
+        "tonalRamp": [
+          "#080043",
+          "#1B177C",
+          "#323AAB",
+          "#4E5FD8",
+          "#6F86FE",
+          "#9BAFFF",
+          "#C6D2FF",
+          "#E9EEFF"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Indigo Soft",
+        "canonical": "#EBEEFC",
+        "tonalRamp": [
+          "#080043",
+          "#1B177C",
+          "#323AAB",
+          "#4E5FD8",
+          "#6F86FE",
+          "#9BAFFF",
+          "#C6D2FF",
+          "#E9EEFF"
+        ]
+      },
+      "accent-light": {
+        "role": "primary",
+        "displayName": "Indigo Light",
+        "canonical": "#7A8AD1",
+        "tonalRamp": [
+          "#090A33",
+          "#20275C",
+          "#3C4785",
+          "#5B69AD",
+          "#7D8DD2",
+          "#A0B0F2",
+          "#C6D2FF",
+          "#E9EEFF"
+        ]
+      },
+      "wash-base": {
+        "role": "neutral",
+        "displayName": "Cool Vellum",
+        "canonical": "#F3F4F8",
+        "tonalRamp": [
+          "#111113",
+          "#2D2E30",
+          "#4C4D50",
+          "#6E6E72",
+          "#919295",
+          "#B3B4B7",
+          "#D3D4D7",
+          "#EEEEF1"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Blue-Black Ink",
+        "canonical": "#1C1E28",
+        "tonalRamp": [
+          "#101118",
+          "#2B2D36",
+          "#4A4C57",
+          "#6B6E7A",
+          "#8F919E",
+          "#B1B4C0",
+          "#D1D4DF",
+          "#ECEEF8"
+        ]
+      },
+      "text-body": {
+        "role": "neutral",
+        "displayName": "Body Ink",
+        "canonical": "#33353F",
+        "tonalRamp": [
+          "#101118",
+          "#2B2D36",
+          "#4A4C57",
+          "#6B6E7A",
+          "#8F919E",
+          "#B1B4C0",
+          "#D1D4DF",
+          "#ECEEF8"
+        ]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Ink",
+        "canonical": "#5D6170",
+        "tonalRamp": [
+          "#0F111A",
+          "#2A2D39",
+          "#494C5A",
+          "#6A6E7D",
+          "#8D92A1",
+          "#AFB4C3",
+          "#D0D4E1",
+          "#EBEEFA"
+        ]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#9A9EAD",
+        "tonalRamp": [
+          "#0F1119",
+          "#2B2D38",
+          "#494C59",
+          "#6A6E7C",
+          "#8E92A0",
+          "#B0B4C1",
+          "#D0D4E0",
+          "#EBEEF9"
+        ]
+      },
+      "edge": {
+        "role": "neutral",
+        "displayName": "Edge",
+        "canonical": "#C9CBD4",
+        "tonalRamp": [
+          "#101116",
+          "#2C2D33",
+          "#4B4D54",
+          "#6C6E76",
+          "#90929A",
+          "#B2B4BC",
+          "#D2D4DB",
+          "#EDEEF4"
+        ]
+      },
+      "oat": {
+        "role": "neutral",
+        "displayName": "Oat",
+        "canonical": "#ECEDF3",
+        "tonalRamp": [
+          "#111114",
+          "#2D2D31",
+          "#4C4D51",
+          "#6D6E73",
+          "#919297",
+          "#B3B4B9",
+          "#D3D4D8",
+          "#EDEEF2"
+        ]
+      },
+      "success": {
+        "role": "secondary",
+        "displayName": "Meadow",
+        "canonical": "#57B26A",
+        "tonalRamp": [
+          "#001704",
+          "#003913",
+          "#005E24",
+          "#23833E",
+          "#50A863",
+          "#7ACA88",
+          "#A2E8AD",
+          "#C8FFCF"
+        ]
+      },
+      "warning": {
+        "role": "secondary",
+        "displayName": "Amber",
+        "canonical": "#E8A23D",
+        "tonalRamp": [
+          "#1C0E00",
+          "#412800",
+          "#6B4400",
+          "#976200",
+          "#C48216",
+          "#E5A652",
+          "#FFC986",
+          "#FFEBD3"
+        ]
+      },
+      "rust": {
+        "role": "secondary",
+        "displayName": "Rust",
+        "canonical": "#B04A3F",
+        "tonalRamp": [
+          "#2B0000",
+          "#5B0404",
+          "#862720",
+          "#B04A3F",
+          "#D77063",
+          "#F89588",
+          "#FFC4BB",
+          "#FFE9E5"
+        ]
+      },
+      "sky": {
+        "role": "tertiary",
+        "displayName": "Sky",
+        "canonical": "#6A8CAF",
+        "tonalRamp": [
+          "#011226",
+          "#153049",
+          "#31506E",
+          "#517294",
+          "#7496B8",
+          "#98B8D9",
+          "#BBD8F6",
+          "#E2F0FF"
+        ]
+      },
+      "apricot-wash": {
+        "role": "tertiary",
+        "displayName": "Apricot Wash",
+        "canonical": "rgba(236, 166, 140, 0.14)",
+        "note": "Legal only inside the --wash-app / --wash-hero radial stacks, at alpha <= 0.18. Never on a control, chip, border, icon, or text.",
+        "tonalRamp": [
+          "#2A0D02",
+          "#59250F",
+          "#82412A",
+          "#A75F47",
+          "#CA8067",
+          "#E9A288",
+          "#FFC5AE",
+          "#FFE6DA"
+        ]
+      },
+      "accent-text": {
+        "role": "primary",
+        "displayName": "Indigo Text",
+        "canonical": "#4E5FD8",
+        "note": "Legibility sibling for accent text/glyphs ON an accent tint. Resolves to var(--accent) in light; lifts to #8F9EE1 in dark because the dark tint is translucent and composites lighter over --paper than over glass. Same pattern as --success-text / --warning-dark.",
+        "tonalRamp": [
+          "#080043",
+          "#1B177C",
+          "#323AAB",
+          "#4E5FD8",
+          "#6F86FE",
+          "#9BAFFF",
+          "#C6D2FF",
+          "#E9EEFF"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The About hero headline only. The single piece of fluid type in the system; one phrase inside it carries the accent gradient."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The note document title. Serif at weight 400, not 600 — typeset rather than shouted. The signature moment of the system."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Page titles on the content pages; section headings inside them drop to serif 600 18px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading AND writing text at 68ch. Read mode and edit mode share it exactly, so toggling reflows nothing."
+      },
+      "label": {
+        "displayName": "Label / Eyebrow",
+        "purpose": "Metadata kickers, <=4 words, used sparingly. Soft Glass removed the eyebrow that used to sit above the note title."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code blocks, inline code, kbd chips. Never prose — the editor textarea moved to sans."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px rgba(28, 30, 40, 0.05)",
+        "purpose": "The faintest cue. Switch knobs."
+      },
+      {
+        "name": "shadow-row-active",
+        "value": "0 2px 8px rgba(35, 42, 90, 0.07)",
+        "purpose": "The selected note row lifting off the sidebar panel."
+      },
+      {
+        "name": "shadow-seg",
+        "value": "0 2px 6px rgba(28, 30, 40, 0.10)",
+        "purpose": "The active segmented option — a white pill on a control-fill track."
+      },
+      {
+        "name": "shadow-chip",
+        "value": "0 1px 4px rgba(28, 30, 40, 0.12)",
+        "purpose": "The active format chip in the editor toolbar."
+      },
+      {
+        "name": "shadow-md",
+        "value": "0 8px 20px rgba(35, 42, 90, 0.10)",
+        "purpose": "Popovers and toasts."
+      },
+      {
+        "name": "shadow-card",
+        "value": "0 8px 20px rgba(35, 42, 90, 0.12)",
+        "purpose": "The active note card."
+      },
+      {
+        "name": "shadow-primary",
+        "value": "0 8px 18px rgba(78, 95, 216, 0.35)",
+        "purpose": "The indigo glow beneath primary pills. A COLORED shadow in the accent's own hue — what makes a primary button read as lit rather than merely filled."
+      },
+      {
+        "name": "shadow-primary-sm",
+        "value": "0 6px 14px rgba(78, 95, 216, 0.30)",
+        "purpose": "Small primary and danger pills."
+      },
+      {
+        "name": "glass-shadow",
+        "value": "0 20px 50px rgba(35, 42, 90, 0.12)",
+        "purpose": "The floating glass panels and modal dialogs. Blue-violet, never black — panels look lit, not cut out."
+      },
+      {
+        "name": "shadow-empty",
+        "value": "0 30px 70px rgba(35, 42, 90, 0.16)",
+        "purpose": "The first-run card. The deepest float in the system."
+      },
+      {
+        "name": "shadow-pill-float",
+        "value": "0 14px 34px rgba(35, 42, 90, 0.12)",
+        "purpose": "The About page's floating glass nav pill."
+      },
+      {
+        "name": "shadow-glyph",
+        "value": "0 4px 10px rgba(78, 95, 216, 0.35)",
+        "purpose": "The brand glyph squircle."
+      },
+      {
+        "name": "field-inset-shadow",
+        "value": "inset 0 1px 2px rgba(28, 30, 40, 0.03)",
+        "purpose": "Inputs read as pressed INTO the panel rather than raised off it."
+      }
+    ],
+    "motion": [
+      {
+        "name": "t-fast",
+        "value": "120ms",
+        "purpose": "Press feedback and hover fills. The default for anything a finger triggers."
+      },
+      {
+        "name": "t-base",
+        "value": "150ms",
+        "purpose": "State changes — selection, toggle, chip activation."
+      },
+      {
+        "name": "t-slow",
+        "value": "300ms",
+        "purpose": "Panel entrance only."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "The system default. Fast start, soft settle, no overshoot."
+      },
+      {
+        "name": "ease-pop",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "purpose": "Overshoot easing reserved EXCLUSIVELY for the dialog entrance. Using it on a control violates the No-Lift Rule."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.98) over 120ms",
+        "purpose": "The only theatrical moment in the component set. Applies to every pill."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "coarse-pointer",
+        "value": "(pointer: coarse) or (max-width: 640px)",
+        "purpose": "Promotes every small control to a 44px minimum hit area; hides the search hint chip; the format pill scrolls sideways."
+      },
+      {
+        "name": "single-pane",
+        "value": "768px",
+        "purpose": "Below this the two-column grid collapses to one pane: sidebar IS the list, selecting a note swaps to a full-screen editor with a Back button."
+      }
+    ],
+    "darkMode": {
+      "mechanism": "Pattern-B cascade in inkwell-tokens.css: @media (prefers-color-scheme: dark) applies unless [data-theme=\"light\"]; [data-theme=\"dark\"] forces dark. The two blocks are meant to be byte-parallel. There are NO dark-mode rules in app.css and there should not be.",
+      "tokens": {
+        "wash-base": "#101219",
+        "wash-warm-stop": "rgba(217, 165, 95, 0.10)",
+        "wash-warm-stop-hero": "rgba(217, 165, 95, 0.12)",
+        "wash-cool-stop": "rgba(122, 138, 209, 0.14)",
+        "paper": "#232634",
+        "oat": "#2B2D38",
+        "glass-bg": "rgba(23, 26, 36, 0.62)",
+        "glass-bg-strong": "rgba(23, 26, 36, 0.72)",
+        "glass-border": "1px solid rgba(255, 255, 255, 0.08)",
+        "glass-fallback": "rgba(23, 26, 36, 0.94)",
+        "glass-shadow": "0 20px 50px rgba(0, 0, 0, 0.50)",
+        "ink": "#E8E9F0",
+        "text-body": "#C9CBD4",
+        "text-secondary": "#B4B8C4",
+        "text-muted": "#8E92A0",
+        "text-quote": "#B9BEDD",
+        "accent": "#8593D6",
+        "accent-deep": "#6273C0",
+        "accent-soft": "rgba(122, 138, 209, 0.16)",
+        "accent-soft-2": "rgba(122, 138, 209, 0.22)",
+        "on-accent": "#0E1016",
+        "edge": "#3A3D48",
+        "success": "#6FBF83",
+        "success-text": "#9AD3A8",
+        "warning": "#E8A23D",
+        "warning-text": "#E8B45F",
+        "rust": "#D27468",
+        "sky": "#85A6CB",
+        "accent-text": "#8F9EE1"
+      },
+      "notes": [
+        "The dark accent is LIFTED to #8593D6 specifically so accent text on --accent-soft chips clears 4.5:1. Do not lower it.",
+        "The warm wash stop shifts from apricot rgba(236,166,140,.14) in light to gold rgba(217,165,95,.10) in dark. Same role, same allowlist: wash gradients only.",
+        "The .select chevron is a data URI and cannot read CSS variables, so its entire background-image is overridden in both dark blocks with the lifted muted color.",
+        "FIXED 2026-07-31: the two dark blocks had diverged on --accent ([data-theme=\"dark\"] carried the un-lifted #7A8AD1). Both now carry #8593D6 and the blocks are byte-parallel across all 78 token lines. Keep them that way — a divergence here is invisible in auto-dark and only shows up when a user explicitly toggles.",
+        "RESOLVED 2026-07-31: accent-on-accent-soft used to reach only 4.05:1 over the opaque --paper used by the ACTIVE note row (vs 4.70:1 over glass), failing AA for .note-row-tag at 10px/600. Fixed by adding --accent-text, a legibility sibling following the --success-text / --warning-dark precedent, lifted to #8F9EE1 in dark and resolving to var(--accent) in light. All 12 accent-on-tint sites now use it. Worst-case dark is 4.61:1, matching light's 4.60:1."
+      ]
+    },
+    "layout": {
+      "shellGrid": "grid-template-columns: 302px 1fr; grid-template-rows: 1fr; gap: 16px; padding: 18px",
+      "documentMeasure": "68ch (--measure-doc), shared by title, byline, tag bar, textarea, and rendered markdown",
+      "containers": {
+        "narrow": "820px",
+        "default": "920px",
+        "wide": "1120px",
+        "contentCard": "760px",
+        "pagePadX": "24px"
+      },
+      "tripwires": [
+        "body:not(.page-privacy) { height: 100dvh } — caps the app page so inner scroll regions have a definite size.",
+        ".app-shell { grid-template-rows: 1fr } — pins the single row to the container instead of auto-sizing to children.",
+        ".sidebar { min-height: 0 } — overrides the grid item default so .note-list can actually scroll."
+      ]
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single most important action in a context. Pill geometry with a colored indigo glow.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">New note</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 18px; font-family: var(--sans); font-size: 14px; font-weight: 600; border-radius: var(--r-pill); border: 1px solid transparent; cursor: pointer; transition: background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease, transform var(--t-fast) var(--press); } .ds-btn:active { transform: scale(0.98); } .ds-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-primary); } .ds-btn-primary:hover { background: var(--accent-d); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A tinted pill rather than an outlined one — control-fill at 5% ink, no border.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 18px; font-family: var(--sans); font-size: 14px; font-weight: 600; border-radius: var(--r-pill); border: 1px solid transparent; cursor: pointer; transition: background var(--t-fast) ease, color var(--t-fast) ease, transform var(--t-fast) var(--press); } .ds-btn:active { transform: scale(0.98); } .ds-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-secondary { background: var(--control-fill); color: var(--ink); } .ds-btn-secondary:hover { background: var(--control-fill-hover); }"
+    },
+    {
+      "name": "Search Control",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "The sidebar search field: leading icon, borderless inner input, trailing shortcut hint that hides on coarse pointers.",
+      "html": "<div class=\"ds-search\"><svg class=\"ds-search-icon\" width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M20 20l-3.5-3.5\"/></svg><input class=\"ds-search-input\" type=\"search\" placeholder=\"Search notes\" /><span class=\"ds-search-hint\">&#8984;K</span></div>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 8px; min-width: 0; height: 38px; padding: 0 10px; background: var(--field-bg); border: 1px solid var(--hairline-color-2); border-radius: var(--r-md); box-shadow: var(--field-inset-shadow); transition: border-color var(--t-fast) ease, box-shadow var(--t-fast) ease; } .ds-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-focus-ring); } .ds-search-icon { flex: none; color: var(--text-muted); } .ds-search-input { flex: 1 1 auto; min-width: 0; height: 100%; border: 0; background: transparent; outline: none; padding: 0; font: 400 13.5px/1 var(--sans); color: var(--ink); } .ds-search-input::placeholder { color: var(--text-muted); } .ds-search-hint { flex: none; font: 500 11px/1 var(--sans); color: var(--text-muted); background: var(--control-fill); border-radius: var(--r-code); padding: 3px 6px; }"
+    },
+    {
+      "name": "Note Row — Selected",
+      "kind": "nav",
+      "refersTo": "note-row-active",
+      "description": "The signature list element. At rest it is transparent; selected it becomes a Paper card with an INSET 2.5px pill accent bar — never a full-height border-left.",
+      "html": "<button class=\"ds-note-row ds-is-active\"><span class=\"ds-note-title\">Weekly review</span><span class=\"ds-note-when\">2h ago</span><span class=\"ds-note-excerpt\">Three things that went well, one that didn't, and the one change worth making next week.</span></button>",
+      "css": ".ds-note-row { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; row-gap: 3px; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: var(--r-lg); padding: 10px 12px; cursor: pointer; color: var(--ink); font-family: var(--sans); position: relative; transition: background var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease; } .ds-note-row:hover { background: var(--row-hover); } .ds-note-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; } .ds-note-row.ds-is-active { background: var(--paper); border-color: var(--hairline-color); box-shadow: var(--shadow-row-active); padding-left: 14px; overflow: hidden; } .ds-note-row.ds-is-active::before { content: \"\"; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2.5px; border-radius: var(--r-pill); background: var(--accent); } .ds-note-title { font: 600 13.5px/1.35 var(--sans); color: var(--ink); } .ds-note-when { font: 400 11.5px/1.35 var(--sans); color: var(--text-muted); } .ds-note-excerpt { grid-column: 1 / -1; font: 400 12.5px/1.45 var(--sans); color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented-track",
+      "description": "Notes / Trash / Tags. A control-fill track with the active option as a white pill carrying its own small shadow.",
+      "html": "<div class=\"ds-segmented\"><button class=\"ds-seg\" aria-pressed=\"true\">Notes</button><button class=\"ds-seg\" aria-pressed=\"false\">Trash</button><button class=\"ds-seg\" aria-pressed=\"false\">Tags</button></div>",
+      "css": ".ds-segmented { display: inline-flex; align-items: center; background: var(--control-fill); border: none; border-radius: var(--r-seg-track); padding: 3px; gap: 2px; } .ds-seg { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 12px; font: 500 12.5px/1 var(--sans); color: var(--text-secondary); background: transparent; border: none; border-radius: var(--r-sm); cursor: pointer; transition: background var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease; } .ds-seg:hover { color: var(--ink); } .ds-seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-seg[aria-pressed=\"true\"] { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-seg); }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "The privacy guarantee made visible. Carries backup state via data-backup-state: healthy (meadow), aging (amber), missing (rust, weight 600).",
+      "html": "<button class=\"ds-status-chip\" data-backup-state=\"healthy\"><span class=\"ds-status-dot\"></span>Local-only &middot; never syncs</button>",
+      "css": ".ds-status-chip { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border: 0; border-radius: var(--r-pill); background: var(--control-fill); font: 500 11px/1 var(--sans); color: var(--text-secondary); cursor: pointer; } .ds-status-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-status-dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--success); flex: none; } .ds-status-chip[data-backup-state=\"healthy\"] { background: var(--success-tint); color: var(--success-text); } .ds-status-chip[data-backup-state=\"aging\"] { background: var(--warning-tint); color: var(--warning-dark); } .ds-status-chip[data-backup-state=\"aging\"] .ds-status-dot { background: var(--warning); } .ds-status-chip[data-backup-state=\"missing\"] { background: var(--rust-tint); color: var(--rust); font-weight: 600; } .ds-status-chip[data-backup-state=\"missing\"] .ds-status-dot { background: var(--rust); }"
+    },
+    {
+      "name": "Tag Badge",
+      "kind": "chip",
+      "refersTo": "badge-accent",
+      "description": "A tag is a filter button plus an optional remove control. Accent-soft fill, accent text, pill radius.",
+      "html": "<span class=\"ds-tag\"><button class=\"ds-tag-filter\">review</button><button class=\"ds-tag-remove\" aria-label=\"Remove tag\">&times;</button></span>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; height: 22px; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent); font: 500 12px/1 var(--sans); overflow: hidden; transition: background var(--t-fast) ease; } .ds-tag:hover { background: var(--accent-soft-2); } .ds-tag-filter { border: 0; background: transparent; color: inherit; font: inherit; padding: 0 4px 0 9px; height: 100%; cursor: pointer; } .ds-tag-remove { border: 0; background: transparent; color: inherit; font: 13px/1 var(--sans); padding: 0 8px 0 2px; height: 100%; cursor: pointer; opacity: 0.65; } .ds-tag-remove:hover { opacity: 1; } .ds-tag-filter:focus-visible, .ds-tag-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }"
+    },
+    {
+      "name": "Glass Panel",
+      "kind": "card",
+      "refersTo": "panel-glass",
+      "description": "One of the seven allowlisted blurred surfaces. Ships the -webkit- prefix, an @supports opaque fallback, and a reduced-transparency fallback — all three are required.",
+      "html": "<div class=\"ds-glass-panel\"><p class=\"ds-glass-panel-body\">Frosted glass over the tinted wash. The specular white border along the edge is what makes it read as glass rather than as a translucent rectangle.</p></div>",
+      "css": ".ds-glass-panel { background: var(--glass-bg); -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur)); border: var(--glass-border); border-radius: var(--r-panel); box-shadow: var(--glass-shadow); padding: 22px 24px; overflow: hidden; contain: layout style paint; } .ds-glass-panel-body { margin: 0; font: 400 14px/1.6 var(--sans); color: var(--text-body); } @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .ds-glass-panel { background: var(--glass-fallback); -webkit-backdrop-filter: none; backdrop-filter: none; } } @media (prefers-reduced-transparency: reduce) { .ds-glass-panel { background: var(--glass-fallback); -webkit-backdrop-filter: none; backdrop-filter: none; } }"
+    },
+    {
+      "name": "Brand Glyph",
+      "kind": "custom",
+      "refersTo": "brand-glyph",
+      "description": "A 26px gradient squircle at 9px radius with an indigo glow — one of the three sanctioned gradients in the system. Strokes stay white in both themes.",
+      "html": "<span class=\"ds-glyph\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 26 26\" fill=\"none\"><path class=\"ds-glyph-lines\" d=\"M7.5 9h11M7.5 13h11M7.5 17h6.5\"/></svg></span>",
+      "css": ".ds-glyph { width: 26px; height: 26px; flex-shrink: 0; display: block; background: var(--accent-grad); border-radius: var(--r-glyph); box-shadow: var(--shadow-glyph); } .ds-glyph-lines { stroke: var(--glyph-ink); stroke-width: 2.4; stroke-linecap: round; fill: none; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Ink Under Glass",
+    "overview": "Scratchpad is a document seen through a frosted pane. The system has two halves and they do not mix. The chrome is weather: frosted glass panels floating over a faintly tinted wash, set in system sans, shaped as pills and squircles, lit by soft diffuse shadows. The document is ink: a serif title, serif section headings, a 68ch measure that has not moved since the app's first release. The glass is the room; the ink is the work; the room is never the subject.\n\nThis is the Soft Glass system (Inkwell v3.0.0), and it deliberately retired three rules from the app's earlier \"Analog Notebook\" identity. Surfaces used to be flat — now they float with 0 20px 50px shadows. Outer borders used to be a 1.5px signature hairline — now they are 1px. Gradients used to be forbidden — now three sanctioned ones exist (the brand glyph, the About display headline, and the page wash). What did not change is the part that matters most: every color still routes through a var(--token), every asset is same-origin, and the app makes zero network calls for user data. The reskin changed the room, not the guarantee.\n\nThe system rejects four neighbors, and the rejection is what forces character to come from typography and restraint rather than ornament: bloated productivity SaaS (Notion/Confluence chrome, nested sidebars, slash-command overload); the generic AI-template aesthetic (this one is delicate, because Soft Glass uses frosted panels — the difference is that glass here is a structural material on seven named surfaces, not a decorative finish sprayed across every card); consumer-bland defaults (Apple/Google Notes, no point of view); and the over-designed and loud (hover-lift, bounce, decoration competing with the writing).",
+    "keyCharacteristics": [
+      "Two type voices with a hard boundary: serif owns the document, sans owns the chrome.",
+      "One accent hue (Lifted Indigo) on controls; apricot exists only in the page wash.",
+      "Frosted glass on exactly seven surfaces; everything else is opaque or transparent.",
+      "Pills and squircles throughout — no square corners anywhere in the system.",
+      "Soft, wide, low-opacity shadows; never a hover-lift, never a bounce on a control.",
+      "Token-only color — a literal hex in app.css is a defect.",
+      "Dark mode is a pure token flip; there are no [data-theme] rules in app.css."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule (amended)",
+        "body": "Indigo is the only accent that may touch a control. Meadow, Amber, Rust, and Sky carry state exclusively. The one amendment: apricot rgba(236,166,140,0.14–0.18) is legal inside the --wash-app and --wash-hero radial stacks and nowhere else. Apricot on a button, chip, border, icon, or text is a bug. If you can point at an apricot pixel that sits above the wash layer, that's a defect.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Inline Color Rule",
+        "body": "Every color in app CSS is a var(--token). A literal hex in app.css breaks the dark-mode flip, so it is a defect regardless of how correct it looks in light mode. Gradients assembled from token colors (--accent-grad) are fine.",
+        "section": "colors"
+      },
+      {
+        "name": "The Legibility-Through-Glass Rule",
+        "body": "Any text that sits on a frosted panel must clear AA against the fallback opaque color, not the translucent one. Blur composites unpredictably across backdrops; the fallback is the only stable thing to measure.",
+        "section": "colors"
+      },
+      {
+        "name": "The Accent-On-Tint Rule",
+        "body": "A saturated hue used as text on its own tint gets a dedicated legibility sibling — --accent-text, --success-text, --warning-dark — and the base hue is never set as text on its own tint directly. This exists because the dark-mode tints are translucent, so the same text color measures differently over the glass panel than over the opaque --paper row. Verify any new tint pairing against the LIGHTEST backdrop it can land on, which is --paper, not the glass. Current margins are 4.60:1 in light and 4.61:1 in dark — deliberately matched, so neither theme is the fragile one.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink-and-Chrome Rule",
+        "body": "Serif belongs to content the user wrote or came to read: the note title, rendered markdown h2/h3, page titles, the wordmark. Sans belongs to everything the app says about itself: buttons, rows, chips, labels, search, dialogs, meta. A serif button is a bug. A sans note title is a bug. The boundary is what makes the document feel like a document instead of another panel.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono-Means-Metadata Rule",
+        "body": "Monospace is reserved for actual machine data — timestamps, counts, tags, shortcuts, code. Since the editor textarea moved to sans, this rule is stricter than it was under the previous system: mono no longer appears anywhere the user types prose. Never set body copy or a heading in mono for flavor.",
+        "section": "typography"
+      },
+      {
+        "name": "The Fixed-Scale Rule",
+        "body": "Product UI uses a fixed px scale, not fluid clamp(). The About hero display is the sole exception. A heading that shrinks inside a sidebar looks worse, not better.",
+        "section": "typography"
+      },
+      {
+        "name": "The Blur Allowlist Rule",
+        "body": "backdrop-filter appears on exactly seven surfaces, and the list is closed: .sidebar, .main, .dialog, .onboarding-panel, .editor-format, .status-chip.is-floating, and the About nav pill (.page-about .privacy-header). The dialog scrim blurs separately at 8px. Each is a single, large, rarely-repeated surface. Adding an eighth requires a reason; blur on a repeated row, chip, or tag is a bug. Note that CLAUDE.md describes this as \"the two top-level panels\" — that is understated, and this list is the accurate one.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Triple-Fallback Rule",
+        "body": "Every blurred surface ships three things or it is incomplete: the -webkit-backdrop-filter prefix alongside the standard property, an @supports not (backdrop-filter…) opaque fallback, and a prefers-reduced-transparency: reduce opaque fallback. contain: layout style paint on the two shell panels isolates their rendering cost.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Lift Rule",
+        "body": "Nothing moves toward the viewer on hover. Hover changes fill and color; press changes scale to 0.98 over 120ms. There is no translateY hover, no shadow-growth-on-hover, and no bounce on any control — the one --ease-pop overshoot in the system belongs to the dialog entrance and nowhere else.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "Every outer border is 1px. The previous system's 1.5px signature border is retired — if you find a 1.5px outer border, it is a leftover, not a rule. The one sanctioned exception is outline: 2px solid var(--accent) on :focus-visible, which must never be removed or thinned.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Accent-Bar Rule",
+        "body": "The selected-note indicator is a 2.5px pill-radius bar inset 8px from the row's top and bottom — an inset floating bar, not a full-height border-left. A thick colored border-left as a decorative stripe on a card or callout is the pattern this system replaced; the rendered-markdown blockquote uses the same inset-pill treatment at 3.5px.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do route every color through var(--token). A literal hex in app.css is a defect even when it looks right.",
+      "Do keep serif for the document and sans for the chrome — the Ink-and-Chrome Rule is the system's most load-bearing line.",
+      "Do keep every outer border at 1px; use --glass-border on floating panels and --border-hair for internal dividers.",
+      "Do ship all three fallbacks with any blurred surface: the -webkit- prefix, the @supports not opaque path, and the prefers-reduced-transparency opaque path.",
+      "Do keep blur on the seven allowlisted surfaces and give repeated elements opacity and shadow instead.",
+      "Do use --accent-text (not --accent) for any accent text or glyph sitting on an accent tint, and verify new tint pairings against --paper — the lightest backdrop a tint can composite over.",
+      "Do reserve monospace for real machine data — timestamps, counts, tags, shortcuts, code.",
+      "Do use inline SVG stroke icons and a <template> + cloneNode for static icons; never emoji, never an icon font.",
+      "Do give every interactive control its full state set — default, hover, focus-visible, active, disabled — plus aria-pressed/aria-expanded where it toggles.",
+      "Do keep motion at 120–150ms for state changes and 300ms for entrances, with a prefers-reduced-motion path for every animation including smooth scroll.",
+      "Do validate dark mode by flipping tokens in inkwell-tokens.css, and keep the @media (prefers-color-scheme: dark) and [data-theme=\"dark\"] blocks identical."
+    ],
+    "donts": [
+      "Don't add a second saturated accent. Indigo is the only hue that touches a control; apricot is legal in the wash gradient and nowhere else.",
+      "Don't put backdrop-filter on a row, chip, tag, button, or any element that repeats. Compositing cost scales with instance count.",
+      "Don't add a hover-lift, a shadow that grows on hover, or a bounce easing on a control. --ease-pop belongs to the dialog entrance alone.",
+      "Don't use a 1.5px outer border — that signature belonged to the retired Analog Notebook system and any surviving instance is a leftover.",
+      "Don't use a thick colored border-left as a decorative stripe. Selection and quotation both use an inset pill-radius bar (2.5px and 3.5px).",
+      "Don't set the note title in sans or a button in serif.",
+      "Don't ship the generic AI-template aesthetic: no gradient text outside the About display headline, no glassmorphism as decoration beyond the allowlist, no identical icon-card grids, and no uppercase tracked eyebrow over every section.",
+      "Don't drift toward bloated productivity SaaS chrome — no nested sidebars, slash-command overload, or feature-stuffed toolbars. Scratchpad stays a scratchpad.",
+      "Don't add [data-theme=\"dark\"] {…} rules to app.css. If something renders wrong in dark mode, the token usage is wrong.",
+      "Don't load a web font, a CDN script, or any third-party asset. Platform fonts only; everything same-origin; zero network calls for user data."
+    ]
+  }
+}
