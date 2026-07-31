@@ -4,6 +4,7 @@ description: A privacy-first, local-only notes app — frosted glass chrome arou
 colors:
   accent: "#4E5FD8"
   accent-deep: "#4553C4"
+  accent-text: "#4E5FD8"
   accent-soft: "#EBEEFC"
   accent-soft-2: "#DDE2FB"
   accent-light: "#7A8AD1"
@@ -231,6 +232,12 @@ set used strictly for state.
   forms the empty-state icon gradient.
 - **Indigo Light** (`#7A8AD1`): Exists for exactly one job — the second stop of the
   About display-headline gradient. It is not a second accent.
+- **Indigo Text** (`--accent-text`): The legibility variant, used wherever accent
+  text or a glyph sits *on* an accent tint. In light mode it resolves to
+  `var(--accent)` and adds nothing. In dark mode it lifts to `#8F9EE1`, because
+  dark `--accent-soft` is translucent and therefore composites lighter over the
+  opaque `--paper` active row than it does over the glass panel. It is the same
+  sibling relationship `--success-text` and `--warning-dark` already have.
 
 ### Secondary (state only — never decorative)
 - **Meadow** (`#57B26A`, text `#3B7A4B`, tint at 12%): Success, additions, and the
@@ -276,6 +283,15 @@ looks in light mode. Gradients assembled from token colors (`--accent-grad`) are
 **The Legibility-Through-Glass Rule.** Any text that sits on a frosted panel must clear
 AA against the *fallback* opaque color, not the translucent one. Blur composites
 unpredictably across backdrops; the fallback is the only stable thing to measure.
+
+**The Accent-On-Tint Rule.** A saturated hue used as text on its own tint gets a
+dedicated legibility sibling — `--accent-text`, `--success-text`, `--warning-dark` —
+and the base hue is never set as text on its own tint directly. This exists because
+the dark-mode tints are translucent, so the same text color measures differently over
+the glass panel than over the opaque `--paper` row. Verify any new tint pairing against
+the **lightest** backdrop it can land on, which is `--paper`, not the glass. Current
+margins are 4.60:1 in light and 4.61:1 in dark — deliberately matched, so neither theme
+is the fragile one.
 
 ## Typography
 
@@ -524,6 +540,9 @@ sticky.
   `@supports not` opaque path, and the `prefers-reduced-transparency` opaque path.
 - **Do** keep blur on the seven allowlisted surfaces and give repeated elements
   opacity and shadow instead.
+- **Do** use `--accent-text` (not `--accent`) for any accent text or glyph sitting on
+  an accent tint, and verify new tint pairings against `--paper` — the lightest
+  backdrop a tint can composite over.
 - **Do** reserve monospace for real machine data — timestamps, counts, tags, shortcuts,
   code.
 - **Do** use inline SVG stroke icons and a `<template>` + `cloneNode` for static icons;

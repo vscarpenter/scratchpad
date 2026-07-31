@@ -382,7 +382,7 @@ body:not(.page-privacy) {
 
 /* Pressed/active state for standalone toggle buttons (e.g. bulk "Select"). */
 .btn.is-active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 
@@ -960,7 +960,7 @@ body:not(.page-privacy) {
   background: var(--accent-soft);
   border: 0;
   font: 600 10px/1 var(--sans);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
 }
 .note-row-tag::before { content: none; }
@@ -1123,7 +1123,7 @@ body:not(.page-privacy) {
 .popover-menu button.is-destructive { color: var(--rust); }
 .popover-menu button.is-destructive:hover { background: var(--rust-tint); }
 .popover-menu button.is-active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 .menu-divider {
@@ -1223,7 +1223,7 @@ body:not(.page-privacy) {
 }
 .icon-btn:hover { background: var(--control-fill-hover); color: var(--ink); }
 .icon-btn.is-active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 
@@ -1265,7 +1265,7 @@ body:not(.page-privacy) {
   border-radius: var(--r-pill);
   background: var(--accent-soft);
   font: 600 11.5px/1 var(--sans);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .tag-pill-filter {
@@ -1321,7 +1321,7 @@ body:not(.page-privacy) {
   cursor: pointer;
 }
 .tag-add-empty:hover { color: var(--accent); border-color: var(--accent); }
-.tag-add-plus:hover { color: var(--accent); background: var(--accent-soft); }
+.tag-add-plus:hover { color: var(--accent-text); background: var(--accent-soft); }
 
 .tag-bar .tag-input {
   background: transparent;
@@ -1769,7 +1769,7 @@ body:not(.page-privacy) {
 }
 .wikilink-suggest [role="option"][aria-selected="true"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ---------- Empty states ---------- */
@@ -1801,7 +1801,7 @@ body:not(.page-privacy) {
   margin: 0 auto 18px;
   background: linear-gradient(135deg, var(--accent-soft), var(--accent-soft-2));
   box-shadow: var(--shadow-glyph-inset), var(--shadow-primary-sm);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Soft Glass empty card drops the eyebrow. */
@@ -2221,7 +2221,7 @@ body:not(.page-privacy) {
   flex: 0 0 auto;
   width: 40px;
   height: 40px;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   border: 1px solid var(--accent-strong-border);
   border-radius: var(--r-md);
@@ -2638,7 +2638,7 @@ body:not(.page-privacy) {
   transition: color .12s ease, background-color .12s ease;
 }
 .app-footer a:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-tint);
 }
 .app-footer a:focus-visible {
