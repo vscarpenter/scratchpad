@@ -22,45 +22,34 @@ guarantee, not an implementation detail.
 - **`marked` and `DOMPurify` are vendored**, not loaded from a CDN. They live
   in `public/js/vendor/`. Don't replace with CDN URLs.
 
-### Inkwell design system — "Soft Glass" (v3)
-This repo overrides the base Inkwell system with the **Soft Glass** reskin
-(frosted floating glass panels over a tinted wash, system-sans identity, lifted
-`#4E5FD8` accent, pills/squircles/soft shadows). The full spec is in
-`docs/superpowers/specs/2026-07-08-soft-glass-redesign-design.md`. Read
-`https://raw.githubusercontent.com/vscarpenter/inkwell/main/agent-instructions.md`
+### Inkwell design system — "Porcelain Chronicle" (v4)
+This repo overrides the base Inkwell system with the **Porcelain Chronicle**
+direction: a quiet chronology rail, an opaque note index, and a raised document
+on cool porcelain surfaces. Restrained Indigo (`#5661B3`) is the sole accent.
+The approved spec is in
+`docs/superpowers/specs/2026-07-31-porcelain-chronicle-indigo-design.md`.
+Read `https://raw.githubusercontent.com/vscarpenter/inkwell/main/agent-instructions.md`
 for the base system, but the rules below reflect this repo's overrides and win.
 Key rules for anything in `public/css/app.css`:
 - **All colors via `var(--token)`** — no hex codes anywhere in app CSS. Use
   `--accent`, `--ink`, `--text-secondary`/`--text-muted`/`--text-body`, `--paper`,
   `--accent-soft`, `--glass-*`, `--wash-*`, `--control-fill`, `--gray-*`, etc.
   Gradients built from token colors (e.g. `--accent-grad`) are fine.
-- **Outer borders are 1px hairlines** via `var(--border)` / `var(--border-hair)`;
-  floating panels use `var(--glass-border)`. (Soft Glass retired the old 1.5px
-  signature border.) Focus outlines (`outline: 2px solid var(--accent)`) are the
-  exception and stay.
-- **Surfaces float.** `backdrop-filter` lives on exactly **seven** surfaces and
-  the list is closed: `.sidebar`, `.main`, `.dialog`, `.onboarding-panel`,
-  `.editor-format`, `.status-chip.is-floating`, and the About nav pill
-  (`.page-about .privacy-header`). The dialog scrim blurs separately at 8px.
-  Each ships `--glass-bg` + `backdrop-filter` (always with the `-webkit-`
-  prefix) plus **both** `@supports not (backdrop-filter…)` and
-  `prefers-reduced-transparency` opaque fallbacks; the two shell panels also
-  carry `contain: layout style paint`. Adding an eighth needs a reason. Smaller
-  cards are opaque panels with `--glass-shadow`; do **not** put
-  `backdrop-filter` on rows, chips, tags, or any element that repeats —
-  compositing cost scales with instance count. Soft shadows and the sanctioned
-  gradients (brand glyph, About display text, page wash) are part of the system
-  now.
-- **One accent** — `--accent`. `--accent-2` is only the lighter stop for the
-  About display-text gradient, and `--accent-text` is the legibility sibling for
-  accent text or glyphs sitting *on* an accent tint (same pattern as
-  `--success-text` / `--warning-dark`). Neither is a second accent. Use
-  `--olive`/`--sky` for a data-viz hue. The apricot in `--wash-app`/`--wash-hero`
-  is legal in those radial stacks only, never on a control.
-- **Platform fonts only** — no `@font-face`, no Google Fonts. Ink-and-Chrome
-  split: `--serif` carries the document (note title, rendered `h2`/`h3`, page
-  titles, wordmark); `--sans` carries the chrome (buttons, rows, chips, labels,
-  dialogs); `--mono` is metadata only and never prose.
+- **Outer borders are 1px hairlines** via `var(--border)` / `var(--border-hair)`.
+  The chronology rail and note index are flat opaque surfaces; the document is
+  the only raised surface in the application shell. Focus outlines remain the
+  exception and stay visible.
+- **No decorative glass in the app shell.** The rail, list, top bar, and document
+  stage use the semantic `--surface-*` tokens. Do not add blur or gradients to
+  the Chronicle shell. Legacy glass tokens remain for dialogs, onboarding, and
+  static pages until those surfaces are redesigned.
+- **One accent** — `--accent`. Indigo marks the selected day, primary actions,
+  links, tags, the document date spine, and focus. `--accent-text` is the
+  legibility sibling for accent text or glyphs sitting on a tint. Semantic
+  success, warning, and danger colors remain state-only.
+- **Platform fonts only** — no `@font-face`, no Google Fonts. The application
+  shell and document title use `--sans`; rendered note prose may retain the
+  editorial serif voice. `--mono` is metadata only and never prose.
 - **No emoji in source.** Icons are inline SVG strokes (the `⌘K` hint is a
   Unicode symbol, matching the existing kbd shortcuts).
 - **Dark mode** extends the Pattern-B cascade in `inkwell-tokens.css`; validate

@@ -3514,6 +3514,531 @@ body:not(.page-privacy) {
      printing them would be noise, not information.
    ========================================================================== */
 
+/* =====================================================================
+   Porcelain Chronicle — approved application shell
+   ===================================================================== */
+
+body:not(.page-privacy) {
+  background: var(--surface-canvas);
+}
+
+.chronicle-rail {
+  display: none;
+}
+
+.chronicle-sidebar-heading {
+  display: none;
+  min-width: 0;
+}
+
+.chronicle-sidebar-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font: 700 22px/1.12 var(--sans);
+  letter-spacing: -0.035em;
+}
+
+.chronicle-daily-card {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-height: 72px;
+  padding: 13px 14px;
+  color: var(--accent-d);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-strong-border);
+  border-radius: var(--r-lg);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-fast) ease, border-color var(--t-fast) ease;
+}
+
+.chronicle-daily-card:hover {
+  background: var(--accent-soft-2);
+  border-color: var(--accent);
+}
+
+.chronicle-daily-card:focus-visible {
+  outline: 3px solid var(--accent-focus-ring);
+  outline-offset: 2px;
+}
+
+.chronicle-daily-title {
+  font: 700 12.5px/1.2 var(--sans);
+}
+
+.chronicle-daily-copy {
+  color: var(--text-secondary);
+  font: 400 10.5px/1.4 var(--sans);
+}
+
+.editor-date-spine {
+  display: none;
+}
+
+@media screen and (min-width: 768px) {
+  .app-shell {
+    grid-template-columns: 310px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+  }
+
+  .sidebar,
+  .main {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    animation: none;
+  }
+
+  .sidebar {
+    background: var(--surface-list);
+    border-right: 1px solid var(--hairline-color-2);
+  }
+
+  .main {
+    background: var(--surface-document-stage);
+  }
+
+  .sidebar-head {
+    gap: 12px;
+    padding: 25px 20px 12px;
+  }
+
+  .sidebar-head .brand {
+    align-items: flex-start;
+  }
+
+  .sidebar-head .brand-title {
+    display: none;
+  }
+
+  .chronicle-sidebar-heading {
+    display: grid;
+    gap: 5px;
+  }
+
+  .sidebar-kicker {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .sidebar-kicker .accent {
+    color: var(--text-muted);
+  }
+
+  .brand-actions .btn {
+    width: 36px;
+    height: 36px;
+    background: var(--surface-document);
+    border: 1px solid var(--hairline-color-2);
+    border-radius: 10px;
+  }
+
+  .search-control {
+    height: 44px;
+    padding-inline: 13px;
+    background: var(--surface-document);
+    border-color: var(--hairline-color-2);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .search-hint {
+    padding: 0;
+    background: transparent;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+
+  .sidebar-actions .btn-primary {
+    height: 40px;
+    border-radius: 11px;
+  }
+
+  .sidebar-actions .btn-ghost {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-document);
+    border: 1px solid var(--hairline-color-2);
+    border-radius: 11px;
+  }
+
+  .sidebar-view-switch {
+    background: var(--control-fill);
+  }
+
+  .list-header {
+    min-height: 34px;
+    padding: 5px 14px 7px;
+    border-bottom-color: var(--hairline-color);
+  }
+
+  .note-list {
+    gap: 4px;
+    padding: 8px 12px 18px;
+  }
+
+  .note-section {
+    gap: 3px;
+  }
+
+  .note-section-head {
+    padding-inline: 5px;
+  }
+
+  .note-row {
+    padding: 13px 14px;
+    border-radius: 13px;
+  }
+
+  .note-row.is-active {
+    padding-left: 14px;
+    border-color: var(--hairline-color-2);
+    box-shadow: var(--shadow-row-active);
+  }
+
+  .note-row.is-active::before {
+    content: none;
+  }
+
+  .note-row-title {
+    font-size: 13.5px;
+    font-weight: 700;
+  }
+
+  .note-row-excerpt {
+    font-size: 11.3px;
+    line-height: 1.43;
+  }
+
+  .note-row-when {
+    font-family: var(--mono);
+    font-size: 9.5px;
+  }
+
+  .note-row-tag {
+    height: 18px;
+    padding-inline: 7px;
+    font-family: var(--mono);
+    font-size: 9px;
+  }
+
+  .sidebar-foot {
+    padding: 10px 20px 20px;
+  }
+
+  .status-chip {
+    width: 100%;
+    min-height: 34px;
+    height: auto;
+    justify-content: flex-start;
+    border-radius: 10px;
+  }
+
+  .editor-view {
+    display: grid;
+    grid-template-rows: 72px minmax(0, 1fr);
+  }
+
+  .editor-head {
+    min-width: 0;
+    height: 72px;
+    padding: 0 30px;
+    border-bottom: 0;
+  }
+
+  .note-breadcrumb {
+    height: auto;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    color: var(--text-muted);
+    font-size: 11.5px;
+  }
+
+  .note-breadcrumb .crumb-current {
+    color: var(--text-secondary);
+    font-weight: 650;
+  }
+
+  .editor-actions .icon-btn,
+  .editor-actions .btn {
+    border-radius: 11px;
+  }
+
+  .editor-actions .icon-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-document);
+    border: 1px solid var(--hairline-color-2);
+  }
+
+  .editor-actions .btn-primary {
+    height: 40px;
+    padding-inline: 16px;
+  }
+
+  .editor-card {
+    position: relative;
+    width: min(850px, calc(100% - 84px));
+    min-height: 100%;
+    margin: 6px auto 0;
+    padding: 56px 48px 88px 92px;
+    overflow: auto;
+    background: var(--surface-document);
+    border: 1px solid var(--hairline-color-2);
+    border-radius: 22px 22px 0 0;
+    box-shadow: var(--glass-shadow);
+  }
+
+  .editor-doc-head,
+  .tag-bar,
+  .note-rendered,
+  .note-editor,
+  .editor-empty {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .editor-doc-head {
+    margin-bottom: 22px;
+  }
+
+  .editor-doc-head .eyebrow {
+    display: inline-flex;
+    margin: 0 0 15px;
+    color: var(--accent-text);
+    font: 650 10.5px/1 var(--mono);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .editor-doc-head .eyebrow::before {
+    content: none;
+  }
+
+  .note-doc-title {
+    margin-bottom: 11px;
+    font-family: var(--sans);
+    font-size: 36px;
+    font-weight: 750;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+  }
+
+  .editor-doc-head .byline {
+    font-size: 11.5px;
+  }
+
+  .tag-bar {
+    margin-bottom: 30px;
+  }
+
+  .note-rendered,
+  .note-editor {
+    color: var(--text-body);
+    font-size: 16px;
+    line-height: 1.72;
+  }
+
+  .note-rendered p.is-lede {
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+
+  .note-rendered h1,
+  .note-rendered h2,
+  .note-rendered h3 {
+    font-family: var(--sans);
+  }
+
+  .note-rendered h2 {
+    margin-top: 33px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .editor-card.is-editing .note-editor {
+    max-width: var(--measure-doc);
+    padding: 26px 0 20px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media screen and (min-width: 900px) {
+  .app-shell {
+    grid-template-columns: 80px 296px minmax(0, 1fr);
+  }
+
+  .chronicle-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 22px 0 20px;
+    background: var(--surface-rail);
+    border-right: 1px solid var(--hairline-color-2);
+  }
+
+  .chronicle-brand {
+    display: grid;
+    place-items: center;
+  }
+
+  .chronicle-brand .brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--accent);
+  }
+
+  .chronicle-month {
+    margin: 36px 0 0;
+    color: var(--text-muted);
+    font: 650 10px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .chronicle-days {
+    display: grid;
+    gap: 8px;
+    margin-top: 17px;
+  }
+
+  .chronicle-day {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: color var(--t-fast) ease, background var(--t-fast) ease, box-shadow var(--t-fast) ease;
+  }
+
+  .chronicle-day b {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .chronicle-day small {
+    margin-top: -4px;
+    font-size: 8px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .chronicle-day:hover {
+    color: var(--ink);
+    background: var(--control-fill);
+  }
+
+  .chronicle-day.is-active {
+    color: var(--on-accent);
+    background: var(--accent);
+    box-shadow: var(--shadow-primary-sm);
+  }
+
+  .chronicle-day:focus-visible,
+  .chronicle-today:focus-visible {
+    outline: 3px solid var(--accent-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .chronicle-today {
+    margin-top: auto;
+    padding: 10px 8px;
+    color: var(--accent-text);
+    background: transparent;
+    border: 0;
+    border-radius: var(--r-sm);
+    font: 700 10px/1 var(--sans);
+    cursor: pointer;
+  }
+
+  .editor-date-spine {
+    position: absolute;
+    top: 58px;
+    left: 28px;
+    display: grid;
+    justify-items: center;
+    color: var(--accent-text);
+  }
+
+  .editor-date-spine strong {
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .editor-date-spine span {
+    margin-top: 4px;
+    font: 650 9px/1 var(--mono);
+    text-transform: uppercase;
+  }
+
+  .editor-date-spine::after {
+    content: "";
+    width: 1px;
+    height: 460px;
+    margin-top: 18px;
+    background: var(--hairline-color-2);
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .app-shell {
+    grid-template-columns: 104px 330px minmax(0, 1fr);
+  }
+
+  .chronicle-day {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+  }
+
+  .editor-card {
+    padding: 66px 82px 100px 116px;
+  }
+
+  .editor-date-spine {
+    top: 66px;
+    left: 38px;
+  }
+
+  .editor-date-spine::after {
+    height: 520px;
+  }
+
+  .note-doc-title {
+    font-size: 44px;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .chronicle-rail,
+  .chronicle-sidebar-heading,
+  .editor-date-spine {
+    display: none;
+  }
+
+  .chronicle-daily-card {
+    min-height: 76px;
+  }
+}
+
 /* ---------- Focus mode (distraction-free writing) ----------
    Same technique the print stylesheet above uses to drop the sidebar
    column, but toggled by a body class (state.focusMode) instead of an
@@ -3526,6 +4051,7 @@ body:not(.page-privacy) {
     grid-template-columns: 1fr;
   }
   body.focus-mode .sidebar,
+  body.focus-mode .chronicle-rail,
   body.focus-mode #note-breadcrumb,
   body.focus-mode #note-byline,
   body.focus-mode #tag-bar,
@@ -3574,6 +4100,7 @@ body:not(.page-privacy) {
 
   /* App chrome that never belongs on paper. */
   #sidebar,
+  #chronicle-rail,
   dialog,
   .popover-menu,
   #toast-region,
