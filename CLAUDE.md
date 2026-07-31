@@ -38,23 +38,39 @@ Key rules for anything in `public/css/app.css`:
   floating panels use `var(--glass-border)`. (Soft Glass retired the old 1.5px
   signature border.) Focus outlines (`outline: 2px solid var(--accent)`) are the
   exception and stay.
-- **Surfaces float.** The two top-level panels (sidebar + main; the About nav
-  pill and hero preview) are frosted glass — `--glass-bg` + `backdrop-filter`
-  (always ship the `-webkit-` prefix), `contain: layout style paint`, and both
-  `@supports not (backdrop-filter…)` and `prefers-reduced-transparency` opaque
-  fallbacks. Smaller cards are opaque panels with `--glass-shadow`; do **not**
-  put `backdrop-filter` on rows, chips, or many small elements (compositing cost).
-  Soft shadows and the sanctioned gradients (brand glyph, About display text,
-  page wash) are part of the system now.
-- **One accent** — `--accent` (`--accent-2` is only the lighter stop for the
-  About display-text gradient). Use `--olive`/`--sky` for a data-viz hue.
-- **Platform fonts only** — no `@font-face`, no Google Fonts. The system is
-  sans-led (`--sans`); `--serif` is retained but unused by Soft Glass.
+- **Surfaces float.** `backdrop-filter` lives on exactly **seven** surfaces and
+  the list is closed: `.sidebar`, `.main`, `.dialog`, `.onboarding-panel`,
+  `.editor-format`, `.status-chip.is-floating`, and the About nav pill
+  (`.page-about .privacy-header`). The dialog scrim blurs separately at 8px.
+  Each ships `--glass-bg` + `backdrop-filter` (always with the `-webkit-`
+  prefix) plus **both** `@supports not (backdrop-filter…)` and
+  `prefers-reduced-transparency` opaque fallbacks; the two shell panels also
+  carry `contain: layout style paint`. Adding an eighth needs a reason. Smaller
+  cards are opaque panels with `--glass-shadow`; do **not** put
+  `backdrop-filter` on rows, chips, tags, or any element that repeats —
+  compositing cost scales with instance count. Soft shadows and the sanctioned
+  gradients (brand glyph, About display text, page wash) are part of the system
+  now.
+- **One accent** — `--accent`. `--accent-2` is only the lighter stop for the
+  About display-text gradient, and `--accent-text` is the legibility sibling for
+  accent text or glyphs sitting *on* an accent tint (same pattern as
+  `--success-text` / `--warning-dark`). Neither is a second accent. Use
+  `--olive`/`--sky` for a data-viz hue. The apricot in `--wash-app`/`--wash-hero`
+  is legal in those radial stacks only, never on a control.
+- **Platform fonts only** — no `@font-face`, no Google Fonts. Ink-and-Chrome
+  split: `--serif` carries the document (note title, rendered `h2`/`h3`, page
+  titles, wordmark); `--sans` carries the chrome (buttons, rows, chips, labels,
+  dialogs); `--mono` is metadata only and never prose.
 - **No emoji in source.** Icons are inline SVG strokes (the `⌘K` hint is a
   Unicode symbol, matching the existing kbd shortcuts).
 - **Dark mode** extends the Pattern-B cascade in `inkwell-tokens.css`; validate
-  AA before shipping. The dark accent is lifted to `#8593D6` so accent text on
-  `--accent-soft` chips clears 4.5:1.
+  AA before shipping, and keep the `@media (prefers-color-scheme: dark)` and
+  `[data-theme="dark"]` blocks byte-parallel — a divergence there is invisible
+  on auto-dark and only surfaces when a user explicitly toggles. The dark accent
+  is lifted to `#8593D6`; accent text on a tint uses `--accent-text` (`#8F9EE1`
+  in dark), which clears 4.5:1 on every backdrop **including** the opaque
+  `--paper` of the active note row. Dark tints are translucent, so verify a new
+  tint pairing against `--paper` — the lightest thing it can composite over.
 
 ### HTML/JS safety
 - **Never set `innerHTML` to untrusted content.** The pre-commit hook at
