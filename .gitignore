@@ -27,7 +27,12 @@ ehthumbs.db
 # ---- Local agent/tooling artifacts ----
 .claude/
 .agents/
-.impeccable/
+# .impeccable/design.json IS committed — it's the DESIGN.md sidecar (tonal
+# ramps, dark-mode tokens, component snippets) and belongs with the design
+# system. Everything else the tool writes here stays local. Note the `/*`:
+# git can't re-include a file whose parent directory is itself excluded.
+.impeccable/*
+!.impeccable/design.json
 
 # ---- Logs ----
 *.log

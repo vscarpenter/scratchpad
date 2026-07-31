@@ -274,6 +274,10 @@ These files exist in the repo but **must not** end up in S3 / CloudFront:
 - `cloudfront/` (operator-only AWS policy artifacts)
 - `package.json`, `bun.lock`, `node_modules/`, `tests/`, `scripts/`,
   `playwright.config.js` (local-only dev/test tooling)
+- `DESIGN.md`, `PRODUCT.md`, `.impeccable/design.json` (design-system record;
+  `design.json` is the DESIGN.md sidecar and the only tracked file under
+  `.impeccable/`)
+- `docs/` (specs and design notes)
 - `.git/`, `.verify/`, `.gitignore`
 
 The deploy script handles this by uploading only `public/**` (with
