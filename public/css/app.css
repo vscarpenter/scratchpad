@@ -503,6 +503,71 @@ body:not(.page-privacy) {
 .folder-dot[data-color="sky"] { background: var(--sky); }
 .folder-dot[data-color="gray"] { background: var(--gray-500); }
 
+.daily-month-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;
+}
+
+.daily-month-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--sans);
+}
+.daily-month-toggle:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+.daily-month-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.daily-month-chevron {
+  width: 0;
+  height: 0;
+  flex: 0 0 auto;
+  border-left: 4px solid currentColor;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  transform: rotate(90deg);
+  transition: transform var(--t-fast) ease;
+}
+.daily-month-toggle[aria-expanded="false"] .daily-month-chevron { transform: rotate(0deg); }
+
+.daily-month-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 12px/1.2 var(--sans);
+}
+
+.daily-month-count {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font: 500 11px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-month-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.daily-month-notes[hidden] { display: none; }
+
 /* Global folder menu: positioned from JS against its trigger. Double-class
    selector so these overrides beat the later .popover-menu base rule
    (equal-specificity single classes resolve by source order). */

@@ -23,6 +23,7 @@
   const RESERVED_FOLDER_NAME = 'notes';
   const GROUPING_KEY = 'scratchpad:notesGrouping';
   const COLLAPSED_FOLDERS_KEY = 'scratchpad:collapsedFolders';
+  const DAILY_MONTH_DISCLOSURE_KEY = 'scratchpad:dailyMonthDisclosure';
   const VIRTUAL_FOLDER_KEY = '__notes__';
   const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
   const DAILY_NOTES_FOLDER_NAME = 'Daily Notes';
@@ -968,6 +969,38 @@
     renderSidebar();
   }
 
+  function dailyMonthDisclosure() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(DAILY_MONTH_DISCLOSURE_KEY) || '{}');
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+      return Object.fromEntries(
+        Object.entries(raw).filter(([key, value]) => typeof key === 'string' && typeof value === 'boolean')
+      );
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function dailyMonthDisclosureId(monthKey) {
+    return state.view + ':' + monthKey;
+  }
+
+  function isDailyMonthExpanded(monthKey) {
+    const disclosure = dailyMonthDisclosure();
+    const id = dailyMonthDisclosureId(monthKey);
+    return typeof disclosure[id] === 'boolean' ? disclosure[id] : monthKey === todayKey().slice(0, 7);
+  }
+
+  function setDailyMonthExpanded(monthKey, expanded) {
+    const disclosure = dailyMonthDisclosure();
+    disclosure[dailyMonthDisclosureId(monthKey)] = !!expanded;
+    const entries = Object.entries(disclosure).slice(-120);
+    try {
+      localStorage.setItem(DAILY_MONTH_DISCLOSURE_KEY, JSON.stringify(Object.fromEntries(entries)));
+    } catch (e) { /* private mode / quota */ }
+    renderSidebar();
+  }
+
   function folderNameError(name, excludeId) {
     if (!name) return 'Folder name is required.';
     if (name.toLowerCase() === RESERVED_FOLDER_NAME) return '"Notes" is reserved for the built-in folder.';
@@ -1723,8 +1756,78 @@
         }
       });
     }
-    const rows = collapsed ? [] : notes.map(renderRow);
+    const rows = collapsed
+      ? []
+      : isDailyNotesFolder(folder)
+        ? renderDailyMonthGroups(notes)
+        : notes.map(renderRow);
     return el('div', { class: 'note-section folder-section', children: [head, ...rows] });
+  }
+
+  function dailyNotesByMonth(notes) {
+    const groups = new Map();
+    for (const note of notes) {
+      const monthKey = note.dailyDate.slice(0, 7);
+      if (!groups.has(monthKey)) groups.set(monthKey, []);
+      groups.get(monthKey).push(note);
+    }
+    return [...groups.entries()]
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([monthKey, monthNotes]) => ({
+        monthKey,
+        notes: monthNotes.sort((a, b) =>
+          b.dailyDate.localeCompare(a.dailyDate) || lifecycleTime(b) - lifecycleTime(a)
+        ),
+      }));
+  }
+
+  function monthLabel(monthKey) {
+    const match = /^(\d{4})-(\d{2})$/.exec(monthKey || '');
+    if (!match) return monthKey;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    if (month < 1 || month > 12) return monthKey;
+    return new Date(year, month - 1, 1, 12).toLocaleDateString([], {
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  function renderDailyMonthGroups(notes) {
+    return dailyNotesByMonth(notes).map(({ monthKey, notes: monthNotes }) => {
+      const expanded = isDailyMonthExpanded(monthKey);
+      const notesId = 'daily-month-' + state.view + '-' + monthKey;
+      const toggle = el('button', {
+        class: 'daily-month-toggle',
+        attrs: {
+          type: 'button',
+          'aria-expanded': expanded ? 'true' : 'false',
+          'aria-controls': notesId,
+          'aria-label': (expanded ? 'Collapse ' : 'Expand ') + monthLabel(monthKey) +
+            ' (' + monthNotes.length + ' note' + (monthNotes.length === 1 ? '' : 's') + ')',
+        },
+        children: [
+          el('span', { class: 'daily-month-chevron', attrs: { 'aria-hidden': 'true' } }),
+          el('span', { class: 'daily-month-label', text: monthLabel(monthKey) }),
+          el('span', {
+            class: 'daily-month-count',
+            text: String(monthNotes.length),
+            attrs: { 'aria-hidden': 'true' },
+          }),
+        ],
+        on: { click: () => setDailyMonthExpanded(monthKey, !expanded) },
+      });
+      const monthRows = el('div', {
+        class: 'daily-month-notes',
+        attrs: { id: notesId, hidden: expanded ? null : true },
+        children: monthNotes.map(renderRow),
+      });
+      return el('div', {
+        class: 'daily-month-group',
+        attrs: { 'data-month': monthKey },
+        children: [toggle, monthRows],
+      });
+    });
   }
 
   async function dropFolderOn(draggedId, targetId) {

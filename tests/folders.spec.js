@@ -4,6 +4,28 @@ const { gotoApp, seedRawNotes, createAndSaveNote, seedFolders, importJson, enter
 
 const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
 
+function localMonthKey(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+}
+
+function localDateKey(year, month, day) {
+  return year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+}
+
+function dailyMonthFixtures() {
+  const today = new Date();
+  const current = new Date(today.getFullYear(), today.getMonth(), 1, 12);
+  const previous = new Date(today.getFullYear(), today.getMonth() - 1, 1, 12);
+  return {
+    currentKey: localMonthKey(current),
+    previousKey: localMonthKey(previous),
+    currentNewer: localDateKey(current.getFullYear(), current.getMonth(), 2),
+    currentOlder: localDateKey(current.getFullYear(), current.getMonth(), 1),
+    previousNewer: localDateKey(previous.getFullYear(), previous.getMonth(), 28),
+    previousOlder: localDateKey(previous.getFullYear(), previous.getMonth(), 3),
+  };
+}
+
 test.describe('folders DB layer', () => {
   test('putFolder/getAllFolders/removeFolder round-trip', async ({ page }) => {
     await gotoApp(page);
@@ -94,6 +116,78 @@ test.describe('sidebar accordion', () => {
     await seedFolders(page, [{ id: 'f-w', name: 'Work' }]);
     const rows = page.locator('.folder-section .note-row');
     await expect(rows.first()).toContainText('Old pinned');
+  });
+
+  test('groups Daily Notes by month with newest days first and older months collapsed', async ({ page }) => {
+    const dates = dailyMonthFixtures();
+    await seedRawNotes(page, [
+      { id: 'current-old', title: 'Current older', body: 'x', dailyDate: dates.currentOlder },
+      { id: 'previous-old', title: 'Previous older', body: 'x', dailyDate: dates.previousOlder },
+      { id: 'current-new', title: 'Current newer', body: 'x', dailyDate: dates.currentNewer },
+      { id: 'previous-new', title: 'Previous newer', body: 'x', dailyDate: dates.previousNewer },
+    ]);
+
+    const groups = page.locator('.daily-month-group');
+    await expect(groups).toHaveCount(2);
+    await expect(groups.first()).toHaveAttribute('data-month', dates.currentKey);
+    await expect(groups.last()).toHaveAttribute('data-month', dates.previousKey);
+
+    const current = page.locator(`.daily-month-group[data-month="${dates.currentKey}"]`);
+    const previous = page.locator(`.daily-month-group[data-month="${dates.previousKey}"]`);
+    await expect(current.locator('.daily-month-toggle')).toHaveAttribute('aria-expanded', 'true');
+    await expect(current.locator('.daily-month-count')).toHaveText('2');
+    await expect(current.locator('.note-row').nth(0)).toHaveAttribute('data-id', 'current-new');
+    await expect(current.locator('.note-row').nth(1)).toHaveAttribute('data-id', 'current-old');
+    await expect(previous.locator('.daily-month-toggle')).toHaveAttribute('aria-expanded', 'false');
+    await expect(previous.locator('.daily-month-notes')).toBeHidden();
+  });
+
+  test('persists explicit Daily Notes month disclosure choices across reload', async ({ page }) => {
+    const dates = dailyMonthFixtures();
+    await seedRawNotes(page, [
+      { id: 'current-day', title: 'Current day', body: 'x', dailyDate: dates.currentNewer },
+      { id: 'previous-day', title: 'Previous day', body: 'x', dailyDate: dates.previousNewer },
+    ]);
+
+    const currentToggle = page.locator(`.daily-month-group[data-month="${dates.currentKey}"] .daily-month-toggle`);
+    const previousToggle = page.locator(`.daily-month-group[data-month="${dates.previousKey}"] .daily-month-toggle`);
+    await currentToggle.click();
+    await previousToggle.click();
+    await expect(currentToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(previousToggle).toHaveAttribute('aria-expanded', 'true');
+
+    await page.reload();
+    await expect(page.locator(`.daily-month-group[data-month="${dates.currentKey}"] .daily-month-toggle`))
+      .toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator(`.daily-month-group[data-month="${dates.previousKey}"] .daily-month-toggle`))
+      .toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('groups archived Daily Notes by month while Recent and search stay flat', async ({ page }) => {
+    const dates = dailyMonthFixtures();
+    await seedRawNotes(page, [
+      { id: 'active-day', title: 'Active daily unique', body: 'x', dailyDate: dates.currentNewer },
+      {
+        id: 'archived-day',
+        title: 'Archived daily unique',
+        body: 'x',
+        dailyDate: dates.previousNewer,
+        archivedAt: Date.now(),
+      },
+    ]);
+
+    await page.locator('#archive-view').click();
+    await expect(page.locator(`.daily-month-group[data-month="${dates.previousKey}"]`)).toHaveCount(1);
+
+    await page.locator('#active-notes-view').click();
+    await page.locator('#group-recent').click();
+    await expect(page.locator('.daily-month-group')).toHaveCount(0);
+    await expect(page.locator('.note-row[data-id="active-day"]')).toBeVisible();
+
+    await page.locator('#group-folders').click();
+    await page.locator('#search').fill('Active daily unique');
+    await expect(page.locator('.daily-month-group')).toHaveCount(0);
+    await expect(page.locator('.note-row[data-id="active-day"]')).toBeVisible();
   });
 });
 
