@@ -4,10 +4,17 @@ const { gotoApp, seedRawNotes } = require('./helpers');
 
 const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
 
+function localDateKey(date) {
+  return date.getFullYear() + '-' +
+    String(date.getMonth() + 1).padStart(2, '0') + '-' +
+    String(date.getDate()).padStart(2, '0');
+}
+
 test.describe('dailyDate field', () => {
   test('survives an edit-and-save round trip', async ({ page }) => {
+    const key = localDateKey(new Date());
     await seedRawNotes(page, [
-      { id: 'daily-1', title: 'My day', body: 'original', dailyDate: '2026-07-16' },
+      { id: 'daily-1', title: 'My day', body: 'original', dailyDate: key },
     ]);
     await page.locator('.note-row').first().click();
     await page.locator('#edit-btn').click();
@@ -15,7 +22,7 @@ test.describe('dailyDate field', () => {
     await page.locator('#save-btn').click();
     await expect(page.locator('#save-btn')).toBeHidden();
     const stored = await page.evaluate(() => window.ScratchpadDB.get('daily-1'));
-    expect(stored.dailyDate).toBe('2026-07-16');
+    expect(stored.dailyDate).toBe(key);
     expect(stored.body).toBe('edited body');
   });
 
@@ -23,7 +30,7 @@ test.describe('dailyDate field', () => {
     await gotoApp(page);
     const parsed = await page.evaluate(() => {
       return window.ScratchpadDB.put({
-        id: 'roundtrip-1', title: 'T', body: 'B', tags: [], pinned: false,
+        id: 'roundtrip-1', title: 'Roundtrip identity', body: 'B', tags: [], pinned: false,
         createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null,
         lastDraftAt: null, dailyDate: '2026-01-02',
       }).then(() => window.ScratchpadDB.get('roundtrip-1'));
@@ -33,7 +40,8 @@ test.describe('dailyDate field', () => {
     await expect(page.locator('#app-shell')).toBeVisible();
     // After reload, loadAll() ran the note through normalizeNote; an
     // edit-and-save writes that normalized shape back to the DB.
-    await page.locator('.note-row', { hasText: 'T' }).click();
+    await page.locator('#search').fill('Roundtrip identity');
+    await page.locator('.note-row', { hasText: 'Roundtrip identity' }).click();
     await page.locator('#edit-btn').click();
     await page.locator('#save-btn').click();
     await expect(page.locator('#save-btn')).toBeHidden();

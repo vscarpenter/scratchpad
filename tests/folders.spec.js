@@ -134,7 +134,13 @@ test.describe('sidebar accordion', () => {
 
     const current = page.locator(`.daily-month-group[data-month="${dates.currentKey}"]`);
     const previous = page.locator(`.daily-month-group[data-month="${dates.previousKey}"]`);
-    await expect(current.locator('.daily-month-toggle')).toHaveAttribute('aria-expanded', 'true');
+    const currentToggle = current.locator('.daily-month-toggle');
+    await expect(currentToggle).toHaveAttribute('aria-expanded', 'true');
+    const controlledId = await currentToggle.getAttribute('aria-controls');
+    expect(controlledId).toBeTruthy();
+    await expect(current.locator('.daily-month-notes')).toHaveAttribute('id', controlledId);
+    const toggleBox = await currentToggle.boundingBox();
+    expect(toggleBox && toggleBox.height).toBeGreaterThanOrEqual(43.9);
     await expect(current.locator('.daily-month-count')).toHaveText('2');
     await expect(current.locator('.note-row').nth(0)).toHaveAttribute('data-id', 'current-new');
     await expect(current.locator('.note-row').nth(1)).toHaveAttribute('data-id', 'current-old');
@@ -310,6 +316,9 @@ test.describe('folder crud', () => {
     expect(state.folders.some((folder) => folder.id === 'legacy-daily-folder')).toBe(false);
     expect(state.notes.find((note) => note.id === 'legacy-daily').folderId).toBe(DAILY_NOTES_FOLDER_ID);
     expect(state.notes.find((note) => note.id === 'legacy-member').folderId).toBe(DAILY_NOTES_FOLDER_ID);
+    const undatedGroup = page.locator('.daily-month-group[data-month="undated"]');
+    await expect(undatedGroup.locator('.daily-month-label')).toHaveText('Undated');
+    await expect(undatedGroup.locator('.note-row[data-id="legacy-member"]')).toBeVisible();
   });
 
   test('managed folder does not consume one of the 100 user folder slots', async ({ page }) => {

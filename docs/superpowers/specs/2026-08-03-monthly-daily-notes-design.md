@@ -39,6 +39,8 @@ tag-filter results remain flat.
 
 - Derive the month from the note's validated local `dailyDate` (`YYYY-MM-DD`).
 - Render months newest first and days newest first within a month.
+- Preserve adopted legacy members without a `dailyDate` in an expanded
+  **Undated** group after the dated months so they remain visible and movable.
 - Each month has a native button showing the localized month/year and note count.
 - Each button exposes `aria-expanded` and `aria-controls` and toggles its rows.
 - The current month is expanded by default; older months are collapsed by
@@ -117,4 +119,3 @@ broadcast paths, so another tab observes the new review like any other note.
   protection, and duplicate behavior.
 - JSON and Markdown round-trip coverage for `monthlyReviewMonth`.
 - Keyboard, focus, responsive, CSP, and full cross-browser regression checks.
-
