@@ -131,6 +131,30 @@ test.describe('sharing and portable exports', () => {
     expect(storedText).not.toContain('Trash body');
   });
 
+  test('preserves monthly review identity in native and Markdown exports', async ({ page }) => {
+    await seedRawNotes(page, [{
+      id: 'monthly-review-export',
+      title: 'July retrospective',
+      body: '## Highlights\n\nShipped the review flow.',
+      tags: ['monthly-review'],
+      monthlyReviewMonth: '2026-07',
+    }]);
+
+    await openBackupMenu(page);
+    const jsonDownloadPromise = page.waitForEvent('download');
+    await page.locator('#export-btn').click();
+    const jsonPayload = JSON.parse((await downloadBuffer(await jsonDownloadPromise)).toString('utf8'));
+    expect(jsonPayload.notes[0].monthlyReviewMonth).toBe('2026-07');
+    expect(jsonPayload.schemaVersion).toBe(4);
+
+    await openBackupMenu(page);
+    const markdownDownloadPromise = page.waitForEvent('download');
+    await page.locator('#export-markdown-btn').click();
+    const storedText = (await downloadBuffer(await markdownDownloadPromise)).toString('utf8');
+    expect(storedText).toContain('july-retrospective.md');
+    expect(storedText).toContain('monthlyReviewMonth: "2026-07"');
+  });
+
   test('reports that there is nothing to export when only Trash has notes', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'zip-only-trash', title: 'Only trash', body: 'Deleted.', deletedAt: Date.now() },

@@ -11,7 +11,7 @@ Chromium because Playwright exposes external-protocol navigation details there.
 | Archive lifecycle, organization integrations, cross-tab routing, and portability | `archive.spec.js`, `archive-integrations.spec.js`, `archive-portability.spec.js` |
 | Search, filters, tags, ordering, bulk actions, and mobile navigation | `enhanced-search.spec.js`, `note-organization.spec.js`, `reliability.spec.js`, `bulk-actions.spec.js`, `mobile-navigation.spec.js` |
 | Markdown rendering, sanitization, task lists, wikilinks, and backlinks | `notes-crud.spec.js`, `sanitization.spec.js`, `task-lists.spec.js`, `wikilinks.spec.js` |
-| Daily notes, managed folders, quick capture, action URLs, and keyboard shortcuts | `daily-note.spec.js`, `folders.spec.js`, `keyboard-shortcuts.spec.js` |
+| Daily notes, month grouping, Monthly Reviews, managed folders, quick capture, action URLs, and keyboard shortcuts | `daily-note.spec.js`, `folders.spec.js`, `keyboard-shortcuts.spec.js`, `markdown-import.spec.js`, `share-export.spec.js` |
 | Drafts, revisions, failed writes, and multi-tab conflicts | `reliability.spec.js`, `revision-history.spec.js`, `cross-tab-conflicts.spec.js` |
 | JSON, Markdown, and encrypted import/export plus sharing | `import.spec.js`, `markdown-import.spec.js`, `encrypted-backup.spec.js`, `share-export.spec.js`, `backup-reminder.spec.js` |
 | Diagnostics, persistent storage, data erasure, and update recovery | `diagnostics.spec.js`, `storage-protection.spec.js`, `data-erasure.spec.js`, `pwa-lifecycle.spec.js` |

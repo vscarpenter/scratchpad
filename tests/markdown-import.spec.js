@@ -13,6 +13,7 @@ test.describe('Markdown import', () => {
           'title: "Imported plan"',
           'tags: ["work", "private"]',
           'pinned: true',
+          'monthlyReviewMonth: "2026-07"',
           'createdAt: "2026-07-01T12:00:00.000Z"',
           'updatedAt: "2026-07-02T12:00:00.000Z"',
           '---',
@@ -35,7 +36,13 @@ test.describe('Markdown import', () => {
 
     const imported = await page.evaluate(async () =>
       (await window.ScratchpadDB.getAll())
-        .map(({ title, body, tags, pinned }) => ({ title, body, tags, pinned }))
+        .map(({ title, body, tags, pinned, monthlyReviewMonth }) => ({
+          title,
+          body,
+          tags,
+          pinned,
+          monthlyReviewMonth,
+        }))
         .sort((a, b) => a.title.localeCompare(b.title))
     );
     expect(imported).toEqual([
@@ -44,12 +51,14 @@ test.describe('Markdown import', () => {
         body: '# Imported plan\n\nKeep this local.',
         tags: ['work', 'private'],
         pinned: true,
+        monthlyReviewMonth: '2026-07',
       },
       {
         title: 'Plain note',
         body: '# Plain note\n\nNo frontmatter required.',
         tags: [],
         pinned: false,
+        monthlyReviewMonth: null,
       },
     ]);
   });
