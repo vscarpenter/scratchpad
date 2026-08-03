@@ -27,7 +27,10 @@ never leave it.
   clickable in view mode and write back to the Markdown source.
 - Jump to today's note with one command; it is created on first use from a
   note titled "Daily template" (or a minimal default) and kept in the managed
-  Daily Notes folder. Quick capture appends a timestamped line from anywhere.
+  Daily Notes folder. Daily notes group into collapsible months, and an
+  on-demand Monthly Review creates reflection prompts plus links to that
+  month's notes without copying their contents. Quick capture appends a
+  timestamped line from anywhere.
 - Link notes with `[[Title]]` (autocompleted as you type); each note shows
   what links to it, and renaming a linked note offers to update references.
 - Search titles, bodies, and tags; pin important notes; and use bulk tagging,

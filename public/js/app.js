@@ -4968,6 +4968,9 @@
       'tags: [' + (note.tags || []).map((tag) => JSON.stringify(tag)).join(', ') + ']',
       'pinned: ' + (!!note.pinned ? 'true' : 'false'),
       ...(note.dailyDate ? ['dailyDate: ' + JSON.stringify(note.dailyDate)] : []),
+      ...(note.monthlyReviewMonth
+        ? ['monthlyReviewMonth: ' + JSON.stringify(note.monthlyReviewMonth)]
+        : []),
       ...(isArchived(note) ? ['archivedAt: ' + JSON.stringify(new Date(note.archivedAt).toISOString())] : []),
       'createdAt: ' + JSON.stringify(new Date(note.createdAt).toISOString()),
       'updatedAt: ' + JSON.stringify(new Date(note.updatedAt).toISOString()),
@@ -5100,6 +5103,9 @@
       deletedAt: null,
       lastDraftAt: null,
       dailyDate: typeof metadata.dailyDate === 'string' ? metadata.dailyDate : null,
+      monthlyReviewMonth: typeof metadata.monthlyReviewMonth === 'string'
+        ? metadata.monthlyReviewMonth
+        : null,
     });
     if (!candidate.title) candidate.title = deriveTitle(candidate);
     return candidate;
