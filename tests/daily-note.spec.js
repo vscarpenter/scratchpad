@@ -167,6 +167,150 @@ test.describe('daily note', () => {
   });
 });
 
+test.describe('monthly review', () => {
+  test('creates a contextual review with prompts and links, then reuses it after rename', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'july-first', title: 'July first', body: 'One', dailyDate: '2026-07-01' },
+      {
+        id: 'july-second',
+        title: 'July second',
+        body: 'Two',
+        dailyDate: '2026-07-02',
+        archivedAt: Date.now(),
+      },
+      { id: 'july-third', title: 'July third', body: 'Three', dailyDate: '2026-07-03' },
+      {
+        id: 'july-trashed',
+        title: 'July trashed',
+        body: 'Gone',
+        dailyDate: '2026-07-04',
+        deletedAt: Date.now(),
+      },
+      { id: 'august-day', title: 'August day', body: 'Later', dailyDate: '2026-08-01' },
+    ]);
+
+    await page.locator('#search').fill('July third');
+    await page.locator('.note-row[data-id="july-third"]').click();
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('monthly review');
+    const command = page.locator('.command-palette-item', { hasText: 'Create July 2026 monthly review' });
+    await expect(command).toBeVisible();
+    await command.click();
+
+    await expect(page.locator('#note-editor')).toBeVisible();
+    await expect(page.locator('#note-title-input')).toHaveValue('Monthly Review — July 2026');
+    const review = await page.evaluate(async () => {
+      const notes = await window.ScratchpadDB.getAll();
+      return notes.find((note) => note.monthlyReviewMonth === '2026-07');
+    });
+    expect(review.folderId).toBeNull();
+    expect(review.tags).toContain('monthly-review');
+    expect(review.body).toContain('## Highlights');
+    expect(review.body).toContain('## Decisions');
+    expect(review.body).toContain('## Open loops');
+    expect(review.body).toContain('## Next month');
+    expect(review.body).toContain('## Daily notes');
+    expect(review.body).toContain('[[July first|');
+    expect(review.body).toContain('[[July second|');
+    expect(review.body).toContain('[[July third|');
+    expect(review.body).not.toContain('July trashed');
+    expect(review.body).not.toContain('August day');
+    expect(review.body.indexOf('July first')).toBeLessThan(review.body.indexOf('July second'));
+    expect(review.body.indexOf('July second')).toBeLessThan(review.body.indexOf('July third'));
+
+    await page.locator('#note-title-input').fill('July retrospective');
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#save-btn')).toBeHidden();
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('monthly review');
+    await page.locator('.command-palette-item', { hasText: 'Open July 2026 monthly review' }).click();
+    await expect(page.locator('#note-title-display')).toHaveText('July retrospective');
+    const reviewCount = await page.evaluate(async () =>
+      (await window.ScratchpadDB.getAll()).filter((note) => note.monthlyReviewMonth === '2026-07').length
+    );
+    expect(reviewCount).toBe(1);
+  });
+
+  test('defaults to the previous completed month when no dated note is selected', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'ordinary', title: 'Ordinary note', body: 'No date identity' }]);
+    await page.locator('.note-row[data-id="ordinary"]').click();
+    const previous = new Date();
+    previous.setDate(1);
+    previous.setMonth(previous.getMonth() - 1);
+    const label = previous.toLocaleDateString([], { month: 'long', year: 'numeric' });
+
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('monthly review');
+    await expect(page.locator('.command-palette-item', { hasText: `Create ${label} monthly review` })).toBeVisible();
+  });
+
+  test('opens a renamed archived review without unarchiving it', async ({ page }) => {
+    const archivedAt = Date.now();
+    await seedRawNotes(page, [{
+      id: 'archived-review',
+      title: 'Renamed archive review',
+      body: 'Reflection',
+      monthlyReviewMonth: '2026-06',
+      archivedAt,
+    }]);
+    await page.locator('#archive-view').click();
+    await page.locator('.note-row[data-id="archived-review"]').click();
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('monthly review');
+    await page.locator('.command-palette-item', { hasText: 'Open June 2026 monthly review' }).click();
+
+    await expect(page.locator('#archive-view')).toHaveClass(/is-active/);
+    await expect(page.locator('#note-title-display')).toHaveText('Renamed archive review');
+    const stored = await page.evaluate(() => window.ScratchpadDB.get('archived-review'));
+    expect(stored.archivedAt).toBe(archivedAt);
+  });
+
+  test('ignores a trashed review replacement and clears identity when duplicating', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'june-day', title: 'June day', body: 'Day', dailyDate: '2026-06-12' },
+      {
+        id: 'trashed-review',
+        title: 'Trashed June review',
+        body: 'Old',
+        monthlyReviewMonth: '2026-06',
+        deletedAt: Date.now(),
+      },
+    ]);
+    await page.locator('#search').fill('June day');
+    await page.locator('.note-row[data-id="june-day"]').click();
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('monthly review');
+    await page.locator('.command-palette-item', { hasText: 'Create June 2026 monthly review' }).click();
+    await page.locator('#save-btn').click();
+    await expect(page.locator('#save-btn')).toBeHidden();
+
+    await page.locator('#overflow-btn').click();
+    await page.locator('#duplicate-overflow-btn').click();
+    const records = await page.evaluate(async () => await window.ScratchpadDB.getAll());
+    const reviews = records.filter((note) => note.monthlyReviewMonth === '2026-06');
+    const copy = records.find((note) => note.title === 'Monthly Review — June 2026 (copy)');
+    expect(reviews).toHaveLength(2);
+    expect(reviews.some((note) => note.id === 'trashed-review')).toBe(true);
+    expect(copy.monthlyReviewMonth).toBeNull();
+  });
+
+  test('protects a dirty editor before creating a monthly review', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'dirty-note', title: 'Dirty note', body: 'Saved' }]);
+    await page.locator('.note-row[data-id="dirty-note"]').click();
+    await page.locator('#edit-btn').click();
+    await page.locator('#note-editor').fill('Unsaved');
+
+    await page.locator('#command-palette-btn').click();
+    await page.locator('#command-palette-input').fill('monthly review');
+    await page.locator('.command-palette-item', { hasText: /monthly review/ }).first().click();
+    await expect(page.locator('#discard-dialog')).toBeVisible();
+    const reviewsBefore = await page.evaluate(async () =>
+      (await window.ScratchpadDB.getAll()).filter((note) => note.monthlyReviewMonth).length
+    );
+    expect(reviewsBefore).toBe(0);
+  });
+});
+
 test.describe('quick capture', () => {
   test('captures into today note, creating it when needed', async ({ page }) => {
     await gotoApp(page);
