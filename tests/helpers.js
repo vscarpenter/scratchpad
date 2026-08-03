@@ -50,6 +50,7 @@ async function seedRawNotes(page, notes) {
       deletedAt: Number.isFinite(note.deletedAt) ? note.deletedAt : null,
       lastDraftAt: Number.isFinite(note.lastDraftAt) ? note.lastDraftAt : null,
       dailyDate: typeof note.dailyDate === 'string' ? note.dailyDate : null,
+      monthlyReviewMonth: typeof note.monthlyReviewMonth === 'string' ? note.monthlyReviewMonth : null,
       folderId: typeof note.folderId === 'string' ? note.folderId : null,
     }));
     await window.ScratchpadDB.bulkPut(notes);

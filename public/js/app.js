@@ -778,6 +778,9 @@
       deletedAt: Number.isFinite(n.deletedAt) ? n.deletedAt : null,
       lastDraftAt: Number.isFinite(n.lastDraftAt) ? n.lastDraftAt : null,
       dailyDate: typeof n.dailyDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(n.dailyDate) ? n.dailyDate : null,
+      monthlyReviewMonth: typeof n.monthlyReviewMonth === 'string' && /^\d{4}-\d{2}$/.test(n.monthlyReviewMonth)
+        ? n.monthlyReviewMonth
+        : null,
     };
   }
 
@@ -2780,6 +2783,7 @@
         deletedAt: null,
         lastDraftAt: null,
         dailyDate: null,
+        monthlyReviewMonth: null,
       });
       await putNoteRecord(copy);
       state.notes.push(copy);
@@ -2849,6 +2853,7 @@
             createdAt: now(),
             updatedAt: now(),
             lastDraftAt: null,
+            monthlyReviewMonth: null,
           });
           await putNoteRecord(copy);
           await DB.removeDraft(note.id);
@@ -3936,6 +3941,107 @@
     return openDailyNote(todayKey(), els.todayNote);
   }
 
+  // -------- Monthly review --------
+  // A review is an ordinary movable note with stable month identity. Its body
+  // starts as a user-owned reflection scaffold plus links; daily-note content
+  // is never copied or synchronized into it.
+  function previousMonthKey() {
+    const today = new Date();
+    const previous = new Date(today.getFullYear(), today.getMonth() - 1, 1, 12);
+    return localDateKey(previous).slice(0, 7);
+  }
+
+  function monthlyReviewTargetMonth() {
+    const selected = getNote(state.selectedId);
+    if (selected && selected.dailyDate) return selected.dailyDate.slice(0, 7);
+    if (selected && selected.monthlyReviewMonth) return selected.monthlyReviewMonth;
+    return previousMonthKey();
+  }
+
+  function findMonthlyReview(monthKey) {
+    return sortNotes(state.notes.filter((note) =>
+      !isTrashed(note) && note.monthlyReviewMonth === monthKey
+    ))[0] || null;
+  }
+
+  function monthlyReviewTitle(monthKey) {
+    return 'Monthly Review — ' + monthLabel(monthKey);
+  }
+
+  function monthlyReviewLink(note) {
+    const date = localDateFromKey(note.dailyDate);
+    const alias = date
+      ? date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' +
+        date.toLocaleDateString([], { weekday: 'short' })
+      : note.dailyDate;
+    return '- [[' + deriveTitle(note) + '|' + alias + ']]';
+  }
+
+  function monthlyReviewBody(monthKey) {
+    const dailyLinks = preservedNotes()
+      .filter((note) => note.dailyDate && note.dailyDate.startsWith(monthKey + '-'))
+      .sort((a, b) => a.dailyDate.localeCompare(b.dailyDate))
+      .map(monthlyReviewLink);
+    return [
+      '## Highlights',
+      '',
+      '## Decisions',
+      '',
+      '## Open loops',
+      '',
+      '## Next month',
+      '',
+      '## Daily notes',
+      '',
+      ...dailyLinks,
+      '',
+    ].join('\n');
+  }
+
+  async function createMonthlyReview(monthKey) {
+    const t = now();
+    const note = normalizeNote({
+      id: uuid(),
+      title: monthlyReviewTitle(monthKey),
+      body: monthlyReviewBody(monthKey),
+      tags: ['monthly-review'],
+      pinned: false,
+      folderId: null,
+      createdAt: t,
+      updatedAt: t,
+      archivedAt: null,
+      deletedAt: null,
+      lastDraftAt: null,
+      dailyDate: null,
+      monthlyReviewMonth: monthKey,
+    });
+    await putNoteRecord(note);
+    state.notes.push(note);
+    return note;
+  }
+
+  async function openMonthlyReview(monthKey) {
+    const existing = findMonthlyReview(monthKey);
+    if (existing) return openNoteFromCommand(existing.id);
+    if (state.editing && state.dirty) {
+      const ok = await confirmDiscard();
+      if (!ok) return null;
+      await discardCurrentDraft();
+    }
+    return withBusy('monthly-review-' + monthKey, [], 'Could not create that monthly review.', async () => {
+      const note = await createMonthlyReview(monthKey);
+      state.view = 'active';
+      state.selectedId = note.id;
+      state.editing = true;
+      state.dirty = false;
+      state.mobileView = 'editor';
+      renderAll();
+      syncMobileView();
+      setTimeout(() => els.editor.focus(), 0);
+      return note;
+    });
+  }
+
   function openEraseLocalDataDialog() {
     closeDialog(els.aboutDialog);
     els.eraseConfirmation.value = '';
@@ -4241,6 +4347,8 @@
 
   // -------- Command palette --------
   function commandDefinitions() {
+    const reviewMonth = monthlyReviewTargetMonth();
+    const monthlyReview = findMonthlyReview(reviewMonth);
     const commands = [
       {
         id: 'new-note',
@@ -4262,6 +4370,13 @@
         meta: "Append a timestamped line to today's note",
         keywords: 'capture jot inbox quick add',
         run: openQuickCapture,
+      },
+      {
+        id: 'monthly-review',
+        label: (monthlyReview ? 'Open ' : 'Create ') + monthLabel(reviewMonth) + ' monthly review',
+        meta: monthlyReview ? 'Return to this month’s reflection' : 'Start with prompts and links to daily notes',
+        keywords: 'monthly review reflection recap retrospective daily notes month',
+        run: () => openMonthlyReview(reviewMonth),
       },
       {
         id: 'search-notes',
