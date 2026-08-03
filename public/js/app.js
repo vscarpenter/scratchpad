@@ -991,7 +991,9 @@
   function isDailyMonthExpanded(monthKey) {
     const disclosure = dailyMonthDisclosure();
     const id = dailyMonthDisclosureId(monthKey);
-    return typeof disclosure[id] === 'boolean' ? disclosure[id] : monthKey === todayKey().slice(0, 7);
+    return typeof disclosure[id] === 'boolean'
+      ? disclosure[id]
+      : monthKey === 'undated' || monthKey === todayKey().slice(0, 7);
   }
 
   function setDailyMonthExpanded(monthKey, expanded) {
@@ -1770,21 +1772,27 @@
   function dailyNotesByMonth(notes) {
     const groups = new Map();
     for (const note of notes) {
-      const monthKey = note.dailyDate.slice(0, 7);
+      const monthKey = note.dailyDate ? note.dailyDate.slice(0, 7) : 'undated';
       if (!groups.has(monthKey)) groups.set(monthKey, []);
       groups.get(monthKey).push(note);
     }
     return [...groups.entries()]
-      .sort(([a], [b]) => b.localeCompare(a))
+      .sort(([a], [b]) => {
+        if (a === 'undated') return 1;
+        if (b === 'undated') return -1;
+        return b.localeCompare(a);
+      })
       .map(([monthKey, monthNotes]) => ({
         monthKey,
-        notes: monthNotes.sort((a, b) =>
-          b.dailyDate.localeCompare(a.dailyDate) || lifecycleTime(b) - lifecycleTime(a)
-        ),
+        notes: monthNotes.sort((a, b) => {
+          if (!a.dailyDate || !b.dailyDate) return lifecycleTime(b) - lifecycleTime(a);
+          return b.dailyDate.localeCompare(a.dailyDate) || lifecycleTime(b) - lifecycleTime(a);
+        }),
       }));
   }
 
   function monthLabel(monthKey) {
+    if (monthKey === 'undated') return 'Undated';
     const match = /^(\d{4})-(\d{2})$/.exec(monthKey || '');
     if (!match) return monthKey;
     const year = Number(match[1]);
