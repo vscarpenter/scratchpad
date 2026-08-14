@@ -33,9 +33,6 @@
   const DAY_MS = 24 * 60 * 60 * 1000;
   const BACKUP_HEALTHY_MS = 7 * DAY_MS;
   const BACKUP_AGING_MS = 30 * DAY_MS;
-  const ENCRYPTED_BACKUP_FORMAT = 'scratchpad-encrypted-backup';
-  const ENCRYPTED_BACKUP_VERSION = 1;
-  const ENCRYPTED_BACKUP_ITERATIONS = 600000;
   const CROSS_TAB_CHANNEL = 'scratchpad-notes';
   const TAB_ID = uuidLike();
 
@@ -4764,55 +4761,6 @@
     });
   }
 
-  function bytesToBase64(bytes) {
-    let value = '';
-    for (const byte of bytes) value += String.fromCharCode(byte);
-    return btoa(value);
-  }
-
-  function base64ToBytes(value) {
-    const decoded = atob(value);
-    const bytes = new Uint8Array(decoded.length);
-    for (let i = 0; i < decoded.length; i += 1) bytes[i] = decoded.charCodeAt(i);
-    return bytes;
-  }
-
-  async function deriveBackupKey(passphrase, salt, usage) {
-    const material = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(passphrase),
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: ENCRYPTED_BACKUP_ITERATIONS, hash: 'SHA-256' },
-      material,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      [usage]
-    );
-  }
-
-  async function encryptBackupPayload(payload, passphrase) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveBackupKey(passphrase, salt, 'encrypt');
-    const plaintext = new TextEncoder().encode(JSON.stringify(payload));
-    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
-    return {
-      format: ENCRYPTED_BACKUP_FORMAT,
-      version: ENCRYPTED_BACKUP_VERSION,
-      kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: ENCRYPTED_BACKUP_ITERATIONS, salt: bytesToBase64(salt) },
-      cipher: { name: 'AES-GCM', iv: bytesToBase64(iv) },
-      ciphertext: bytesToBase64(new Uint8Array(ciphertext)),
-    };
-  }
-
-  function isEncryptedBackup(data) {
-    return !!data && data.format === ENCRYPTED_BACKUP_FORMAT && data.version === ENCRYPTED_BACKUP_VERSION;
-  }
-
   // v2 backups predate folders; v3 adds folders; v4 adds Archive provenance.
   function isNativeBackup(data) {
     return !!data &&
@@ -4823,25 +4771,6 @@
       Array.isArray(data.trashedNotes) &&
       Array.isArray(data.revisions) &&
       (data.folders === undefined || Array.isArray(data.folders));
-  }
-
-  async function decryptBackupEnvelope(envelope, passphrase) {
-    if (!isEncryptedBackup(envelope) || !envelope.kdf || !envelope.cipher ||
-      envelope.kdf.iterations !== ENCRYPTED_BACKUP_ITERATIONS ||
-      typeof envelope.kdf.salt !== 'string' || typeof envelope.cipher.iv !== 'string' ||
-      typeof envelope.ciphertext !== 'string') {
-      throw new Error('Invalid encrypted backup envelope');
-    }
-    const salt = base64ToBytes(envelope.kdf.salt);
-    const iv = base64ToBytes(envelope.cipher.iv);
-    if (salt.length !== 16 || iv.length !== 12) throw new Error('Invalid encrypted backup parameters');
-    const key = await deriveBackupKey(passphrase, salt, 'decrypt');
-    const plaintext = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      base64ToBytes(envelope.ciphertext)
-    );
-    return JSON.parse(new TextDecoder().decode(plaintext));
   }
 
   function resetPassphraseDialog() {
@@ -4909,7 +4838,7 @@
       return;
     }
     return withBusy('export-encrypted', [els.confirmEncryptedExport], 'Encrypted export failed.', async () => {
-      const envelope = await encryptBackupPayload(await buildBackupPayload(), passphrase);
+      const envelope = await ScratchpadCrypto.encryptBackupPayload(await buildBackupPayload(), passphrase);
       const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `scratchpad-encrypted-${exportStamp()}.scratchpad`);
       closeDialog(els.backupPassphraseDialog);
@@ -4924,7 +4853,7 @@
     return withBusy('import-encrypted', [els.confirmEncryptedImport], '', async () => {
       let data;
       try {
-        data = await decryptBackupEnvelope(state.encryptedImport, els.backupPassphrase.value);
+        data = await ScratchpadCrypto.decryptBackupEnvelope(state.encryptedImport, els.backupPassphrase.value);
       } catch (e) {
         console.warn('Encrypted backup unlock failed', e);
         showPassphraseError('The passphrase or file is invalid. Try again.');
@@ -5185,7 +5114,7 @@
       toast('Import failed: that file is not valid JSON.', { tone: 'error' });
       return;
     }
-    if (isEncryptedBackup(data)) {
+    if (ScratchpadCrypto.isEncryptedBackup(data)) {
       openEncryptedImportDialog(data);
       return;
     }
