@@ -1,0 +1,29 @@
+name: Vendor currency
+
+# Fails when a vendored library in public/js/vendor/ falls behind its latest
+# npm release. DOMPurify is the only control standing between a shared note and
+# the recipient's origin, so a silent drift there matters. Runs weekly rather
+# than per-commit because the vendored files change rarely and the check needs
+# the npm registry.
+#
+# The runner image ships Node and npm, so no setup-node step is needed.
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 1
+
+      - name: Compare vendored versions against npm
+        run: node scripts/check-vendor-versions.mjs
