@@ -3,12 +3,13 @@
   'use strict';
 
   const DB_NAME = 'scratchpad';
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
   const STORES = {
     notes: 'notes',
     drafts: 'drafts',
     revisions: 'revisions',
     folders: 'folders',
+    shares: 'shares',
   };
 
   let dbPromise = null;
@@ -36,6 +37,11 @@
         }
         if (!db.objectStoreNames.contains(STORES.folders)) {
           db.createObjectStore(STORES.folders, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.shares)) {
+          const shares = db.createObjectStore(STORES.shares, { keyPath: 'id' });
+          shares.createIndex('noteId', 'noteId');
+          shares.createIndex('expiresAt', 'expiresAt');
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -249,7 +255,7 @@
   async function deleteNoteEverywhere(noteId) {
     const db = await open();
     return new Promise((resolve, reject) => {
-      const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions], 'readwrite');
+      const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions, STORES.shares], 'readwrite');
       t.objectStore(STORES.notes).delete(noteId);
       t.objectStore(STORES.drafts).delete(noteId);
       const revisions = t.objectStore(STORES.revisions);
@@ -257,7 +263,57 @@
       req.onsuccess = () => {
         for (const rev of req.result || []) revisions.delete(rev.id);
       };
+      // Local rows only. Revoking the shares themselves is a network call the
+      // caller makes first; a deletion must not be blocked by a failed revoke.
+      const shares = t.objectStore(STORES.shares);
+      const shareReq = shares.index('noteId').getAll(noteId);
+      shareReq.onsuccess = () => {
+        for (const share of shareReq.result || []) shares.delete(share.id);
+      };
       t.oncomplete = () => resolve();
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error);
+    });
+  }
+
+  // -------- Shares --------
+  // One row per live share link. Holds the only copy of that share's decryption
+  // key and revoke token: without the row the link can never be redisplayed or
+  // revoked, only waited out.
+
+  async function getSharesForNote(noteId) {
+    const store = await tx(STORES.shares, 'readonly');
+    return reqToPromise(store.index('noteId').getAll(noteId));
+  }
+
+  async function getAllShares() {
+    const store = await tx(STORES.shares, 'readonly');
+    return reqToPromise(store.getAll());
+  }
+
+  async function putShare(share) {
+    const store = await tx(STORES.shares, 'readwrite');
+    return reqToPromise(store.put(share));
+  }
+
+  async function removeShare(id) {
+    const store = await tx(STORES.shares, 'readwrite');
+    return reqToPromise(store.delete(id));
+  }
+
+  async function pruneExpiredShares(now) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction(STORES.shares, 'readwrite');
+      const store = t.objectStore(STORES.shares);
+      // Upper bound is exclusive: a share expiring exactly now is not yet dead.
+      const req = store.index('expiresAt').getAll(IDBKeyRange.upperBound(now, true));
+      let removed = [];
+      req.onsuccess = () => {
+        removed = req.result || [];
+        for (const share of removed) store.delete(share.id);
+      };
+      t.oncomplete = () => resolve(removed);
       t.onerror = () => reject(t.error);
       t.onabort = () => reject(t.error);
     });
@@ -266,11 +322,15 @@
   async function clearAllStores() {
     const db = await open();
     return new Promise((resolve, reject) => {
-      const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions, STORES.folders], 'readwrite');
+      const t = db.transaction(
+        [STORES.notes, STORES.drafts, STORES.revisions, STORES.folders, STORES.shares],
+        'readwrite'
+      );
       t.objectStore(STORES.notes).clear();
       t.objectStore(STORES.drafts).clear();
       t.objectStore(STORES.revisions).clear();
       t.objectStore(STORES.folders).clear();
+      t.objectStore(STORES.shares).clear();
       t.oncomplete = () => resolve();
       t.onerror = () => reject(t.error);
       t.onabort = () => reject(t.error);
@@ -300,5 +360,10 @@
     importRecords,
     deleteNoteEverywhere,
     clearAllStores,
+    getSharesForNote,
+    getAllShares,
+    putShare,
+    removeShare,
+    pruneExpiredShares,
   };
 })();
