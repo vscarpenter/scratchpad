@@ -217,15 +217,68 @@ because they don't mutate. Real deploys (and any other AWS mutation —
 `aws s3 cp`, `aws cloudfront update-distribution`, `create-invalidation`)
 need a "yes, deploy" or equivalent each time.
 
-### CloudFront origin gotcha
-The distribution origin is the **S3 website endpoint** (not the REST
-endpoint with OAC). Two consequences:
+**Deploy identity.** `deploy.sh` forwards `AWS_PROFILE` to the aws CLI, so
+set it in `.env.local`:
+
+```sh
+AWS_PROFILE=scratchpad-deploy
+```
+
+The `scratchpad-deploy` IAM user carries the customer-managed policy
+`ScratchpadDeploy`, which grants exactly what this script needs: read,
+write, and delete on `notes.vinny.dev`, plus invalidation on distribution
+`EOFN4QJL8747H`. Nothing else in the account. It deliberately lacks
+`s3:DeleteObjectVersion`, so even a compromised deploy key can create
+delete markers but cannot destroy the version history that makes an
+overwrite recoverable.
+
+Without `AWS_PROFILE` set, the script falls back to the `default` profile,
+which is an account administrator. That is the Critical finding SP-01 in
+`SECURITY-REVIEW.md`. Check which identity you are about to deploy as:
+
+```sh
+aws sts get-caller-identity --query Arn --output text
+```
+
+### CloudFront origin
+The distribution origin is the **S3 REST endpoint behind Origin Access
+Control** (`notes.vinny.dev.s3.us-east-1.amazonaws.com`, `https-only`). It
+was the S3 *website* endpoint until 2026-08-14; see `SECURITY-REVIEW.md`
+SP-07 for why it moved. Consequences:
+- **The bucket is private.** Block Public Access is on for all four
+  settings and the only policy statement allows
+  `cloudfront.amazonaws.com` with an `AWS:SourceArn` condition pinned to
+  distribution `EOFN4QJL8747H`. Requests to either S3 endpoint directly
+  return 403. Do not add a public-read statement back.
 - **`OriginPath` must stay empty.** Anything in `OriginPath` is prefixed
   onto every request CloudFront forwards. We hit a real bug where it was
   `/index.html` and every URL 404'd. If you see universal 404s after a
   deploy, check `OriginPath` first.
-- **`DefaultRootObject` is intentionally empty** — the S3 website endpoint
-  handles `/` → `index.html` on its own.
+- **`DefaultRootObject` is `index.html`.** The REST endpoint does not
+  resolve `/` on its own the way the website endpoint did. The router
+  function also rewrites `/` to `/index.html`, so the result does not
+  depend on which one CloudFront applies first.
+- **A missing key now returns 403, not 404.** That is normal for a REST
+  origin with no `s3:ListBucket` grant. It only affects `/public/*`
+  paths, because everything else is rewritten to `/index.html` before it
+  reaches the origin.
+
+### The `/s/*` router function does more than routing
+`cloudfront/share-router-function.js` runs at viewer-request on the default
+behavior and has two jobs. It rewrites `/s/<id>` to `/share.html`, and it
+rewrites **any unrecognized path** to `/index.html`.
+
+The second job is a security control. CloudFront does not run
+viewer-response functions when the origin returns 400 or higher, so a 404
+used to ship with no CSP, no HSTS, and no `X-Frame-Options`, leaving the
+app framable at any 404 URL. Pointing unknown paths at a real object makes
+the origin answer 200 so `scratchpad-security-headers` runs.
+
+If you add a root-level file, add it to `ROOT_FILES` in that function or it
+will silently resolve to `index.html`. Paths under `/public/` pass through
+untouched on purpose: a missing asset must stay an error rather than return
+HTML. Do **not** try to solve this with `CustomErrorResponses`; that was
+tried and it fails for two reasons documented in `SECURITY-REVIEW.md` 10.2.
 
 ### CloudFront Free pricing plan
 The distribution is enrolled in CloudFront's **Free** flat-rate pricing

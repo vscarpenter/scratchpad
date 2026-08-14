@@ -213,26 +213,72 @@ To remove every live share at once:
 aws s3 rm "s3://scratchpad-shares/shares/" --recursive
 ```
 
-## 8. Cost alarm
+## 8. Abuse guardrails
 
-The write endpoint is public and unauthenticated. Guardrails in this version are
-the 256 KB body cap, envelope validation, and seven-day expiry. Add a billing
-alarm as the backstop:
+The write endpoint is public and unauthenticated. As of the 2026-08-14 security
+review the guardrails are:
+
+| Control | Value | Where it lives |
+| --- | --- | --- |
+| Body cap | 256 KB, checked before any S3 call | `lambda/validate.mjs:31` |
+| Envelope validation | only `v`, `ciphertext`, `iv` persist | `lambda/validate.mjs:54` |
+| Object expiry | 7 days | bucket lifecycle, and re-checked on read |
+| Reserved concurrency | 25 | `provision.sh`, re-applied on every run |
+| Route throttling | 20 req/s steady, 40 burst | API Gateway `$default` stage |
+| Invocation alarm | 500 in 5 min | CloudWatch `scratchpad-share-invocations-spike` |
+| Throttle alarm | 5 in 5 min | CloudWatch `scratchpad-share-throttles` |
+| Cost anomaly | daily, $10 absolute impact | Cost Explorer `vinny-service-monitor` |
+
+Reserved concurrency is the one that bounds blast radius. Without it this
+function draws from the account-wide pool it shares with every other Lambda, so
+a flood here would starve unrelated workloads before it cost real money.
+
+If abuse becomes real, the next steps in order of cost are a WAF rate-based rule
+scoped to `/api/share`, then a per-IP counter in DynamoDB with a TTL attribute.
+Neither changes the client contract.
+
+## 9. Rotate the origin secret
+
+`x-share-origin-secret` is the only thing preventing a caller from skipping
+CloudFront and hitting the API Gateway endpoint directly, which would bypass the
+WAF. It lives in plaintext in two places, and `provision.sh` deliberately reuses
+whatever the function already has, so rotation is manual.
+
+Order matters. The Lambda must accept the new value **before** CloudFront starts
+sending it, or every share request 404s during the gap.
 
 ```sh
-aws cloudwatch put-metric-alarm \
-  --alarm-name scratchpad-share-cost \
-  --namespace AWS/Billing --metric-name EstimatedCharges \
-  --dimensions Name=Currency,Value=USD \
-  --statistic Maximum --period 21600 --evaluation-periods 1 \
-  --threshold 10 --comparison-operator GreaterThanThreshold \
-  --region us-east-1
+NEW="$(head -c 32 /dev/urandom | base64 | tr -d '\n=' | tr '+/' '-_')"
+BUCKET=scratchpad-shares
+
+# 1. Lambda first. It now accepts only the new secret.
+aws lambda update-function-configuration \
+  --function-name scratchpad-share-api \
+  --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$NEW}"
+aws lambda wait function-updated-v2 --function-name scratchpad-share-api
+
+# 2. CloudFront second. Edit the custom header on the share-api-lambda origin.
+DIST_ID="$(grep CLOUDFRONT_DISTRIBUTION_ID .env.local | cut -d= -f2)"
+aws cloudfront get-distribution-config --id "$DIST_ID" > /tmp/dist.json
+# Replace Origins.Items[share-api-lambda].CustomHeaders x-share-origin-secret
+# with $NEW, then put the config back with --if-match "$ETAG" as in step 4.
 ```
 
-Billing metrics only publish in `us-east-1`, regardless of where the bucket
-lives. Set `--threshold` to whatever "something is wrong" means for this
-account.
+Between step 1 and step 2 the CDN is sending the old secret and the handler is
+rejecting it, so `/api/share*` answers 404. Keep the gap short and do it when
+nobody is creating links. There is no way to have the handler honor both values
+without adding code, and a two-secret handler is a worse thing to own than a
+sixty-second window.
 
-If abuse ever becomes real, the next steps in order of cost are: a per-IP
-counter in DynamoDB with a TTL attribute, then an AWS WAF rate-based rule.
-Neither changes the client contract.
+Verify with the smoke test in step 6. Then confirm the bypass is still closed:
+
+```sh
+API_ID="$(aws apigatewayv2 get-apis --query \
+  "Items[?Name=='scratchpad-share-api'].ApiId | [0]" --output text)"
+curl -sS -o /dev/null -w '%{http_code}\n' -X POST \
+  "https://$API_ID.execute-api.us-east-1.amazonaws.com/api/share" \
+  -H 'content-type: application/json' -d '{"v":1,"ciphertext":"QUJD","iv":"QUJDREVGR0hJSktM"}'   # 404
+```
+
+Rotate whenever someone with `cloudfront:GetDistributionConfig` or
+`lambda:GetFunctionConfiguration` in this account should no longer have it.
