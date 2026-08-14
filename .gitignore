@@ -63,3 +63,11 @@ yarn.lock
 
 # ---- Session status dashboard (agent-generated, local only) ----
 status.html
+
+# ---- Security posture record (local only, never committed) ----
+# These name live AWS resources: account id, distribution id, bucket names,
+# the API Gateway id, IAM principals. None of it is a credential, but this is
+# a public repo and none of it needs to be in one. They were tracked briefly on
+# 2026-08-14 and purged from history with git-filter-repo. Keep them local.
+SECURITY-REVIEW.md
+security-review-evidence.md

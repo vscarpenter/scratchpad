@@ -346,7 +346,8 @@ These files exist in the repo but **must not** end up in S3 / CloudFront:
   `.impeccable/`)
 - `docs/` (specs and design notes)
 - `SECURITY-REVIEW.md`, `security-review-evidence.md` (security posture record;
-  the evidence file names live AWS resources and must never be served)
+  gitignored and local-only, because they name live AWS resources. Never
+  commit them to this public repo and never serve them)
 - `.git/`, `.verify/`, `.gitignore`
 
 The deploy script handles this by uploading only `public/**` (with
