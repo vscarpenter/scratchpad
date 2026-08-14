@@ -2977,6 +2977,134 @@ body:not(.page-privacy) {
   .privacy-title { font-size: 22px; }
 }
 
+/* ---------- Shared note viewer (share.html adds .page-share) ---------- */
+/* Reuses .page-privacy layout: the body grows with content and the window
+   scrolls, which is what a read-only document wants. */
+.share-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.share-doc,
+.page-share .share-state {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 36px;
+  width: 100%;
+}
+
+.share-title {
+  font: 600 28px/1.25 var(--serif);
+  letter-spacing: -0.01em;
+  margin: 8px 0 12px;
+  color: var(--slate);
+  /* The title is untrusted text set with textContent; a hostile one is long,
+     not dangerous, so it just has to wrap. */
+  overflow-wrap: anywhere;
+}
+
+.share-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.share-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 9px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  font: 600 10px/1 var(--sans);
+  color: var(--accent-text);
+  overflow-wrap: anywhere;
+}
+
+.share-body {
+  padding-top: 18px;
+  border-top: var(--border-hair);
+  line-height: 1.65;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.share-body > :first-child { margin-top: 0; }
+
+/* Wide content must scroll inside itself rather than widening the page. */
+.share-body pre,
+.share-body table {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.share-state-loading {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 36px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.share-state-title {
+  font: 600 22px/1.25 var(--serif);
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+  color: var(--slate);
+}
+
+.share-state-text {
+  line-height: 1.6;
+  color: var(--gray-700);
+  margin: 0;
+}
+
+.share-state-text code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  background: var(--gray-100);
+  color: var(--slate);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+}
+
+.share-footer {
+  text-align: center;
+}
+
+.share-expiry {
+  font: 600 12px/1.4 var(--sans);
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+
+.share-provenance {
+  max-width: 60ch;
+  margin: 0 auto 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.share-provenance a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.share-provenance a:hover { color: var(--accent-d); }
+
+@media (max-width: 640px) {
+  .share-doc,
+  .page-share .share-state,
+  .share-state-loading {
+    padding: 24px 20px;
+  }
+  .share-title { font-size: 24px; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 767px) {
   .app-shell {

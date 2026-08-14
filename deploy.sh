@@ -21,7 +21,7 @@ Deploys Scratchpad:
   1. Updates SCRATCHPAD_BUILD_DATE in public/js/version.js to today's date.
   2. Syncs public/ to s3://$S3_BUCKET/public/ with a 5-minute cache.
   3. Re-uploads manifest and service-worker assets with explicit content headers.
-  4. Uploads index.html, about.html, guide.html, privacy.html, terms.html, and service-worker.js with short caches.
+  4. Uploads index.html, about.html, guide.html, privacy.html, terms.html, share.html, and service-worker.js with short caches.
   5. Creates a CloudFront invalidation for changed shell entry points.
 
 Required variables (in .env.local):
@@ -151,7 +151,7 @@ HTML_CACHE="public, max-age=60, must-revalidate"
 WORKER_CACHE="no-cache, no-store, must-revalidate"
 
 echo "==> Uploading HTML (Cache-Control: $HTML_CACHE)"
-for html in index.html about.html guide.html privacy.html terms.html; do
+for html in index.html about.html guide.html privacy.html terms.html share.html; do
   if [ ! -f "$html" ]; then
     echo "WARN: $html missing, skipping" >&2
     continue
@@ -178,6 +178,7 @@ INVALIDATION_PATHS=(
   "/guide.html"
   "/privacy.html"
   "/terms.html"
+  "/share.html"
   "/service-worker.js"
   "/public/manifest.webmanifest"
   "/public/service-worker.js*"

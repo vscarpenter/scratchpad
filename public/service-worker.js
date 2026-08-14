@@ -12,6 +12,7 @@
     '/guide.html',
     '/privacy.html',
     '/terms.html',
+    '/share.html',
     '/public/manifest.webmanifest',
     '/public/icon.svg',
     '/public/maskable-icon.svg',
@@ -31,9 +32,11 @@
     '/public/js/markdown.js',
     '/public/js/zip.js',
     '/public/js/seed.js',
+    '/public/js/share.js',
     '/public/js/app.js',
   ];
   const APP_SHELL_SET = new Set(APP_SHELL);
+  const SHARE_PATH = /^\/s\/[A-Za-z0-9_-]{12}\/?$/;
 
   self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -82,14 +85,20 @@
     if (url.origin !== self.location.origin) return;
 
     if (req.mode === 'navigate') {
+      // A /s/<id> navigation must fall back to the share shell, not the notes
+      // app: serving index.html at a share URL would show the visitor their own
+      // (or an empty) notes list where they expected someone else's note.
+      const shellFallback = SHARE_PATH.test(url.pathname) ? '/share.html' : '/index.html';
       event.respondWith(
         fetch(req).catch(() =>
-          caches.match(url.pathname).then((cached) => cached || caches.match('/index.html'))
+          caches.match(url.pathname).then((cached) => cached || caches.match(shellFallback))
         )
       );
       return;
     }
 
+    // Load-bearing: /api/share* is not in APP_SHELL_SET, so it falls through to
+    // the network untouched. A cached share response would survive revocation.
     if (!APP_SHELL_SET.has(url.pathname)) return;
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) =>
