@@ -44,9 +44,10 @@ request body at all, and the share Lambda enforces its own 256 KB cap plus
 strict envelope validation before any S3 write. To restore it:
 
 ```sh
-# Re-run with RuleActionOverrides removed from AWSManagedRulesCommonRuleSet.
-aws wafv2 get-web-acl --scope CLOUDFRONT --region us-east-1 \
-  --name CreatedByCloudFront-32d63bcc --id 1dfc56bd-37a2-4ecf-a789-b8b70622ee09
+# Look up the ACL attached to the distribution, then re-run update-web-acl with
+# RuleActionOverrides removed from AWSManagedRulesCommonRuleSet.
+aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1 \
+  --query "WebACLs[?starts_with(Name,'CreatedByCloudFront')].{Name:Name,Id:Id}"
 ```
 
 ## Prerequisites
@@ -94,7 +95,7 @@ allows.
 
 | Setting | Value |
 | --- | --- |
-| Origin domain | the HTTP API host, e.g. `l5b5two3y6.execute-api.us-east-1.amazonaws.com` |
+| Origin domain | the HTTP API host, `<api-id>.execute-api.us-east-1.amazonaws.com` |
 | Origin protocol | HTTPS only |
 | Custom header | `x-share-origin-secret: <value printed by provision.sh>` |
 | **OriginPath** | **empty** — see the warning below |
@@ -181,8 +182,10 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST "$API" \
 curl -sS -o /dev/null -w '%{http_code}\n' "https://scratchpad-shares.s3.amazonaws.com/shares/$ID.json"  # 403
 
 # The API Gateway endpoint must not be usable without the origin secret
+API_ID="$(aws apigatewayv2 get-apis --query \
+  "Items[?Name=='scratchpad-share-api'].ApiId | [0]" --output text)"
 curl -sS -o /dev/null -w '%{http_code}\n' -X POST \
-  "https://<api-id>.execute-api.us-east-1.amazonaws.com/api/share" \
+  "https://$API_ID.execute-api.us-east-1.amazonaws.com/api/share" \
   -H 'content-type: application/json' -d '{"v":1,"ciphertext":"QUJD","iv":"QUJDREVGR0hJSktM"}'   # 404
 
 # A body over 8 KB must succeed (proves the WAF override is in place)
