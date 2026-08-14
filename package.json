@@ -8,6 +8,7 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
+    "test:lambda": "node --test share-infra/lambda/*.test.mjs",
     "check:vendor": "node scripts/check-vendor-versions.mjs"
   },
   "devDependencies": {
