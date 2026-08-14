@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Scratchpad is a static, privacy-first notes app with no backend and no build step. Root HTML files are the deployed pages: `index.html`, `privacy.html`, and `terms.html`. App assets live under `public/`: `public/js/app.js` handles UI state and events, `public/js/db.js` wraps IndexedDB, `public/js/version.js` owns release metadata, and `public/js/vendor/` contains vendored `marked` and `DOMPurify`. Styles live in `public/css/`, with Scratchpad-specific layout in `app.css` and Inkwell tokens/components in the `inkwell-*` files. CloudFront-only security artifacts live in `cloudfront/` and are not deployed by the app.
+Scratchpad is a static, privacy-first notes app with no build step. Root HTML files are the deployed pages: `index.html`, `about.html`, `guide.html`, `privacy.html`, `terms.html`, and `share.html`. The only server-side component is the share API in `share-infra/` (operator-only, not deployed with the app). App assets live under `public/`: `public/js/app.js` handles UI state and events, `public/js/db.js` wraps IndexedDB, `public/js/version.js` owns release metadata, and `public/js/vendor/` contains vendored `marked` and `DOMPurify`. Styles live in `public/css/`, with Scratchpad-specific layout in `app.css` and Inkwell tokens/components in the `inkwell-*` files. CloudFront-only security artifacts live in `cloudfront/` and are not deployed by the app.
 
 ## Build, Test, and Development Commands
 

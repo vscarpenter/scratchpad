@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="Scratchpad user guide — how to write, organize, link, and back up notes that never leave your browser." />
+  <meta name="description" content="Scratchpad user guide — how to write, organize, link, share, and back up your notes." />
   <meta name="referrer" content="no-referrer" />
   <title>User guide — Scratchpad</title>
 
@@ -17,7 +17,7 @@
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Scratchpad: private notes that never leave your browser." />
+  <meta property="og:image:alt" content="Scratchpad: private notes that stay in your browser." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="User guide — Scratchpad" />
   <meta name="twitter:description" content="How to use every Scratchpad feature: Markdown, Archive, daily notes, wikilinks, backups, and offline." />
@@ -55,8 +55,9 @@
       <p class="eyebrow">User guide</p>
       <h1 class="privacy-title">How to use <em class="accent">Scratchpad.</em></h1>
       <p class="privacy-lede">
-        Everything the app can do, in one page. Scratchpad is a local-only notes app — every
-        feature below works entirely in your browser, and nothing you write ever leaves it.
+        Everything the app can do, in one page. Scratchpad is a local-first notes app — every
+        feature below works in your browser, and nothing you write leaves it unless you
+        deliberately create a share link.
       </p>
 
       <nav class="guide-toc" aria-label="Guide sections">
@@ -70,6 +71,7 @@
         <a href="#organizing">Finding &amp; organizing</a>
         <a href="#history-drafts">History &amp; drafts</a>
         <a href="#backups">Backups</a>
+        <a href="#sharing">Sharing a note</a>
         <a href="#privacy-controls">Privacy controls</a>
         <a href="#offline">Offline &amp; installing</a>
         <a href="#shortcuts">Keyboard shortcuts</a>
@@ -340,6 +342,53 @@
       </ul>
       <p>
         Scratchpad reminds you gently when it's been a while since your last backup.
+      </p>
+
+      <h2 id="sharing">Sharing a note</h2>
+      <p>
+        Open a note, then <strong>⋯ → Share…</strong>. The dialog offers three things.
+      </p>
+      <ul>
+        <li>
+          <strong>Copy to clipboard</strong> and <strong>Open in email</strong> happen entirely on
+          your device. Nothing is uploaded.
+        </li>
+        <li>
+          <strong>Create public link</strong> makes a web address anyone can open — no account, no
+          app, nothing to install. Use it when the person you're sending to shouldn't have to care
+          what Scratchpad is.
+        </li>
+      </ul>
+      <p>
+        A public link works like this: your browser encrypts the note, uploads only the encrypted
+        copy, and puts the decryption key in the part of the link after the <code>#</code>.
+        Browsers never send that part to a server, so the key stays between you and whoever you
+        give the link to. Scratchpad cannot read a note you've shared.
+      </p>
+      <p>
+        <strong>Anyone with the link can read the note and forward it.</strong> There's no
+        password. Treat the link itself as the secret.
+      </p>
+      <ul>
+        <li>
+          <strong>Links expire after 7 days</strong>, automatically. The dialog shows the date.
+        </li>
+        <li>
+          <strong>Stop sharing</strong> kills a link immediately, before it expires.
+        </li>
+        <li>
+          <strong>The shared copy is frozen.</strong> Editing the note afterwards doesn't change
+          what a recipient sees. To share the newer version, create a second link — the dialog
+          lists every live link for the note, so you can retire the old one.
+        </li>
+        <li>
+          <strong>Deleting the note revokes its links.</strong> So does erasing all your data.
+        </li>
+      </ul>
+      <p>
+        One caveat worth knowing: the link is the only copy of the key, and the record of it lives
+        in this browser. If you clear your site data, you can no longer revoke a link you created
+        — you'd have to wait out the seven days.
       </p>
 
       <h2 id="privacy-controls">Your data &amp; privacy controls</h2>

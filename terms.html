@@ -4,23 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="Scratchpad terms of use — local-only notes app, provided as-is, your data stays in your browser." />
+  <meta name="description" content="Scratchpad terms of use — local-first notes app, provided as-is, your data stays in your browser." />
   <meta name="referrer" content="no-referrer" />
   <title>Terms of Use — Scratchpad</title>
 
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="Scratchpad" />
   <meta property="og:title" content="Terms of Use — Scratchpad" />
-  <meta property="og:description" content="Plain-language terms for a free, local-only notes app." />
+  <meta property="og:description" content="Plain-language terms for a free, local-first notes app." />
   <meta property="og:url" content="https://notes.vinny.dev/terms.html" />
   <meta property="og:image" content="https://notes.vinny.dev/public/og-banner.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Scratchpad: private notes that never leave your browser." />
+  <meta property="og:image:alt" content="Scratchpad: private notes that stay in your browser." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Terms of Use — Scratchpad" />
-  <meta name="twitter:description" content="Plain-language terms for a free, local-only notes app." />
+  <meta name="twitter:description" content="Plain-language terms for a free, local-first notes app." />
   <meta name="twitter:image" content="https://notes.vinny.dev/public/og-banner.png" />
 
   <script>
@@ -53,11 +53,11 @@
   <main class="privacy-main">
     <article class="card privacy-card">
       <p class="eyebrow">Terms of use</p>
-      <h1 class="privacy-title">Plain-language terms for a local-only app.</h1>
+      <h1 class="privacy-title">Plain-language terms for a local-first app.</h1>
       <p class="privacy-lede">
-        Scratchpad is a free, local-only notes app. There is no account, no server, and no
-        relationship to manage. These terms exist mainly to set expectations and to make clear
-        what the app does and does not promise.
+        Scratchpad is a free, local-first notes app. There is no account and no relationship to
+        manage. These terms exist mainly to set expectations and to make clear what the app does
+        and does not promise.
       </p>
 
       <h2>Using Scratchpad</h2>
@@ -69,9 +69,10 @@
 
       <h2>What Scratchpad is</h2>
       <ul>
-        <li>A static web page that runs entirely in your browser.</li>
-        <li>Notes are stored in your browser's IndexedDB. Nothing is uploaded.</li>
-        <li>There is no backend, no account system, no telemetry, and no advertising.</li>
+        <li>A static web page that runs in your browser.</li>
+        <li>Notes are stored in your browser's IndexedDB. Nothing is uploaded unless you create a share link.</li>
+        <li>There is no account system, no telemetry, and no advertising.</li>
+        <li>The only server-side component is the one that stores encrypted shared notes for seven days.</li>
         <li>The full <a href="privacy.html">privacy policy</a> describes the data posture in detail.</li>
       </ul>
 
@@ -98,15 +99,54 @@
       <h2>Sharing notes</h2>
       <p>
         Scratchpad provides options to copy a note to your clipboard or open it in your email
-        client. These actions happen on your device. The app itself never transmits your note;
-        what your clipboard manager or your email client does with the content afterwards is
-        governed by their own terms, not these.
+        client. These actions happen on your device. What your clipboard manager or your email
+        client does with the content afterwards is governed by their own terms, not these.
+      </p>
+      <p>
+        Scratchpad also lets you create a <strong>public share link</strong> for a single note.
+        This uploads an encrypted copy of that note to our storage. The decryption key stays in
+        the link and is never sent to us, so we cannot read what you share. The copy is deleted
+        automatically seven days after you create it, and you can stop sharing sooner.
+      </p>
+      <p>
+        A share link is public. Anyone who has it can read the note and pass it on. There is no
+        password and no access list. You are responsible for who you give a link to, and for the
+        content you publish through one.
+      </p>
+
+      <h2>Publishing through a share link</h2>
+      <p>
+        When you create a share link you are publishing content on a domain we operate, so a few
+        additional terms apply to that content specifically.
+      </p>
+      <ul>
+        <li>
+          Don't publish content that is illegal where you live, unlawful to distribute, infringes
+          someone else's rights, or is intended to harass, defraud, or endanger anyone.
+        </li>
+        <li>
+          Don't use share links to distribute malware, phishing pages, or bulk unsolicited
+          content.
+        </li>
+        <li>
+          We may remove any shared copy at any time, with or without notice — for example in
+          response to a credible report of abuse or a legal request. Removal deletes the
+          ciphertext we hold; because we cannot decrypt it, we cannot review what we remove
+          beyond the fact that a specific link was reported.
+        </li>
+        <li>
+          Removing a shared copy does not touch your note. The original stays in your browser.
+        </li>
+      </ul>
+      <p>
+        To report a shared note, use the contact address below and include the full link.
       </p>
 
       <h2>Intellectual property</h2>
       <p>
         Anything you write in Scratchpad belongs to you. The app does not claim any rights to
-        your notes — it can't, because it never sees them.
+        your notes. It cannot read the notes you keep locally, and it cannot read the ones you
+        share either — those arrive encrypted, without the key.
       </p>
       <p>
         The Scratchpad source code is published by

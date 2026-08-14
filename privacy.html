@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="Scratchpad privacy policy — local-only notes, no servers, no tracking, no data leaves your browser." />
+  <meta name="description" content="Scratchpad privacy policy — local-first notes, no tracking, and encrypted opt-in sharing." />
   <meta name="referrer" content="no-referrer" />
   <title>Privacy — Scratchpad</title>
 
@@ -17,7 +17,7 @@
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Scratchpad: private notes that never leave your browser." />
+  <meta property="og:image:alt" content="Scratchpad: private notes that stay in your browser." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Privacy — Scratchpad" />
   <meta name="twitter:description" content="What Scratchpad stores, where it stores it, and what it doesn't do." />
@@ -55,16 +55,18 @@
       <p class="eyebrow">Privacy policy</p>
       <h1 class="privacy-title">Your notes stay on <em class="accent">your device.</em></h1>
       <p class="privacy-lede">
-        Scratchpad is a local-only notes app. There is no account to create, no server to send
-        your notes to, and no telemetry. This page describes exactly what that means in practice.
+        Scratchpad is a local-first notes app. There is no account to create and no telemetry.
+        Nothing you write is uploaded unless you deliberately create a share link — and even then
+        it is encrypted before it leaves, with the key held back. This page describes exactly what
+        that means in practice.
       </p>
 
       <h2>The short version</h2>
       <ul>
-        <li>Your notes are stored in this browser using IndexedDB. Nothing leaves the device.</li>
-        <li>There is no backend. There are no servers we operate that process your content.</li>
+        <li>Your notes are stored in this browser using IndexedDB. They stay on this device.</li>
         <li>There are no analytics, no trackers, no advertising IDs, no third-party scripts.</li>
-        <li>No requests are made to any external service while you use the app.</li>
+        <li>While you write, read, search, import, or export, the app makes no network requests at all.</li>
+        <li>The one exception is a share link, which you create per note, one note at a time. See <a href="#sharing">Sharing</a>.</li>
         <li>If you clear site data or use private browsing, your notes are deleted.</li>
       </ul>
 
@@ -145,11 +147,50 @@
         data in browser settings has the same effect and also removes the offline app cache.
       </p>
 
+      <h2 id="sharing">Sharing</h2>
+      <p>
+        Sharing a note is the only feature that sends note content off your device. It is always
+        something you start, one note at a time, from that note's Share dialog.
+      </p>
+      <p>When you create a share link, your browser encrypts the note first. What gets uploaded is:</p>
+      <ul>
+        <li>The encrypted note — its title, text, and tags, as ciphertext.</li>
+        <li>A random initialisation vector, which encryption requires and which reveals nothing.</li>
+        <li>An expiry timestamp, set by the server to seven days from creation.</li>
+        <li>A hash of a revocation token, so the browser that created the link can later delete it.</li>
+      </ul>
+      <p>What is <strong>not</strong> uploaded:</p>
+      <ul>
+        <li>
+          The decryption key. It is generated in your browser and placed in the part of the link
+          after the <code>#</code>. Browsers never transmit that part to a server, so it does not
+          reach our host, our logs, or our storage. We cannot read a note you have shared.
+        </li>
+        <li>Any of your other notes, your folders, your tags, or your note history.</li>
+        <li>Any account, identifier, device fingerprint, or IP-based profile.</li>
+      </ul>
+      <p>
+        Shared copies are frozen. Editing the note afterwards does not change what a recipient sees.
+        Every share is deleted automatically seven days after it is created, and you can stop
+        sharing sooner from the same dialog. Deleting a note also revokes its links.
+      </p>
+      <p>
+        Be aware of what a public link means: <strong>anyone who has it can read the note and can
+        forward it.</strong> There is no password and no access list. Treat the link itself as the
+        secret, and only send it to people you would show the note to.
+      </p>
+      <p>
+        We may remove a shared note from our storage — for example in response to a report of
+        illegal content. Removal deletes the ciphertext; since we cannot decrypt it, we cannot read
+        what we are removing.
+      </p>
+
       <h2>Hosting</h2>
       <p>
         Scratchpad is delivered as static files from a content delivery network. The host can see
-        the request for <code>index.html</code> and related assets (this is how the web works), but
-        it never sees the contents of your notes — those never leave your browser.
+        the request for <code>index.html</code> and related assets (this is how the web works). It
+        never sees the contents of your notes: unshared notes are never sent at all, and shared
+        notes arrive already encrypted, without the key.
       </p>
 
       <h2>Children's privacy</h2>

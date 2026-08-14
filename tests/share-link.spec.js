@@ -9,6 +9,12 @@ const { seedRawNotes, openOverflowMenu } = require('./helpers');
  * this feature has to keep.
  */
 
+// WebKit routes requests from a service-worker-controlled page around
+// page.route, so the stubbed POST would escape to the real static server and
+// 501. Blocking the service worker keeps the stub authoritative in every
+// browser. The service worker's own behavior is covered by the pwa specs.
+test.use({ serviceWorkers: 'block' });
+
 const SHARE_ID = 'AbCdEf123456';
 
 async function stubCreate(page, options = {}) {

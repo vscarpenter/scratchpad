@@ -17,8 +17,17 @@ guarantee, not an implementation detail.
 - **No third-party scripts, fonts, trackers, or analytics.** Everything is
   same-origin. If a change would add a CDN reference, a Google Font, a script
   tag pointing off-site, or an `<img>` from a third-party host, stop and check.
-- **No remote calls for user data.** The product is "your notes never leave
-  this browser." Don't add fetch/XHR for note content.
+- **`POST/GET/DELETE /api/share` is the ONLY sanctioned network call.** The
+  product is "your notes stay in this browser unless you deliberately share
+  one." Don't add any other fetch/XHR. No sync, no autosave-to-server, no
+  telemetry, no error reporting.
+- **Note content is encrypted client-side before any upload.** A share is
+  AES-GCM ciphertext plus an IV; the key is generated in the browser, lives in
+  the URL fragment, and must never appear in a request path, query string,
+  header, or body. `tests/network-isolation.spec.js` asserts zero requests in
+  normal use, exactly one POST when a link is created, and that no request
+  carries the note plaintext. Treat those assertions as the executable form of
+  the product promise — tighten them, never relax them.
 - **`marked` and `DOMPurify` are vendored**, not loaded from a CDN. They live
   in `public/js/vendor/`. Don't replace with CDN URLs.
 
@@ -78,6 +87,7 @@ Key rules for anything in `public/css/app.css`:
 
 ```
 index.html               app entry
+share.html               public read-only viewer for a shared note (/s/<id>)
 about.html               about / support page
 privacy.html             privacy policy page
 guide.html               user guide / help page (reuses .page-privacy layout + .page-guide)
@@ -168,18 +178,25 @@ shouldn't be. If something doesn't render correctly in dark mode, fix the
 token usage rather than adding `[data-theme="dark"] {…}` rules.
 
 The inline `<head>` script in every page (`index.html`, `about.html`,
-`guide.html`, `privacy.html`, `terms.html`) reads `localStorage['theme-preview']`
-and applies the attribute before any CSS parses, preventing flash of incorrect
-theme. It's byte-identical across all five pages (they share one CSP hash).
-The toggle script at the bottom of each page cycles
-`auto → light → dark → auto`.
+`guide.html`, `privacy.html`, `terms.html`, `share.html`) reads
+`localStorage['theme-preview']` and applies the attribute before any CSS parses,
+preventing flash of incorrect theme. It's byte-identical across all six pages
+(they share one CSP hash). The toggle script at the bottom of each page cycles
+`auto → light → dark → auto`; there are two variants of it (`index.html` sets a
+`data-theme-icon` attribute, the content pages don't), hence three hashes total.
+
+`share.html` copies the content-page variants **byte for byte** precisely so it
+lands on the existing hashes and needs no CSP change. Verify after any edit with
+`bash cloudfront/recompute-csp-hashes.sh`, which now scans `share.html` too. If
+it reports a new hash, you broke that property.
 
 ## Releases and deploys
 
 ### Version bumps
 Single source of truth: `public/js/version.js`. Edit the two constants
-(`SCRATCHPAD_VERSION`, `SCRATCHPAD_BUILD_DATE`) and all five pages
-(`index.html`, `about.html`, `guide.html`, `privacy.html`, `terms.html`) pick up the new
+(`SCRATCHPAD_VERSION`, `SCRATCHPAD_BUILD_DATE`) and all six pages
+(`index.html`, `about.html`, `guide.html`, `privacy.html`, `terms.html`,
+`share.html`) pick up the new
 values via the `#app-version` and `#app-build-date` placeholders in their
 footers.
 
@@ -278,7 +295,7 @@ These files exist in the repo but **must not** end up in S3 / CloudFront:
 - `.git/`, `.verify/`, `.gitignore`
 
 The deploy script handles this by uploading only `public/**` (with
-`--delete`) plus the five HTML shells explicitly (`index.html`,
-`about.html`, `guide.html`, `privacy.html`, `terms.html`) and the root
-`service-worker.js`. Don't widen the upload scope without adjusting the
+`--delete`) plus the six HTML shells explicitly (`index.html`,
+`about.html`, `guide.html`, `privacy.html`, `terms.html`, `share.html`) and the
+root `service-worker.js`. Don't widen the upload scope without adjusting the
 exclusions.
