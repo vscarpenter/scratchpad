@@ -138,7 +138,7 @@ test.describe('Archive lifecycle', () => {
     }]);
 
     await expect(page.locator('#empty-no-notes h3')).toHaveText('No active notes');
-    await expect(page.locator('#empty-no-notes')).toContainText('Your archived notes are still available.');
+    await expect(page.locator('#empty-no-notes')).toContainText('Everything you have written is in Archive.');
     await page.locator('#empty-view-archive').click();
     await expect(page.locator('.note-row[data-id="only-archived"]')).toBeVisible();
   });

@@ -18,33 +18,37 @@
       String(d.getDate()).padStart(2, '0');
   }
 
+  // Action first. The opening line has to be something the reader can do without
+  // learning anything, so the list starts with a checkbox: ticking it in the
+  // rendered note writes back to this Markdown and saves, which is the fastest
+  // honest proof that the app works and asks nothing of them. Explanation comes
+  // after the doing, and every item is optional.
+  // No leading H1: the note's own title already renders above the body, and a
+  // repeated heading is the first thing a newcomer would see.
   const WELCOME_BODY = [
-    "# Welcome to Scratchpad",
-    "",
-    "This is a **privacy-first, local-only** notes app. Everything you write lives in *this browser* — no account, no sync, no servers. To prove it, open your browser's network tab: after the page loads, Scratchpad makes **zero** network calls.",
-    "",
-    "These three starter notes are a quick tour. Edit them, delete them, make the place yours.",
+    "No account, no setup, no save button to hunt for. This is an ordinary note and it is already yours — start with the box below.",
     "",
     "## Try these",
     "",
-    "- [x] Read this welcome note",
-    "- [ ] Open the [[Markdown Guide]] to see every formatting trick",
-    "- [ ] Press `Cmd/Ctrl + K` for the command palette",
-    "- [ ] Jump to **today's note** from the palette (search \"today\") — a fresh page each day",
-    "- [ ] Star a note to pin it to the top",
-    "- [ ] Export a backup from the ⋯ menu",
+    "- [ ] Tick this box — it's an edit, and it saves itself",
+    "- [ ] Press **Edit** to rewrite this note in your own words, then `Cmd/Ctrl + S`",
+    "- [ ] Press `Cmd/Ctrl + N` and start something of your own",
+    "- [ ] Open the [[Markdown Guide]] if you're new to Markdown",
+    "- [ ] Press `Cmd/Ctrl + K` for every command and every note in one box",
+    "",
+    "## Where this lives",
+    "",
+    "Everything you write lives in *this browser* — no account, no sync, no servers. To prove it, open your browser's network tab: after the page loads, Scratchpad makes **zero** network calls.",
     "",
     "## Linking notes together",
     "",
     "Wrap a note's title in double brackets to link to it, like [[Markdown Guide]]. Link to a title that doesn't exist yet and it renders as a **dashed** link — click [[My First Note]] and Scratchpad offers to create it. That's how a web of notes grows.",
     "",
-    "> Everything here is yours and stays on this device. Read more any time on the [About page](about.html).",
+    "> These three starter notes are ordinary notes. Edit them, delete them, make the place yours. More about how it all works on the [About page](about.html).",
     "",
   ].join("\n");
 
   const MARKDOWN_GUIDE_BODY = [
-    "# Markdown Guide",
-    "",
     "Scratchpad renders standard (GitHub-flavored) Markdown, and the output is sanitized — so pasting from anywhere is safe.",
     "",
     "## Text styling",

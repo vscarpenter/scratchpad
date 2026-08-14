@@ -2060,12 +2060,16 @@
     els.emptyTrash.hidden = true;
   }
 
+  // Since first-run seeding landed, a newcomer never reaches this state — they
+  // arrive with starter notes. Whoever sees it has used Scratchpad before and
+  // has nothing here now: they cleared it, or the browser evicted the database.
+  // So the copy stays neutral about which, and names the way back either way.
   function renderNoActiveNotesState() {
     const hasArchivedNotes = archivedNotes().length > 0;
-    els.emptyNoNotesTitle.textContent = hasArchivedNotes ? 'No active notes' : 'No notes yet';
+    els.emptyNoNotesTitle.textContent = hasArchivedNotes ? 'No active notes' : 'No notes here';
     els.emptyNoNotesCopy.textContent = hasArchivedNotes
-      ? 'Your archived notes are still available.'
-      : 'Create a note, restore a backup, or review the privacy model before you start. Nothing leaves this browser.';
+      ? 'Everything you have written is in Archive. Bring one back, or start something new.'
+      : 'Start a new note, or restore from a backup file.';
     els.emptyViewArchive.hidden = !hasArchivedNotes;
   }
 
@@ -6167,21 +6171,24 @@
   }
 
   // -------- Boot --------
-  // First run: seed a few starter notes, then send a brand-new visitor to the
-  // About page exactly once — only when they've never visited (no flag) AND have
-  // no notes yet. Existing users who predate the flag keep their place (they have
-  // notes); a returning user who cleared all their notes also stays (their flag
-  // survives), so seeding never recurs. Clearing site data wipes both flag and
-  // notes, so it reads as a fresh first run. Fails open if localStorage is blocked
-  // so the app can never get stuck here; a seeding error still lets boot proceed.
-  async function maybeRedirectFirstRun() {
+  // First run: seed a few starter notes so a brand-new visitor lands in a working
+  // app instead of a blank one — only when they've never visited (no flag) AND
+  // have no notes yet. Welcome is pinned, so ensureSelectionForView() opens it
+  // first and there is something to read and tick straight away; no redirect and
+  // no interstitial stands between arriving and writing. Existing users who
+  // predate the flag keep their place (they have notes); a returning user who
+  // cleared all their notes stays empty (their flag survives), so seeding never
+  // recurs. Clearing site data wipes both flag and notes, so it reads as a fresh
+  // first run. Fails open if localStorage is blocked, and a seeding error still
+  // lets boot proceed — nothing here may keep the app from opening.
+  async function maybeSeedFirstRun() {
     let visited;
     try {
       visited = localStorage.getItem('scratchpad-visited');
     } catch (e) {
-      return false;
+      return;
     }
-    if (visited) return false;
+    if (visited) return;
     try {
       localStorage.setItem('scratchpad-visited', '1');
     } catch (e) {
@@ -6191,20 +6198,16 @@
     try {
       count = (await DB.getAll()).length;
     } catch (e) {
-      return false;
+      return;
     }
-    if (count === 0) {
-      try {
-        if (window.ScratchpadSeed) {
-          await DB.bulkPut(window.ScratchpadSeed.buildFirstRunNotes(now()));
-        }
-      } catch (e) {
-        console.error('First-run seeding failed', e); // fail open — still redirect
+    if (count > 0) return;
+    try {
+      if (window.ScratchpadSeed) {
+        await DB.bulkPut(window.ScratchpadSeed.buildFirstRunNotes(now()));
       }
-      window.location.replace('about.html');
-      return true;
+    } catch (e) {
+      console.error('First-run seeding failed', e); // fail open — boot continues
     }
-    return false;
   }
 
   // OS-level PWA shortcuts land on /?action=<name>. Handle once at boot,
@@ -6221,7 +6224,7 @@
   }
 
   async function init() {
-    if (await maybeRedirectFirstRun()) return;
+    await maybeSeedFirstRun();
     Markdown.setWikilinkResolver((target) => {
       const wanted = (target || '').trim().toLowerCase();
       if (!wanted) return null;
