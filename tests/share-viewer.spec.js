@@ -181,6 +181,42 @@ test.describe('share viewer', () => {
     expect(await page.evaluate(() => window.__idbOpened)).toBe(false);
   });
 
+  // share.html is served at BOTH /share.html and /s/<id>. A relative asset path
+  // resolves against /s/ at the second one, so every script 404s and the viewer
+  // hangs on "Decrypting..." forever. This shipped once; the ?id= form used by
+  // the other tests hides it, because relative paths resolve fine there.
+  test('every asset path is root-absolute so /s/<id> resolves them', async ({ page }) => {
+    await page.goto('/share.html');
+    const relative = await page.evaluate(() =>
+      [...document.querySelectorAll('script[src], link[href], a[href], img[src]')]
+        .map((el) => el.getAttribute('src') || el.getAttribute('href'))
+        .filter((value) => value && !/^(?:\/|https?:|#|data:|mailto:)/.test(value))
+    );
+    expect(relative, `relative paths break when served at /s/<id>: ${relative.join(', ')}`).toEqual([]);
+  });
+
+  test('renders when served from an /s/<id> path, not just ?id=', async ({ page }) => {
+    const { envelope, key } = await makeShare(page, {
+      v: 1, title: 'From a share path', body: 'Served at /s/<id>.', tags: [], updatedAt: 1,
+    });
+    await stubShare(page, envelope);
+
+    // The local static server has no CloudFront Function, so stand in for the
+    // rewrite: serve share.html's bytes at the /s/<id> URL and let the browser
+    // resolve its subresources from that path exactly as production does.
+    const html = await (await page.request.get('/share.html')).text();
+    await page.route('**/s/AbCdEf123456', (routeCall) =>
+      routeCall.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html }));
+
+    const failed = [];
+    page.on('requestfailed', (req) => failed.push(req.url()));
+    page.on('response', (res) => { if (res.status() === 404) failed.push(res.url()); });
+
+    await page.goto('/s/AbCdEf123456#k=' + key);
+    await expect(page.locator('.share-title')).toHaveText('From a share path');
+    expect(failed, `subresources failed to load: ${failed.join(', ')}`).toEqual([]);
+  });
+
   test('is marked noindex so share links are never crawled', async ({ page }) => {
     await page.goto('/share.html');
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
