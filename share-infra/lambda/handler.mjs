@@ -71,12 +71,27 @@ export function route(method, path) {
   return { action: 'unknown', id: null };
 }
 
-function json(status, body) {
+// The /api/share* cache behavior carries no CloudFront function association, so
+// the viewer-response security-headers function never runs on this path. What
+// this handler sets is the complete header set the browser sees. HSTS matches
+// cloudfront/security-headers-function.js byte for byte so one host never
+// advertises two different policies.
+export const SECURITY_HEADERS = Object.freeze({
+  'cache-control': 'no-store',
+  'x-content-type-options': 'nosniff',
+  'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
+});
+
+export function json(status, body) {
   return {
     statusCode: status,
-    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json', ...SECURITY_HEADERS },
     body: JSON.stringify(body),
   };
+}
+
+export function noContent() {
+  return { statusCode: 204, headers: { ...SECURITY_HEADERS }, body: '' };
 }
 
 function keyFor(id) {
@@ -148,7 +163,7 @@ async function revoke(id, token) {
   }
   const { client, sdk } = await getS3();
   await client.send(new sdk.DeleteObjectCommand({ Bucket: BUCKET, Key: keyFor(id) }));
-  return { statusCode: 204, headers: { 'cache-control': 'no-store' }, body: '' };
+  return noContent();
 }
 
 export async function handler(event) {

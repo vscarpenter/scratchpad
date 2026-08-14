@@ -2,7 +2,42 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   route, newShareId, hashToken, timingSafeEqualHex, isMissingObjectError, hasValidOriginSecret,
+  json, noContent, SECURITY_HEADERS,
 } from './handler.mjs';
+
+// The /api/share* cache behavior carries no CloudFront function, so the
+// viewer-response security-headers function never runs on this path. Whatever
+// this handler sets is the complete header set the browser sees. Asserting it
+// here is the only place that property is enforced.
+test('every JSON response carries nosniff, HSTS, and no-store', () => {
+  const res = json(404, { error: 'Not found' });
+  assert.equal(res.headers['content-type'], 'application/json');
+  assert.equal(res.headers['cache-control'], 'no-store');
+  assert.equal(res.headers['x-content-type-options'], 'nosniff');
+  assert.equal(res.headers['strict-transport-security'],
+    'max-age=63072000; includeSubDomains; preload');
+});
+
+test('the 204 revoke response carries the same headers as a JSON response', () => {
+  const res = noContent();
+  assert.equal(res.statusCode, 204);
+  assert.equal(res.body, '');
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    assert.equal(res.headers[name], value, `204 response is missing ${name}`);
+  }
+});
+
+test('no-store survives on every status a client can reach', () => {
+  for (const status of [200, 201, 400, 403, 404, 410, 413, 500]) {
+    assert.equal(json(status, {}).headers['cache-control'], 'no-store',
+      `status ${status} lost no-store`);
+  }
+});
+
+test('a caller cannot mutate the shared header set', () => {
+  assert.throws(() => { SECURITY_HEADERS['x-content-type-options'] = 'off'; });
+  assert.equal(json(200, {}).headers['x-content-type-options'], 'nosniff');
+});
 
 // The API Gateway endpoint is reachable from the internet, so CloudFront injects
 // a secret header that the handler requires. Without this the CDN -- and every

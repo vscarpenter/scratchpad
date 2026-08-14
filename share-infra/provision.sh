@@ -26,6 +26,15 @@ ROLE_NAME="scratchpad-share-lambda-role"
 FUNCTION_NAME="scratchpad-share-api"
 POLICY_NAME="scratchpad-share-s3-access"
 API_NAME="scratchpad-share-api"
+
+# Runtime is set on create AND on every update, so a re-run of this script
+# cannot leave the function on a deprecated runtime. Check the deprecation
+# schedule before bumping: nodejs20.x reached end of support 2026-04-30.
+RUNTIME="nodejs22.x"
+
+# POST /api/share is unauthenticated. Reserved concurrency caps what a flood can
+# take from the account-wide pool this function shares with every other Lambda.
+RESERVED_CONCURRENCY=25
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DRY_RUN=0
@@ -128,14 +137,19 @@ if aws lambda get-function --function-name "$FUNCTION_NAME" >/dev/null 2>&1; the
 else
   ROLE_ARN="$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text 2>/dev/null || echo 'ROLE_ARN_PENDING')"
   run aws lambda create-function --function-name "$FUNCTION_NAME" \
-    --runtime nodejs20.x --role "$ROLE_ARN" --handler handler.handler \
+    --runtime "$RUNTIME" --role "$ROLE_ARN" --handler handler.handler \
     --timeout 10 --memory-size 256 --zip-file "fileb://$ZIP" \
     --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$SECRET}"
 fi
 
 [ "$DRY_RUN" -eq 1 ] || aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 run aws lambda update-function-configuration --function-name "$FUNCTION_NAME" \
+  --runtime "$RUNTIME" \
   --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$SECRET}"
+
+[ "$DRY_RUN" -eq 1 ] || aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
+run aws lambda put-function-concurrency --function-name "$FUNCTION_NAME" \
+  --reserved-concurrent-executions "$RESERVED_CONCURRENCY"
 
 rm -rf "$ZIP_DIR"
 
