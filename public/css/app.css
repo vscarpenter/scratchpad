@@ -2977,6 +2977,103 @@ body:not(.page-privacy) {
   .privacy-title { font-size: 22px; }
 }
 
+/* ---------- Public share links (inside the share dialog) ---------- */
+/* Secondary to the on-device actions above it: separated by a hairline, with a
+   quieter heading, so "copy" and "email" stay the obvious default. */
+.share-link-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: var(--border-hair);
+}
+
+.share-link-heading {
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.share-explainer {
+  background: var(--accent-soft);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.share-explainer p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-body);
+}
+
+.share-explainer-list {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.share-explainer-list li { margin: 3px 0; }
+
+.share-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.share-link-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: var(--border-hair);
+}
+.share-link-row:first-child { padding-top: 0; }
+
+.share-link-url {
+  width: 100%;
+  font: 400 12px/1.4 var(--mono);
+  color: var(--text-body);
+  background: var(--control-fill);
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  padding: 7px 9px;
+}
+.share-link-url:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.share-link-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.share-link-expiry {
+  flex: 1 1 auto;
+  font: 500 11px/1 var(--sans);
+  color: var(--text-muted);
+}
+
+.share-link-error {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--danger);
+}
+
+#create-share-link { margin-top: 12px; }
+
+.note-row-share {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+}
+
 /* ---------- Shared note viewer (share.html adds .page-share) ---------- */
 /* Reuses .page-privacy layout: the body grows with content and the window
    scrolls, which is what a read-only document wants. */

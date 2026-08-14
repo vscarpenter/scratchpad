@@ -58,6 +58,7 @@
     pendingTagDelete: null,
     importPreview: null,
     encryptedImport: null,
+    sharedNoteIds: new Set(),
     backupPassphraseMode: null,
     saveConflict: null,
     externalChanges: new Set(),
@@ -265,6 +266,11 @@
     shareEmail: $('share-email'),
     shareStatus: $('share-status'),
     shareMailtoWarning: $('share-mailto-warning'),
+    shareExplainer: $('share-explainer'),
+    shareLinkList: $('share-link-list'),
+    createShareLink: $('create-share-link'),
+    shareLinkError: $('share-link-error'),
+    shareTemplate: $('tpl-share-icon'),
     toastRegion: $('toast-region'),
   };
 
@@ -428,6 +434,10 @@
 
   function clonePinIcon() {
     return els.pinTemplate.content.cloneNode(true);
+  }
+
+  function cloneShareIcon() {
+    return els.shareTemplate.content.cloneNode(true);
   }
 
   // Transient action feedback. The region is an aria-live="polite" status, so
@@ -1899,6 +1909,16 @@
       }));
     }
 
+    if (isShared(note.id)) {
+      const shareMark = el('span', {
+        class: 'note-row-share',
+        attrs: { 'aria-hidden': 'true' },
+      });
+      shareMark.appendChild(cloneShareIcon());
+      children.push(shareMark);
+      children.push(el('span', { class: 'visually-hidden', text: 'Has a live public link' }));
+    }
+
     if (pinned) {
       children.push(el('span', {
         class: 'note-row-when',
@@ -2994,6 +3014,11 @@
       await discardCurrentDraft();
     }
     return withBusy('move-trash', [els.confirmDelete, els.deleteBtn], 'Delete failed. The note is still in Notes.', async () => {
+      // Trashing a note takes its share dialog away, so a live public link would
+      // become unrevokable. Revoke first; restoring can always share again.
+      await revokeSharesForNote(note.id);
+      await DB.removeSharesForNote(note.id);
+      await syncSharedNoteIds();
       const t = now();
       const nextNote = { ...note, deletedAt: t, updatedAt: t, lastDraftAt: null };
       await putNoteRecord(nextNote);
@@ -3026,7 +3051,9 @@
     const id = state.selectedId;
     if (!id) return;
     return withBusy('permanent-delete', [els.confirmPermanentDelete, els.permanentDeleteBtn], 'Permanent delete failed. The note is still in Trash.', async () => {
+      await revokeSharesForNote(id);
       await deleteNoteRecord(id);
+      await syncSharedNoteIds();
       state.notes = state.notes.filter((n) => n.id !== id);
       state.selectedId = null;
       state.editing = false;
@@ -4347,7 +4374,217 @@
     showShareStatus('');
     const encodedLen = encodeURIComponent(buildShareText(note)).length;
     els.shareMailtoWarning.hidden = encodedLen <= MAILTO_ENCODED_LIMIT;
+    els.shareLinkError.hidden = true;
+    els.shareExplainer.hidden = !!localStorage.getItem(SHARE_EXPLAINER_KEY);
+    refreshShareLinks(note.id);
     openDialog(els.shareDialog);
+  }
+
+  // -------- Public share links --------
+  // The one place in Scratchpad that sends note content off the device. It goes
+  // out encrypted, and the key never goes with it: it lives in the URL fragment,
+  // which browsers do not transmit.
+
+  const SHARE_EXPLAINER_KEY = 'scratchpad:shareExplainerSeenAt';
+  const SHARE_API = '/api/share';
+
+  function buildShareUrl(id, key) {
+    return location.origin + '/s/' + id + '#k=' + key;
+  }
+
+  // Only these four fields are uploaded. Everything else on a note -- its id,
+  // folderId, timestamps, daily-note and archive state -- stays local. The
+  // viewer does not need them, and each omitted field is one less thing to leak.
+  function buildSharePayload(note) {
+    return {
+      v: 1,
+      title: note.title || '',
+      body: note.body || '',
+      tags: Array.isArray(note.tags) ? note.tags.slice() : [],
+      updatedAt: note.updatedAt,
+    };
+  }
+
+  function showShareLinkError(message) {
+    els.shareLinkError.textContent = message;
+    els.shareLinkError.hidden = false;
+  }
+
+  function formatShareExpiry(expiresAt) {
+    return new Date(expiresAt).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  function shareLinkRow(share) {
+    const url = buildShareUrl(share.id, share.key);
+
+    const field = document.createElement('input');
+    field.className = 'share-link-url';
+    field.type = 'text';
+    field.readOnly = true;
+    field.value = url;
+    field.setAttribute('aria-label', 'Public link for ' + (share.titleAtShare || 'this note'));
+    field.addEventListener('focus', () => field.select());
+
+    const expiry = document.createElement('span');
+    expiry.className = 'share-link-expiry';
+    expiry.textContent = 'Expires ' + formatShareExpiry(share.expiresAt);
+
+    const copy = document.createElement('button');
+    copy.className = 'btn btn-secondary btn-sm share-link-copy';
+    copy.type = 'button';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', () => copyShareLink(url, copy));
+
+    const revoke = document.createElement('button');
+    revoke.className = 'btn btn-ghost btn-sm share-link-revoke';
+    revoke.type = 'button';
+    revoke.textContent = 'Stop sharing';
+    revoke.addEventListener('click', () => stopSharing(share, revoke));
+
+    const actions = document.createElement('div');
+    actions.className = 'share-link-actions';
+    actions.append(expiry, copy, revoke);
+
+    const row = document.createElement('li');
+    row.className = 'share-link-row';
+    row.append(field, actions);
+    return row;
+  }
+
+  async function refreshShareLinks(noteId) {
+    const shares = await DB.getSharesForNote(noteId);
+    const live = shares
+      .filter((share) => share.expiresAt > now())
+      .sort((a, b) => b.sharedAt - a.sharedAt);
+    els.shareLinkList.replaceChildren(...live.map(shareLinkRow));
+  }
+
+  async function copyShareLink(url, trigger) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('Link copied.');
+      if (trigger) trigger.textContent = 'Copied';
+      setTimeout(() => { if (trigger) trigger.textContent = 'Copy'; }, 1600);
+    } catch {
+      showShareLinkError('Could not copy. Select the link and copy it manually.');
+    }
+  }
+
+  async function createPublicShare() {
+    const note = getNote(state.selectedId);
+    if (!note || isTrashed(note)) return undefined;
+
+    els.shareLinkError.hidden = true;
+    return withBusy('create-share', [els.createShareLink], '', async () => {
+      const key = await ScratchpadCrypto.generateShareKey();
+      const envelope = await ScratchpadCrypto.encryptShare(buildSharePayload(note), key);
+
+      let response;
+      try {
+        response = await fetch(SHARE_API, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          cache: 'no-store',
+          credentials: 'omit',
+          referrerPolicy: 'no-referrer',
+          body: JSON.stringify(envelope),
+        });
+      } catch {
+        showShareLinkError('Could not reach the network. Your note was not uploaded.');
+        return;
+      }
+
+      if (response.status === 413) {
+        showShareLinkError('This note is too large to share as a link.');
+        return;
+      }
+      if (!response.ok) {
+        showShareLinkError('Sharing failed. Your note was not uploaded.');
+        return;
+      }
+
+      const created = await response.json();
+      await DB.putShare({
+        id: created.id,
+        noteId: note.id,
+        key: await ScratchpadCrypto.exportShareKey(key),
+        revokeToken: created.revokeToken,
+        sharedAt: now(),
+        expiresAt: created.expiresAt,
+        titleAtShare: note.title || '',
+      });
+
+      localStorage.setItem(SHARE_EXPLAINER_KEY, String(now()));
+      els.shareExplainer.hidden = true;
+      state.sharedNoteIds.add(note.id);
+      await refreshShareLinks(note.id);
+      renderAll();
+    });
+  }
+
+  // Returns true when the share is gone from the server. A 404 counts: the
+  // object is already absent, which is the outcome the user asked for.
+  async function revokeShare(share) {
+    let response;
+    try {
+      response = await fetch(SHARE_API + '/' + encodeURIComponent(share.id), {
+        method: 'DELETE',
+        headers: { 'x-revoke-token': share.revokeToken },
+        cache: 'no-store',
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+      });
+    } catch {
+      return false;
+    }
+    return response.ok || response.status === 404;
+  }
+
+  async function stopSharing(share, trigger) {
+    els.shareLinkError.hidden = true;
+    return withBusy('revoke-share', [trigger], '', async () => {
+      if (!(await revokeShare(share))) {
+        showShareLinkError('Could not stop sharing. This link is still live.');
+        return;
+      }
+      await DB.removeShare(share.id);
+      await syncSharedNoteIds();
+      await refreshShareLinks(share.noteId);
+      renderAll();
+      toast('Link stopped working.');
+    });
+  }
+
+  // Best effort: a note leaving the active set should not leave a public link
+  // behind, but a network failure must never block the deletion. The share
+  // expires on its own within seven days regardless.
+  async function revokeSharesForNote(noteId) {
+    let shares = [];
+    try {
+      shares = await DB.getSharesForNote(noteId);
+    } catch {
+      return;
+    }
+    for (const share of shares) {
+      try {
+        await revokeShare(share);
+      } catch {
+        /* ignore: deletion proceeds either way */
+      }
+    }
+  }
+
+  async function syncSharedNoteIds() {
+    const shares = await DB.getAllShares();
+    state.sharedNoteIds = new Set(shares.map((share) => share.noteId));
+  }
+
+  function isShared(noteId) {
+    return state.sharedNoteIds.has(noteId);
   }
 
   // -------- Command palette --------
@@ -5661,6 +5898,7 @@
     els.shareBtn.addEventListener('click', openShareDialog);
     els.shareCopy.addEventListener('click', copyShare);
     els.shareEmail.addEventListener('click', emailShare);
+    els.createShareLink.addEventListener('click', createPublicShare);
 
     els.deleteBtn.addEventListener('click', () => openDialog(els.deleteDialog));
     els.archiveNoteBtn.addEventListener('click', () => setCurrentArchiveState(true));
@@ -5996,6 +6234,8 @@
     bindEvents();
     try {
       await purgeExpiredTrash();
+      await DB.pruneExpiredShares(now());
+      await syncSharedNoteIds();
       await loadAll();
       await handleActionParam();
       registerServiceWorker();

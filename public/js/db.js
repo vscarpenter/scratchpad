@@ -301,6 +301,21 @@
     return reqToPromise(store.delete(id));
   }
 
+  async function removeSharesForNote(noteId) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction(STORES.shares, 'readwrite');
+      const store = t.objectStore(STORES.shares);
+      const req = store.index('noteId').getAll(noteId);
+      req.onsuccess = () => {
+        for (const share of req.result || []) store.delete(share.id);
+      };
+      t.oncomplete = () => resolve();
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error);
+    });
+  }
+
   async function pruneExpiredShares(now) {
     const db = await open();
     return new Promise((resolve, reject) => {
@@ -364,6 +379,7 @@
     getAllShares,
     putShare,
     removeShare,
+    removeSharesForNote,
     pruneExpiredShares,
   };
 })();

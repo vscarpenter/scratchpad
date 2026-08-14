@@ -812,7 +812,7 @@
       <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
     </div>
     <div class="dialog-body">
-      <p>Sharing happens on this device — Scratchpad doesn't send your note anywhere.</p>
+      <p>Copying and emailing happen on this device — nothing is sent anywhere.</p>
       <p id="share-mailto-warning" class="share-warning" hidden>
         This note is long. The email draft will be truncated; copy to clipboard to send the full note.
       </p>
@@ -821,6 +821,25 @@
         <button id="share-email" class="btn btn-secondary" type="button">Open in email</button>
       </div>
       <p id="share-status" class="share-status" role="status" aria-live="polite" hidden></p>
+
+      <section class="share-link-section" aria-labelledby="share-link-heading">
+        <h3 id="share-link-heading" class="share-link-heading">Public link</h3>
+
+        <div id="share-explainer" class="share-explainer" hidden>
+          <p>A public link uploads an <strong>encrypted copy</strong> of this note's title, text, and tags.</p>
+          <ul class="share-explainer-list">
+            <li>The key that decrypts it stays in the link itself and is never sent to the server, so Scratchpad can't read a shared note.</li>
+            <li><strong>Anyone with the link can read and forward it.</strong> There is no password.</li>
+            <li>The link stops working after 7 days. You can stop sharing sooner.</li>
+            <li>None of your other notes are uploaded, and the shared copy won't change if you edit this note later.</li>
+          </ul>
+        </div>
+
+        <ul id="share-link-list" class="share-link-list"></ul>
+
+        <button id="create-share-link" class="btn btn-secondary" type="button">Create public link</button>
+        <p id="share-link-error" class="share-link-error" role="alert" hidden></p>
+      </section>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
@@ -842,6 +861,10 @@
 
   <template id="tpl-pin-icon">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 4h6l-1 6 3 3H7l3-3-1-6z"/></svg>
+  </template>
+
+  <template id="tpl-share-icon">
+    <svg class="note-share-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
   </template>
 
   <script src="public/js/vendor/marked.min.js"></script>
