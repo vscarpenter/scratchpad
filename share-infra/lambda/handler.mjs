@@ -15,8 +15,10 @@ import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { parseShareBody, isValidShareId, SHARE_TTL_MS } from './validate.mjs';
 
 const BUCKET = process.env.SHARES_BUCKET;
+const ORIGIN_SECRET = process.env.SHARE_ORIGIN_SECRET;
 const PREFIX = 'shares/';
 const READ_PATH = /^\/api\/share\/([^/]+)$/;
+const ORIGIN_SECRET_HEADER = 'x-share-origin-secret';
 
 // The AWS SDK is provided by the Lambda runtime, not by this repo. Loading it
 // lazily keeps the pure exports below importable in a plain `node --test` run
@@ -46,6 +48,19 @@ export function timingSafeEqualHex(a, b) {
   return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
 }
 
+// The API Gateway endpoint is reachable from the internet, so CloudFront injects
+// a secret header that this handler requires. Without it the CDN could simply be
+// bypassed, along with any edge protection added there later. An unset secret
+// allows everything, which is only for local runs -- provision.sh always sets it.
+export function hasValidOriginSecret(headers, expected) {
+  if (!expected) return true;
+  if (!headers) return false;
+  const supplied = headers[ORIGIN_SECRET_HEADER] ??
+    headers[Object.keys(headers).find((k) => k.toLowerCase() === ORIGIN_SECRET_HEADER) ?? ''];
+  if (typeof supplied !== 'string' || supplied.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(supplied, 'utf8'), Buffer.from(expected, 'utf8'));
+}
+
 export function route(method, path) {
   if (method === 'POST' && path === '/api/share') return { action: 'create', id: null };
   const match = READ_PATH.exec(path);
@@ -68,13 +83,27 @@ function keyFor(id) {
   return PREFIX + id + '.json';
 }
 
+// The IAM policy grants GetObject on shares/* but deliberately NOT ListBucket,
+// so a compromised handler cannot enumerate shares. S3's documented behavior in
+// that case is to answer AccessDenied rather than NoSuchKey for a key that does
+// not exist, because revealing the difference would itself leak existence.
+//
+// Every key this handler requests is inside the granted prefix, so AccessDenied
+// there can only mean the object is absent. Treating it as "missing" is what
+// makes a revoked link render as "nothing here" instead of a server error.
+export function isMissingObjectError(error) {
+  if (!error) return false;
+  const status = error.$metadata?.httpStatusCode;
+  return error.name === 'NoSuchKey' || error.name === 'AccessDenied' || status === 404 || status === 403;
+}
+
 async function readObject(id) {
   const { client, sdk } = await getS3();
   try {
     const res = await client.send(new sdk.GetObjectCommand({ Bucket: BUCKET, Key: keyFor(id) }));
     return JSON.parse(await res.Body.transformToString());
   } catch (error) {
-    if (error?.name === 'NoSuchKey' || error?.$metadata?.httpStatusCode === 404) return null;
+    if (isMissingObjectError(error)) return null;
     throw error;
   }
 }
@@ -123,6 +152,13 @@ async function revoke(id, token) {
 }
 
 export async function handler(event) {
+  const headers = event?.headers || {};
+  if (!hasValidOriginSecret(headers, ORIGIN_SECRET)) {
+    // Deliberately indistinguishable from an unknown path: someone probing the
+    // API Gateway endpoint directly learns nothing about what lives here.
+    return json(404, { error: 'Not found' });
+  }
+
   const method = event?.requestContext?.http?.method || '';
   const path = event?.rawPath || '';
   const { action, id } = route(method, path);
@@ -135,7 +171,6 @@ export async function handler(event) {
     if (action === 'create') return await create(rawBody);
     if (action === 'read') return await read(id);
     if (action === 'revoke') {
-      const headers = event.headers || {};
       return await revoke(id, headers['x-revoke-token'] || headers['X-Revoke-Token']);
     }
     return json(404, { error: 'Not found' });

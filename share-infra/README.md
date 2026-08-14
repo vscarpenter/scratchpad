@@ -14,13 +14,40 @@ plus the explicit HTML shell list, and `CLAUDE.md` lists this directory under
 | IAM role | `scratchpad-share-lambda-role` | Lambda execution role. |
 | Inline policy | `scratchpad-share-s3-access` | `PutObject`/`GetObject`/`DeleteObject` on `shares/*` only. |
 | Lambda | `scratchpad-share-api` | The three-route API. Node 20, 256 MB, 10s timeout. |
-| Function URL | (generated) | The CloudFront origin. Auth type NONE. |
-| CloudFront behavior | `/api/share*` | Routes to the Lambda origin on the existing distribution. |
+| HTTP API | `scratchpad-share-api` | API Gateway v2, Lambda proxy. The CloudFront origin. |
+| CloudFront behavior | `/api/share*` | Routes to the HTTP API origin on the existing distribution. |
+| WAF override | `SizeRestrictions_BODY` | Set to Count so uploads over 8 KB are not blocked. |
 
 **The bucket is never publicly readable.** Every read goes through the Lambda,
 so there is exactly one code path that can return share data. That is
 deliberate — a public bucket would create a second reachable surface governed
 by a bucket policy rather than by logic.
+
+**Why API Gateway and not a Lambda function URL.** Anonymous function URLs are
+refused in this AWS account (403 `AccessDeniedException` regardless of the
+resource policy; no Organizations SCP or RCP is involved). Fronting one with
+CloudFront OAC works, but OAC signs the origin request with SigV4 and therefore
+requires the *browser* to send an `x-amz-content-sha256` payload hash on every
+upload. The HTTP API needs neither, and costs about $1 per million requests.
+
+**Why the origin secret.** The API Gateway endpoint is reachable from the
+internet, so CloudFront injects `x-share-origin-secret` as a custom origin
+header and the handler refuses anything without it — answering 404, so a prober
+learns nothing. Without this the CDN could simply be bypassed.
+
+**Why the WAF override.** The distribution has a CloudFront-managed web ACL
+(`CreatedByCloudFront-*`) whose Core Rule Set includes `SizeRestrictions_BODY`,
+which blocks request bodies over exactly 8,192 bytes. That capped a shareable
+note at roughly 1,000 words. The rule is overridden to **Count**, which protects
+nothing else here: every other endpoint on this domain is static and accepts no
+request body at all, and the share Lambda enforces its own 256 KB cap plus
+strict envelope validation before any S3 write. To restore it:
+
+```sh
+# Re-run with RuleActionOverrides removed from AWSManagedRulesCommonRuleSet.
+aws wafv2 get-web-acl --scope CLOUDFRONT --region us-east-1 \
+  --name CreatedByCloudFront-32d63bcc --id 1dfc56bd-37a2-4ecf-a789-b8b70622ee09
+```
 
 ## Prerequisites
 
@@ -48,7 +75,7 @@ Idempotent — re-running updates the Lambda code and re-applies the bucket
 settings without recreating anything. Re-running is the normal way to ship a
 handler change.
 
-Note the Function URL it prints; step 4 needs it.
+Note the origin domain and origin secret it prints; step 4 needs both.
 
 ## 3. Redeploy handler code after an edit
 
@@ -67,8 +94,9 @@ allows.
 
 | Setting | Value |
 | --- | --- |
-| Origin domain | the Function URL host, e.g. `abc123.lambda-url.us-east-1.on.aws` |
+| Origin domain | the HTTP API host, e.g. `l5b5two3y6.execute-api.us-east-1.amazonaws.com` |
 | Origin protocol | HTTPS only |
+| Custom header | `x-share-origin-secret: <value printed by provision.sh>` |
 | **OriginPath** | **empty** — see the warning below |
 | Path pattern | `/api/share*` |
 | Allowed methods | `GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE` |
@@ -125,10 +153,13 @@ needed once the function is associated with the default behavior.
 
 ## 6. Smoke test
 
+`base64` wraps at 76 columns on macOS, which would corrupt the JSON — hence the
+`tr -d '\n'`.
+
 ```sh
 API="https://notes.vinny.dev/api/share"
-IV=$(head -c 12 /dev/urandom | base64)
-CT=$(head -c 64 /dev/urandom | base64)
+IV=$(head -c 12 /dev/urandom | base64 | tr -d '\n')
+CT=$(head -c 64 /dev/urandom | base64 | tr -d '\n')
 
 CREATED=$(curl -sS -X POST "$API" -H 'content-type: application/json' \
   -d "{\"v\":1,\"ciphertext\":\"$CT\",\"iv\":\"$IV\"}")
@@ -148,6 +179,16 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST "$API" \
 
 # The bucket must not be readable directly
 curl -sS -o /dev/null -w '%{http_code}\n' "https://scratchpad-shares.s3.amazonaws.com/shares/$ID.json"  # 403
+
+# The API Gateway endpoint must not be usable without the origin secret
+curl -sS -o /dev/null -w '%{http_code}\n' -X POST \
+  "https://<api-id>.execute-api.us-east-1.amazonaws.com/api/share" \
+  -H 'content-type: application/json' -d '{"v":1,"ciphertext":"QUJD","iv":"QUJDREVGR0hJSktM"}'   # 404
+
+# A body over 8 KB must succeed (proves the WAF override is in place)
+python3 -c 'print("{\"v\":1,\"iv\":\"AAAAAAAAAAAAAAAA\",\"ciphertext\":\"" + "A"*20000 + "\"}")' > /tmp/mid.json
+curl -sS -o /dev/null -w '%{http_code}\n' -X POST "$API" \
+  -H 'content-type: application/json' --data-binary @/tmp/mid.json                                # 201
 ```
 
 ## 7. Take down a single share

@@ -1,6 +1,56 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { route, newShareId, hashToken, timingSafeEqualHex } from './handler.mjs';
+import {
+  route, newShareId, hashToken, timingSafeEqualHex, isMissingObjectError, hasValidOriginSecret,
+} from './handler.mjs';
+
+// The API Gateway endpoint is reachable from the internet, so CloudFront injects
+// a secret header that the handler requires. Without this the CDN -- and every
+// edge protection we might add there later -- could simply be bypassed.
+test('accepts a request carrying the expected origin secret', () => {
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': 'sekret' }, 'sekret'), true);
+});
+
+test('rejects a missing, wrong, or truncated origin secret', () => {
+  assert.equal(hasValidOriginSecret({}, 'sekret'), false);
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': 'wrong!' }, 'sekret'), false);
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': 'sek' }, 'sekret'), false);
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': '' }, 'sekret'), false);
+  assert.equal(hasValidOriginSecret(undefined, 'sekret'), false);
+});
+
+test('is case-insensitive about the header name', () => {
+  assert.equal(hasValidOriginSecret({ 'X-Share-Origin-Secret': 'sekret' }, 'sekret'), true);
+});
+
+test('allows everything when no secret is configured, for local runs', () => {
+  assert.equal(hasValidOriginSecret({}, ''), true);
+  assert.equal(hasValidOriginSecret({}, undefined), true);
+});
+
+// The IAM policy grants GetObject on shares/* but deliberately NOT ListBucket,
+// so a compromised handler cannot enumerate shares. The documented consequence
+// is that S3 answers AccessDenied instead of NoSuchKey for a key that does not
+// exist. Every key this handler requests is inside the granted prefix, so
+// AccessDenied there means "absent", and a revoked link must render as "nothing
+// here" rather than a server error.
+test('treats AccessDenied as a missing object, not a failure', () => {
+  assert.equal(isMissingObjectError({ name: 'AccessDenied' }), true);
+  assert.equal(isMissingObjectError({ $metadata: { httpStatusCode: 403 } }), true);
+});
+
+test('treats NoSuchKey and 404 as missing', () => {
+  assert.equal(isMissingObjectError({ name: 'NoSuchKey' }), true);
+  assert.equal(isMissingObjectError({ $metadata: { httpStatusCode: 404 } }), true);
+});
+
+test('does not swallow genuine failures', () => {
+  assert.equal(isMissingObjectError({ name: 'ThrottlingException' }), false);
+  assert.equal(isMissingObjectError({ $metadata: { httpStatusCode: 500 } }), false);
+  assert.equal(isMissingObjectError({ name: 'NetworkingError' }), false);
+  assert.equal(isMissingObjectError(new SyntaxError('bad json')), false);
+  assert.equal(isMissingObjectError(undefined), false);
+});
 
 test('routes POST /api/share to create', () => {
   assert.deepEqual(route('POST', '/api/share'), { action: 'create', id: null });

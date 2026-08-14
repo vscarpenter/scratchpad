@@ -160,27 +160,6 @@ test.describe('ScratchpadCrypto share primitives', () => {
     expect(result.rejectsMissing).toBe(true);
   });
 
-  // CloudFront's Origin Access Control signs origin requests with SigV4, which
-  // requires the viewer to supply the hex SHA-256 of any request body in the
-  // x-amz-content-sha256 header. Known vectors, because a wrong hash here means
-  // every share upload is rejected at the edge.
-  test('sha256Hex matches the published SHA-256 vectors', async ({ page }) => {
-    await gotoApp(page);
-    const hashes = await page.evaluate(async () => {
-      const C = window.ScratchpadCrypto;
-      return {
-        empty: await C.sha256Hex(''),
-        abc: await C.sha256Hex('abc'),
-        unicode: await C.sha256Hex('héllo → ✓'),
-        repeat: await C.sha256Hex('abc'),
-      };
-    });
-    expect(hashes.empty).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
-    expect(hashes.abc).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
-    expect(hashes.abc).toBe(hashes.repeat);
-    expect(hashes.unicode).toMatch(/^[0-9a-f]{64}$/);
-  });
-
   test('base64url encoding survives bytes that need URL-safe substitution', async ({ page }) => {
     await gotoApp(page);
     const ok = await page.evaluate(() => {

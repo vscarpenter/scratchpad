@@ -4387,7 +4387,6 @@
 
   const SHARE_EXPLAINER_KEY = 'scratchpad:shareExplainerSeenAt';
   const SHARE_API = '/api/share';
-  const EMPTY_PAYLOAD_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 
   function buildShareUrl(id, key) {
     return location.origin + '/s/' + id + '#k=' + key;
@@ -4484,24 +4483,15 @@
       const key = await ScratchpadCrypto.generateShareKey();
       const envelope = await ScratchpadCrypto.encryptShare(buildSharePayload(note), key);
 
-      // CloudFront's Origin Access Control signs the origin request with SigV4
-      // and takes the payload hash from x-amz-content-sha256. Without it the
-      // edge rejects the upload, so the body is serialized once and hashed --
-      // re-serializing could produce different bytes than the ones sent.
-      const body = JSON.stringify(envelope);
-
       let response;
       try {
         response = await fetch(SHARE_API, {
           method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-amz-content-sha256': await ScratchpadCrypto.sha256Hex(body),
-          },
+          headers: { 'content-type': 'application/json' },
           cache: 'no-store',
           credentials: 'omit',
           referrerPolicy: 'no-referrer',
-          body,
+          body: JSON.stringify(envelope),
         });
       } catch {
         showShareLinkError('Could not reach the network. Your note was not uploaded.');
@@ -4543,12 +4533,7 @@
     try {
       response = await fetch(SHARE_API + '/' + encodeURIComponent(share.id), {
         method: 'DELETE',
-        headers: {
-          'x-revoke-token': share.revokeToken,
-          // No body, so this is the SHA-256 of the empty string -- the correct
-          // payload hash either way, whether or not the edge derives its own.
-          'x-amz-content-sha256': EMPTY_PAYLOAD_SHA256,
-        },
+        headers: { 'x-revoke-token': share.revokeToken },
         cache: 'no-store',
         credentials: 'omit',
         referrerPolicy: 'no-referrer',

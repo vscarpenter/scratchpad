@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 # Provision the Scratchpad share API: private bucket, lifecycle, execution role,
-# Lambda, and Function URL. Idempotent -- safe to re-run; existing resources are
-# reported and skipped.
+# Lambda, and an API Gateway HTTP API. Idempotent -- safe to re-run; existing
+# resources are reported and skipped.
 #
 # Operator-only. This directory is never deployed to S3; see CLAUDE.md.
+#
+# Topology note: CloudFront reaches the Lambda through an API Gateway HTTP API,
+# NOT a Lambda function URL. Anonymous function URLs are refused in this AWS
+# account, and fronting one with CloudFront OAC would require the browser to
+# send a SigV4 payload hash on every upload. The HTTP API needs neither.
+#
+# Because the API Gateway endpoint is reachable from the internet, CloudFront
+# injects a secret header (x-share-origin-secret) that the handler requires, so
+# the CDN cannot be bypassed. This script generates that secret on first run and
+# reuses whatever the function already has on later runs.
 #
 # Usage:
 #   bash share-infra/provision.sh --dry-run   # preview, mutates nothing
@@ -15,6 +25,7 @@ REGION="${AWS_REGION:-us-east-1}"
 ROLE_NAME="scratchpad-share-lambda-role"
 FUNCTION_NAME="scratchpad-share-api"
 POLICY_NAME="scratchpad-share-s3-access"
+API_NAME="scratchpad-share-api"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DRY_RUN=0
@@ -100,6 +111,17 @@ ZIP="$ZIP_DIR/share-api.zip"
 (cd "$HERE/lambda" && zip -q -r "$ZIP" handler.mjs validate.mjs)
 echo "Packaged handler.mjs + validate.mjs -> $ZIP"
 
+# Reuse the existing origin secret if there is one, so re-running this script
+# never silently invalidates the header CloudFront is already sending.
+SECRET="$(aws lambda get-function-configuration --function-name "$FUNCTION_NAME" \
+  --query 'Environment.Variables.SHARE_ORIGIN_SECRET' --output text 2>/dev/null || echo '')"
+if [ -z "$SECRET" ] || [ "$SECRET" = "None" ]; then
+  SECRET="$(head -c 32 /dev/urandom | base64 | tr -d '\n=' | tr '+/' '-_')"
+  NEW_SECRET=1
+else
+  NEW_SECRET=0
+fi
+
 if aws lambda get-function --function-name "$FUNCTION_NAME" >/dev/null 2>&1; then
   echo "Function exists, updating code."
   run aws lambda update-function-code --function-name "$FUNCTION_NAME" --zip-file "fileb://$ZIP"
@@ -108,27 +130,46 @@ else
   run aws lambda create-function --function-name "$FUNCTION_NAME" \
     --runtime nodejs20.x --role "$ROLE_ARN" --handler handler.handler \
     --timeout 10 --memory-size 256 --zip-file "fileb://$ZIP" \
-    --environment "Variables={SHARES_BUCKET=$BUCKET}"
-  run aws lambda create-function-url-config --function-name "$FUNCTION_NAME" --auth-type NONE
-  run aws lambda add-permission --function-name "$FUNCTION_NAME" \
-    --statement-id FunctionURLAllowPublicAccess --action lambda:InvokeFunctionUrl \
-    --principal '*' --function-url-auth-type NONE
+    --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$SECRET}"
 fi
 
+[ "$DRY_RUN" -eq 1 ] || aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 run aws lambda update-function-configuration --function-name "$FUNCTION_NAME" \
-  --environment "Variables={SHARES_BUCKET=$BUCKET}"
+  --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$SECRET}"
 
 rm -rf "$ZIP_DIR"
 
+# ------------------------------------------------------- 4. API Gateway HTTP API
 echo
-echo "== Function URL =="
-if [ "$DRY_RUN" -eq 1 ]; then
-  echo "DRY-RUN: aws lambda get-function-url-config --function-name $FUNCTION_NAME"
+echo "== HTTP API =="
+API_ID="$(aws apigatewayv2 get-apis --query "Items[?Name=='$API_NAME'].ApiId | [0]" --output text 2>/dev/null || echo 'None')"
+if [ "$API_ID" = "None" ] || [ -z "$API_ID" ]; then
+  LAMBDA_ARN="$(aws lambda get-function --function-name "$FUNCTION_NAME" --query 'Configuration.FunctionArn' --output text 2>/dev/null || echo 'PENDING')"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "DRY-RUN: aws apigatewayv2 create-api --name $API_NAME --protocol-type HTTP --target $LAMBDA_ARN"
+    API_ID="<new-api-id>"
+  else
+    API_ID="$(aws apigatewayv2 create-api --name "$API_NAME" --protocol-type HTTP \
+      --target "$LAMBDA_ARN" --query 'ApiId' --output text)"
+    aws lambda add-permission --function-name "$FUNCTION_NAME" \
+      --statement-id AllowApiGatewayInvoke --action lambda:InvokeFunction \
+      --principal apigateway.amazonaws.com \
+      --source-arn "arn:aws:execute-api:$REGION:$(aws sts get-caller-identity --query Account --output text):$API_ID/*/*" \
+      >/dev/null
+  fi
 else
-  aws lambda get-function-url-config --function-name "$FUNCTION_NAME" \
-    --query 'FunctionUrl' --output text 2>/dev/null || echo "(pending)"
+  echo "HTTP API exists: $API_ID"
 fi
 
 echo
-echo "Next: attach this Function URL as a CloudFront origin with an /api/share*"
-echo "cache behavior. See share-infra/README.md, step 4."
+echo "== Summary =="
+echo "Origin domain:  $API_ID.execute-api.$REGION.amazonaws.com"
+if [ "$NEW_SECRET" -eq 1 ]; then
+  echo "Origin secret:  $SECRET   <-- NEW; set this as the CloudFront custom"
+  echo "                origin header x-share-origin-secret on the share origin."
+else
+  echo "Origin secret:  (unchanged; CloudFront already has it)"
+fi
+echo
+echo "Next: point the CloudFront /api/share* origin at the domain above and set"
+echo "the x-share-origin-secret custom header. See share-infra/README.md, step 4."
