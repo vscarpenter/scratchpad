@@ -1,0 +1,11 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-shares-after-7-days",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "shares/" },
+      "Expiration": { "Days": 7 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}

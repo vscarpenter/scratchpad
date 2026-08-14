@@ -104,6 +104,13 @@ public/
     vendor/
       marked.min.js
       purify.min.js
+share-infra/             share API Lambda + AWS provisioning (do NOT deploy)
+  lambda/handler.mjs     three-route share API over the private shares bucket
+  lambda/validate.mjs    pure request validation; unit-tested, no AWS imports
+  iam-policy.json        least privilege: shares/* on scratchpad-shares only
+  lifecycle.json         expire shares/ after 7 days
+  provision.sh           idempotent bucket + role + Lambda + Function URL
+  README.md              operator guide, incl. single-share takedown
 cloudfront/              CloudFront security-header artifacts (do NOT deploy)
   README.md              operator guide for the function workflow
   security-headers-function.js   active deployed source: CF Function attached
@@ -261,6 +268,7 @@ These files exist in the repo but **must not** end up in S3 / CloudFront:
 - `README.md`, `ScratchPad-PRD.md`, `CLAUDE.md`, `coding-standard.md`, `backlog.md`
 - `deploy.sh`, `.env.local`, `.env.local.example`
 - `cloudfront/` (operator-only AWS policy artifacts)
+- `share-infra/` (operator-only share API Lambda, IAM, and provisioning)
 - `package.json`, `bun.lock`, `node_modules/`, `tests/`, `scripts/`,
   `playwright.config.js` (local-only dev/test tooling)
 - `DESIGN.md`, `PRODUCT.md`, `.impeccable/design.json` (design-system record;
