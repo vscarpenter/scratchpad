@@ -203,6 +203,22 @@ Deleting a note, or running the data-erasure flow, attempts revocation of that
 note's live shares on a best-effort basis. Failure to reach the network does not
 block deletion; the share still expires on its own.
 
+## Where sharing lives in the UI
+
+`index.html:809` already has a **Share this note** dialog with on-device
+actions — copy to clipboard, open in email — reached from `#share-btn` in the
+note overflow menu. The public link goes into that dialog rather than into a
+second one: one share affordance, with the on-device options staying first and
+primary and the public link explicitly secondary.
+
+That dialog's body text currently reads *"Sharing happens on this device —
+Scratchpad doesn't send your note anywhere."* This feature makes that sentence
+false, so it is rewritten in the same commit that makes it false.
+
+The first-run explainer appears inside this dialog, above the create button,
+and is dismissed permanently by the first successful share
+(`localStorage['scratchpad:shareExplainerSeenAt']`).
+
 ## Viewer page
 
 `share.html` plus `public/js/share.js`. It reads the ID from the path and the
