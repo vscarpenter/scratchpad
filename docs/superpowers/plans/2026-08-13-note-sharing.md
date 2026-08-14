@@ -26,7 +26,7 @@
 - **Shares bucket is `scratchpad-shares`**, key prefix `shares/`, Block Public Access fully enabled.
 - **AWS-managed CloudFront policies only** — the distribution is on the Free pricing plan, which rejects custom cache and origin-request policies. Use managed `CachingDisabled` (`4135ea2d-6df8-44a3-9df3-4b5a84be39ad`) and managed `AllViewerExceptHostHeader` (`b689b0a8-53d0-40ab-baf2-68738e2966ac`).
 - **Never run the real `./deploy.sh` or any AWS mutation without explicit user confirmation in the current turn.** `./deploy.sh --dry-run` is safe to run autonomously.
-- Run the browser suite with `bun run test` (Playwright). Run Lambda tests with `node --test share-infra/lambda/`.
+- Run the browser suite with `bun run test` (Playwright). Run Lambda tests with `bun run test:lambda`.
 
 ---
 
@@ -502,7 +502,7 @@ test('validates share id shape', () => {
 
 - [ ] **Step 2: Run the test and confirm it fails**
 
-Run: `node --test share-infra/lambda/`
+Run: `bun run test:lambda`
 Expected: FAIL — `Cannot find module .../validate.mjs`.
 
 - [ ] **Step 3: Write `share-infra/lambda/validate.mjs`**
@@ -563,7 +563,7 @@ export function parseShareBody(rawBody) {
 
 - [ ] **Step 4: Run the test and confirm it passes**
 
-Run: `node --test share-infra/lambda/`
+Run: `bun run test:lambda`
 Expected: PASS, 12 cases.
 
 - [ ] **Step 5: Commit**
@@ -665,7 +665,7 @@ test('timingSafeEqualHex compares equal-length hex safely', () => {
 
 - [ ] **Step 2: Run the test and confirm it fails**
 
-Run: `node --test share-infra/lambda/`
+Run: `bun run test:lambda`
 Expected: FAIL — `Cannot find module .../handler.mjs`. The `validate.test.mjs` cases from Task 2 still pass.
 
 - [ ] **Step 3: Write `share-infra/lambda/handler.mjs`**
@@ -795,7 +795,7 @@ export async function handler(event) {
 
 - [ ] **Step 4: Run the tests and confirm they pass**
 
-Run: `node --test share-infra/lambda/`
+Run: `bun run test:lambda`
 Expected: PASS, 20 cases across both files.
 
 Note: `@aws-sdk/client-s3` is provided by the Lambda Node 20 runtime, so there is no `package.json` and no `npm install` here. The import resolves at runtime in Lambda, and the test file imports only the pure exports, so `node --test` never evaluates an S3 call. If the import itself fails locally, add `share-infra/lambda/package.json` containing `{"type":"module"}` and install the SDK as a dev-only dependency — do not commit `node_modules`.
