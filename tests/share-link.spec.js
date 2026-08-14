@@ -25,6 +25,7 @@ async function stubCreate(page, options = {}) {
       method: routeCall.request().method(),
       body: routeCall.request().postData(),
       url: routeCall.request().url(),
+      headers: routeCall.request().headers(),
     });
     if (status === 0) return routeCall.abort();
     routeCall.fulfill({
@@ -106,6 +107,24 @@ test.describe('creating a public share link', () => {
     expect(raw).not.toContain('work');
     expect(raw).not.toContain('note-1');
     expect(atob(body.ciphertext)).not.toContain('Ship the thing');
+  });
+
+  // CloudFront's OAC signs the origin request with SigV4 and takes the payload
+  // hash from this header. Without it, or with a stale one, the edge rejects
+  // every upload -- so it is asserted against a hash computed here, not just
+  // checked for presence.
+  test('the POST carries an x-amz-content-sha256 matching its body', async ({ page }) => {
+    const seen = await stubCreate(page);
+    await seedOneNote(page);
+    await openShareDialog(page);
+    await page.locator('#create-share-link').click();
+    await expect(page.locator('.share-link-url').first()).toBeVisible();
+
+    const header = seen[0].headers['x-amz-content-sha256'];
+    expect(header).toMatch(/^[0-9a-f]{64}$/);
+
+    const expected = await page.evaluate((body) => window.ScratchpadCrypto.sha256Hex(body), seen[0].body);
+    expect(header).toBe(expected);
   });
 
   test('the decryption key appears in no request', async ({ page }) => {

@@ -145,7 +145,19 @@
     return JSON.parse(new TextDecoder().decode(plaintext));
   }
 
+  // Hex SHA-256 of a UTF-8 string. Used for the x-amz-content-sha256 header:
+  // CloudFront's Origin Access Control signs the origin request with SigV4 and
+  // takes the payload hash from that header, so a request with a body must
+  // carry it or the edge rejects the upload before the Lambda ever sees it.
+  async function sha256Hex(text) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
   window.ScratchpadCrypto = {
+    sha256Hex,
     bytesToBase64,
     base64ToBytes,
     bytesToBase64Url,
