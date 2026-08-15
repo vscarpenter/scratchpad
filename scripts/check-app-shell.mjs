@@ -11,11 +11,17 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workerSource = readFileSync(join(root, 'public', 'service-worker.js'), 'utf8');
 
-// The six HTML shells deploy.sh uploads explicitly. Anything else at the
-// bucket root does not exist after a deploy, whatever the working tree holds.
-const DEPLOYED_SHELLS = new Set([
-  'index.html', 'about.html', 'guide.html', 'privacy.html', 'terms.html', 'share.html',
-]);
+// The HTML shells deploy.sh uploads explicitly, read from its canonical
+// HTML_SHELLS line so this check can never disagree with the deploy. Anything
+// else at the bucket root does not exist after a deploy, whatever the working
+// tree holds.
+const deploySource = readFileSync(join(root, 'deploy.sh'), 'utf8');
+const shellsMatch = deploySource.match(/^HTML_SHELLS=\(([^)]*)\)$/m);
+if (!shellsMatch) {
+  console.error('check-app-shell: could not derive HTML_SHELLS from deploy.sh');
+  process.exit(1);
+}
+const DEPLOYED_SHELLS = new Set(shellsMatch[1].split(/\s+/).filter(Boolean));
 
 function extractList(name) {
   const match = workerSource.match(new RegExp('const ' + name + ' = \\[([^\\]]*)\\]'));

@@ -8,6 +8,12 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# The canonical list of deployed HTML shells. recompute-csp-hashes.sh and
+# scripts/check-app-shell.mjs both derive their page sets from this line, so
+# the verifiers and the deploy can never disagree about what ships. Keep the
+# assignment on one line.
+HTML_SHELLS=(index.html about.html guide.html privacy.html terms.html share.html)
+
 # ---------- args ----------
 DRY=""
 for arg in "$@"; do
@@ -151,7 +157,7 @@ HTML_CACHE="public, max-age=60, must-revalidate"
 WORKER_CACHE="no-cache, no-store, must-revalidate"
 
 echo "==> Uploading HTML (Cache-Control: $HTML_CACHE)"
-for html in index.html about.html guide.html privacy.html terms.html share.html; do
+for html in "${HTML_SHELLS[@]}"; do
   if [ ! -f "$html" ]; then
     echo "WARN: $html missing, skipping" >&2
     continue
