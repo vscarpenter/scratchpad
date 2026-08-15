@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedNotes } = require('./helpers');
+const { seedNotes, seedFolders } = require('./helpers');
 
 test.describe('sidebar layout — scroll containment', () => {
   test('sidebar stays within viewport when there are many notes', async ({ page }) => {
@@ -58,5 +58,35 @@ test.describe('sidebar layout — scroll containment', () => {
     await expect(page.locator('.sidebar-kicker')).toBeVisible();
     await expect(page.locator('#note-count')).toHaveText('5');
     await expect(page.locator('.sidebar-kicker')).toContainText('stored locally');
+  });
+
+  test('opening the folder switcher does not scroll or clip the sidebar', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 815 });
+    await seedFolders(page, [
+      { id: 'f-prompts', name: 'Prompts', color: 'sky' },
+      { id: 'f-personal', name: 'Personal Tasks', color: 'gray' },
+    ]);
+
+    const sidebar = page.locator('#sidebar');
+    const sidebarBox = await sidebar.boundingBox();
+    if (!sidebarBox) throw new Error('sidebar has no bounding box');
+
+    await page.locator('#folder-switcher-btn').click();
+    await expect(page.locator('#folder-switcher')).toBeVisible();
+    await expect(page.locator('#folder-switcher-search')).toBeFocused();
+
+    const scroll = await sidebar.evaluate((element) => ({
+      left: element.scrollLeft,
+      width: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }));
+    expect(scroll.left).toBe(0);
+    expect(scroll.scrollWidth).toBe(scroll.width);
+
+    for (const selector of ['.sidebar-head', '#new-note', '#today-note', '#list-header']) {
+      const box = await page.locator(selector).boundingBox();
+      if (!box) throw new Error(selector + ' has no bounding box');
+      expect(box.x, selector + ' is clipped beneath the Chronicle rail').toBeGreaterThanOrEqual(sidebarBox.x - 0.5);
+    }
   });
 });
