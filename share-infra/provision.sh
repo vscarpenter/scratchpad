@@ -58,6 +58,11 @@ if ! command -v zip >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: python3 not found (needed to merge the Lambda environment)." >&2
+  exit 1
+fi
+
 echo "Bucket:   $BUCKET"
 echo "Region:   $REGION"
 echo "Role:     $ROLE_NAME"
@@ -120,18 +125,48 @@ ZIP="$ZIP_DIR/share-api.zip"
 (cd "$HERE/lambda" && zip -q -r "$ZIP" handler.mjs validate.mjs)
 echo "Packaged handler.mjs + validate.mjs -> $ZIP"
 
-# Reuse the existing origin secret if there is one, so re-running this script
-# never silently invalidates the header CloudFront is already sending.
-SECRET="$(aws lambda get-function-configuration --function-name "$FUNCTION_NAME" \
-  --query 'Environment.Variables.SHARE_ORIGIN_SECRET' --output text 2>/dev/null || echo '')"
-if [ -z "$SECRET" ] || [ "$SECRET" = "None" ]; then
+# Reuse the existing origin secret -- and every other environment variable the
+# function already carries -- so a re-run can neither invalidate the header
+# CloudFront is already sending nor wipe a variable an operator added by hand.
+# Only "function does not exist" may fall through to minting a fresh secret:
+# any other read failure (denied, throttled, expired credentials, a dropped
+# socket) must abort, because minting while CloudFront still injects the old
+# header takes every /api/share route down until the distribution's custom
+# header is edited by hand (share-infra/README.md step 9).
+ENV_FILE="$ZIP_DIR/env.json"
+FUNCTION_EXISTS=1
+ENV_ERR="$({ aws lambda get-function-configuration --function-name "$FUNCTION_NAME" \
+  --query 'Environment.Variables' --output json > "$ENV_FILE"; } 2>&1)" || true
+if [ -n "$ENV_ERR" ]; then
+  case "$ENV_ERR" in
+    *ResourceNotFound*|*NotFound*)
+      FUNCTION_EXISTS=0
+      echo 'null' > "$ENV_FILE"
+      ;;
+    *)
+      echo "ERROR: cannot read $FUNCTION_NAME's configuration." >&2
+      echo "  aws said: $ENV_ERR" >&2
+      echo >&2
+      echo "Refusing to guess. Treating this failure as a first install would mint" >&2
+      echo "a fresh SHARE_ORIGIN_SECRET while CloudFront still sends the old one," >&2
+      echo "breaking /api/share until the CloudFront custom header is updated by" >&2
+      echo "hand (share-infra/README.md step 9)." >&2
+      exit 1
+      ;;
+  esac
+fi
+
+SECRET="$(python3 -c 'import json, sys
+env = json.load(open(sys.argv[1])) or {}
+print(env.get("SHARE_ORIGIN_SECRET", ""))' "$ENV_FILE")"
+if [ -z "$SECRET" ]; then
   SECRET="$(head -c 32 /dev/urandom | base64 | tr -d '\n=' | tr '+/' '-_')"
   NEW_SECRET=1
 else
   NEW_SECRET=0
 fi
 
-if aws lambda get-function --function-name "$FUNCTION_NAME" >/dev/null 2>&1; then
+if [ "$FUNCTION_EXISTS" -eq 1 ]; then
   echo "Function exists, updating code."
   run aws lambda update-function-code --function-name "$FUNCTION_NAME" --zip-file "fileb://$ZIP"
 else
@@ -142,10 +177,18 @@ else
     --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$SECRET}"
 fi
 
+# Read-modify-write: the map read above plus the two variables this script
+# owns, so an unconditional --environment can never drop anything else.
+ENV_ARG="$(python3 -c 'import json, sys
+env = json.load(open(sys.argv[1])) or {}
+env["SHARES_BUCKET"] = sys.argv[2]
+env["SHARE_ORIGIN_SECRET"] = sys.argv[3]
+print(json.dumps({"Variables": env}))' "$ENV_FILE" "$BUCKET" "$SECRET")"
+
 [ "$DRY_RUN" -eq 1 ] || aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 run aws lambda update-function-configuration --function-name "$FUNCTION_NAME" \
   --runtime "$RUNTIME" \
-  --environment "Variables={SHARES_BUCKET=$BUCKET,SHARE_ORIGIN_SECRET=$SECRET}"
+  --environment "$ENV_ARG"
 
 [ "$DRY_RUN" -eq 1 ] || aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 run aws lambda put-function-concurrency --function-name "$FUNCTION_NAME" \

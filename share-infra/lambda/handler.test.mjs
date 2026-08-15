@@ -58,6 +58,16 @@ test('is case-insensitive about the header name', () => {
   assert.equal(hasValidOriginSecret({ 'X-Share-Origin-Secret': 'sekret' }, 'sekret'), true);
 });
 
+test('rejects a multibyte origin secret instead of throwing', () => {
+  // 'é' is one UTF-16 code unit but two UTF-8 bytes, so the string lengths
+  // match while the byte lengths differ. timingSafeEqual throws RangeError on
+  // unequal buffers, and a throw here would surface as a bare API Gateway 5xx
+  // that breaks the deliberate 404 indistinguishability.
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': 'sekreé' }, 'sekret'), false);
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': 'sékret' }, 'sekret'), false);
+  assert.equal(hasValidOriginSecret({ 'x-share-origin-secret': '�'.repeat(6) }, 'sekret'), false);
+});
+
 test('allows everything when no secret is configured, for local runs', () => {
   assert.equal(hasValidOriginSecret({}, ''), true);
   assert.equal(hasValidOriginSecret({}, undefined), true);

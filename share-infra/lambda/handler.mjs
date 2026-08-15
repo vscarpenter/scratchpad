@@ -57,8 +57,13 @@ export function hasValidOriginSecret(headers, expected) {
   if (!headers) return false;
   const supplied = headers[ORIGIN_SECRET_HEADER] ??
     headers[Object.keys(headers).find((k) => k.toLowerCase() === ORIGIN_SECRET_HEADER) ?? ''];
-  if (typeof supplied !== 'string' || supplied.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(supplied, 'utf8'), Buffer.from(expected, 'utf8'));
+  if (typeof supplied !== 'string') return false;
+  // Compare byte lengths, not string lengths: a multibyte character makes the
+  // two measures diverge, and timingSafeEqual throws on unequal buffers.
+  const suppliedBytes = Buffer.from(supplied, 'utf8');
+  const expectedBytes = Buffer.from(expected, 'utf8');
+  if (suppliedBytes.length !== expectedBytes.length) return false;
+  return timingSafeEqual(suppliedBytes, expectedBytes);
 }
 
 export function route(method, path) {
@@ -171,7 +176,16 @@ async function revoke(id, token) {
 
 export async function handler(event) {
   const headers = event?.headers || {};
-  if (!hasValidOriginSecret(headers, ORIGIN_SECRET)) {
+  // A throw inside the gate must degrade to the same 404 the gate returns,
+  // never a bare API Gateway 5xx: the error path would otherwise both break
+  // the indistinguishability below and ship without SECURITY_HEADERS.
+  let originOk = false;
+  try {
+    originOk = hasValidOriginSecret(headers, ORIGIN_SECRET);
+  } catch {
+    originOk = false;
+  }
+  if (!originOk) {
     // Deliberately indistinguishable from an unknown path: someone probing the
     // API Gateway endpoint directly learns nothing about what lives here.
     return json(404, { error: 'Not found' });

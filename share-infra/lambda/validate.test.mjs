@@ -63,6 +63,29 @@ test('rejects empty ciphertext', () => {
   assert.equal(parseShareBody(JSON.stringify({ v: 1, ciphertext: '', iv })).status, 400);
 });
 
+test('accepts unpadded base64', () => {
+  const unpadded = ciphertext.replace(/=+$/, '');
+  const result = parseShareBody(JSON.stringify({ v: 1, ciphertext: unpadded, iv }));
+  assert.equal(result.ok, true);
+});
+
+test('rejects base64 with more than two padding characters', () => {
+  assert.equal(parseShareBody(JSON.stringify({ v: 1, ciphertext: 'QQ===', iv })).status, 400);
+});
+
+test('rejects a pathological padding run in bounded time', () => {
+  // '='.repeat(k) + 'A' is the classic trim-ReDoS probe: a /=+$/ strip
+  // backtracks quadratically, so ~256KB of '=' burns the whole Lambda timeout.
+  // The 500ms bound is generous for a linear scan and impossible for O(n^2).
+  const evil = '='.repeat(50000) + 'A';
+  const started = process.hrtime.bigint();
+  const result = parseShareBody(JSON.stringify({ v: 1, ciphertext: evil, iv }));
+  const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
+  assert.equal(result.ok, false);
+  assert.equal(result.status, 400);
+  assert.ok(elapsedMs < 500, `pathological padding took ${elapsedMs}ms`);
+});
+
 test('ignores a client-supplied expiresAt entirely', () => {
   const withExpiry = JSON.stringify({ v: 1, ciphertext, iv, expiresAt: 4102444800000 });
   const result = parseShareBody(withExpiry);

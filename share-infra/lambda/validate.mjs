@@ -14,13 +14,28 @@ function fail(status, error) {
   return { ok: false, status, error };
 }
 
+// Anchored and linear: one start position, and '=' is outside the class, so
+// the engine cannot backtrack quadratically the way an unanchored /=+$/ strip
+// does against a long padding run (the classic trim-ReDoS probe).
+const BASE64_SHAPE = /^[A-Za-z0-9+/]+={0,2}$/;
+
+// Canonical base64 carries at most two padding characters, and BASE64_SHAPE
+// has already enforced that, so this loop runs at most twice.
+function stripPadding(value) {
+  let out = value;
+  while (out.endsWith('=')) out = out.slice(0, -1);
+  return out;
+}
+
 // Buffer.from(..., 'base64') is lenient: it silently drops characters outside
 // the alphabet rather than throwing. Round-tripping is the only way to know the
 // input really was base64 and not something that merely survived the filter.
+// The shape test runs first so the round-trip only ever sees bounded padding.
 function decodeBase64(value) {
+  if (!BASE64_SHAPE.test(value)) return null;
   const buf = Buffer.from(value, 'base64');
-  const normalized = buf.toString('base64').replace(/=+$/, '');
-  return normalized === value.replace(/=+$/, '') ? buf : null;
+  const normalized = stripPadding(buf.toString('base64'));
+  return normalized === stripPadding(value) ? buf : null;
 }
 
 export function isValidShareId(id) {
