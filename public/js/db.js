@@ -18,6 +18,16 @@
     if (dbPromise) return dbPromise;
     dbPromise = new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
+      // A failed open must not latch: reset the cache so the next call can
+      // retry once the transient condition (another tab holding an old
+      // version, a permission prompt) has cleared.
+      let settled = false;
+      const fail = (error) => {
+        if (settled) return;
+        settled = true;
+        dbPromise = null;
+        reject(error);
+      };
       req.onupgradeneeded = (e) => {
         const db = req.result;
         if (!db.objectStoreNames.contains(STORES.notes)) {
@@ -44,9 +54,26 @@
           shares.createIndex('expiresAt', 'expiresAt');
         }
       };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-      req.onblocked = () => reject(new Error('IndexedDB open blocked'));
+      req.onsuccess = () => {
+        const db = req.result;
+        // Yield to a future version bump: without this handler an open tab
+        // blocks another tab's upgrade forever, and that tab latches
+        // onblocked. The next call here reopens at the new version.
+        db.onversionchange = () => {
+          db.close();
+          dbPromise = null;
+        };
+        if (settled) {
+          // Late success after onblocked already rejected: nobody holds this
+          // promise anymore, so just release the connection.
+          db.close();
+          return;
+        }
+        settled = true;
+        resolve(db);
+      };
+      req.onerror = () => fail(req.error);
+      req.onblocked = () => fail(new Error('IndexedDB open blocked'));
     });
     return dbPromise;
   }
@@ -59,6 +86,21 @@
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  // A request error bubbles to the transaction while transaction.error is
+  // still null -- the real error is only assigned by the later abort steps.
+  // Latch it in onerror and reject from onabort so callers see the cause
+  // (QuotaExceededError, most importantly) instead of null.
+  function transactionDone(t) {
+    return new Promise((resolve, reject) => {
+      let failure = null;
+      t.oncomplete = () => resolve();
+      t.onerror = () => {
+        if (!failure && t.error) failure = t.error;
+      };
+      t.onabort = () => reject(failure || t.error || new Error('IndexedDB transaction aborted'));
     });
   }
 
@@ -89,14 +131,10 @@
 
   async function bulkPut(notes) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(STORES.notes, 'readwrite');
-      const store = t.objectStore(STORES.notes);
-      for (const note of notes) store.put(note);
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(STORES.notes, 'readwrite');
+    const store = t.objectStore(STORES.notes);
+    for (const note of notes) store.put(note);
+    return transactionDone(t);
   }
 
   async function getDraft(noteId) {
@@ -136,14 +174,10 @@
 
   async function bulkPutFolders(folders) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(STORES.folders, 'readwrite');
-      const store = t.objectStore(STORES.folders);
-      for (const folder of folders) store.put(folder);
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(STORES.folders, 'readwrite');
+    const store = t.objectStore(STORES.folders);
+    for (const folder of folders) store.put(folder);
+    return transactionDone(t);
   }
 
   async function getRevisions(noteId) {
@@ -167,19 +201,15 @@
 
   async function pruneRevisions(noteId, keep) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(STORES.revisions, 'readwrite');
-      const store = t.objectStore(STORES.revisions);
-      const index = store.index('noteId');
-      const req = index.getAll(noteId);
-      req.onsuccess = () => {
-        const rows = (req.result || []).sort((a, b) => b.savedAt - a.savedAt);
-        for (const rev of rows.slice(keep)) store.delete(rev.id);
-      };
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(STORES.revisions, 'readwrite');
+    const store = t.objectStore(STORES.revisions);
+    const index = store.index('noteId');
+    const req = index.getAll(noteId);
+    req.onsuccess = () => {
+      const rows = (req.result || []).sort((a, b) => b.savedAt - a.savedAt);
+      for (const rev of rows.slice(keep)) store.delete(rev.id);
+    };
+    return transactionDone(t);
   }
 
   async function getAllRevisions() {
@@ -189,14 +219,10 @@
 
   async function bulkPutRevisions(revisions) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(STORES.revisions, 'readwrite');
-      const store = t.objectStore(STORES.revisions);
-      for (const revision of revisions) store.put(revision);
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(STORES.revisions, 'readwrite');
+    const store = t.objectStore(STORES.revisions);
+    for (const revision of revisions) store.put(revision);
+    return transactionDone(t);
   }
 
   async function importRecords(notes, revisions, revisionLimit, folders) {
@@ -254,26 +280,22 @@
 
   async function deleteNoteEverywhere(noteId) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions, STORES.shares], 'readwrite');
-      t.objectStore(STORES.notes).delete(noteId);
-      t.objectStore(STORES.drafts).delete(noteId);
-      const revisions = t.objectStore(STORES.revisions);
-      const req = revisions.index('noteId').getAll(noteId);
-      req.onsuccess = () => {
-        for (const rev of req.result || []) revisions.delete(rev.id);
-      };
-      // Local rows only. Revoking the shares themselves is a network call the
-      // caller makes first; a deletion must not be blocked by a failed revoke.
-      const shares = t.objectStore(STORES.shares);
-      const shareReq = shares.index('noteId').getAll(noteId);
-      shareReq.onsuccess = () => {
-        for (const share of shareReq.result || []) shares.delete(share.id);
-      };
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions, STORES.shares], 'readwrite');
+    t.objectStore(STORES.notes).delete(noteId);
+    t.objectStore(STORES.drafts).delete(noteId);
+    const revisions = t.objectStore(STORES.revisions);
+    const req = revisions.index('noteId').getAll(noteId);
+    req.onsuccess = () => {
+      for (const rev of req.result || []) revisions.delete(rev.id);
+    };
+    // Local rows only. Revoking the shares themselves is a network call the
+    // caller makes first; a deletion must not be blocked by a failed revoke.
+    const shares = t.objectStore(STORES.shares);
+    const shareReq = shares.index('noteId').getAll(noteId);
+    shareReq.onsuccess = () => {
+      for (const share of shareReq.result || []) shares.delete(share.id);
+    };
+    return transactionDone(t);
   }
 
   // -------- Shares --------
@@ -303,53 +325,42 @@
 
   async function removeSharesForNote(noteId) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(STORES.shares, 'readwrite');
-      const store = t.objectStore(STORES.shares);
-      const req = store.index('noteId').getAll(noteId);
-      req.onsuccess = () => {
-        for (const share of req.result || []) store.delete(share.id);
-      };
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(STORES.shares, 'readwrite');
+    const store = t.objectStore(STORES.shares);
+    const req = store.index('noteId').getAll(noteId);
+    req.onsuccess = () => {
+      for (const share of req.result || []) store.delete(share.id);
+    };
+    return transactionDone(t);
   }
 
   async function pruneExpiredShares(now) {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(STORES.shares, 'readwrite');
-      const store = t.objectStore(STORES.shares);
-      // Upper bound is exclusive: a share expiring exactly now is not yet dead.
-      const req = store.index('expiresAt').getAll(IDBKeyRange.upperBound(now, true));
-      let removed = [];
-      req.onsuccess = () => {
-        removed = req.result || [];
-        for (const share of removed) store.delete(share.id);
-      };
-      t.oncomplete = () => resolve(removed);
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(STORES.shares, 'readwrite');
+    const store = t.objectStore(STORES.shares);
+    // Upper bound is exclusive: a share expiring exactly now is not yet dead.
+    const req = store.index('expiresAt').getAll(IDBKeyRange.upperBound(now, true));
+    let removed = [];
+    req.onsuccess = () => {
+      removed = req.result || [];
+      for (const share of removed) store.delete(share.id);
+    };
+    await transactionDone(t);
+    return removed;
   }
 
   async function clearAllStores() {
     const db = await open();
-    return new Promise((resolve, reject) => {
-      const t = db.transaction(
-        [STORES.notes, STORES.drafts, STORES.revisions, STORES.folders, STORES.shares],
-        'readwrite'
-      );
-      t.objectStore(STORES.notes).clear();
-      t.objectStore(STORES.drafts).clear();
-      t.objectStore(STORES.revisions).clear();
-      t.objectStore(STORES.folders).clear();
-      t.objectStore(STORES.shares).clear();
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error);
-    });
+    const t = db.transaction(
+      [STORES.notes, STORES.drafts, STORES.revisions, STORES.folders, STORES.shares],
+      'readwrite'
+    );
+    t.objectStore(STORES.notes).clear();
+    t.objectStore(STORES.drafts).clear();
+    t.objectStore(STORES.revisions).clear();
+    t.objectStore(STORES.folders).clear();
+    t.objectStore(STORES.shares).clear();
+    return transactionDone(t);
   }
 
   window.ScratchpadDB = {
