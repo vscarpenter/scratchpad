@@ -56,7 +56,7 @@ test.describe('Archive integrations', () => {
     await expect(page.locator('.note-row')).toHaveCount(2);
   });
 
-  test('Archive folder grouping is browse-only and omits empty folders', async ({ page }) => {
+  test('Archive folder switcher is browse-only and exposes empty folders for navigation', async ({ page }) => {
     await seedRawNotes(page, [
       {
         id: 'filed-archive',
@@ -72,10 +72,11 @@ test.describe('Archive integrations', () => {
     ]);
 
     await page.locator('#archive-view').click();
-    await expect(page.locator('.folder-head[data-folder-id="folder-used"]')).toBeVisible();
-    await expect(page.locator('.folder-head[data-folder-id="folder-empty"]')).toHaveCount(0);
+    await page.locator('#folder-switcher-btn').click();
+    await expect(page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="folder-used"]')).toBeVisible();
+    await expect(page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="folder-empty"]')).toBeVisible();
     await expect(page.locator('.folder-menu-btn')).toHaveCount(0);
-    await expect(page.locator('.new-folder-row')).toHaveCount(0);
+    await expect(page.locator('#folder-switcher-new')).toBeHidden();
     await openListMenu(page);
     await expect(page.locator('#new-folder-menu-btn')).toBeHidden();
   });
@@ -117,7 +118,8 @@ test.describe('Archive integrations', () => {
     ]);
     await seedFolders(page, [{ id: 'mixed-folder', name: 'Mixed folder' }]);
 
-    await page.locator('.folder-head[data-folder-id="mixed-folder"] .folder-menu-btn').click();
+    await page.locator('#folder-switcher-btn').click();
+    await page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="mixed-folder"] .folder-switcher-menu-btn').click();
     await page.locator('#folder-menu [data-action="delete"]').click();
     await expect(page.locator('#folder-delete-copy')).toContainText('1 active and 1 archived');
     await page.locator('#folder-delete-keep').click();

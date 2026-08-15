@@ -128,17 +128,15 @@
           <rect class="mock-tab" x="186" y="196" width="78" height="26" rx="6" />
           <text class="mock-tab-label" x="225" y="213" text-anchor="middle">Trash</text>
 
-          <!-- group-by toggle -->
-          <rect class="mock-tab mock-tab-active" x="20" y="232" width="64" height="22" rx="11" />
-          <text class="mock-tab-label-active" x="52" y="247" text-anchor="middle">Folders</text>
-          <rect class="mock-tab" x="90" y="232" width="64" height="22" rx="11" />
-          <text class="mock-tab-label" x="122" y="247" text-anchor="middle">Recent</text>
+          <!-- Home + current-folder switcher -->
+          <rect class="mock-tab" x="20" y="232" width="46" height="22" rx="6" />
+          <text class="mock-tab-label" x="43" y="247" text-anchor="middle">Home</text>
+          <rect class="mock-tab mock-tab-active" x="72" y="232" width="92" height="22" rx="6" />
+          <text class="mock-tab-label-active" x="118" y="247" text-anchor="middle">Work⌄</text>
 
-          <!-- folder: Work (expanded) -->
-          <path class="mock-folder-chevron" d="M23 266l5 5 5-5" />
-          <circle class="mock-folder-dot-accent" cx="44" cy="268" r="3.5" />
-          <text class="mock-folder-name" x="54" y="272">Work</text>
-          <text class="mock-folder-count" x="258" y="272" text-anchor="end">2</text>
+          <!-- current folder -->
+          <circle class="mock-folder-dot-accent" cx="26" cy="268" r="3.5" />
+          <text class="mock-folder-name" x="36" y="272">2 notes in Work</text>
 
           <!-- note row 1 (active, in Work) -->
           <rect class="mock-note-row mock-note-row-active" x="14" y="282" width="256" height="64" rx="8" />
@@ -154,25 +152,10 @@
           <text class="mock-note-time" x="258" y="371" text-anchor="end">Mon</text>
           <text class="mock-note-excerpt" x="26" y="389">Panel formats that don't waste a day…</text>
 
-          <!-- folder: Ideas (collapsed) -->
-          <path class="mock-folder-chevron" d="M26 421l5 5-5 5" />
-          <circle class="mock-folder-dot-olive" cx="44" cy="426" r="3.5" />
-          <text class="mock-folder-name" x="54" y="430">Ideas</text>
-          <text class="mock-folder-count" x="258" y="430" text-anchor="end">5</text>
-
-          <!-- folder: Notes (built-in, expanded) -->
-          <path class="mock-folder-chevron" d="M23 453l5 5 5-5" />
-          <text class="mock-folder-name" x="44" y="459">Notes</text>
-          <text class="mock-folder-count" x="258" y="459" text-anchor="end">5</text>
-
-          <!-- note row (in Notes) -->
-          <rect class="mock-note-row" x="14" y="469" width="256" height="50" rx="8" />
-          <text class="mock-note-title-dim" x="26" y="488">Coffee shop list</text>
-          <text class="mock-note-time" x="258" y="488" text-anchor="end">Fri</text>
-          <text class="mock-note-excerpt" x="26" y="506">Sightglass, Saint Frank, Ritual…</text>
-
-          <!-- + new folder -->
-          <text class="mock-newfolder" x="24" y="541">+  New folder</text>
+          <!-- folder switcher hint -->
+          <rect class="mock-note-row" x="14" y="421" width="256" height="48" rx="8" />
+          <text class="mock-note-title-dim" x="26" y="441">Switch folders to change context</text>
+          <text class="mock-note-excerpt" x="26" y="457">Home keeps recent notes one click away.</text>
 
           <!-- editor area -->
           <text class="mock-breadcrumb" x="310" y="76">work / q2-product-strategy</text>
@@ -296,7 +279,7 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           </span>
           <h3 class="about-feature-title">Fast organization</h3>
-          <p class="about-feature-body">Group notes into folders with drag and drop, search titles, bodies, and tags, pin the notes you revisit, or organize several notes at once.</p>
+          <p class="about-feature-body">Open one focused folder at a time, return Home for pinned and recent notes, drag to file a note, or search titles, bodies, and tags across the whole library.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">

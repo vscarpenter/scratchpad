@@ -16,6 +16,14 @@ test.describe('user guide page', () => {
     }
   });
 
+  test('documents Home, the folder switcher, and global search', async ({ page }) => {
+    await page.goto('/guide.html');
+    const folders = page.locator('#folders').locator('..');
+    await expect(folders).toContainText('Switch folders');
+    await expect(folders).toContainText('Home');
+    await expect(folders).toContainText('searchable picker');
+  });
+
   test('TOC anchor navigates to its section', async ({ page }) => {
     await page.goto('/guide.html');
     await page.locator('.guide-toc a[href="#task-lists"]').click();

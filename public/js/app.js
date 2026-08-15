@@ -21,8 +21,7 @@
   const IMPORT_MAX_FOLDERS = FOLDERS_MAX + 1;
   const FOLDER_COLORS = new Set(['accent', 'olive', 'sky', 'gray']);
   const RESERVED_FOLDER_NAME = 'notes';
-  const GROUPING_KEY = 'scratchpad:notesGrouping';
-  const COLLAPSED_FOLDERS_KEY = 'scratchpad:collapsedFolders';
+  const FOLDER_VIEW_KEY = 'scratchpad:folderView';
   const DAILY_MONTH_DISCLOSURE_KEY = 'scratchpad:dailyMonthDisclosure';
   const VIRTUAL_FOLDER_KEY = '__notes__';
   const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
@@ -51,7 +50,8 @@
     searchScope: 'all',
     tagFilter: null,
     view: 'active',
-    grouping: readGrouping(),
+    folderViewId: readFolderView(),
+    folderSwitcherQuery: '',
     mobileView: 'list', // 'list' | 'editor' - only meaningful on narrow viewports
     focusMode: false, // distraction-free writing; runtime-only, never persisted or restored on reload
     promptedDrafts: new Set(),
@@ -97,9 +97,14 @@
     activeNotesView: $('active-notes-view'),
     archiveView: $('archive-view'),
     trashView: $('trash-view'),
-    groupToggle: $('group-toggle'),
-    groupFolders: $('group-folders'),
-    groupRecent: $('group-recent'),
+    folderNavigation: $('folder-navigation'),
+    homeView: $('home-view'),
+    folderSwitcherBtn: $('folder-switcher-btn'),
+    folderSwitcherLabel: $('folder-switcher-label'),
+    folderSwitcher: $('folder-switcher'),
+    folderSwitcherSearch: $('folder-switcher-search'),
+    folderSwitcherList: $('folder-switcher-list'),
+    folderSwitcherNew: $('folder-switcher-new'),
     manageTags: $('manage-tags'),
     listHeader: $('list-header'),
     listMenuBtn: $('list-menu-btn'),
@@ -938,46 +943,55 @@
     return managed;
   }
 
-  function readGrouping() {
+  function readFolderView() {
     try {
-      return localStorage.getItem(GROUPING_KEY) === 'recent' ? 'recent' : 'folders';
+      const id = localStorage.getItem(FOLDER_VIEW_KEY);
+      return typeof id === 'string' && id ? id : null;
     } catch (e) {
-      return 'folders';
+      return null;
     }
   }
 
-  function setGrouping(mode) {
-    state.grouping = mode === 'recent' ? 'recent' : 'folders';
+  function writeFolderView(folderId) {
     try {
-      localStorage.setItem(GROUPING_KEY, state.grouping);
+      if (folderId) localStorage.setItem(FOLDER_VIEW_KEY, folderId);
+      else localStorage.removeItem(FOLDER_VIEW_KEY);
     } catch (e) { /* private mode / quota */ }
-    renderAll();
   }
 
-  function collapsedFolderKeys() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(COLLAPSED_FOLDERS_KEY) || '[]');
-      return new Set(Array.isArray(raw) ? raw.filter((k) => typeof k === 'string') : []);
-    } catch (e) {
-      return new Set();
+  function isValidFolderView(folderId) {
+    return folderId === VIRTUAL_FOLDER_KEY || !!folderById(folderId);
+  }
+
+  function normalizeFolderView() {
+    if (state.folderViewId && !isValidFolderView(state.folderViewId)) {
+      state.folderViewId = null;
+      writeFolderView(null);
     }
   }
 
-  function writeCollapsedFolderKeys(keys) {
-    const valid = new Set(state.folders.map((f) => f.id));
-    valid.add(VIRTUAL_FOLDER_KEY);
-    const pruned = [...keys].filter((k) => valid.has(k));
-    try {
-      localStorage.setItem(COLLAPSED_FOLDERS_KEY, JSON.stringify(pruned));
-    } catch (e) { /* private mode / quota */ }
+  function setFolderView(folderId, render) {
+    const nextId = folderId && isValidFolderView(folderId) ? folderId : null;
+    state.folderViewId = nextId;
+    writeFolderView(nextId);
+    closeFolderSwitcher();
+    if (render !== false) renderAll();
   }
 
-  function toggleFolderCollapsed(key) {
-    const keys = collapsedFolderKeys();
-    if (keys.has(key)) keys.delete(key);
-    else keys.add(key);
-    writeCollapsedFolderKeys(keys);
-    renderSidebar();
+  function folderForView(folderId) {
+    if (folderId === VIRTUAL_FOLDER_KEY) return null;
+    return folderById(folderId);
+  }
+
+  function folderViewName() {
+    if (!state.folderViewId) return 'Folders';
+    const folder = folderForView(state.folderViewId);
+    return folder ? folder.name : 'Notes';
+  }
+
+  function currentNewNoteFolderId() {
+    const folder = folderForView(state.folderViewId);
+    return folder && !isDailyNotesFolder(folder) ? folder.id : null;
   }
 
   function dailyMonthDisclosure() {
@@ -1065,6 +1079,10 @@
     await loadFolders();
     state.folderDialogId = null;
     closeDialog(els.folderDialog);
+    if (!existing) {
+      state.folderViewId = folder.id;
+      writeFolderView(folder.id);
+    }
     renderAll();
     toast(existing ? 'Folder updated.' : 'Folder created.');
   }
@@ -1207,9 +1225,10 @@
     await DB.removeFolder(folderId);
     broadcastChange({ type: 'folders-changed' });
     await loadFolders();
-    const keys = collapsedFolderKeys();
-    keys.delete(folderId);
-    writeCollapsedFolderKeys(keys);
+    if (state.folderViewId === folderId) {
+      state.folderViewId = null;
+      writeFolderView(null);
+    }
     state.folderDeleteId = null;
     closeDialog(els.folderDeleteDialog);
     renderAll();
@@ -1400,13 +1419,19 @@
     els.activeNotesView.classList.toggle('is-active', state.view === 'active');
     els.archiveView.classList.toggle('is-active', state.view === 'archive');
     els.trashView.classList.toggle('is-active', state.view === 'trash');
-    if (!els.groupToggle) return;
-    els.groupToggle.hidden = state.view === 'trash';
+    if (!els.folderNavigation) return;
+    const showNavigation = state.view !== 'trash';
+    els.folderNavigation.hidden = !showNavigation;
     els.newFolderMenuBtn.hidden = state.view === 'archive';
-    els.groupFolders.classList.toggle('is-active', state.grouping === 'folders');
-    els.groupFolders.setAttribute('aria-pressed', state.grouping === 'folders' ? 'true' : 'false');
-    els.groupRecent.classList.toggle('is-active', state.grouping === 'recent');
-    els.groupRecent.setAttribute('aria-pressed', state.grouping === 'recent' ? 'true' : 'false');
+    normalizeFolderView();
+    const atHome = !state.folderViewId;
+    els.homeView.classList.toggle('is-active', atHome);
+    els.homeView.setAttribute('aria-pressed', atHome ? 'true' : 'false');
+    els.folderSwitcherLabel.textContent = folderViewName();
+    els.folderSwitcherBtn.classList.toggle('is-active', !atHome);
+    els.folderSwitcherBtn.setAttribute('aria-pressed', atHome ? 'false' : 'true');
+    els.folderSwitcherNew.hidden = state.view === 'archive';
+    renderFolderSwitcher();
   }
 
   function renderSearchScope() {
@@ -1455,10 +1480,13 @@
       if (state.bulkMode && sorted.length) children.push(renderBulkToolbar(sorted));
       if (sorted.length) children.push(renderSection('Trash', sorted));
     } else {
-      if (state.bulkMode && sorted.length) children.push(renderBulkToolbar(sorted));
       const flat = !!(state.search.trim() || state.tagFilter);
-      if (state.grouping === 'folders' && !flat) {
-        renderFolderSections(children, sorted);
+      const scopedNotes = !flat && state.folderViewId
+        ? notesForFolder(sorted, state.folderViewId === VIRTUAL_FOLDER_KEY ? null : state.folderViewId)
+        : sorted;
+      if (state.bulkMode && scopedNotes.length) children.push(renderBulkToolbar(scopedNotes));
+      if (!flat && state.folderViewId) {
+        renderFolderScope(children, scopedNotes);
       } else {
         const buckets = bucketizeNotes(sorted);
         for (const bucket of buckets) {
@@ -1655,25 +1683,31 @@
       });
   }
 
-  function renderFolderSections(children, notes) {
-    const browseOnly = state.view === 'archive';
-    for (const folder of sortedFolders()) {
-      const folderNotes = notesForFolder(notes, folder.id);
-      if (browseOnly && !folderNotes.length) continue;
-      children.push(renderFolderSection(folder, folderNotes, browseOnly));
-    }
-    const unfiled = notesForFolder(notes, null);
-    if (!browseOnly || unfiled.length) children.push(renderFolderSection(null, unfiled, browseOnly));
-    if (browseOnly) return;
-    children.push(el('button', {
-      class: 'new-folder-row',
-      attrs: { type: 'button' },
-      children: [
-        el('span', { class: 'new-folder-plus', attrs: { 'aria-hidden': 'true' }, text: '+' }),
-        el('span', { text: 'New folder' }),
-      ],
-      on: { click: () => openFolderDialog(null) },
+  function renderFolderScope(children, notes) {
+    const folder = folderForView(state.folderViewId);
+    const name = folder ? folder.name : 'Notes';
+    const count = notes.length;
+    children.push(el('div', {
+      class: 'folder-scope-meta',
+      text: count + ' note' + (count === 1 ? '' : 's') + ' in ' + name,
     }));
+    if (!count) {
+      children.push(el('div', {
+        class: 'folder-scope-empty',
+        children: [
+          el('p', { text: 'Nothing is filed here yet.' }),
+          state.view === 'active' && !isDailyNotesFolder(folder) ? el('button', {
+            class: 'btn btn-secondary btn-sm',
+            text: 'New note here',
+            attrs: { type: 'button' },
+            on: { click: () => createNote(folder ? folder.id : null) },
+          }) : null,
+        ],
+      }));
+      return;
+    }
+    if (isDailyNotesFolder(folder)) children.push(...renderDailyMonthGroups(notes));
+    else children.push(...notes.map(renderRow));
   }
 
   function folderMenuIcon() {
@@ -1693,88 +1727,138 @@
     return svg;
   }
 
-  function renderFolderSection(folder, notes, browseOnly) {
-    const key = folder ? folder.id : VIRTUAL_FOLDER_KEY;
-    const collapsed = collapsedFolderKeys().has(key);
-    const name = folder ? folder.name : 'Notes';
-    const toggleChildren = [
-      el('span', { class: 'folder-chevron', attrs: { 'aria-hidden': 'true' } }),
+  function folderSwitcherEntries() {
+    const query = state.folderSwitcherQuery.trim().toLocaleLowerCase();
+    const options = [
+      ...sortedFolders().map((folder) => ({
+        id: folder.id,
+        name: folder.name,
+        color: folder.color,
+        folder,
+      })),
+      { id: VIRTUAL_FOLDER_KEY, name: 'Notes', color: null, folder: null },
     ];
-    if (folder && folder.color) {
-      toggleChildren.push(el('span', { class: 'folder-dot', attrs: { 'data-color': folder.color, 'aria-hidden': 'true' } }));
-    }
-    toggleChildren.push(el('span', { class: 'folder-name', text: name }));
-    toggleChildren.push(el('span', { class: 'folder-count', text: String(notes.length), attrs: { 'aria-hidden': 'true' } }));
-    const toggle = el('button', {
-      class: 'folder-toggle',
-      attrs: {
-        type: 'button',
-        'aria-expanded': collapsed ? 'false' : 'true',
-        'aria-label': (collapsed ? 'Expand ' : 'Collapse ') + name + ' (' + notes.length + ' note' + (notes.length === 1 ? '' : 's') + ')',
-      },
-      children: toggleChildren,
-      on: { click: () => toggleFolderCollapsed(key) },
-    });
-    const headChildren = [toggle];
-    if (folder && !browseOnly) {
-      headChildren.push(el('button', {
-        class: 'icon-btn folder-menu-btn',
+    return query ? options.filter((option) => option.name.toLocaleLowerCase().includes(query)) : options;
+  }
+
+  function renderFolderSwitcher() {
+    if (!els.folderSwitcherList) return;
+    const baseNotes = currentBaseNotes();
+    const entries = folderSwitcherEntries();
+    const rows = entries.map((option) => {
+      const folderId = option.id === VIRTUAL_FOLDER_KEY ? null : option.id;
+      const count = notesForFolder(baseNotes, folderId).length;
+      const choose = el('button', {
+        class: 'folder-switcher-option' + (state.folderViewId === option.id ? ' is-current' : ''),
+        text: option.name,
         attrs: {
           type: 'button',
-          'aria-haspopup': 'menu',
-          'aria-expanded': 'false',
-          'aria-label': 'Folder actions for ' + name,
-          title: 'Folder actions',
+          'data-folder-id': option.id,
+          'aria-current': state.folderViewId === option.id ? 'page' : null,
+          'aria-label': option.name + ', ' + count + ' note' + (count === 1 ? '' : 's'),
         },
-        children: [folderMenuIcon()],
-        on: { click: (e) => openFolderMenu(folder.id, e.currentTarget) },
-      }));
-    }
-    const head = el('div', {
-      class: 'folder-head' + (collapsed ? ' is-collapsed' : ''),
-      attrs: {
-        'data-folder-id': folder ? folder.id : '',
-        draggable: folder && !browseOnly ? 'true' : null,
-      },
-      children: headChildren,
+        on: { click: () => setFolderView(option.id) },
+      });
+      const rowChildren = [
+        option.color ? el('span', {
+          class: 'folder-dot',
+          attrs: { 'data-color': option.color, 'aria-hidden': 'true' },
+        }) : null,
+        choose,
+        el('span', { class: 'folder-switcher-count', text: String(count), attrs: { 'aria-hidden': 'true' } }),
+      ];
+      if (option.folder && state.view === 'active') {
+        rowChildren.push(el('button', {
+          class: 'icon-btn folder-menu-btn folder-switcher-menu-btn',
+          attrs: {
+            type: 'button',
+            'aria-haspopup': 'menu',
+            'aria-expanded': 'false',
+            'aria-label': 'Folder actions for ' + option.name,
+            title: 'Folder actions',
+          },
+          children: [folderMenuIcon()],
+          on: { click: (e) => openFolderMenu(option.id, e.currentTarget) },
+        }));
+      }
+      const row = el('div', {
+        class: 'folder-switcher-row' + (state.folderViewId === option.id ? ' is-current' : ''),
+        attrs: { 'data-folder-id': option.id },
+        children: rowChildren,
+      });
+      if (state.view === 'active' && !isDailyNotesFolder(option.folder)) {
+        row.addEventListener('dragover', (e) => {
+          if (!Array.from(e.dataTransfer.types || []).includes('application/x-scratchpad-note')) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          row.classList.add('is-drop-target');
+        });
+        row.addEventListener('dragleave', () => row.classList.remove('is-drop-target'));
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          row.classList.remove('is-drop-target');
+          const noteId = e.dataTransfer.getData('application/x-scratchpad-note');
+          if (noteId) moveNotesToFolder([noteId], folderId);
+        });
+      }
+      return row;
     });
-    if (folder && !browseOnly) {
-      head.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('application/x-scratchpad-folder', folder.id);
-        e.dataTransfer.effectAllowed = 'move';
-      });
-    }
-    if (!browseOnly) {
-      head.addEventListener('dragover', (e) => {
-        const types = Array.from(e.dataTransfer.types || []);
-        const isNote = types.includes('application/x-scratchpad-note') && !isDailyNotesFolder(folder);
-        const isFolder = types.includes('application/x-scratchpad-folder') && !!folder;
-        if (!isNote && !isFolder) return;
+    if (!rows.length) rows.push(el('p', {
+      class: 'folder-switcher-empty',
+      text: 'No folders match that name.',
+    }));
+    els.folderSwitcherList.replaceChildren(...rows);
+  }
+
+  function openFolderSwitcher(options) {
+    if (!els.folderSwitcher.hidden) return;
+    closeListMenu();
+    closeFolderMenu();
+    state.folderSwitcherQuery = '';
+    els.folderSwitcherSearch.value = '';
+    renderFolderSwitcher();
+    const rect = els.folderSwitcherBtn.getBoundingClientRect();
+    els.folderSwitcher.hidden = false;
+    const maxLeft = window.innerWidth - els.folderSwitcher.offsetWidth - 8;
+    els.folderSwitcher.style.top = Math.round(rect.bottom + 6) + 'px';
+    els.folderSwitcher.style.left = Math.max(8, Math.min(Math.round(rect.left), maxLeft)) + 'px';
+    els.folderSwitcherBtn.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', onFolderSwitcherOutsideClick, true);
+    document.addEventListener('keydown', onFolderSwitcherKey, true);
+    if (!options || options.focus !== false) setTimeout(() => els.folderSwitcherSearch.focus(), 0);
+  }
+
+  function closeFolderSwitcher(options) {
+    if (!els.folderSwitcher || els.folderSwitcher.hidden) return;
+    els.folderSwitcher.hidden = true;
+    els.folderSwitcherBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onFolderSwitcherOutsideClick, true);
+    document.removeEventListener('keydown', onFolderSwitcherKey, true);
+    if (options && options.restoreFocus) els.folderSwitcherBtn.focus();
+  }
+
+  function toggleFolderSwitcher() {
+    if (els.folderSwitcher.hidden) openFolderSwitcher();
+    else closeFolderSwitcher({ restoreFocus: true });
+  }
+
+  function onFolderSwitcherOutsideClick(e) {
+    if (els.folderSwitcher.contains(e.target) || els.folderSwitcherBtn.contains(e.target)) return;
+    closeFolderSwitcher();
+  }
+
+  function onFolderSwitcherKey(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeFolderSwitcher({ restoreFocus: true });
+    } else if (e.key === 'ArrowDown' && document.activeElement === els.folderSwitcherSearch) {
+      const first = els.folderSwitcherList.querySelector('.folder-switcher-option');
+      if (first) {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        head.classList.add('is-drop-target');
-      });
-      head.addEventListener('dragleave', () => head.classList.remove('is-drop-target'));
-      head.addEventListener('drop', (e) => {
-        e.preventDefault();
-        head.classList.remove('is-drop-target');
-        const noteId = e.dataTransfer.getData('application/x-scratchpad-note');
-        if (noteId) {
-          moveNotesToFolder([noteId], folder ? folder.id : null);
-          return;
-        }
-        const draggedFolderId = e.dataTransfer.getData('application/x-scratchpad-folder');
-        if (draggedFolderId && folder && draggedFolderId !== folder.id) {
-          dropFolderOn(draggedFolderId, folder.id);
-        }
-      });
+        first.focus();
+      }
     }
-    const rows = collapsed
-      ? []
-      : isDailyNotesFolder(folder)
-        ? renderDailyMonthGroups(notes)
-        : notes.map(renderRow);
-    return el('div', { class: 'note-section folder-section', children: [head, ...rows] });
   }
 
   function dailyNotesByMonth(notes) {
@@ -1847,20 +1931,6 @@
         children: [toggle, monthRows],
       });
     });
-  }
-
-  async function dropFolderOn(draggedId, targetId) {
-    const ordered = sortedFolders().map((f) => f.id);
-    const from = ordered.indexOf(draggedId);
-    const to = ordered.indexOf(targetId);
-    if (from < 0 || to < 0 || from === to) return;
-    ordered.splice(to, 0, ordered.splice(from, 1)[0]);
-    const t = now();
-    const renumbered = ordered.map((id, i) => ({ ...folderById(id), sortOrder: i, updatedAt: t }));
-    await DB.bulkPutFolders(renumbered);
-    broadcastChange({ type: 'folders-changed' });
-    await loadFolders();
-    renderAll();
   }
 
   function renderSection(label, notes, isPinnedSection) {
@@ -1971,7 +2041,6 @@
 
     const draggable =
       state.view === 'active' &&
-      state.grouping === 'folders' &&
       !state.bulkMode &&
       !isDailyNote(note);
     return el('div', {
@@ -1987,6 +2056,7 @@
           e.dataTransfer.setData('application/x-scratchpad-note', note.id);
           e.dataTransfer.setData('text/plain', note.id);
           e.dataTransfer.effectAllowed = 'move';
+          openFolderSwitcher({ focus: false });
         },
       } : null,
       children: [openButton, ...children],
@@ -2724,6 +2794,7 @@
 
   async function setView(view) {
     if (view === state.view) return;
+    closeFolderSwitcher();
     if (state.editing && state.dirty) {
       const ok = await confirmDiscard();
       if (!ok) return;
@@ -2746,9 +2817,10 @@
       await discardCurrentDraft();
     }
     const t = now();
+    const requestedFolderId = typeof folderId === 'string' ? folderId : currentNewNoteFolderId();
     const targetFolderId =
-      typeof folderId === 'string' && folderId && !isDailyNotesFolder(folderId)
-        ? folderId
+      requestedFolderId && !isDailyNotesFolder(requestedFolderId) && folderById(requestedFolderId)
+        ? requestedFolderId
         : null;
     const note = {
       id: uuid(),
@@ -5908,8 +5980,16 @@
     els.activeNotesView.addEventListener('click', () => setView('active'));
     els.archiveView.addEventListener('click', () => setView('archive'));
     els.trashView.addEventListener('click', () => setView('trash'));
-    els.groupFolders.addEventListener('click', () => setGrouping('folders'));
-    els.groupRecent.addEventListener('click', () => setGrouping('recent'));
+    els.homeView.addEventListener('click', () => setFolderView(null));
+    els.folderSwitcherBtn.addEventListener('click', toggleFolderSwitcher);
+    els.folderSwitcherSearch.addEventListener('input', () => {
+      state.folderSwitcherQuery = els.folderSwitcherSearch.value;
+      renderFolderSwitcher();
+    });
+    els.folderSwitcherNew.addEventListener('click', () => {
+      closeFolderSwitcher();
+      openFolderDialog(null);
+    });
     els.folderDialogSave.addEventListener('click', () => { saveFolderDialog(); });
     els.folderNameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {

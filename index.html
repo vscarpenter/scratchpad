@@ -131,11 +131,22 @@
 
       <nav class="note-list" id="note-list" aria-label="Note list">
         <div class="list-header" id="list-header">
-          <div id="group-toggle" class="list-header-groups" role="group" aria-label="Group notes by">
-            <span class="list-header-chevron" aria-hidden="true"></span>
-            <button id="group-folders" class="list-header-tab is-active" type="button" aria-pressed="true">Folders</button>
-            <span class="list-header-sep" aria-hidden="true">/</span>
-            <button id="group-recent" class="list-header-tab" type="button" aria-pressed="false">Recent</button>
+          <div id="folder-navigation" class="folder-navigation" role="group" aria-label="Note location">
+            <button id="home-view" class="folder-navigation-home is-active" type="button" aria-pressed="true">Home</button>
+            <div class="folder-switcher-wrap">
+              <button id="folder-switcher-btn" class="folder-switcher-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="folder-switcher">
+                <span id="folder-switcher-label">Folders</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+              </button>
+              <div id="folder-switcher" class="folder-switcher" role="dialog" aria-label="Switch folder" hidden>
+                <div class="folder-switcher-head">
+                  <label class="visually-hidden" for="folder-switcher-search">Find a folder</label>
+                  <input id="folder-switcher-search" class="input folder-switcher-search" type="search" placeholder="Find a folder" autocomplete="off" />
+                </div>
+                <div id="folder-switcher-list" class="folder-switcher-list" aria-label="Folders"></div>
+                <button id="folder-switcher-new" class="folder-switcher-new" type="button">New folder</button>
+              </div>
+            </div>
           </div>
           <div class="overflow-wrap list-header-overflow">
             <button id="list-menu-btn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="List options" title="List options">
@@ -468,6 +479,12 @@
         Clearing site data (or using private browsing) will erase your notes. Back up with
         <em>Export</em> and restore with <em>Import</em>, both behind the backup chip at the
         bottom of the sidebar.
+      </p>
+      <p>
+        Keep the sidebar calm as your library grows: <strong>Home</strong> shows pinned and
+        recently edited notes, while the <strong>Folders</strong> switcher opens one folder at a
+        time. Search still looks across every folder. Dragging a note opens the switcher so you
+        can drop it into its new home.
       </p>
 
       <section id="diagnostics-panel" class="diagnostics-panel" aria-labelledby="diagnostics-title">
