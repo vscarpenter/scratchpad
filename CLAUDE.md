@@ -319,9 +319,15 @@ has the exact command snippets.
 ## Local development
 
 ```sh
-python3 -m http.server 8080
+node scripts/dev-server.mjs
 # open http://localhost:8080
 ```
+
+Don't use `python3 -m http.server` here: it serves the entire working tree —
+`.env.local`, `.git/`, the security-review dossiers — with directory listings
+and no Host validation. `scripts/dev-server.mjs` serves exactly what
+`deploy.sh` uploads, listens on 127.0.0.1 only, and rejects non-loopback Host
+headers (DNS rebinding). The Playwright suite uses the same server.
 
 Don't open `index.html` via `file://`. IndexedDB behavior on file URLs is
 inconsistent across browsers.

@@ -22,7 +22,11 @@ module.exports = defineConfig({
     { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
-    command: 'python3 -m http.server 8080 --bind 127.0.0.1',
+    // scripts/dev-server.mjs serves only the deployable surface (the HTML
+    // shells, service-worker.js, public/**) with Host validation -- unlike
+    // python3 -m http.server, which exposed the whole working tree including
+    // .env.local and .git/ to any local process or DNS-rebinding page.
+    command: 'node scripts/dev-server.mjs 8080',
     url: 'http://127.0.0.1:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

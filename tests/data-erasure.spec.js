@@ -1,6 +1,11 @@
 const { test, expect } = require('@playwright/test');
 const { gotoApp, createAndSaveNote } = require('./helpers');
 
+// WebKit routes requests from a service-worker-controlled page around
+// page.route, so the stubbed DELETE /api/share/<id> in the revocation tests
+// would escape to the real static server. Same rationale as share-link.spec.js.
+test.use({ serviceWorkers: 'block' });
+
 test.describe('local data erasure', () => {
   test('requires ERASE and clears notes, drafts, revisions, and app preferences', async ({ page }) => {
     await gotoApp(page);
