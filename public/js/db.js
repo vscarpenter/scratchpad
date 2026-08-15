@@ -119,6 +119,26 @@
     return reqToPromise(store.put(note));
   }
 
+  // Compare-and-put in one transaction: the write commits only when the
+  // stored record's updatedAt still matches what the caller read, and never
+  // resurrects a record another tab deleted. Returns whether it wrote.
+  async function putIfUnchanged(note, expectedUpdatedAt) {
+    const db = await open();
+    const t = db.transaction(STORES.notes, 'readwrite');
+    const store = t.objectStore(STORES.notes);
+    let committed = false;
+    const req = store.get(note.id);
+    req.onsuccess = () => {
+      const current = req.result;
+      if (current && current.updatedAt === expectedUpdatedAt) {
+        store.put(note);
+        committed = true;
+      }
+    };
+    await transactionDone(t);
+    return committed;
+  }
+
   async function remove(id) {
     const store = await tx(STORES.notes, 'readwrite');
     return reqToPromise(store.delete(id));
@@ -367,6 +387,7 @@
     getAll,
     get,
     put,
+    putIfUnchanged,
     remove,
     clear,
     bulkPut,

@@ -3021,8 +3021,7 @@
     return withBusy('move-trash', [els.confirmDelete, els.deleteBtn], 'Delete failed. The note is still in Notes.', async () => {
       // Trashing a note takes its share dialog away, so a live public link would
       // become unrevokable. Revoke first; restoring can always share again.
-      await revokeSharesForNote(note.id);
-      await DB.removeSharesForNote(note.id);
+      const stillLive = await revokeSharesForNote(note.id);
       await syncSharedNoteIds();
       const t = now();
       const nextNote = { ...note, deletedAt: t, updatedAt: t, lastDraftAt: null };
@@ -3035,6 +3034,7 @@
       state.mobileView = 'list';
       renderAll();
       toast('Moved to Trash.');
+      warnUnrevoked(stillLive, 'Restore the note to retry.');
     });
   }
 
@@ -3056,7 +3056,7 @@
     const id = state.selectedId;
     if (!id) return;
     return withBusy('permanent-delete', [els.confirmPermanentDelete, els.permanentDeleteBtn], 'Permanent delete failed. The note is still in Trash.', async () => {
-      await revokeSharesForNote(id);
+      const stillLive = await revokeSharesForNote(id);
       await deleteNoteRecord(id);
       await syncSharedNoteIds();
       state.notes = state.notes.filter((n) => n.id !== id);
@@ -3065,19 +3065,26 @@
       state.dirty = false;
       renderAll();
       toast('Note permanently deleted.');
+      warnUnrevoked(stillLive);
     });
   }
 
   async function emptyTrash() {
     const notes = trashedNotes();
     return withBusy('empty-trash', [els.confirmEmptyTrash], 'Empty Trash failed. Trashed notes were not removed.', async () => {
+      // Deleting forever destroys each share row and with it the only copy of
+      // the revoke token, so the revoke must come first.
+      const stillLive = (await Promise.all(notes.map((note) => revokeSharesForNote(note.id))))
+        .reduce((sum, count) => sum + count, 0);
       await Promise.all(notes.map((note) => deleteNoteRecord(note.id)));
+      await syncSharedNoteIds();
       state.notes = state.notes.filter((n) => !isTrashed(n));
       state.selectedId = null;
       state.editing = false;
       state.dirty = false;
       renderAll();
       toast('Trash emptied.');
+      warnUnrevoked(stillLive);
     });
   }
 
@@ -3201,6 +3208,11 @@
     const selected = selectedBulkNotes().filter((note) => !isTrashed(note));
     if (!selected.length) return;
     return withBusy('bulk-move-trash', [], 'Move to Trash failed. Selected notes were not changed.', async () => {
+      // Same contract as the single-note path: trashing takes the share dialog
+      // away, so revoke first. Failed revokes keep their rows for a retry.
+      const stillLive = (await Promise.all(selected.map((note) => revokeSharesForNote(note.id))))
+        .reduce((sum, count) => sum + count, 0);
+      await syncSharedNoteIds();
       const t = now();
       const nextNotes = selected.map((note) => ({ ...note, deletedAt: t, updatedAt: t, lastDraftAt: null }));
       await bulkPutNoteRecords(nextNotes);
@@ -3217,6 +3229,7 @@
       state.dirty = false;
       renderAll();
       toast('Moved ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + ' to Trash.');
+      warnUnrevoked(stillLive, 'Restore the affected notes to retry.');
     });
   }
 
@@ -3244,7 +3257,12 @@
     const ok = window.confirm('Permanently delete ' + selected.length + ' selected note' + (selected.length === 1 ? '' : 's') + '?');
     if (!ok) return;
     return withBusy('bulk-delete-forever', [], 'Permanent delete failed. Selected notes are still in Trash.', async () => {
+      // Deleting forever destroys each share row and with it the only copy of
+      // the revoke token, so the revoke must come first.
+      const stillLive = (await Promise.all(selected.map((note) => revokeSharesForNote(note.id))))
+        .reduce((sum, count) => sum + count, 0);
       await Promise.all(selected.map((note) => deleteNoteRecord(note.id)));
+      await syncSharedNoteIds();
       const selectedIds = new Set(selected.map((note) => note.id));
       state.notes = state.notes.filter((note) => !selectedIds.has(note.id));
       if (state.selectedId && selectedIds.has(state.selectedId)) state.selectedId = null;
@@ -3252,6 +3270,7 @@
       state.bulkMode = false;
       renderAll();
       toast('Deleted ' + selected.length + ' note' + (selected.length === 1 ? '' : 's') + ' forever.');
+      warnUnrevoked(stillLive);
     });
   }
 
@@ -3542,25 +3561,35 @@
 
   async function mutateNoteBody(noteId, transform, opts) {
     opts = opts || {};
-    const latestRaw = await DB.get(noteId);
-    if (!latestRaw) return null;
-    const latest = normalizeNote(latestRaw);
-    if (isTrashed(latest)) return null;
-    const nextBody = transform(latest.body || '');
-    if (typeof nextBody !== 'string' || nextBody === latest.body) return latest;
-    let snapshot = true;
-    if (opts.coalesceToggles) {
-      const last = toggleRevisionAt.get(noteId) || 0;
-      if (now() - last < TOGGLE_REVISION_WINDOW_MS) snapshot = false;
-      else toggleRevisionAt.set(noteId, now());
+    // Retried because the read and the write are separate transactions --
+    // storeRevision alone adds two more in between -- and a write committed
+    // by another tab in that gap would be clobbered wholesale by the stale
+    // {...latest} snapshot, every field of it, with nothing to show for it.
+    // The conditional put detects the conflict; the transform then re-runs
+    // against the newer record.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const latestRaw = await DB.get(noteId);
+      if (!latestRaw) return null;
+      const latest = normalizeNote(latestRaw);
+      if (isTrashed(latest)) return null;
+      const nextBody = transform(latest.body || '');
+      if (typeof nextBody !== 'string' || nextBody === latest.body) return latest;
+      let snapshot = true;
+      if (opts.coalesceToggles) {
+        const last = toggleRevisionAt.get(noteId) || 0;
+        if (now() - last < TOGGLE_REVISION_WINDOW_MS) snapshot = false;
+        else toggleRevisionAt.set(noteId, now());
+      }
+      if (snapshot) await storeRevision(latest);
+      const nextNote = { ...latest, body: nextBody, updatedAt: nextUpdatedAt(latest) };
+      if (!(await DB.putIfUnchanged(nextNote, latestRaw.updatedAt))) continue;
+      broadcastChange({ type: 'note-changed', noteId: nextNote.id, updatedAt: nextNote.updatedAt });
+      const index = state.notes.findIndex((n) => n.id === noteId);
+      if (index >= 0) state.notes[index] = nextNote;
+      else state.notes.push(nextNote);
+      return nextNote;
     }
-    if (snapshot) await storeRevision(latest);
-    const nextNote = { ...latest, body: nextBody, updatedAt: nextUpdatedAt(latest) };
-    await putNoteRecord(nextNote);
-    const index = state.notes.findIndex((n) => n.id === noteId);
-    if (index >= 0) state.notes[index] = nextNote;
-    else state.notes.push(nextNote);
-    return nextNote;
+    return null;
   }
 
   // -------- Task toggles --------
@@ -4096,6 +4125,31 @@
       return;
     }
     return withBusy('erase-local-data', [els.confirmEraseLocalData], 'Local data could not be erased.', async () => {
+      // The shares store holds the only copy of every link's revoke token, so
+      // this is the last possible moment to take the published copies down.
+      // Best effort -- but if any link survives, the user decides whether to
+      // destroy the tokens anyway, because after the wipe no one can revoke.
+      let shares = [];
+      try {
+        shares = await DB.getAllShares();
+      } catch { /* the erase itself still proceeds */ }
+      let stillLive = 0;
+      for (const share of shares) {
+        try {
+          if (!(await revokeShare(share))) stillLive += 1;
+        } catch {
+          stillLive += 1;
+        }
+      }
+      if (stillLive) {
+        const what = stillLive === 1 ? 'One share link' : stillLive + ' share links';
+        const proceed = window.confirm(
+          what + ' could not be revoked and will stay live until expiry. ' +
+          'Erasing local data destroys the only copy of the revoke tokens, so ' +
+          'the links can never be taken down early. Erase anyway?'
+        );
+        if (!proceed) return;
+      }
       await DB.clearAllStores();
       const appKeys = [];
       for (let i = 0; i < localStorage.length; i += 1) {
@@ -4144,12 +4198,18 @@
   }
 
   function readStoredTime(key) {
-    const value = Number(localStorage.getItem(key));
-    return Number.isFinite(value) && value > 0 ? value : null;
+    try {
+      const value = Number(localStorage.getItem(key));
+      return Number.isFinite(value) && value > 0 ? value : null;
+    } catch (e) {
+      return null; /* private mode / blocked storage */
+    }
   }
 
   function writeStoredTime(key, value) {
-    localStorage.setItem(key, String(value));
+    try {
+      localStorage.setItem(key, String(value));
+    } catch (e) { /* private mode / quota */ }
   }
 
   function lastBackupAt() {
@@ -4203,7 +4263,9 @@
 
   function recordBackupDownload() {
     writeStoredTime(LAST_BACKUP_KEY, now());
-    localStorage.removeItem(BACKUP_SNOOZE_KEY);
+    try {
+      localStorage.removeItem(BACKUP_SNOOZE_KEY);
+    } catch (e) { /* private mode / blocked storage */ }
     renderBackupChip();
     renderDiagnostics();
   }
@@ -4380,7 +4442,11 @@
     const encodedLen = encodeURIComponent(buildShareText(note)).length;
     els.shareMailtoWarning.hidden = encodedLen <= MAILTO_ENCODED_LIMIT;
     els.shareLinkError.hidden = true;
-    els.shareExplainer.hidden = !!localStorage.getItem(SHARE_EXPLAINER_KEY);
+    let explainerSeen = false;
+    try {
+      explainerSeen = !!localStorage.getItem(SHARE_EXPLAINER_KEY);
+    } catch (e) { /* private mode / blocked storage; keep showing the explainer */ }
+    els.shareExplainer.hidden = explainerSeen;
     // A longer-lived link is a deliberate per-link choice, not a sticky setting.
     els.shareExpiryDays.value = '7';
     refreshShareLinks(note.id);
@@ -4487,7 +4553,7 @@
     if (!note || isTrashed(note)) return undefined;
 
     els.shareLinkError.hidden = true;
-    return withBusy('create-share', [els.createShareLink], '', async () => {
+    return withBusy('create-share', [els.createShareLink], 'Sharing failed. Reopen the share dialog to check whether a link was created.', async () => {
       const key = await ScratchpadCrypto.generateShareKey();
       const envelope = await ScratchpadCrypto.encryptShare(buildSharePayload(note), key);
       const chosen = Number(els.shareExpiryDays.value);
@@ -4529,7 +4595,9 @@
         titleAtShare: note.title || '',
       });
 
-      localStorage.setItem(SHARE_EXPLAINER_KEY, String(now()));
+      try {
+        localStorage.setItem(SHARE_EXPLAINER_KEY, String(now()));
+      } catch (e) { /* private mode / quota; the link itself is already saved */ }
       els.shareExplainer.hidden = true;
       state.sharedNoteIds.add(note.id);
       await refreshShareLinks(note.id);
@@ -4557,7 +4625,7 @@
 
   async function stopSharing(share, trigger) {
     els.shareLinkError.hidden = true;
-    return withBusy('revoke-share', [trigger], '', async () => {
+    return withBusy('revoke-share', [trigger], 'Could not finish stopping this share. Reopen the dialog and try again.', async () => {
       if (!(await revokeShare(share))) {
         showShareLinkError('Could not stop sharing. This link is still live.');
         return;
@@ -4571,22 +4639,38 @@
   }
 
   // Best effort: a note leaving the active set should not leave a public link
-  // behind, but a network failure must never block the deletion. The share
-  // expires on its own at its chosen duration — 30 days at most — regardless.
+  // behind, but a network failure must never block the deletion. A row whose
+  // revoke succeeded is removed here; a failed one is kept, because the row
+  // holds the only copy of the revoke token and destroying it makes the link
+  // unrevokable for its full remaining life — 30 days at most. Returns how
+  // many links are still live so the caller can tell the user.
   async function revokeSharesForNote(noteId) {
     let shares = [];
     try {
       shares = await DB.getSharesForNote(noteId);
     } catch {
-      return;
+      return 0;
     }
+    let stillLive = 0;
     for (const share of shares) {
       try {
-        await revokeShare(share);
+        if (await revokeShare(share)) await DB.removeShare(share.id);
+        else stillLive += 1;
       } catch {
-        /* ignore: deletion proceeds either way */
+        stillLive += 1;
       }
     }
+    return stillLive;
+  }
+
+  // The revoke leg is best-effort; when it fails the user must hear that a
+  // link outlived the note, because nothing else will ever tell them.
+  function warnUnrevoked(count, advice) {
+    if (!count) return;
+    const what = count === 1
+      ? 'One public link could not be revoked; it stays live until it expires.'
+      : count + ' public links could not be revoked; they stay live until they expire.';
+    toast(advice ? what + ' ' + advice : what, { tone: 'error' });
   }
 
   async function syncSharedNoteIds() {
@@ -5128,16 +5212,20 @@
         toast('No notes to export.', { tone: 'info' });
         return;
       }
-      const used = new Map();
+      // Uniqueness is tracked on the emitted filename, not the slug: a
+      // generated suffix can collide with another note's natural slug
+      // ('Report' twice plus 'Report 2' all reduce to report-2), and a ZIP
+      // with duplicate entry names silently drops a note in most extractors.
+      const taken = new Set();
       const files = notes.map((note) => {
         const folderId = noteFolderId(note);
         const archiveDir = isArchived(note) ? 'archive/' : '';
         const folderDir = folderId ? slugify(folderDisplayName(folderId)) + '/' : '';
         const dir = archiveDir + folderDir;
         const base = dir + (slugify(deriveTitle(note)) || 'untitled-note');
-        const count = used.get(base) || 0;
-        used.set(base, count + 1);
-        const name = count ? `${base}-${count + 1}.md` : `${base}.md`;
+        let name = `${base}.md`;
+        for (let n = 2; taken.has(name); n += 1) name = `${base}-${n}.md`;
+        taken.add(name);
         return { name, content: noteToMarkdown(note) };
       });
       const blob = new Blob([Zip.createZip(files)], { type: 'application/zip' });
