@@ -224,6 +224,17 @@ if ! bash cloudfront/recompute-csp-hashes.sh >/dev/null 2>&1; then
 fi
 echo "    CSP hashes:   current"
 
+# cache.addAll is atomic: a precache path that no longer deploys would fail
+# every registered user's service-worker install, silently and permanently.
+echo "    checking service-worker precache paths…"
+if ! node scripts/check-app-shell.mjs >/dev/null 2>&1; then
+  echo "ERROR: service-worker precache check failed." >&2
+  echo "Run 'node scripts/check-app-shell.mjs' and fix APP_SHELL/OPTIONAL_SHELL" >&2
+  echo "in public/service-worker.js before deploying." >&2
+  exit 1
+fi
+echo "    app shell:    all precache paths deployable"
+
 # share-infra/README.md step 3: the handler tests must be green before its code
 # is redeployed.
 echo "    running Lambda unit tests…"

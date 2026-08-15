@@ -9,7 +9,8 @@
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
     "test:lambda": "node --test share-infra/lambda/*.test.mjs",
-    "check:vendor": "node scripts/check-vendor-versions.mjs"
+    "check:vendor": "node scripts/check-vendor-versions.mjs",
+    "check:shell": "node scripts/check-app-shell.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1"
