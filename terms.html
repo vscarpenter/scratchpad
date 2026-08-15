@@ -72,7 +72,7 @@
         <li>A static web page that runs in your browser.</li>
         <li>Notes are stored in your browser's IndexedDB. Nothing is uploaded unless you create a share link.</li>
         <li>There is no account system, no telemetry, and no advertising.</li>
-        <li>The only server-side component is the one that stores encrypted shared notes for seven days.</li>
+        <li>The only server-side component is the one that stores encrypted shared notes for up to 30 days.</li>
         <li>The full <a href="privacy.html">privacy policy</a> describes the data posture in detail.</li>
       </ul>
 
@@ -106,7 +106,8 @@
         Scratchpad also lets you create a <strong>public share link</strong> for a single note.
         This uploads an encrypted copy of that note to our storage. The decryption key stays in
         the link and is never sent to us, so we cannot read what you share. The copy is deleted
-        automatically seven days after you create it, and you can stop sharing sooner.
+        automatically at the expiry you choose when creating the link — 7, 14, 21, or 30 days —
+        and you can stop sharing sooner.
       </p>
       <p>
         A share link is public. Anyone who has it can read the note and pass it on. There is no

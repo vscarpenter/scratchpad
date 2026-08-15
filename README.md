@@ -7,7 +7,8 @@ There is exactly one way a note leaves the device, and you trigger it: creating
 a public share link. The note is encrypted in your browser first, and the
 decryption key travels in the URL fragment, which browsers never send to a
 server — so the host stores ciphertext it cannot read. Share links stop working
-after seven days and can be revoked sooner. Nothing else is ever uploaded.
+after the duration the sender picks — 7 to 30 days — and can be revoked sooner.
+Nothing else is ever uploaded.
 
 ## Features
 

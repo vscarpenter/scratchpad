@@ -69,8 +69,8 @@ Lead with the habit; let the privacy architecture be the reason it's credible.
   conflict preview.
 - **Sharing.** A user-triggered public read-only link at `/s/<id>`. The note is
   encrypted in the browser first; the host stores ciphertext and an IV, the key
-  travels in the URL fragment, links expire after seven days, and they can be
-  revoked sooner.
+  travels in the URL fragment, links expire after a sender-chosen 7, 14, 21,
+  or 30 days, and they can be revoked sooner.
 - **Storage reality.** IndexedDB can be evicted by the browser. Scratchpad
   requests persistent storage on a best-effort basis, surfaces the result
   honestly, reminds users to back up, and treats backups — not hope — as the
@@ -171,8 +171,8 @@ Real and citable:
 - **A written decision record.** `docs/superpowers/specs/`,
   `docs/superpowers/plans/`, and `docs/adr/0001-model-note-lifecycle-with-nullable-timestamps.md`.
 - **Server-side least privilege.** `share-infra/` carries the actual Lambda, an
-  IAM policy scoped to `shares/*` on a single bucket, and a lifecycle rule that
-  expires shares after seven days.
+  IAM policy scoped to `shares/*` on a single bucket, and tag-routed lifecycle
+  rules that expire shares at their chosen duration, capped at 30 days.
 - **Release state.** Version 3.7.0; encrypted note sharing shipped 2026-08-13.
 
 Absences future work must not fabricate:

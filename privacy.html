@@ -156,7 +156,7 @@
       <ul>
         <li>The encrypted note — its title, text, and tags, as ciphertext.</li>
         <li>A random initialisation vector, which encryption requires and which reveals nothing.</li>
-        <li>An expiry timestamp, set by the server to seven days from creation.</li>
+        <li>An expiry timestamp, set by the server to the duration you chose — 7, 14, 21, or 30 days from creation.</li>
         <li>A hash of a revocation token, so the browser that created the link can later delete it.</li>
       </ul>
       <p>What is <strong>not</strong> uploaded:</p>
@@ -171,8 +171,8 @@
       </ul>
       <p>
         Shared copies are frozen. Editing the note afterwards does not change what a recipient sees.
-        Every share is deleted automatically seven days after it is created, and you can stop
-        sharing sooner from the same dialog. Deleting a note also revokes its links.
+        Every share is deleted automatically when it expires — at most 30 days after it is
+        created — and you can stop sharing sooner from the same dialog. Deleting a note also revokes its links.
       </p>
       <p>
         Be aware of what a public link means: <strong>anyone who has it can read the note and can

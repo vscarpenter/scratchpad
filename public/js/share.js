@@ -129,7 +129,7 @@
     }
 
     // The server refuses expired objects, but a cached or replayed response must
-    // not outlive the seven days promised on the page.
+    // not outlive the expiry promised on the page.
     if (Number.isFinite(envelope.expiresAt) && Date.now() > envelope.expiresAt) {
       show('expired');
       return;
