@@ -97,8 +97,9 @@ test.describe('creating a public share link', () => {
 
     expect(seen).toHaveLength(1);
     const body = JSON.parse(seen[0].body);
-    expect(Object.keys(body).sort()).toEqual(['ciphertext', 'iv', 'v']);
+    expect(Object.keys(body).sort()).toEqual(['ciphertext', 'expiresDays', 'iv', 'v']);
     expect(body.v).toBe(1);
+    expect(body.expiresDays).toBe(7);
     expect(body).not.toHaveProperty('expiresAt');
 
     const raw = seen[0].body;
@@ -107,6 +108,31 @@ test.describe('creating a public share link', () => {
     expect(raw).not.toContain('work');
     expect(raw).not.toContain('note-1');
     expect(atob(body.ciphertext)).not.toContain('Ship the thing');
+  });
+
+  test('posts the selected expiry duration', async ({ page }) => {
+    const seen = await stubCreate(page);
+    await seedOneNote(page);
+    await openShareDialog(page);
+
+    await page.locator('#share-expiry-days').selectOption('30');
+    await page.locator('#create-share-link').click();
+    await expect(page.locator('.share-link-url').first()).toBeVisible();
+
+    expect(JSON.parse(seen[0].body).expiresDays).toBe(30);
+  });
+
+  test('the expiry select resets to 7 days each time the dialog opens', async ({ page }) => {
+    await stubCreate(page);
+    await seedOneNote(page);
+    await openShareDialog(page);
+
+    await page.locator('#share-expiry-days').selectOption('21');
+    await page.locator('#share-dialog [data-dialog-close]').first().click();
+    await expect(page.locator('#share-dialog')).toBeHidden();
+
+    await openShareDialog(page);
+    await expect(page.locator('#share-expiry-days')).toHaveValue('7');
   });
 
   test('the decryption key appears in no request', async ({ page }) => {

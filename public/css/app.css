@@ -3036,6 +3036,32 @@ body:not(.page-privacy) {
   color: var(--danger);
 }
 
+.share-expiry-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.share-expiry-picker label {
+  font: 500 12px/1 var(--sans);
+  color: var(--text-secondary);
+}
+
+.share-expiry-select {
+  font: 500 12px/1.2 var(--sans);
+  color: var(--text-body);
+  background: var(--control-fill);
+  border: var(--border-hair);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+}
+.share-expiry-select:hover { background: var(--control-fill-hover); }
+.share-expiry-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 #create-share-link { margin-top: 12px; }
 
 .note-row-share {

@@ -268,6 +268,7 @@
     shareMailtoWarning: $('share-mailto-warning'),
     shareExplainer: $('share-explainer'),
     shareLinkList: $('share-link-list'),
+    shareExpiryDays: $('share-expiry-days'),
     createShareLink: $('create-share-link'),
     shareLinkError: $('share-link-error'),
     shareTemplate: $('tpl-share-icon'),
@@ -4380,6 +4381,8 @@
     els.shareMailtoWarning.hidden = encodedLen <= MAILTO_ENCODED_LIMIT;
     els.shareLinkError.hidden = true;
     els.shareExplainer.hidden = !!localStorage.getItem(SHARE_EXPLAINER_KEY);
+    // A longer-lived link is a deliberate per-link choice, not a sticky setting.
+    els.shareExpiryDays.value = '7';
     refreshShareLinks(note.id);
     openDialog(els.shareDialog);
   }
@@ -4391,6 +4394,7 @@
 
   const SHARE_EXPLAINER_KEY = 'scratchpad:shareExplainerSeenAt';
   const SHARE_API = '/api/share';
+  const SHARE_EXPIRY_OPTIONS = [7, 14, 21, 30];
 
   function buildShareUrl(id, key) {
     return location.origin + '/s/' + id + '#k=' + key;
@@ -4486,6 +4490,9 @@
     return withBusy('create-share', [els.createShareLink], '', async () => {
       const key = await ScratchpadCrypto.generateShareKey();
       const envelope = await ScratchpadCrypto.encryptShare(buildSharePayload(note), key);
+      const chosen = Number(els.shareExpiryDays.value);
+      // A tampered DOM can only shorten the sender's own link back to the default.
+      const expiresDays = SHARE_EXPIRY_OPTIONS.includes(chosen) ? chosen : 7;
 
       let response;
       try {
@@ -4495,7 +4502,7 @@
           cache: 'no-store',
           credentials: 'omit',
           referrerPolicy: 'no-referrer',
-          body: JSON.stringify(envelope),
+          body: JSON.stringify({ v: envelope.v, ciphertext: envelope.ciphertext, iv: envelope.iv, expiresDays }),
         });
       } catch {
         showShareLinkError('Could not reach the network. Your note was not uploaded.');
@@ -4565,7 +4572,7 @@
 
   // Best effort: a note leaving the active set should not leave a public link
   // behind, but a network failure must never block the deletion. The share
-  // expires on its own within seven days regardless.
+  // expires on its own at its chosen duration — 30 days at most — regardless.
   async function revokeSharesForNote(noteId) {
     let shares = [];
     try {
