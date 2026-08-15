@@ -1,9 +1,14 @@
 #!/bin/sh
-# Pre-commit hook: block staged additions that write markup into the DOM as
-# a raw string, via .innerHTML/.outerHTML assignment or insertAdjacentHTML().
+# Pre-commit hook: block staged additions that write markup into the DOM as a
+# raw string -- innerHTML/outerHTML/srcdoc assignment (dot or bracket notation,
+# plain or compound, even when the value sits on the next line), plus the
+# parser entry points insertAdjacentHTML(), setHTMLUnsafe(),
+# document.write/writeln(), and createContextualFragment().
 #
-# Only ADDED lines (diff lines starting with "+") are checked, so
-# pre-existing code never blocks an unrelated commit.
+# Only ADDED lines (diff lines starting with "+") are checked, so pre-existing
+# code never blocks an unrelated commit. The diff is parsed in one pass, so a
+# filename with spaces or non-ASCII characters can never make a file drop out
+# of the scan; every stage fails closed.
 #
 # Sanctioned pattern instead (see CLAUDE.md "HTML/JS safety"):
 #   DOMPurify.sanitize(raw, { RETURN_DOM_FRAGMENT: true }) + replaceChildren()
@@ -12,44 +17,62 @@
 
 set -eu
 
-pattern='\.(innerHTML|outerHTML)[[:space:]]*(\+=|=[^=])|insertAdjacentHTML[[:space:]]*\('
+# ([^=]|$) instead of a bare [^=]: the latter needs a character AFTER the '=',
+# so a formatter-wrapped `el.innerHTML =` at end of line slipped through.
+assign='(\+|\?\?|\|\||&&)?=([^=]|$)'
+pattern="\.(innerHTML|outerHTML)[[:space:]]*${assign}"
+pattern="${pattern}|\[[[:space:]]*[\"'](innerHTML|outerHTML)[\"'][[:space:]]*\][[:space:]]*${assign}"
+pattern="${pattern}|\.srcdoc[[:space:]]*${assign}"
+pattern="${pattern}|insertAdjacentHTML[[:space:]]*\("
+pattern="${pattern}|setHTMLUnsafe[[:space:]]*\("
+pattern="${pattern}|document\.write(ln)?[[:space:]]*\("
+pattern="${pattern}|createContextualFragment[[:space:]]*\("
 
-files=$(git diff --cached --name-only -- '*.js' '*.html')
+diff_tmp=$(mktemp)
+added_tmp=$(mktemp)
+trap 'rm -f "$diff_tmp" "$added_tmp"' EXIT
 
-found=0
+if ! git diff --cached --unified=0 -- \
+  '*.js' '*.mjs' '*.cjs' '*.jsx' '*.ts' '*.tsx' '*.html' '*.svg' > "$diff_tmp"; then
+  echo "pre-commit: git diff failed; refusing to commit unchecked." >&2
+  exit 2
+fi
 
-for f in $files; do
-  case "$f" in
-    public/js/vendor/*|node_modules/*|*/node_modules/*)
-      continue
-      ;;
-  esac
+# One pass over the whole diff: filenames come from the +++ headers, so the
+# shell never word-splits a path. Vendored and node_modules code is exempt.
+awk '
+  /^\+\+\+ / {
+    file = substr($0, 5)
+    sub(/^"/, "", file); sub(/"$/, "", file); sub(/\t$/, "", file)
+    sub(/^b\//, "", file)
+    skip = (file ~ /^public\/js\/vendor\// || file ~ /(^|\/)node_modules\//)
+    next
+  }
+  /^@@/ {
+    match($0, /\+[0-9]+/)
+    lineno = substr($0, RSTART + 1, RLENGTH - 1) + 0
+    next
+  }
+  /^\+/ {
+    if (!skip) print file ":" lineno ":" substr($0, 2)
+    lineno++
+    next
+  }
+' "$diff_tmp" > "$added_tmp"
 
-  hits=$(git diff --cached --unified=0 -- "$f" | awk -v file="$f" '
-    /^@@/ {
-      match($0, /\+[0-9]+/)
-      lineno = substr($0, RSTART + 1, RLENGTH - 1) + 0
-      next
-    }
-    /^\+\+\+/ { next }
-    /^\+/ {
-      print file ":" lineno ":" substr($0, 2)
-      lineno++
-      next
-    }
-  ' | grep -E "$pattern" || true)
+set +e
+hits=$(grep -E "$pattern" "$added_tmp")
+rc=$?
+set -e
+if [ "$rc" -gt 1 ]; then
+  echo "pre-commit: grep failed (status $rc); refusing to commit unchecked." >&2
+  exit 2
+fi
 
-  if [ -n "$hits" ]; then
-    if [ "$found" -eq 0 ]; then
-      echo "pre-commit: staged changes write raw HTML into the DOM:"
-      echo
-    fi
-    echo "$hits"
-    found=1
-  fi
-done
-
-if [ "$found" -eq 1 ]; then
+if [ "$rc" -eq 0 ]; then
+  echo "pre-commit: staged changes write raw HTML into the DOM:"
+  echo
+  echo "$hits"
   echo
   echo "Use DOMPurify.sanitize(raw, { RETURN_DOM_FRAGMENT: true }) + replaceChildren() instead (CLAUDE.md: HTML/JS safety)."
   exit 1
