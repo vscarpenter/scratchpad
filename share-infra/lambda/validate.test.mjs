@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseShareBody, isValidShareId, MAX_BODY_BYTES, SHARE_TTL_MS } from './validate.mjs';
+import { parseShareBody, isValidShareId, MAX_BODY_BYTES, SHARE_TTL_DAYS, DEFAULT_TTL_DAYS } from './validate.mjs';
 
 const iv = Buffer.alloc(12, 7).toString('base64');
 const ciphertext = Buffer.from('some ciphertext bytes').toString('base64');
@@ -77,8 +77,45 @@ test('drops any unexpected field rather than persisting it', () => {
   assert.deepEqual(Object.keys(result.value).sort(), ['ciphertext', 'iv', 'v']);
 });
 
-test('the TTL is exactly seven days', () => {
-  assert.equal(SHARE_TTL_MS, 7 * 24 * 60 * 60 * 1000);
+test('the TTL menu is exactly 7, 14, 21, 30 days with a 7-day default', () => {
+  assert.deepEqual([...SHARE_TTL_DAYS], [7, 14, 21, 30]);
+  assert.equal(DEFAULT_TTL_DAYS, 7);
+});
+
+test('defaults to seven days when expiresDays is absent', () => {
+  const result = parseShareBody(good);
+  assert.equal(result.ok, true);
+  assert.equal(result.ttlDays, 7);
+});
+
+test('accepts each duration on the menu', () => {
+  for (const days of [7, 14, 21, 30]) {
+    const result = parseShareBody(JSON.stringify({ v: 1, ciphertext, iv, expiresDays: days }));
+    assert.equal(result.ok, true, `rejected ${days}`);
+    assert.equal(result.ttlDays, days);
+  }
+});
+
+test('rejects durations off the menu with a 400', () => {
+  for (const days of [0, 1, 8, -7, 31, 365, 6.9]) {
+    const result = parseShareBody(JSON.stringify({ v: 1, ciphertext, iv, expiresDays: days }));
+    assert.equal(result.ok, false, `accepted ${days}`);
+    assert.equal(result.status, 400);
+  }
+});
+
+test('rejects non-numeric expiresDays with a 400', () => {
+  for (const bad of ['14', null, true, [7], { days: 7 }]) {
+    const result = parseShareBody(JSON.stringify({ v: 1, ciphertext, iv, expiresDays: bad }));
+    assert.equal(result.ok, false, `accepted ${JSON.stringify(bad)}`);
+    assert.equal(result.status, 400);
+  }
+});
+
+test('expiresDays is consumed by validation, never persisted', () => {
+  const result = parseShareBody(JSON.stringify({ v: 1, ciphertext, iv, expiresDays: 14 }));
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.value).sort(), ['ciphertext', 'iv', 'v']);
 });
 
 test('validates share id shape', () => {

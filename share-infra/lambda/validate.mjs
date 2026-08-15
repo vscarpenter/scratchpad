@@ -3,7 +3,8 @@
 // is unit-testable in isolation and every rejection happens before any S3 call.
 
 export const MAX_BODY_BYTES = 262144; // 256 KB
-export const SHARE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const SHARE_TTL_DAYS = Object.freeze([7, 14, 21, 30]);
+export const DEFAULT_TTL_DAYS = 7;
 export const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]{12}$/;
 export const SHARE_ENVELOPE_VERSION = 1;
 
@@ -48,11 +49,24 @@ export function parseShareBody(rawBody) {
   const iv = decodeBase64(parsed.iv);
   if (!iv || iv.length !== IV_BYTES) return fail(400, 'Invalid iv');
 
+  // The menu is closed: an off-menu value is a broken or hostile client, so it
+  // is refused rather than clamped. Absent means a pre-menu client; it gets the
+  // same seven days it was written against.
+  let ttlDays = DEFAULT_TTL_DAYS;
+  if ('expiresDays' in parsed) {
+    if (!Number.isInteger(parsed.expiresDays) || !SHARE_TTL_DAYS.includes(parsed.expiresDays)) {
+      return fail(400, 'Invalid expiresDays');
+    }
+    ttlDays = parsed.expiresDays;
+  }
+
   // Only these three fields are ever persisted. Anything else the client sent --
   // an expiresAt, a revokeHash, a stray plaintext field -- is dropped here. The
-  // server owns expiry and owns the revoke hash.
+  // server owns expiry and owns the revoke hash; expiresDays is a duration
+  // request the server turns into a timestamp, never stored as sent.
   return {
     ok: true,
     value: { v: SHARE_ENVELOPE_VERSION, ciphertext: parsed.ciphertext, iv: parsed.iv },
+    ttlDays,
   };
 }

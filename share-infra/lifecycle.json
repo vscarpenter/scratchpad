@@ -1,10 +1,34 @@
 {
   "Rules": [
     {
-      "ID": "expire-shares-after-7-days",
+      "ID": "expire-shares-ttl-7",
+      "Status": "Enabled",
+      "Filter": { "And": { "Prefix": "shares/", "Tags": [{ "Key": "ttl-days", "Value": "7" }] } },
+      "Expiration": { "Days": 7 }
+    },
+    {
+      "ID": "expire-shares-ttl-14",
+      "Status": "Enabled",
+      "Filter": { "And": { "Prefix": "shares/", "Tags": [{ "Key": "ttl-days", "Value": "14" }] } },
+      "Expiration": { "Days": 14 }
+    },
+    {
+      "ID": "expire-shares-ttl-21",
+      "Status": "Enabled",
+      "Filter": { "And": { "Prefix": "shares/", "Tags": [{ "Key": "ttl-days", "Value": "21" }] } },
+      "Expiration": { "Days": 21 }
+    },
+    {
+      "ID": "expire-shares-ttl-30",
+      "Status": "Enabled",
+      "Filter": { "And": { "Prefix": "shares/", "Tags": [{ "Key": "ttl-days", "Value": "30" }] } },
+      "Expiration": { "Days": 30 }
+    },
+    {
+      "ID": "expire-shares-backstop-30-days",
       "Status": "Enabled",
       "Filter": { "Prefix": "shares/" },
-      "Expiration": { "Days": 7 },
+      "Expiration": { "Days": 30 },
       "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
     }
   ]

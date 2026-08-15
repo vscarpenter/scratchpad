@@ -10,9 +10,9 @@ plus the explicit HTML shell list, and `CLAUDE.md` lists this directory under
 | Resource | Name | Purpose |
 | --- | --- | --- |
 | S3 bucket | `scratchpad-shares` | Holds encrypted share objects under `shares/`. Block Public Access fully on. |
-| Lifecycle rule | `expire-shares-after-7-days` | Deletes `shares/*` seven days after creation. |
+| Lifecycle rules | `expire-shares-ttl-{7,14,21,30}` + `expire-shares-backstop-30-days` | Delete each share at its chosen duration, routed by the `ttl-days` object tag. Untagged objects fall to the 30-day backstop; earliest-expiration-wins keeps the backstop harmless for tagged objects. |
 | IAM role | `scratchpad-share-lambda-role` | Lambda execution role. |
-| Inline policy | `scratchpad-share-s3-access` | `PutObject`/`GetObject`/`DeleteObject` on `shares/*` only. |
+| Inline policy | `scratchpad-share-s3-access` | `PutObject`/`PutObjectTagging`/`GetObject`/`DeleteObject` on `shares/*` only. |
 | Lambda | `scratchpad-share-api` | The three-route API. Node 20, 256 MB, 10s timeout. |
 | HTTP API | `scratchpad-share-api` | API Gateway v2, Lambda proxy. The CloudFront origin. |
 | CloudFront behavior | `/api/share*` | Routes to the HTTP API origin on the existing distribution. |
@@ -77,6 +77,21 @@ settings without recreating anything. Re-running is the normal way to ship a
 handler change.
 
 Note the origin domain and origin secret it prints; step 4 needs both.
+
+**One-time migration (2026-08-14 expiry menu).** Shares created before the
+`ttl-days` tag existed are untagged, so the new lifecycle rules would hold
+them until the 30-day backstop instead of the 7 days they were promised.
+After applying the new lifecycle, tag them once:
+
+```sh
+aws s3api list-objects-v2 --bucket scratchpad-shares --prefix shares/ \
+  --query 'Contents[].Key' --output text | tr '\t' '\n' | grep . | while read -r key; do
+  aws s3api put-object-tagging --bucket scratchpad-shares --key "$key" \
+    --tagging 'TagSet=[{Key=ttl-days,Value=7}]'
+done
+```
+
+(The operator can list the bucket; the Lambda deliberately cannot.)
 
 ## 3. Redeploy handler code after an edit
 
@@ -197,7 +212,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST "$API" \
 ## 7. Take down a single share
 
 A share link is public, so the domain can host content that needs removing. To
-kill one immediately, without waiting for its seven days:
+kill one immediately, without waiting for its expiry:
 
 ```sh
 aws s3 rm "s3://scratchpad-shares/shares/<id>.json"
@@ -222,7 +237,7 @@ review the guardrails are:
 | --- | --- | --- |
 | Body cap | 256 KB, checked before any S3 call | `lambda/validate.mjs:31` |
 | Envelope validation | only `v`, `ciphertext`, `iv` persist | `lambda/validate.mjs:54` |
-| Object expiry | 7 days | bucket lifecycle, and re-checked on read |
+| Object expiry | sender-chosen 7/14/21/30 days, 30 hard cap | tag-routed bucket lifecycle, and re-checked on read |
 | Reserved concurrency | 25 | `provision.sh`, re-applied on every run |
 | Route throttling | 20 req/s steady, 40 burst | API Gateway `$default` stage |
 | Invocation alarm | 500 in 5 min | CloudWatch `scratchpad-share-invocations-spike` |

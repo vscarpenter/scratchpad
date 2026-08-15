@@ -12,7 +12,7 @@
 // semantics are enforced here, by absence, rather than by client discipline.
 
 import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
-import { parseShareBody, isValidShareId, SHARE_TTL_MS } from './validate.mjs';
+import { parseShareBody, isValidShareId } from './validate.mjs';
 
 const BUCKET = process.env.SHARES_BUCKET;
 const ORIGIN_SECRET = process.env.SHARE_ORIGIN_SECRET;
@@ -130,13 +130,16 @@ async function create(rawBody) {
   const { client, sdk } = await getS3();
   const id = newShareId();
   const revokeToken = randomBytes(32).toString('base64url');
-  const expiresAt = Date.now() + SHARE_TTL_MS;
+  const expiresAt = Date.now() + parsed.ttlDays * 24 * 60 * 60 * 1000;
 
   await client.send(new sdk.PutObjectCommand({
     Bucket: BUCKET,
     Key: keyFor(id),
     ContentType: 'application/json',
     Body: JSON.stringify({ ...parsed.value, expiresAt, revokeHash: hashToken(revokeToken) }),
+    // The tag routes the object to its matching lifecycle rule; untagged
+    // objects fall to the 30-day backstop. See share-infra/lifecycle.json.
+    Tagging: 'ttl-days=' + parsed.ttlDays,
   }));
 
   return json(201, { id, revokeToken, expiresAt });
