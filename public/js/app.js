@@ -5822,7 +5822,10 @@
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
     const version = encodeURIComponent(window.SCRATCHPAD_VERSION || 'dev');
     try {
-      const registration = await navigator.serviceWorker.register('service-worker.js?v=' + version);
+      // Root-absolute: index.html is also served for unrecognized deep paths
+      // (the /s/* router's catch-all), where a relative URL would resolve
+      // under /s/ and register nothing.
+      const registration = await navigator.serviceWorker.register('/service-worker.js?v=' + version);
       state.serviceWorkerRegistration = registration;
       if (registration.waiting && navigator.serviceWorker.controller) showWaitingUpdate(registration.waiting);
       if (typeof registration.addEventListener === 'function') {

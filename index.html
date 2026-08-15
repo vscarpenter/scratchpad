@@ -24,12 +24,12 @@
   <meta name="twitter:description" content="A notes app that keeps everything in your browser, with encrypted opt-in sharing." />
   <meta name="twitter:image" content="https://notes.vinny.dev/public/og-banner.png" />
   <meta name="twitter:image:alt" content="Scratchpad: private notes that stay in your browser." />
-  <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
-  <link rel="icon" type="image/png" sizes="64x64" href="public/favicon-64.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="public/favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="public/favicon-16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="public/favicon-180.png" />
-  <link rel="manifest" href="public/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/public/favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/public/favicon-180.png" />
+  <link rel="manifest" href="/public/manifest.webmanifest" />
 
   <script>
     (function () {
@@ -39,8 +39,8 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="public/css/inkwell.css" />
-  <link rel="stylesheet" href="public/css/app.css" />
+  <link rel="stylesheet" href="/public/css/inkwell.css" />
+  <link rel="stylesheet" href="/public/css/app.css" />
 </head>
 <body>
   <div class="app-shell" id="app-shell">
@@ -460,7 +460,9 @@
     <div class="dialog-body about-body">
       <p>
         Scratchpad keeps everything you write in <strong>this browser only</strong>, using IndexedDB.
-        Nothing is uploaded, synced, or transmitted. There are no accounts, trackers, or analytics.
+        Nothing is uploaded, synced, or transmitted unless you deliberately create a share
+        link&mdash;and that copy is encrypted in this browser first. There are no accounts,
+        trackers, or analytics.
       </p>
       <p>
         Clearing site data (or using private browsing) will erase your notes. Back up with
@@ -866,15 +868,15 @@
     <svg class="note-share-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
   </template>
 
-  <script src="public/js/vendor/marked.min.js"></script>
-  <script src="public/js/vendor/purify.min.js"></script>
-  <script src="public/js/crypto.js"></script>
-  <script src="public/js/db.js"></script>
-  <script src="public/js/version.js"></script>
-  <script src="public/js/markdown.js"></script>
-  <script src="public/js/zip.js"></script>
-  <script src="public/js/seed.js"></script>
-  <script src="public/js/app.js"></script>
+  <script src="/public/js/vendor/marked.min.js"></script>
+  <script src="/public/js/vendor/purify.min.js"></script>
+  <script src="/public/js/crypto.js"></script>
+  <script src="/public/js/db.js"></script>
+  <script src="/public/js/version.js"></script>
+  <script src="/public/js/markdown.js"></script>
+  <script src="/public/js/zip.js"></script>
+  <script src="/public/js/seed.js"></script>
+  <script src="/public/js/app.js"></script>
 
   <script>
     (function () {
