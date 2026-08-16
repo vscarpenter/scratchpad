@@ -1,8 +1,9 @@
 /* =====================================================================
    Inkwell — design tokens & dark-mode cascade.
-   Version: 3.1.0 — "Porcelain Chronicle"
-   Palette: restrained indigo (#5661B3) over cool porcelain surfaces;
+   Version: 4.0.0 — "Indigo on Paper"
+   Palette: restrained indigo (#5661B3) over warm paper surfaces;
    chronological wayfinding, opaque panels, and editorial document depth.
+   Spec: docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md
 
    This file contains ONLY:
      • :root custom-property declarations
@@ -22,7 +23,7 @@
 
 :root {
   /* ---------- Wash (page background) ---------- */
-  --wash-base: #EFF1F7;
+  --wash-base: #ECE7DC;
   --wash-app: var(--wash-base);
   --wash-hero:
     radial-gradient(1100px 600px at 20% -10%, rgba(96, 112, 226, 0.20), transparent 60%),
@@ -31,55 +32,55 @@
 
   /* ---------- Surfaces ---------- */
   --ivory: var(--wash-base);   /* page base (legacy alias) */
-  --paper: #FFFEFE;            /* opaque card surface: active row, document */
-  --slate: #25283A;            /* primary text / ink (legacy alias) */
-  --oat:   #E9EBF4;            /* tertiary surface */
+  --paper: #FFFFFF;            /* opaque card surface: active row, document */
+  --slate: #211E1A;            /* primary text / ink (legacy alias) */
+  --oat:   #E7E1D3;            /* tertiary surface */
   --surface-canvas: var(--ivory);
-  --surface-rail: color-mix(in srgb, var(--paper) 88%, var(--ivory));
-  --surface-list: color-mix(in srgb, var(--paper) 42%, var(--ivory));
+  --surface-rail: color-mix(in srgb, var(--paper) 40%, var(--ivory));
+  --surface-list: color-mix(in srgb, var(--paper) 75%, var(--ivory));
   --surface-document: var(--paper);
   --surface-document-stage: var(--ivory);
 
   /* ---------- Glass ---------- */
-  --glass-bg:          rgba(255, 254, 254, 0.92);
-  --glass-bg-strong:   rgba(255, 254, 254, 0.96);  /* empty-state card */
-  --glass-bg-pill:     rgba(255, 254, 254, 0.94);  /* floating pills / nav */
+  --glass-bg:          rgba(255, 255, 255, 0.92);
+  --glass-bg-strong:   rgba(255, 255, 255, 0.96);  /* empty-state card */
+  --glass-bg-pill:     rgba(255, 255, 255, 0.94);  /* floating pills / nav */
   --glass-blur:        26px;
   --glass-blur-strong: 28px;
   --glass-blur-pill:   22px;
-  --glass-border:        1px solid #D9DBEA;
-  --glass-border-strong: 1px solid #CBD0E0;
-  --glass-shadow:   0 24px 56px rgba(55, 61, 105, 0.09), 0 4px 12px rgba(55, 61, 105, 0.05);
-  --glass-fallback: rgba(255, 254, 254, 0.98);      /* opaque, no-blur fallback */
+  --glass-border:        1px solid #D8D1C1;
+  --glass-border-strong: 1px solid #C9C1B0;
+  --glass-shadow:   0 24px 56px rgba(40, 33, 22, 0.09), 0 4px 12px rgba(40, 33, 22, 0.05);
+  --glass-fallback: rgba(255, 255, 255, 0.98);      /* opaque, no-blur fallback */
 
   /* ---------- Text ---------- */
-  --ink:            #25283A;
-  --text-secondary: #484B61;
-  --text-muted:     #73788C;   /* timestamps, placeholders, meta — decorative secondary */
-  --text-body:      #3F4358;
-  --text-quote:     #444A66;
+  --ink:            #211E1A;
+  --text-secondary: #55504A;
+  --text-muted:     #797368;   /* timestamps, placeholders, meta — decorative secondary */
+  --text-body:      #423D36;
+  --text-quote:     #514A3E;
 
   /* ---------- Lines & fills ---------- */
-  --hairline-color:      #E1E3EF;
-  --hairline-color-2:    #D9DBEA;
-  --control-fill:        rgba(37, 40, 58, 0.05);
-  --control-fill-hover:  rgba(37, 40, 58, 0.09);
-  --row-hover:           rgba(37, 40, 58, 0.04);
-  --code-fill:           rgba(37, 40, 58, 0.05);
-  --field-bg:            rgba(255, 254, 254, 0.92);
-  --field-bg-textarea:   rgba(255, 254, 254, 0.84);
-  --field-inset-shadow:  inset 0 1px 2px rgba(37, 40, 58, 0.03);
-  --textarea-inset-shadow: inset 0 1px 3px rgba(37, 40, 58, 0.04);
-  --idle-border:         #CBD0E0;   /* checkbox idle, dashed add-tag */
-  --meta-dot:            #CBD0E0;
+  --hairline-color:      #E3DDD0;
+  --hairline-color-2:    #D8D1C1;
+  --control-fill:        rgba(33, 30, 26, 0.05);
+  --control-fill-hover:  rgba(33, 30, 26, 0.09);
+  --row-hover:           rgba(33, 30, 26, 0.04);
+  --code-fill:           rgba(33, 30, 26, 0.05);
+  --field-bg:            rgba(255, 255, 255, 0.92);
+  --field-bg-textarea:   rgba(255, 255, 255, 0.84);
+  --field-inset-shadow:  inset 0 1px 2px rgba(33, 30, 26, 0.03);
+  --textarea-inset-shadow: inset 0 1px 3px rgba(33, 30, 26, 0.04);
+  --idle-border:         #C9C1B0;   /* checkbox idle, dashed add-tag */
+  --meta-dot:            #C9C1B0;
 
   /* ---------- Accent (Porcelain Indigo) ---------- */
   --accent:               #5661B3;
   --accent-d:             #414B91;                 /* hover/pressed */
   --on-accent:            #FFFFFF;                 /* text/icon on accent fill */
   --accent-text:          var(--accent);           /* accent text/glyph ON an accent tint */
-  --accent-soft:          #E8EAFA;                 /* chip / soft tint bg */
-  --accent-soft-2:        #D9DDF4;                 /* stronger current-state tint */
+  --accent-soft:          #E8E9F4;                 /* chip / soft tint bg */
+  --accent-soft-2:        #DBDDF1;                 /* stronger current-state tint */
   --accent-grad:          var(--accent);
   --accent-2:             #727CC5;                  /* lighter indigo — About display-text gradient */
   --glyph-ink:            #FFFFFF;                  /* brand-glyph strokes: white in both themes */
@@ -110,11 +111,11 @@
   --sky:          #6A8CAF;
 
   /* ---------- Neutral scale (remapped to Soft Glass) ---------- */
-  --gray-100: rgba(28, 30, 40, 0.05);  /* control fill / row hover (semi over glass) */
-  --gray-200: rgba(28, 30, 40, 0.09);  /* stronger hover (circle icon buttons) */
-  --gray-300: #CBD0E0;                 /* visible element border, idle states, meta dots */
-  --gray-500: #73788C;                 /* muted text */
-  --gray-700: #484B61;                 /* secondary text */
+  --gray-100: rgba(33, 30, 26, 0.05);  /* control fill / row hover (semi over glass) */
+  --gray-200: rgba(33, 30, 26, 0.09);  /* stronger hover (circle icon buttons) */
+  --gray-300: #C9C1B0;                 /* visible element border, idle states, meta dots */
+  --gray-500: #797368;                 /* muted text */
+  --gray-700: #55504A;                 /* secondary text */
 
   /* ---------- Typography ---------- */
   /* Ink-and-Chrome split: --serif carries the document (note title, rendered
@@ -169,24 +170,24 @@
   --border-rule:   1px solid var(--hairline-color-2);
 
   /* ---------- Shadows ---------- */
-  --shadow-sm:         0 1px 2px rgba(28, 30, 40, 0.05);
-  --shadow-md:         0 8px 20px rgba(35, 42, 90, 0.10);
-  --shadow-lg:         0 20px 50px rgba(35, 42, 90, 0.12);
-  --shadow-card-hover: 0 8px 20px rgba(35, 42, 90, 0.12);
-  --shadow-card:       0 8px 20px rgba(35, 42, 90, 0.12);  /* active note card */
-  --shadow-row-active: 0 2px 8px rgba(35, 42, 90, 0.07);   /* selected note row */
-  --shadow-empty:      0 30px 70px rgba(35, 42, 90, 0.16); /* empty-state card */
+  --shadow-sm:         0 1px 2px rgba(33, 30, 26, 0.05);
+  --shadow-md:         0 8px 20px rgba(40, 33, 22, 0.10);
+  --shadow-lg:         0 20px 50px rgba(40, 33, 22, 0.12);
+  --shadow-card-hover: 0 8px 20px rgba(40, 33, 22, 0.12);
+  --shadow-card:       0 8px 20px rgba(40, 33, 22, 0.12);  /* active note card */
+  --shadow-row-active: 0 2px 8px rgba(40, 33, 22, 0.07);   /* selected note row */
+  --shadow-empty:      0 30px 70px rgba(40, 33, 22, 0.16); /* empty-state card */
   --shadow-primary:    0 8px 18px rgba(78, 95, 216, 0.35);
   --shadow-primary-sm: 0 6px 14px rgba(78, 95, 216, 0.30);
   --shadow-primary-lg: 0 10px 24px rgba(78, 95, 216, 0.40);
-  --shadow-seg:        0 2px 6px rgba(28, 30, 40, 0.10);   /* active segment */
-  --shadow-chip:       0 1px 4px rgba(28, 30, 40, 0.12);   /* active format chip */
+  --shadow-seg:        0 2px 6px rgba(33, 30, 26, 0.10);   /* active segment */
+  --shadow-chip:       0 1px 4px rgba(33, 30, 26, 0.12);   /* active format chip */
   --shadow-glyph:      0 4px 10px rgba(78, 95, 216, 0.35); /* brand glyph */
   --shadow-glyph-inset: inset 0 1px 2px #FFFFFF;           /* empty icon squircle */
-  --shadow-pill-float: 0 14px 34px rgba(35, 42, 90, 0.12); /* about nav pill */
+  --shadow-pill-float: 0 14px 34px rgba(40, 33, 22, 0.12); /* about nav pill */
 
   /* ---------- Backdrop (dialog scrim) ---------- */
-  --backdrop: rgba(20, 24, 44, 0.35);
+  --backdrop: rgba(28, 23, 14, 0.35);
   --backdrop-blur: 8px;
 
   /* ---------- Motion ---------- */
@@ -225,7 +226,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --wash-base: #101219;
+    --wash-base: #100E0A;
     --wash-app:
       radial-gradient(900px 500px at 8% -5%, rgba(122, 138, 209, 0.14), transparent 60%),
       radial-gradient(800px 480px at 100% 108%, rgba(217, 165, 95, 0.10), transparent 55%),
@@ -236,23 +237,23 @@
       var(--wash-base);
 
     --ivory: var(--wash-base);
-    --paper: #232634;
-    --slate: #E8E9F0;
-    --oat:   #2B2D38;
+    --paper: #221E17;
+    --slate: #F1ECE2;
+    --oat:   #2C2822;
 
-    --glass-bg:          rgba(23, 26, 36, 0.62);
-    --glass-bg-strong:   rgba(23, 26, 36, 0.72);
-    --glass-bg-pill:     rgba(23, 26, 36, 0.70);
+    --glass-bg:          rgba(26, 23, 17, 0.62);
+    --glass-bg-strong:   rgba(26, 23, 17, 0.72);
+    --glass-bg-pill:     rgba(26, 23, 17, 0.70);
     --glass-border:        1px solid rgba(255, 255, 255, 0.08);
     --glass-border-strong: 1px solid rgba(255, 255, 255, 0.12);
     --glass-shadow:   0 20px 50px rgba(0, 0, 0, 0.50);
-    --glass-fallback: rgba(23, 26, 36, 0.94);
+    --glass-fallback: rgba(26, 23, 17, 0.94);
 
-    --ink:            #E8E9F0;
-    --text-secondary: #B4B8C4;
-    --text-muted:     #8E92A0;
-    --text-body:      #C9CBD4;
-    --text-quote:     #B9BEDD;
+    --ink:            #F1ECE2;
+    --text-secondary: #B3ACA0;
+    --text-muted:     #948A79;
+    --text-body:      #CFC9BD;
+    --text-quote:     #CBC2B0;
 
     --hairline-color:     rgba(255, 255, 255, 0.08);
     --hairline-color-2:   rgba(255, 255, 255, 0.10);
@@ -264,8 +265,8 @@
     --field-bg-textarea:  rgba(255, 255, 255, 0.05);
     --field-inset-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
     --textarea-inset-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30);
-    --idle-border:        #4A4D5A;
-    --meta-dot:           #4A4D5A;
+    --idle-border:        #4A4438;
+    --meta-dot:           #4A4438;
 
     --accent:               #8593D6;                 /* lifted to clear AA (4.5+) on accent-soft chips */
     --accent-d:             #6273C0;
@@ -301,9 +302,9 @@
 
     --gray-100: rgba(255, 255, 255, 0.06);
     --gray-200: rgba(255, 255, 255, 0.12);
-    --gray-300: #3A3D48;
-    --gray-500: #8E92A0;
-    --gray-700: #B4B8C4;
+    --gray-300: #3B362C;
+    --gray-500: #948A79;
+    --gray-700: #B3ACA0;
 
     --shadow-sm:         0 1px 2px rgba(0, 0, 0, 0.45);
     --shadow-md:         0 8px 20px rgba(0, 0, 0, 0.50);
@@ -327,14 +328,14 @@
      whole background-image is overridden with the lifted muted color.
      Higher specificity than the base .select rule in inkwell-components.css. */
   :root:not([data-theme="light"]) .select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%238E92A0' stroke-width='1.5' stroke-linecap='round'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23948A79' stroke-width='1.5' stroke-linecap='round'/></svg>");
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --wash-base: #101219;
+  --wash-base: #100E0A;
   --wash-app:
     radial-gradient(900px 500px at 8% -5%, rgba(122, 138, 209, 0.14), transparent 60%),
     radial-gradient(800px 480px at 100% 108%, rgba(217, 165, 95, 0.10), transparent 55%),
@@ -345,23 +346,23 @@
     var(--wash-base);
 
   --ivory: var(--wash-base);
-  --paper: #232634;
-  --slate: #E8E9F0;
-  --oat:   #2B2D38;
+  --paper: #221E17;
+  --slate: #F1ECE2;
+  --oat:   #2C2822;
 
-  --glass-bg:          rgba(23, 26, 36, 0.62);
-  --glass-bg-strong:   rgba(23, 26, 36, 0.72);
-  --glass-bg-pill:     rgba(23, 26, 36, 0.70);
+  --glass-bg:          rgba(26, 23, 17, 0.62);
+  --glass-bg-strong:   rgba(26, 23, 17, 0.72);
+  --glass-bg-pill:     rgba(26, 23, 17, 0.70);
   --glass-border:        1px solid rgba(255, 255, 255, 0.08);
   --glass-border-strong: 1px solid rgba(255, 255, 255, 0.12);
   --glass-shadow:   0 20px 50px rgba(0, 0, 0, 0.50);
-  --glass-fallback: rgba(23, 26, 36, 0.94);
+  --glass-fallback: rgba(26, 23, 17, 0.94);
 
-  --ink:            #E8E9F0;
-  --text-secondary: #B4B8C4;
-  --text-muted:     #8E92A0;
-  --text-body:      #C9CBD4;
-  --text-quote:     #B9BEDD;
+  --ink:            #F1ECE2;
+  --text-secondary: #B3ACA0;
+  --text-muted:     #948A79;
+  --text-body:      #CFC9BD;
+  --text-quote:     #CBC2B0;
 
   --hairline-color:     rgba(255, 255, 255, 0.08);
   --hairline-color-2:   rgba(255, 255, 255, 0.10);
@@ -373,8 +374,8 @@
   --field-bg-textarea:  rgba(255, 255, 255, 0.05);
   --field-inset-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
   --textarea-inset-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30);
-  --idle-border:        #4A4D5A;
-  --meta-dot:           #4A4D5A;
+  --idle-border:        #4A4438;
+  --meta-dot:           #4A4438;
 
   --accent:               #8593D6;                 /* lifted to clear AA (4.5+) on accent-soft chips */
   --accent-d:             #6273C0;
@@ -410,9 +411,9 @@
 
   --gray-100: rgba(255, 255, 255, 0.06);
   --gray-200: rgba(255, 255, 255, 0.12);
-  --gray-300: #3A3D48;
-  --gray-500: #8E92A0;
-  --gray-700: #B4B8C4;
+  --gray-300: #3B362C;
+  --gray-500: #948A79;
+  --gray-700: #B3ACA0;
 
   --shadow-sm:         0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-md:         0 8px 20px rgba(0, 0, 0, 0.50);
@@ -434,5 +435,5 @@
 }
 /* Select chevron in dark mode — see comment in the @media block above. */
 :root[data-theme="dark"] .select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%238E92A0' stroke-width='1.5' stroke-linecap='round'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23948A79' stroke-width='1.5' stroke-linecap='round'/></svg>");
 }

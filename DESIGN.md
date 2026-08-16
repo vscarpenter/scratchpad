@@ -1,18 +1,18 @@
 ---
 name: Scratchpad
-direction: Porcelain Chronicle
-version: 4
-description: A private daily chronicle with a quiet date rail, a calm note index, and a raised writing surface.
+direction: Indigo on Paper
+version: 5
+description: A private daily chronicle on warm paper, with a quiet date rail, a calm note index, and a raised writing surface with a serif voice.
 colors:
-  canvas: "#EFF1F7"
-  paper: "#FFFEFE"
-  ink: "#25283A"
-  text-secondary: "#484B61"
-  text-muted: "#73788C"
+  canvas: "#ECE7DC"
+  paper: "#FFFFFF"
+  ink: "#211E1A"
+  text-secondary: "#55504A"
+  text-muted: "#797368"
   accent: "#5661B3"
   accent-hover: "#414B91"
-  accent-soft: "#E8EAFA"
-  accent-soft-2: "#D9DDF4"
+  accent-soft: "#E8E9F4"
+  accent-soft-2: "#DBDDF1"
 typography:
   chrome: "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
   prose: "Iowan Old Style, Palatino, Georgia, serif"
@@ -33,7 +33,7 @@ The design has three layers:
 
 1. A narrow chronology rail for orientation and daily-note entry.
 2. A compact note index for navigation and local-only trust cues.
-3. A generous document stage with one raised porcelain writing surface.
+3. A generous document stage with one raised paper writing surface.
 
 The application remains local-only. Visual changes must never add remote fonts,
 assets, analytics, or user-content requests.
@@ -45,15 +45,15 @@ actions, links, tags, focus rings, the date spine, and the active daily-note
 callout. Semantic success, warning, and danger colors are reserved for actual
 state.
 
-- Canvas: `#EFF1F7`
-- Paper: `#FFFEFE`
-- Ink: `#25283A`
-- Secondary text: `#484B61`
-- Muted text: `#73788C`
+- Canvas: `#ECE7DC`
+- Paper: `#FFFFFF`
+- Ink: `#211E1A`
+- Secondary text: `#55504A`
+- Muted text: `#797368`
 - Indigo: `#5661B3`
 - Indigo hover: `#414B91`
-- Indigo tint: `#E8EAFA`
-- Indigo pressed/strong tint: `#D9DDF4`
+- Indigo tint: `#E8E9F4`
+- Indigo pressed/strong tint: `#DBDDF1`
 
 All application CSS colors route through tokens in
 `public/css/inkwell-tokens.css`. Do not put literal color values in
@@ -69,7 +69,7 @@ The Chronicle shell is opaque and architectural:
 
 - The date rail is the quietest surface.
 - The note index is a slightly brighter adjacent plane.
-- The main area is a cool document stage.
+- The main area is a warm sunken document stage.
 - The document card is the sole raised surface in the shell.
 
 Do not add blur or gradients to the app shell. Use one-pixel separators and
@@ -80,15 +80,15 @@ continue using legacy glass tokens until they receive their own redesign.
 
 Use platform fonts only.
 
-- System sans owns the rail, note index, controls, metadata, and desktop note
-  title.
-- The editorial serif remains available for rendered note prose and mobile
-  continuity.
-- Monospace is reserved for compact metadata and keyboard hints.
+- The editorial serif carries the display voice: the document title, the list
+  date heading, the date-spine numeral, and rendered prose headings.
+- System sans owns the chrome: rail, note index rows, controls, and dialogs.
+- Monospace is reserved for compact metadata and keyboard hints — it is
+  Scratchpad's second signature alongside indigo.
 
-Desktop document titles should be substantial but not promotional: about 44px
-at the wide breakpoint with tight tracking. Body prose stays readable at a
-maximum measure of 620px.
+Desktop document titles should be substantial but not promotional: serif at
+weight 600, 36px rising to about 44px at the wide breakpoint, with gentle
+tracking. Body prose stays readable at a maximum measure of 620px.
 
 ## Layout
 

@@ -31,12 +31,16 @@ guarantee, not an implementation detail.
 - **`marked` and `DOMPurify` are vendored**, not loaded from a CDN. They live
   in `public/js/vendor/`. Don't replace with CDN URLs.
 
-### Inkwell design system — "Porcelain Chronicle" (v4)
-This repo overrides the base Inkwell system with the **Porcelain Chronicle**
+### Inkwell design system — "Indigo on Paper" (v5)
+This repo overrides the base Inkwell system with the **Indigo on Paper**
 direction: a quiet chronology rail, an opaque note index, and a raised document
-on cool porcelain surfaces. Restrained Indigo (`#5661B3`) is the sole accent.
-The approved spec is in
-`docs/superpowers/specs/2026-07-31-porcelain-chronicle-indigo-design.md`.
+on warm paper surfaces with a serif display voice. Restrained Indigo
+(`#5661B3`) is the sole accent. The approved spec is in
+`docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md` (structure and
+accent carry over from Porcelain Chronicle v4; the neutral temperature and
+display voice are what changed). The executable form of the contract lives in
+`tests/design-tokens.spec.js` — warm surfaces, AA pairs, dark-block parity,
+and the pinned indigo accent.
 Read `https://raw.githubusercontent.com/vscarpenter/inkwell/main/agent-instructions.md`
 for the base system, but the rules below reflect this repo's overrides and win.
 Key rules for anything in `public/css/app.css`:
@@ -56,9 +60,10 @@ Key rules for anything in `public/css/app.css`:
   links, tags, the document date spine, and focus. `--accent-text` is the
   legibility sibling for accent text or glyphs sitting on a tint. Semantic
   success, warning, and danger colors remain state-only.
-- **Platform fonts only** — no `@font-face`, no Google Fonts. The application
-  shell and document title use `--sans`; rendered note prose may retain the
-  editorial serif voice. `--mono` is metadata only and never prose.
+- **Platform fonts only** — no `@font-face`, no Google Fonts. The editorial
+  serif (`--serif`) carries the display voice: document title, list date
+  heading, date-spine numeral, and rendered prose headings. Everything else in
+  the chrome uses `--sans`. `--mono` is metadata only and never prose.
 - **No emoji in source.** Icons are inline SVG strokes (the `⌘K` hint is a
   Unicode symbol, matching the existing kbd shortcuts).
 - **Dark mode** extends the Pattern-B cascade in `inkwell-tokens.css`; validate

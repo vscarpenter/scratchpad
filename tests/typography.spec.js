@@ -2,20 +2,20 @@
 const { test, expect } = require('@playwright/test');
 const { seedRawNotes } = require('./helpers');
 
-test.describe('typography — Chronicle headings and matched read/edit metrics', () => {
-  test('title and rendered headings use the system sans stack, code stays mono', async ({ page }) => {
+test.describe('typography — Indigo on Paper headings and matched read/edit metrics', () => {
+  test('title and rendered headings use the platform serif stack, code stays mono', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'serif-note', title: 'Serif title', body: '## Section\n\nBody paragraph.\n\nUses a `code span` too.' },
     ]);
 
     const title = page.locator('#note-title-display');
-    expect(await title.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/system-ui|Segoe UI/);
-    expect(Number(await title.evaluate((el) => getComputedStyle(el).fontWeight))).toBeGreaterThanOrEqual(700);
+    expect(await title.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Iowan Old Style|Palatino|Georgia/);
+    expect(await title.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
 
     const h2 = page.locator('#note-rendered h2');
-    expect(await h2.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/system-ui|Segoe UI/);
-    expect(await h2.evaluate((el) => getComputedStyle(el).fontSize)).toBe('18px');
-    expect(await h2.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('700');
+    expect(await h2.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Iowan Old Style|Palatino|Georgia/);
+    expect(await h2.evaluate((el) => getComputedStyle(el).fontSize)).toBe('19px');
+    expect(await h2.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
 
     const code = page.locator('#note-rendered code').first();
     expect(await code.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/ui-monospace|SF Mono|Menlo|monospace/);
