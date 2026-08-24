@@ -16,6 +16,32 @@ test.describe('task list rendering', () => {
     await expect(rendered.locator('.task-checkbox').first()).toHaveAttribute('role', 'checkbox');
     await expect(rendered.locator('.task-checkbox').first()).toHaveAttribute('tabindex', '0');
   });
+
+  test('loose task lists hide bullets and keep nested toggles aligned with source', async ({ page }) => {
+    const body = '* [ ] Prepare\n\n  * [ ] Install\n  * [x] Update\n* [x] Run\n\n  * [ ] Verify';
+    await seedRawNotes(page, [
+      { id: 'loose-task-id', title: 'Release checklist', body },
+    ]);
+    await page.locator('.note-row').first().click();
+
+    const rendered = page.locator('#note-rendered');
+    const boxes = rendered.locator('.task-checkbox');
+    const topItems = rendered.locator(':scope > ul > li');
+
+    await expect(boxes).toHaveCount(5);
+    await expect(topItems).toHaveCount(2);
+    await expect(topItems.nth(0).locator(':scope > p > .task-checkbox')).toHaveCount(1);
+    await expect(topItems.nth(1).locator(':scope > p > .task-checkbox')).toHaveCount(1);
+    await expect(topItems.nth(0)).toHaveCSS('list-style-type', 'none');
+    await expect(topItems.nth(1)).toHaveCSS('list-style-type', 'none');
+
+    await expect(boxes.nth(1)).toHaveAttribute('aria-disabled', 'false');
+    await boxes.nth(1).click();
+    await expect(boxes.nth(1)).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(() => page.evaluate(() =>
+      window.ScratchpadDB.get('loose-task-id').then((note) => note.body)
+    )).toBe('* [ ] Prepare\n\n  * [x] Install\n  * [x] Update\n* [x] Run\n\n  * [ ] Verify');
+  });
 });
 
 test.describe('task marker scanner', () => {

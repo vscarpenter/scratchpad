@@ -1919,7 +1919,8 @@ body:not(.page-privacy) {
   cursor: default;
   opacity: 0.6;
 }
-.note-rendered li:has(> .task-checkbox) {
+.note-rendered li:has(> .task-checkbox),
+.note-rendered li:has(> p:first-child > .task-checkbox:first-child) {
   list-style: none;
 }
 
