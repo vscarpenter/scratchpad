@@ -144,16 +144,6 @@ body:not(.page-privacy) {
   }
 }
 
-/* Optional entrance: panels fade/translate up once on load. */
-@media (prefers-reduced-motion: no-preference) {
-  .sidebar { animation: panel-rise var(--t-slow) var(--ease-out) both; }
-  .main    { animation: panel-rise var(--t-slow) var(--ease-out) 40ms both; }
-  @keyframes panel-rise {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: none; }
-  }
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -223,10 +213,26 @@ body:not(.page-privacy) {
   background: var(--control-fill-hover);
   color: var(--ink);
 }
-.theme-toggle .theme-icon { display: none; }
-.theme-toggle[data-theme-icon="auto"] .theme-icon-auto { display: block; }
-.theme-toggle[data-theme-icon="light"] .theme-icon-light { display: block; }
-.theme-toggle[data-theme-icon="dark"] .theme-icon-dark { display: block; }
+/* The three theme glyphs stack in one grid cell and cross-fade on toggle;
+   entering small enough (0.35) that the swap reads as a new glyph arriving,
+   not the old one resizing. First paint applies styles without transitioning,
+   so nothing animates on page load. */
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+}
+.theme-toggle .theme-icon {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: scale(0.35);
+  transition: opacity var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+.theme-toggle[data-theme-icon="auto"] .theme-icon-auto,
+.theme-toggle[data-theme-icon="light"] .theme-icon-light,
+.theme-toggle[data-theme-icon="dark"] .theme-icon-dark {
+  opacity: 1;
+  transform: none;
+}
 
 .sidebar-brand {
   display: flex;
@@ -1333,8 +1339,21 @@ body:not(.page-privacy) {
   z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
+  transition: opacity var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
 }
 .popover-menu[hidden] { display: none; }
+/* Menus unfold from their trigger on open; dismissal stays instant (no
+   display transition) — the system answers Escape/outside-click immediately.
+   Opacity/transform only, so the width measurement on unhide stays valid. */
+@starting-style {
+  .popover-menu:not([hidden]) {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  .popover-menu.popover-menu-up:not([hidden]) {
+    transform: translateY(3px);
+  }
+}
 .popover-menu button {
   text-align: left;
   background: transparent;
@@ -1413,7 +1432,8 @@ body:not(.page-privacy) {
   color: var(--text-secondary);
   font: 700 12px/1 var(--sans);
   cursor: pointer;
-  transition: background var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease;
+  transition: background var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease,
+              transform var(--t-fast) var(--press);
 }
 .fmt-chip.fmt-text {
   width: auto;
@@ -2205,6 +2225,16 @@ body:not(.page-privacy) {
   max-width: 620px;
 }
 
+/* The palette is a keyboard-speed surface: it opens and closes with zero
+   ceremony. The [open] variants match .dialog[open]'s specificity so this
+   later rule wins over the shared enter/exit transitions. */
+.command-palette-dialog,
+.command-palette-dialog[open],
+.command-palette-dialog::backdrop,
+.command-palette-dialog[open]::backdrop {
+  transition: none;
+}
+
 .command-palette-body {
   display: flex;
   flex-direction: column;
@@ -2387,21 +2417,6 @@ body:not(.page-privacy) {
   max-width: 520px;
   overflow: hidden;
   overscroll-behavior: contain;
-}
-
-.quick-capture-dialog[open] {
-  animation: quick-capture-in 180ms var(--ease-out);
-}
-
-@keyframes quick-capture-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 .quick-capture-dialog .dialog-head {
@@ -2722,11 +2737,13 @@ body:not(.page-privacy) {
   pointer-events: auto;
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out);
+  /* Base state governs the exit: --t-fast ≈ 75-80% of the --t-base entrance. */
+  transition: opacity var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
 }
 .toast.is-visible {
   opacity: 1;
   transform: translateY(0);
+  transition-duration: var(--t-base);
 }
 .toast-dot {
   width: 7px;
@@ -2817,7 +2834,7 @@ body:not(.page-privacy) {
   font: 600 14px/1 var(--serif);
   letter-spacing: 0.01em;
   color: var(--slate);
-  transition: color .12s ease;
+  transition: color var(--t-fast) ease;
 }
 
 .footer-tagline {
@@ -2838,7 +2855,7 @@ body:not(.page-privacy) {
   text-decoration: none;
   padding: 6px 10px;
   border-radius: 4px;
-  transition: color .12s ease, background-color .12s ease;
+  transition: color var(--t-fast) ease, background-color var(--t-fast) ease;
 }
 .app-footer a:hover {
   color: var(--accent-text);
@@ -4045,7 +4062,6 @@ body:not(.page-privacy) {
     box-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    animation: none;
   }
 
   .sidebar {

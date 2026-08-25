@@ -328,10 +328,10 @@ code, .code-inline {
   border-radius: 50%;
   background: var(--paper);
   box-shadow: var(--shadow-sm);
-  transition: left var(--t-fast) var(--ease-out);
+  transition: transform var(--t-fast) var(--ease-out);
 }
 .switch input:checked { background: var(--accent); }
-.switch input:checked::after { left: 18px; }
+.switch input:checked::after { transform: translateX(16px); }
 
 /* ---------- Keyboard chip (<kbd>) ---------- */
 kbd, .kbd {
@@ -595,15 +595,51 @@ pre.code-block { margin: 0; font: inherit; color: inherit; white-space: pre; }
   max-width: 480px;
   width: calc(100% - 32px);
 }
+/* Enter/exit as interruptible transitions rather than a one-shot keyframe:
+   `display`/`overlay` ride along via allow-discrete so close fades out instead
+   of snapping. Browsers without @starting-style keep today's instant behavior.
+   The exit (base state) runs at --t-fast ≈ 75-80% of the --t-base entrance. */
+.dialog {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out),
+    display var(--t-fast),
+    overlay var(--t-fast);
+  transition-behavior: allow-discrete;
+}
+.dialog[open] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--t-base) var(--ease-out),
+    transform var(--t-base) var(--ease-pop),
+    display var(--t-base),
+    overlay var(--t-base);
+  transition-behavior: allow-discrete;
+}
+@starting-style {
+  .dialog[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+/* Backdrop dims in ahead of the panel (context before detail) and follows it
+   out. The blur stays static — animating backdrop-filter is never worth it. */
 .dialog::backdrop {
-  background: var(--backdrop);
+  background: transparent;
   -webkit-backdrop-filter: blur(var(--backdrop-blur));
   backdrop-filter: blur(var(--backdrop-blur));
+  transition:
+    background var(--t-fast) var(--ease-out),
+    display var(--t-fast),
+    overlay var(--t-fast);
+  transition-behavior: allow-discrete;
 }
-.dialog[open] { animation: dialog-pop var(--t-base) var(--ease-pop); }
-@keyframes dialog-pop {
-  from { transform: scale(0.96); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
+.dialog[open]::backdrop { background: var(--backdrop); }
+@starting-style {
+  .dialog[open]::backdrop { background: transparent; }
 }
 .dialog-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
