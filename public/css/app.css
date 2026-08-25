@@ -1145,6 +1145,8 @@ body:not(.page-privacy) {
   align-self: start;
   margin-top: 3px;
   font: 500 10.5px/1 var(--sans);
+  /* Dates stack down the list; tabular figures keep the column steady. */
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -1637,6 +1639,8 @@ body:not(.page-privacy) {
 .editor-doc-head .byline {
   margin: 0;
   font: 400 12.5px/1.4 var(--sans);
+  /* The word count re-renders as you type; tabular figures stop the jitter. */
+  font-variant-numeric: tabular-nums;
   text-transform: none;
   letter-spacing: 0;
   color: var(--text-muted);
@@ -1650,6 +1654,7 @@ body:not(.page-privacy) {
   letter-spacing: -0.012em;
   color: var(--ink);
   word-break: break-word;
+  text-wrap: balance;
 }
 
 .note-doc-title-input {
@@ -2131,6 +2136,7 @@ body:not(.page-privacy) {
   margin: 0;
   color: var(--slate);
   font: 600 13px/1.25 var(--sans);
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
@@ -4399,6 +4405,7 @@ body:not(.page-privacy) {
   .chronicle-day b {
     font-size: 14px;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   .chronicle-day small {

@@ -4037,14 +4037,14 @@
     if (target && state.selectedId === target.id && state.editing) {
       els.editor.value = appendCaptureLine(els.editor.value, line);
       els.editor.dispatchEvent(new Event('input', { bubbles: true }));
-      toast("Added to today's draft.");
+      toast("Added to today’s draft.");
       return;
     }
     await withBusy('quick-capture', [], 'Capture failed. Your note was not changed.', async () => {
       const note = target || await createDailyNote();
       await mutateNoteBody(note.id, (body) => appendCaptureLine(body, line));
       renderAll();
-      toast("Captured to today's note.");
+      toast("Captured to today’s note.");
     });
   }
 
@@ -4487,7 +4487,7 @@
       }
     }
     if (!ok) ok = fallbackCopy(text);
-    showShareStatus(ok ? 'Copied to clipboard.' : 'Copy failed - try selecting the note text manually.');
+    showShareStatus(ok ? 'Copied to clipboard.' : 'Copy failed — try selecting the note text manually.');
     if (ok) setTimeout(() => showShareStatus(''), 2000);
   }
 
@@ -4768,7 +4768,7 @@
       },
       {
         id: 'today-note',
-        label: "Open today's note",
+        label: "Open today’s note",
         meta: 'Daily note — created on first use',
         keywords: 'today daily journal log',
         run: openTodayNote,
@@ -4776,7 +4776,7 @@
       {
         id: 'quick-capture',
         label: 'Quick capture',
-        meta: "Append a timestamped line to today's note",
+        meta: "Append a timestamped line to today’s note",
         keywords: 'capture jot inbox quick add',
         run: openQuickCapture,
       },

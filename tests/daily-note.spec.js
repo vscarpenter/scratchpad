@@ -55,7 +55,7 @@ test.describe('daily note', () => {
     await gotoApp(page);
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('today');
-    await page.locator('.command-palette-item', { hasText: "Open today's note" }).click();
+    await page.locator('.command-palette-item', { hasText: "Open today’s note" }).click();
     await expect(page.locator('#note-rendered')).toBeVisible();
     const first = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
@@ -75,7 +75,7 @@ test.describe('daily note', () => {
     // Second invocation reuses the same note.
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('today');
-    await page.locator('.command-palette-item', { hasText: "Open today's note" }).click();
+    await page.locator('.command-palette-item', { hasText: "Open today’s note" }).click();
     const count = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
       return all.filter((n) => n.dailyDate).length;
@@ -328,7 +328,7 @@ test.describe('quick capture', () => {
     await page.locator('#quick-capture-input').fill('remember the milk');
     await page.locator('#quick-capture-submit').click();
     // The dialog closes before the async write; the toast marks completion.
-    await expect(page.locator('.toast', { hasText: "Captured to today's note." }).last()).toBeVisible();
+    await expect(page.locator('.toast', { hasText: "Captured to today’s note." }).last()).toBeVisible();
     const note = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
       return all.find((n) => n.dailyDate);
@@ -341,7 +341,7 @@ test.describe('quick capture', () => {
     await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
     await page.locator('#quick-capture-input').fill('second thought');
     await page.keyboard.press('Enter');
-    await expect(page.locator('.toast', { hasText: "Captured to today's note." }).last()).toBeVisible();
+    await expect(page.locator('.toast', { hasText: "Captured to today’s note." }).last()).toBeVisible();
     await page.waitForFunction(async () => {
       const all = await window.ScratchpadDB.getAll();
       const daily = all.find((n) => n.dailyDate);

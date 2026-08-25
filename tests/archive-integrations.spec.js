@@ -191,7 +191,7 @@ test.describe('Archive integrations', () => {
     await page.keyboard.press('Enter');
     await page.locator('#quick-capture-input').fill('captured while archived');
     await page.locator('#quick-capture-submit').click();
-    await expect(page.locator('.toast', { hasText: "Captured to today's note." }).last()).toBeVisible();
+    await expect(page.locator('.toast', { hasText: "Captured to today’s note." }).last()).toBeVisible();
 
     const daily = await page.evaluate(async (dailyKey) => {
       const all = await window.ScratchpadDB.getAll();
