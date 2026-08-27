@@ -1,4 +1,25 @@
-# Indigo on Paper (v5) — implementation
+# Standards and simplification — implementation
+
+Spec: `tasks/spec.md` (approved 2026-08-27)
+
+- [ ] Restore the green baseline
+- [ ] Reconcile standards and tooling
+- [ ] Remove retired search-scope code
+- [ ] Consolidate accessible menu behavior
+- [ ] Flatten the Indigo on Paper CSS cascade
+- [ ] Run final local, browser, privacy, and visual verification
+- [ ] Produce the change report and comprehension quiz
+
+## Resuming From Here
+
+- Current phase: restore the green baseline.
+- Next: measure the desktop sidebar header, fix its 330px contract, stabilize the animated trash-dialog test, and update vendored Marked.
+- Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
+- Blockers: none.
+
+---
+
+# Indigo on Paper (v5) — implementation history
 
 Spec: docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md (approved)
 
