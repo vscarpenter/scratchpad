@@ -7,13 +7,14 @@ Spec: `tasks/spec.md` (approved 2026-08-27)
 - [x] Remove retired search-scope code
 - [x] Consolidate accessible menu behavior
 - [x] Flatten the Indigo on Paper CSS cascade
-- [ ] Run final local, browser, privacy, and visual verification
-- [ ] Produce the change report and comprehension quiz
+- [x] Run final local, browser, privacy, and visual verification
+- [x] Produce the change report and comprehension quiz
 
 ## Resuming From Here
 
-- Current phase: final repository-wide verification; the functional and visual implementation is complete.
-- Next: run all mechanical, browser, privacy, and vendor gates, then distill this ledger into durable lessons.
+- Current phase: complete on local branch `refactor/standards-and-simplification`.
+- Verification: `npm run verify`; frozen install; vendor currency; JavaScript and shell syntax; 890 Playwright tests passed with 7 intentional skips across Chromium, Firefox, and WebKit; nine responsive light/dark screenshots reviewed.
+- Next: answer the comprehension quiz in the change report before any merge. Push, deploy, release, AWS, and CSP publication remain unauthorised and were not performed.
 - Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
 - Blockers: none.
 
