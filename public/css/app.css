@@ -4080,8 +4080,8 @@ body:not(.page-privacy) {
   }
 
   .sidebar-head {
-    gap: 12px;
-    padding: 25px 20px 12px;
+    gap: 8px;
+    padding: 22px 20px 11px;
   }
 
   .sidebar-head .brand {
