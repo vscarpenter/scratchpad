@@ -108,9 +108,10 @@ test.describe('note organization and empty states', () => {
     await page.getByRole('button', { name: 'Empty Trash' }).click();
     await expect(page.locator('#empty-trash-dialog')).toBeVisible();
     await page.locator('#empty-trash-dialog').getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.locator('#empty-trash-dialog')).toBeHidden();
     await expect(page.locator('.note-row[data-id="trash-delete"]')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Empty Trash' }).click();
+    await page.getByLabel('Note list').getByRole('button', { name: 'Empty Trash' }).click();
     await page.locator('#confirm-empty-trash').click();
     await expect(page.locator('.sidebar-empty-title')).toHaveText('Trash is empty');
 

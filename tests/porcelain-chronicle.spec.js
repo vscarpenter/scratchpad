@@ -3,9 +3,49 @@ const { test, expect } = require('@playwright/test');
 const { seedRawNotes } = require('./helpers');
 
 function localDateKey(date) {
-  return date.getFullYear() + '-' +
-    String(date.getMonth() + 1).padStart(2, '0') + '-' +
-    String(date.getDate()).padStart(2, '0');
+  return (
+    date.getFullYear() +
+    '-' +
+    String(date.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(date.getDate()).padStart(2, '0')
+  );
+}
+
+async function shellStyles(page) {
+  return page.evaluate(() => {
+    const styles = (selector) => getComputedStyle(document.querySelector(selector));
+    const probe = document.createElement('div');
+    document.body.appendChild(probe);
+    const token = (name) => {
+      probe.style.background = `var(${name})`;
+      return getComputedStyle(probe).backgroundColor;
+    };
+    const surface = (selector) => {
+      const style = styles(selector);
+      return {
+        background: style.backgroundColor,
+        radius: style.borderRadius,
+        shadow: style.boxShadow,
+        filter: style.backdropFilter || style.webkitBackdropFilter || 'none',
+      };
+    };
+    const result = {
+      shell: { gap: styles('#app-shell').gap, padding: styles('#app-shell').padding },
+      sidebar: surface('#sidebar'),
+      main: surface('#main'),
+      editor: surface('.editor-card'),
+      rail: surface('#chronicle-rail'),
+      tokens: {
+        list: token('--surface-list'),
+        stage: token('--surface-document-stage'),
+        document: token('--surface-document'),
+        rail: token('--surface-rail'),
+      },
+    };
+    probe.remove();
+    return result;
+  });
 }
 
 test.describe('Porcelain Chronicle shell', () => {
@@ -13,14 +53,16 @@ test.describe('Porcelain Chronicle shell', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const now = new Date();
     const today = localDateKey(now);
-    await seedRawNotes(page, [{
-      id: 'today-daily',
-      title: 'Today',
-      body: 'Today body.',
-      dailyDate: today,
-      createdAt: now.getTime(),
-      updatedAt: now.getTime(),
-    }]);
+    await seedRawNotes(page, [
+      {
+        id: 'today-daily',
+        title: 'Today',
+        body: 'Today body.',
+        dailyDate: today,
+        createdAt: now.getTime(),
+        updatedAt: now.getTime(),
+      },
+    ]);
 
     const rail = page.locator('#chronicle-rail');
     await expect(rail).toBeVisible();
@@ -31,23 +73,29 @@ test.describe('Porcelain Chronicle shell', () => {
     const priorKey = localDateKey(prior);
     await page.locator(`#chronicle-days [data-date="${priorKey}"]`).click();
 
-    await expect.poll(async () => page.evaluate(async (key) => {
-      const notes = await window.ScratchpadDB.getAll();
-      return notes.filter((note) => note.dailyDate === key).length;
-    }, priorKey)).toBe(1);
+    await expect
+      .poll(async () =>
+        page.evaluate(async (key) => {
+          const notes = await window.ScratchpadDB.getAll();
+          return notes.filter((note) => note.dailyDate === key).length;
+        }, priorKey),
+      )
+      .toBe(1);
     await expect(page.locator(`#chronicle-days [data-date="${priorKey}"]`)).toHaveAttribute('aria-current', 'date');
   });
 
   test('uses the selected note date for the document spine', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const createdAt = new Date(2026, 6, 29, 12, 0, 0).getTime();
-    await seedRawNotes(page, [{
-      id: 'dated-note',
-      title: 'Dated note',
-      body: 'A note with a stable local creation date.',
-      createdAt,
-      updatedAt: createdAt,
-    }]);
+    await seedRawNotes(page, [
+      {
+        id: 'dated-note',
+        title: 'Dated note',
+        body: 'A note with a stable local creation date.',
+        createdAt,
+        updatedAt: createdAt,
+      },
+    ]);
 
     await expect(page.locator('#editor-date-spine')).toBeVisible();
     await expect(page.locator('#editor-date-number')).toHaveText('29');
@@ -57,11 +105,14 @@ test.describe('Porcelain Chronicle shell', () => {
 
   test('keeps all three desktop regions inside the viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
-    await seedRawNotes(page, Array.from({ length: 30 }, (_, index) => ({
-      id: `chronicle-${index}`,
-      title: `Chronicle note ${index}`,
-      body: `Body ${index}`,
-    })));
+    await seedRawNotes(
+      page,
+      Array.from({ length: 30 }, (_, index) => ({
+        id: `chronicle-${index}`,
+        title: `Chronicle note ${index}`,
+        body: `Body ${index}`,
+      })),
+    );
 
     const rail = await page.locator('#chronicle-rail').boundingBox();
     const sidebar = await page.locator('#sidebar').boundingBox();
@@ -84,4 +135,45 @@ test.describe('Porcelain Chronicle mobile', () => {
     await expect(page.locator('#editor-date-spine')).toBeHidden();
     await expect(page.locator('#note-title-display')).toHaveText('Mobile note');
   });
+});
+
+for (const width of [390, 768, 1440]) {
+  test(`keeps the application shell flat at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await seedRawNotes(page, [{ id: `flat-${width}`, title: 'Flat shell', body: 'Document surface.' }]);
+    const styles = await shellStyles(page);
+
+    expect(styles.shell).toEqual({ gap: '0px', padding: '0px' });
+    expect(styles.sidebar).toMatchObject({
+      background: styles.tokens.list,
+      radius: '0px',
+      shadow: 'none',
+      filter: 'none',
+    });
+    expect(styles.main).toMatchObject({
+      background: styles.tokens.stage,
+      radius: '0px',
+      shadow: 'none',
+      filter: 'none',
+    });
+    if (width >= 768) {
+      expect(styles.editor.background).toBe(styles.tokens.document);
+      expect(styles.editor.shadow).not.toBe('none');
+    }
+    if (width >= 900) expect(styles.rail.background).toBe(styles.tokens.rail);
+  });
+}
+
+test('keeps intentional glass scoped to dialogs', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Chromium exposes backdrop-filter through computed style.');
+  await seedRawNotes(page, [{ id: 'dialog-glass', title: 'Dialog glass', body: 'Body.' }]);
+  const filters = await page.evaluate(() => {
+    const read = (selector) => {
+      const style = getComputedStyle(document.querySelector(selector));
+      return style.backdropFilter || style.webkitBackdropFilter || 'none';
+    };
+    return { shell: read('#main'), dialog: read('#about-dialog') };
+  });
+  expect(filters.shell).toBe('none');
+  expect(filters.dialog).not.toBe('none');
 });

@@ -49,19 +49,19 @@ Nothing else is ever uploaded.
 
 ## Running locally
 
-The whole app is static files. Use any static HTTP server from the project
-root (do not open `index.html` via `file://` — IndexedDB is partitioned by
-origin and some browsers disable it on file URLs).
+The whole app is static files, but the repository contains private and
+operator-only files that must never be served. Use the allowlisted development
+server (and do not open `index.html` via `file://` — IndexedDB behavior on file
+URLs is inconsistent).
 
 ```sh
-# Python (no install required)
-python3 -m http.server 8080
-
-# Node, if you have it
-npx --yes serve@latest -l 8080 .
+node scripts/dev-server.mjs
 ```
 
 Then visit <http://localhost:8080>.
+
+Do not use `python3 -m http.server` or `npx serve`: both expose the entire
+working tree, including files that are intentionally excluded from deploys.
 
 ### Git hooks
 
@@ -71,9 +71,9 @@ One-time setup for a fresh clone:
 git config core.hooksPath scripts/hooks
 ```
 
-This activates `scripts/hooks/pre-commit`, which blocks staged commits that
-write raw HTML into the DOM (`innerHTML`/`outerHTML` assignment,
-`insertAdjacentHTML(`) outside vendored code.
+This activates the raw-DOM safety check and the changed-file formatting,
+linting, type, structure, and commit-message gates. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the complete local verification loop.
 
 ## Deploying to AWS S3 + CloudFront
 
@@ -114,14 +114,14 @@ What it does:
    `aws s3 cp public/service-worker.js` with `Cache-Control: no-cache,
    no-store, must-revalidate` so the imported service-worker logic is never
    stuck behind the generic asset cache.
-3. `aws s3 cp index.html / about.html / guide.html / privacy.html / terms.html → s3://$S3_BUCKET/` with
+3. `aws s3 cp index.html / about.html / guide.html / privacy.html / terms.html / share.html → s3://$S3_BUCKET/` with
    `Cache-Control: public, max-age=60, must-revalidate` so new HTML reaches
    users within a minute.
 4. `aws s3 cp service-worker.js → s3://$S3_BUCKET/service-worker.js` with
    `Cache-Control: no-cache, no-store, must-revalidate` so installed copies
    see the newest app-shell cache quickly.
 5. `aws cloudfront create-invalidation` for `/`, `/index.html`,
-   `/about.html`, `/guide.html`, `/privacy.html`, `/terms.html`, `/service-worker.js`,
+   `/about.html`, `/guide.html`, `/privacy.html`, `/terms.html`, `/share.html`, `/service-worker.js`,
    `/public/manifest.webmanifest`, and `/public/service-worker.js*` so the
    edge cache flips immediately.
 
@@ -136,7 +136,7 @@ Production security headers are emitted by
 it does not require `script-src 'unsafe-inline'`.
 
 Run this after editing any inline `<script>` in `index.html`, `about.html`,
-`guide.html`, `privacy.html`, or `terms.html`:
+`guide.html`, `privacy.html`, `terms.html`, or `share.html`:
 
 ```sh
 bash cloudfront/recompute-csp-hashes.sh
@@ -260,6 +260,7 @@ about.html
 privacy.html
 guide.html
 terms.html
+share.html
 deploy.sh
 .env.local.example
 public/
@@ -284,6 +285,9 @@ public/
 service-worker.js          # Root shim for full-app service-worker scope
 README.md
 ScratchPad-PRD.md
+coding-standards.md       # canonical human reference; never deployed
 ```
 
-No build step. No `npm install` for runtime. Deploy the tree as-is.
+No build step and no package dependency at runtime. Development dependencies
+are local quality/test tooling only; deploy the allowlisted surface through
+`deploy.sh`, never the working tree.

@@ -17,12 +17,11 @@ body {
 
 /* App page: cap body at viewport height so inner scroll regions (sidebar
    note list, editor card) have a definite size to scroll within. Privacy
-   page opts out via .page-privacy below. The tinted wash sits behind the
-   two floating glass panels. */
+   page opts out via .page-privacy below. */
 body:not(.page-privacy) {
   height: 100vh;
   height: 100dvh;
-  background: var(--wash-app);
+  background: var(--surface-canvas);
   background-attachment: fixed;
 }
 
@@ -90,26 +89,21 @@ body:not(.page-privacy) {
 /* ---------- App shell ---------- */
 .app-shell {
   display: grid;
-  grid-template-columns: 302px 1fr;
-  grid-template-rows: 1fr;
-  gap: 16px;
-  padding: 18px;
+  grid-template-columns: 310px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
   flex: 1;
   min-height: 0;
 }
 
-/* Two floating frosted-glass panels. Blur is compositing-heavy, so it lives
-   only on these two top-level panels (never on rows/chips). contain isolates
-   their rendering. Fallbacks for no-backdrop-filter support and for
-   prefers-reduced-transparency live just below. */
+/* The shell is flat at every width. Dialogs and floating utilities keep the
+   intentional glass treatment; the document is the only raised shell surface. */
 .sidebar,
 .main {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
-  border: var(--glass-border);
-  border-radius: var(--r-panel);
-  box-shadow: var(--glass-shadow);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
   contain: layout style paint;
 }
@@ -121,11 +115,10 @@ body:not(.page-privacy) {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  background: var(--surface-list);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .sidebar,
-  .main,
   .dialog,
   .editor-format,
   .status-chip.is-floating {
@@ -133,8 +126,6 @@ body:not(.page-privacy) {
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .sidebar,
-  .main,
   .dialog,
   .editor-format,
   .status-chip.is-floating {
@@ -161,6 +152,7 @@ body:not(.page-privacy) {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  background: var(--surface-document-stage);
 }
 
 /* ---------- Sidebar head ---------- */
@@ -1604,8 +1596,8 @@ body:not(.page-privacy) {
 }
 
 /* ---------- Editor card ---------- */
-/* Editor content sits directly inside the glass main panel — not a nested
-   card. Override the .card component surface to transparent. */
+/* On narrow screens editor content sits directly on the document stage. The
+   desktop Chronicle treatment below promotes it to the one raised surface. */
 .editor-card {
   flex: 1;
   min-height: 0;
@@ -3393,11 +3385,6 @@ body:not(.page-privacy) {
 @media (max-width: 767px) {
   .app-shell {
     grid-template-columns: 1fr;
-    padding: 10px;
-  }
-  .sidebar,
-  .main {
-    border-radius: 18px;
   }
   .main { display: none; }
   .app-shell.mobile-editor .sidebar { display: none; }
@@ -3995,10 +3982,6 @@ body:not(.page-privacy) {
    Porcelain Chronicle — approved application shell
    ===================================================================== */
 
-body:not(.page-privacy) {
-  background: var(--surface-canvas);
-}
-
 .chronicle-rail {
   display: none;
 }
@@ -4054,34 +4037,13 @@ body:not(.page-privacy) {
 }
 
 @media screen and (min-width: 768px) {
-  .app-shell {
-    grid-template-columns: 310px minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    gap: 0;
-    padding: 0;
-  }
-
-  .sidebar,
-  .main {
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
   .sidebar {
-    background: var(--surface-list);
     border-right: 1px solid var(--hairline-color-2);
   }
 
-  .main {
-    background: var(--surface-document-stage);
-  }
-
   .sidebar-head {
-    gap: 12px;
-    padding: 25px 20px 12px;
+    gap: 8px;
+    padding: 22px 20px 11px;
   }
 
   .sidebar-head .brand {

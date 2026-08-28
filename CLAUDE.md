@@ -138,7 +138,7 @@ cloudfront/              CloudFront security-header artifacts (do NOT deploy)
                                  verifies them in every CSP-bearing source file
 README.md
 ScratchPad-PRD.md        original product requirements
-coding-standard.md       user's own reference file (do NOT deploy)
+coding-standards.md      canonical v18 reference (do NOT deploy)
 ```
 
 ### Regenerating the OG image
@@ -337,6 +337,17 @@ headers (DNS rebinding). The Playwright suite uses the same server.
 Don't open `index.html` via `file://`. IndexedDB behavior on file URLs is
 inconsistent across browsers.
 
+## Coding standards and quality gates
+
+`coding-standards.md` v18 is the canonical human reference. This repository's
+no-build vanilla-JavaScript profile is recorded in
+`docs/adr/0002-adopt-a-ratcheted-vanilla-javascript-quality-profile.md`.
+Run `npm run verify` for formatting, lint, strict type checks on opted-in
+quality tooling, structural non-regression, app-shell/seed/Lambda checks,
+measured browser coverage, and dependency audit. Run `npm test` separately for
+the complete three-browser behavior suite. New modules must meet the v18 limits;
+the recorded legacy ceilings may only decrease.
+
 ## Verification screenshots
 
 `./.verify/` holds browser-driven verification screenshots (gitignored).
@@ -346,11 +357,13 @@ checks; not part of the app and never deployed.
 ## What not to deploy
 
 These files exist in the repo but **must not** end up in S3 / CloudFront:
-- `README.md`, `ScratchPad-PRD.md`, `CLAUDE.md`, `coding-standard.md`, `backlog.md`
+- `README.md`, `CONTRIBUTING.md`, `ScratchPad-PRD.md`, `CLAUDE.md`, `AGENTS.md`,
+  `coding-standards.md`, `backlog.md`
 - `deploy.sh`, `.env.local`, `.env.local.example`
 - `cloudfront/` (operator-only AWS policy artifacts)
 - `share-infra/` (operator-only share API Lambda, IAM, and provisioning)
-- `package.json`, `bun.lock`, `node_modules/`, `tests/`, `scripts/`,
+- `package.json`, `bun.lock`, `biome.json`, `commitlint.config.cjs`,
+  `jsconfig.json`, `config/`, `node_modules/`, `tests/`, `scripts/`,
   `playwright.config.js` (local-only dev/test tooling)
 - `DESIGN.md`, `PRODUCT.md`, `.impeccable/design.json` (design-system record;
   `design.json` is the DESIGN.md sidecar and the only tracked file under

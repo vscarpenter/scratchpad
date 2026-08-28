@@ -1,4 +1,26 @@
-# Indigo on Paper (v5) — implementation
+# Standards and simplification — implementation
+
+Spec: `tasks/spec.md` (approved 2026-08-27)
+
+- [x] Restore the green baseline
+- [x] Reconcile standards and tooling
+- [x] Remove retired search-scope code
+- [x] Consolidate accessible menu behavior
+- [x] Flatten the Indigo on Paper CSS cascade
+- [x] Run final local, browser, privacy, and visual verification
+- [x] Produce the change report and comprehension quiz
+
+## Resuming From Here
+
+- Current phase: complete on local branch `refactor/standards-and-simplification`.
+- Verification: `npm run verify`; frozen install; vendor currency; JavaScript and shell syntax; 890 Playwright tests passed with 7 intentional skips across Chromium, Firefox, and WebKit; nine responsive light/dark screenshots reviewed.
+- Next: answer the comprehension quiz in the change report before any merge. Push, deploy, release, AWS, and CSP publication remain unauthorised and were not performed.
+- Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
+- Blockers: none.
+
+---
+
+# Indigo on Paper (v5) — implementation history
 
 Spec: docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md (approved)
 

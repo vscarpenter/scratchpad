@@ -15,7 +15,6 @@
   const NOTE_TAG_MAX = 48;
   const NOTE_TAGS_MAX = 20;
   const MAX_ROW_TAGS = 2; // chips per note-list row before the +n counter
-  const SEARCH_SCOPES = new Set(['all', 'title', 'body', 'tags']);
   const FOLDER_NAME_MAX = 60;
   const FOLDERS_MAX = 100;
   const IMPORT_MAX_FOLDERS = FOLDERS_MAX + 1;
@@ -47,7 +46,6 @@
     editing: false,
     dirty: false,
     search: '',
-    searchScope: 'all',
     tagFilter: null,
     view: 'active',
     folderViewId: readFolderView(),
@@ -90,7 +88,6 @@
     focusExitBtn: $('focus-exit-btn'),
     focusModeBtn: $('focus-mode-btn'),
     search: $('search'),
-    searchScope: $('search-scope'),
     activeFilter: $('active-filter'),
     activeFilterTag: $('active-filter-tag'),
     clearFilter: $('clear-filter'),
@@ -708,19 +705,12 @@
     return hay.includes(q) || fuzzyIncludes(hay, q);
   }
 
-  function noteSearchText(note, scope) {
-    if (scope === 'title') return note.title || deriveTitle(note);
-    if (scope === 'body') return note.body || '';
-    if (scope === 'tags') return (note.tags || []).join(' ');
+  function noteSearchText(note) {
     return [
       note.title || deriveTitle(note),
       note.body || '',
       (note.tags || []).join(' '),
     ].join('\n');
-  }
-
-  function scopeIncludes(field) {
-    return state.searchScope === 'all' || state.searchScope === field;
   }
 
   function highlightTextNodes(text, query) {
@@ -742,8 +732,8 @@
     return nodes.length ? nodes : [document.createTextNode(source)];
   }
 
-  function highlightedChildren(text, field) {
-    if (!state.search.trim() || !scopeIncludes(field)) return [document.createTextNode(text || '')];
+  function highlightedChildren(text) {
+    if (!state.search.trim()) return [document.createTextNode(text || '')];
     return highlightTextNodes(text || '', state.search);
   }
 
@@ -1087,17 +1077,79 @@
     toast(existing ? 'Folder updated.' : 'Folder created.');
   }
 
-  // -------- Folder menu (mirrors the editor overflow menu semantics) --------
-  function folderMenuItems() {
-    return Array.from(els.folderMenu.querySelectorAll('[role="menuitem"]'))
-      .filter((item) => !item.hidden);
+  // -------- Shared action-menu controller --------
+  function menuItems(menu) {
+    return Array.from(menu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
+      .filter((item) => !item.hidden && item.offsetParent !== null);
   }
 
-  function focusFolderMenuItem(index) {
-    const items = folderMenuItems();
+  function focusMenuItem(controller, index) {
+    const items = menuItems(controller.menu);
     if (!items.length) return;
     const i = (index + items.length) % items.length;
     items[i].focus();
+  }
+
+  function openControlledMenu(controller, options) {
+    if (!controller.menu.hidden) return;
+    controller.trigger = options && options.trigger ? options.trigger : controller.defaultTrigger;
+    controller.menu.hidden = false;
+    controller.trigger.setAttribute('aria-expanded', 'true');
+    if (controller.onOpen) controller.onOpen();
+    document.addEventListener('click', controller.onOutsideClick, true);
+    document.addEventListener('keydown', controller.onKeyDown, true);
+    if (!options || options.focus !== false) {
+      setTimeout(() => {
+        if (!controller.menu.hidden) focusMenuItem(controller, 0);
+      }, 0);
+    }
+  }
+
+  function closeControlledMenu(controller, options) {
+    if (controller.menu.hidden) return;
+    controller.menu.hidden = true;
+    controller.trigger.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', controller.onOutsideClick, true);
+    document.removeEventListener('keydown', controller.onKeyDown, true);
+    if (options && options.returnFocus) controller.trigger.focus();
+    if (controller.onClose) controller.onClose();
+  }
+
+  function handleControlledMenuKey(e, controller) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeControlledMenu(controller, { returnFocus: true });
+      return;
+    }
+    if (e.key === 'Tab') {
+      closeControlledMenu(controller);
+      return;
+    }
+    const items = menuItems(controller.menu);
+    const current = items.indexOf(document.activeElement);
+    const next = {
+      ArrowDown: current < 0 ? 0 : current + 1,
+      ArrowUp: current < 0 ? items.length - 1 : current - 1,
+      Home: 0,
+      End: items.length - 1,
+    }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    focusMenuItem(controller, next);
+  }
+
+  function createMenuController({ menu, trigger, onOpen, onClose }) {
+    const controller = { menu, defaultTrigger: trigger, trigger, onOpen, onClose };
+    controller.open = (options) => openControlledMenu(controller, options);
+    controller.close = (options) => closeControlledMenu(controller, options);
+    controller.toggle = () => menu.hidden ? controller.open() : controller.close();
+    controller.onOutsideClick = (e) => {
+      if (!menu.contains(e.target) && !controller.trigger.contains(e.target)) controller.close();
+    };
+    controller.onKeyDown = (e) => handleControlledMenuKey(e, controller);
+    return controller;
   }
 
   function configureFolderMenu(folderId) {
@@ -1111,71 +1163,31 @@
     }
   }
 
+  const folderMenuController = createMenuController({
+    menu: els.folderMenu,
+    trigger: els.folderSwitcherBtn,
+    onOpen: () => {
+      document.removeEventListener('keydown', onFolderSwitcherKey, true);
+      const rect = folderMenuController.trigger.getBoundingClientRect();
+      const maxLeft = window.innerWidth - els.folderMenu.offsetWidth - 8;
+      els.folderMenu.style.top = Math.round(rect.bottom + 4) + 'px';
+      els.folderMenu.style.left = Math.max(8, Math.min(Math.round(rect.left), maxLeft)) + 'px';
+    },
+    onClose: () => {
+      state.folderMenuTargetId = null;
+      if (!els.folderSwitcher.hidden) document.addEventListener('keydown', onFolderSwitcherKey, true);
+    },
+  });
+
   function openFolderMenu(folderId, trigger) {
     closeFolderMenu();
     state.folderMenuTargetId = folderId;
     configureFolderMenu(folderId);
-    const rect = trigger.getBoundingClientRect();
-    els.folderMenu.hidden = false; // unhide first so the menu has a measurable width
-    const maxLeft = window.innerWidth - els.folderMenu.offsetWidth - 8;
-    els.folderMenu.style.top = Math.round(rect.bottom + 4) + 'px';
-    els.folderMenu.style.left = Math.max(8, Math.min(Math.round(rect.left), maxLeft)) + 'px';
-    trigger.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onFolderMenuOutsideClick, true);
-    document.addEventListener('keydown', onFolderMenuKey, true);
-    setTimeout(() => focusFolderMenuItem(0), 0);
+    folderMenuController.open({ trigger });
   }
 
-  function closeFolderMenu() {
-    if (els.folderMenu.hidden) return;
-    els.folderMenu.hidden = true;
-    state.folderMenuTargetId = null;
-    document.removeEventListener('click', onFolderMenuOutsideClick, true);
-    document.removeEventListener('keydown', onFolderMenuKey, true);
-    const open = document.querySelector('.folder-menu-btn[aria-expanded="true"]');
-    if (open) open.setAttribute('aria-expanded', 'false');
-  }
-
-  function onFolderMenuOutsideClick(e) {
-    if (els.folderMenu.contains(e.target)) return;
-    closeFolderMenu();
-  }
-
-  function onFolderMenuKey(e) {
-    const items = folderMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeFolderMenu();
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(items.length - 1);
-        break;
-      case 'Tab':
-        closeFolderMenu();
-        break;
-      default:
-        break;
-    }
+  function closeFolderMenu(options) {
+    folderMenuController.close(options);
   }
 
   function openFolderDeleteDialog(folderId) {
@@ -1407,7 +1419,7 @@
     return currentBaseNotes().filter((n) => {
       if (tag && !(n.tags || []).includes(tag)) return false;
       if (!q) return true;
-      return matchesQuery(noteSearchText(n, state.searchScope), q);
+      return matchesQuery(noteSearchText(n), q);
     });
   }
 
@@ -1432,11 +1444,6 @@
     els.folderSwitcherBtn.setAttribute('aria-pressed', atHome ? 'false' : 'true');
     els.folderSwitcherNew.hidden = state.view === 'archive';
     renderFolderSwitcher();
-  }
-
-  function renderSearchScope() {
-    if (!els.searchScope) return;
-    els.searchScope.value = state.searchScope;
   }
 
   function renderBulkToggle() {
@@ -1502,7 +1509,6 @@
     // Pass the same header node back in so its listeners and els refs survive.
     els.noteList.replaceChildren(els.listHeader, ...children);
     renderViewSwitch();
-    renderSearchScope();
     renderBulkToggle();
   }
 
@@ -1953,7 +1959,7 @@
       el('span', {
         class: 'note-row-title',
         attrs: { 'aria-hidden': 'true' },
-        children: highlightedChildren(truncate(title, 64), 'title'),
+        children: highlightedChildren(truncate(title, 64)),
       }),
     ];
 
@@ -1976,7 +1982,7 @@
       children.push(el('span', {
         class: 'note-row-excerpt',
         attrs: { 'aria-hidden': 'true' },
-        children: highlightedChildren(excerpt, 'body'),
+        children: highlightedChildren(excerpt),
       }));
     }
 
@@ -2011,7 +2017,7 @@
             'data-tag': tag,
             'aria-label': 'Filter notes by tag ' + tag,
           },
-          children: highlightedChildren(tag, 'tags'),
+          children: highlightedChildren(tag),
           on: { click: () => setTagFilter(tag) },
         }));
       if (note.tags.length > MAX_ROW_TAGS) {
@@ -2081,16 +2087,16 @@
     });
     const children = [
       el('span', { class: 'note-row-check', children: [checkbox] }),
-      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64), 'title') }),
+      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64)) }),
       el('span', { class: 'note-row-when', text: lifecycleTimeLabel(note) }),
     ];
-    if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
+    if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt) }));
     if (note.tags && note.tags.length) {
       const tagNodes = note.tags.slice(0, MAX_ROW_TAGS).map((t) =>
         el('span', {
           class: 'note-row-tag',
           attrs: { 'data-tag': t },
-          children: highlightedChildren(t, 'tags'),
+          children: highlightedChildren(t),
         })
       );
       if (note.tags.length > MAX_ROW_TAGS) {
@@ -2190,7 +2196,7 @@
 
     els.titleDisplay.hidden = showInput;
     els.titleInput.hidden = !showInput;
-    els.titleDisplay.replaceChildren(...highlightedChildren(deriveTitle(note), 'title'));
+    els.titleDisplay.replaceChildren(...highlightedChildren(deriveTitle(note)));
 
     renderBreadcrumb(note);
     renderEyebrow(note);
@@ -2236,7 +2242,7 @@
         els.rendered.hidden = false;
         Markdown.renderMarkdownInto(els.rendered, note.body || '');
         syncTaskCheckboxes(note);
-        if (scopeIncludes('body')) highlightElementText(els.rendered, state.search);
+        highlightElementText(els.rendered, state.search);
       }
       els.editBtn.hidden = trashed;
       els.saveBtn.hidden = true;
@@ -2526,244 +2532,61 @@
   // -------- Overflow menu (#6) --------
   // role="menu" with APG keyboard semantics: focus moves into the menu on open,
   // Up/Down/Home/End cycle items, Esc closes and returns focus to the trigger.
-  function overflowMenuItems() {
-    return Array.from(els.overflowMenu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
-      .filter((item) => !item.hidden && item.offsetParent !== null);
-  }
-
-  function focusOverflowItem(index) {
-    const items = overflowMenuItems();
-    if (!items.length) return;
-    const i = (index + items.length) % items.length;
-    items[i].focus();
-  }
+  const overflowMenuController = createMenuController({
+    menu: els.overflowMenu,
+    trigger: els.overflowBtn,
+  });
 
   function openOverflowMenu() {
-    if (!els.overflowMenu.hidden) return;
-    els.overflowMenu.hidden = false;
-    els.overflowBtn.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onOverflowOutsideClick, true);
-    document.addEventListener('keydown', onOverflowKey, true);
-    setTimeout(() => focusOverflowItem(0), 0);
+    overflowMenuController.open();
   }
 
   function closeOverflowMenu(opts) {
-    if (els.overflowMenu.hidden) return;
-    els.overflowMenu.hidden = true;
-    els.overflowBtn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onOverflowOutsideClick, true);
-    document.removeEventListener('keydown', onOverflowKey, true);
-    if (opts && opts.returnFocus) els.overflowBtn.focus();
+    overflowMenuController.close(opts);
   }
 
   function toggleOverflowMenu() {
-    if (els.overflowMenu.hidden) openOverflowMenu();
-    else closeOverflowMenu();
-  }
-
-  function onOverflowOutsideClick(e) {
-    if (els.overflowMenu.contains(e.target) || els.overflowBtn.contains(e.target)) return;
-    closeOverflowMenu();
-  }
-
-  function onOverflowKey(e) {
-    const items = overflowMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeOverflowMenu({ returnFocus: true });
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(items.length - 1);
-        break;
-      case 'Tab':
-        // Tab leaves the menu: close it and let focus move on naturally.
-        closeOverflowMenu();
-        break;
-      default:
-        break;
-    }
+    overflowMenuController.toggle();
   }
 
   // -------- List overflow menu --------
   // Same APG pattern as the editor overflow menu, for the sidebar's
   // Manage tags / New folder / Select notes actions.
-  function listMenuItems() {
-    return Array.from(els.listMenu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
-      .filter((item) => !item.hidden && item.offsetParent !== null);
-  }
-
-  function focusListMenuItem(index) {
-    const items = listMenuItems();
-    if (!items.length) return;
-    const i = (index + items.length) % items.length;
-    items[i].focus();
-  }
+  const listMenuController = createMenuController({
+    menu: els.listMenu,
+    trigger: els.listMenuBtn,
+  });
 
   function openListMenu() {
-    if (!els.listMenu.hidden) return;
-    els.listMenu.hidden = false;
-    els.listMenuBtn.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onListMenuOutsideClick, true);
-    document.addEventListener('keydown', onListMenuKey, true);
-    setTimeout(() => focusListMenuItem(0), 0);
+    listMenuController.open();
   }
 
   function closeListMenu(opts) {
-    if (els.listMenu.hidden) return;
-    els.listMenu.hidden = true;
-    els.listMenuBtn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onListMenuOutsideClick, true);
-    document.removeEventListener('keydown', onListMenuKey, true);
-    if (opts && opts.returnFocus) els.listMenuBtn.focus();
+    listMenuController.close(opts);
   }
 
   function toggleListMenu() {
-    if (els.listMenu.hidden) openListMenu();
-    else closeListMenu();
-  }
-
-  function onListMenuOutsideClick(e) {
-    if (els.listMenu.contains(e.target) || els.listMenuBtn.contains(e.target)) return;
-    closeListMenu();
-  }
-
-  function onListMenuKey(e) {
-    const items = listMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeListMenu({ returnFocus: true });
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(items.length - 1);
-        break;
-      case 'Tab':
-        // Tab leaves the menu: close it and let focus move on naturally.
-        closeListMenu();
-        break;
-      default:
-        break;
-    }
+    listMenuController.toggle();
   }
 
   // -------- Backup menu (sidebar foot) --------
   // Same APG pattern again; opens upward from the backup status chip.
-  function backupMenuItems() {
-    return Array.from(els.backupMenu.querySelectorAll('[role="menuitem"]'))
-      .filter((item) => !item.hidden && item.offsetParent !== null);
-  }
-
-  function focusBackupMenuItem(index) {
-    const items = backupMenuItems();
-    if (!items.length) return;
-    const i = (index + items.length) % items.length;
-    items[i].focus();
-  }
+  const backupMenuController = createMenuController({
+    menu: els.backupMenu,
+    trigger: els.backupChip,
+    onOpen: renderBackupMenuMeta,
+  });
 
   function openBackupMenu() {
-    if (!els.backupMenu.hidden) return;
-    els.backupMenu.hidden = false;
-    els.backupChip.setAttribute('aria-expanded', 'true');
-    renderBackupMenuMeta();
-    document.addEventListener('click', onBackupMenuOutsideClick, true);
-    document.addEventListener('keydown', onBackupMenuKey, true);
-    setTimeout(() => focusBackupMenuItem(0), 0);
+    backupMenuController.open();
   }
 
   function closeBackupMenu(opts) {
-    if (els.backupMenu.hidden) return;
-    els.backupMenu.hidden = true;
-    els.backupChip.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onBackupMenuOutsideClick, true);
-    document.removeEventListener('keydown', onBackupMenuKey, true);
-    if (opts && opts.returnFocus) els.backupChip.focus();
+    backupMenuController.close(opts);
   }
 
   function toggleBackupMenu() {
-    if (els.backupMenu.hidden) openBackupMenu();
-    else closeBackupMenu();
-  }
-
-  function onBackupMenuOutsideClick(e) {
-    if (els.backupMenu.contains(e.target) || els.backupChip.contains(e.target)) return;
-    closeBackupMenu();
-  }
-
-  function onBackupMenuKey(e) {
-    const items = backupMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeBackupMenu({ returnFocus: true });
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(items.length - 1);
-        break;
-      case 'Tab':
-        // Tab leaves the menu: close it and let focus move on naturally.
-        closeBackupMenu();
-        break;
-      default:
-        break;
-    }
+    backupMenuController.toggle();
   }
 
   function renderAll() {
@@ -3227,14 +3050,7 @@
   function clearAllFilters() {
     state.tagFilter = null;
     state.search = '';
-    state.searchScope = 'all';
     els.search.value = '';
-    renderAll();
-  }
-
-  function setSearchScope(scope) {
-    if (!SEARCH_SCOPES.has(scope)) return;
-    state.searchScope = scope;
     renderAll();
   }
 
@@ -5969,11 +5785,6 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
-    // Search-scope select was retired in the Soft Glass redesign; search now
-    // always matches all fields (state.searchScope defaults to 'all').
-    if (els.searchScope) {
-      els.searchScope.addEventListener('change', () => setSearchScope(els.searchScope.value));
-    }
 
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);

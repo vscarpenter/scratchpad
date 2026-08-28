@@ -1,0 +1,36 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned Bun
+        run: npm install --global bun@1.4.0
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps
+
+      - name: Run mechanical quality gates
+        env:
+          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bun run verify
+
+      - name: Run browser suite
+        run: bun run test
