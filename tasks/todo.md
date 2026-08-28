@@ -5,15 +5,15 @@ Spec: `tasks/spec.md` (approved 2026-08-27)
 - [x] Restore the green baseline
 - [x] Reconcile standards and tooling
 - [x] Remove retired search-scope code
-- [ ] Consolidate accessible menu behavior
+- [x] Consolidate accessible menu behavior
 - [ ] Flatten the Indigo on Paper CSS cascade
 - [ ] Run final local, browser, privacy, and visual verification
 - [ ] Produce the change report and comprehension quiz
 
 ## Resuming From Here
 
-- Current phase: consolidate accessible menu behavior; search now has one explicit all-fields path.
-- Next: characterize the shared keyboard, focus, outside-click, and ARIA contract across all four menus.
+- Current phase: flatten the Indigo on Paper CSS cascade; four action menus now share one controller.
+- Next: add a computed-style shell contract, remove legacy glass at the base layer, and delete superseding shell overrides.
 - Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
 - Blockers: none.
 

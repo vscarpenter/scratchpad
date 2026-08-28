@@ -1077,17 +1077,79 @@
     toast(existing ? 'Folder updated.' : 'Folder created.');
   }
 
-  // -------- Folder menu (mirrors the editor overflow menu semantics) --------
-  function folderMenuItems() {
-    return Array.from(els.folderMenu.querySelectorAll('[role="menuitem"]'))
-      .filter((item) => !item.hidden);
+  // -------- Shared action-menu controller --------
+  function menuItems(menu) {
+    return Array.from(menu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
+      .filter((item) => !item.hidden && item.offsetParent !== null);
   }
 
-  function focusFolderMenuItem(index) {
-    const items = folderMenuItems();
+  function focusMenuItem(controller, index) {
+    const items = menuItems(controller.menu);
     if (!items.length) return;
     const i = (index + items.length) % items.length;
     items[i].focus();
+  }
+
+  function openControlledMenu(controller, options) {
+    if (!controller.menu.hidden) return;
+    controller.trigger = options && options.trigger ? options.trigger : controller.defaultTrigger;
+    controller.menu.hidden = false;
+    controller.trigger.setAttribute('aria-expanded', 'true');
+    if (controller.onOpen) controller.onOpen();
+    document.addEventListener('click', controller.onOutsideClick, true);
+    document.addEventListener('keydown', controller.onKeyDown, true);
+    if (!options || options.focus !== false) {
+      setTimeout(() => {
+        if (!controller.menu.hidden) focusMenuItem(controller, 0);
+      }, 0);
+    }
+  }
+
+  function closeControlledMenu(controller, options) {
+    if (controller.menu.hidden) return;
+    controller.menu.hidden = true;
+    controller.trigger.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', controller.onOutsideClick, true);
+    document.removeEventListener('keydown', controller.onKeyDown, true);
+    if (options && options.returnFocus) controller.trigger.focus();
+    if (controller.onClose) controller.onClose();
+  }
+
+  function handleControlledMenuKey(e, controller) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeControlledMenu(controller, { returnFocus: true });
+      return;
+    }
+    if (e.key === 'Tab') {
+      closeControlledMenu(controller);
+      return;
+    }
+    const items = menuItems(controller.menu);
+    const current = items.indexOf(document.activeElement);
+    const next = {
+      ArrowDown: current < 0 ? 0 : current + 1,
+      ArrowUp: current < 0 ? items.length - 1 : current - 1,
+      Home: 0,
+      End: items.length - 1,
+    }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    focusMenuItem(controller, next);
+  }
+
+  function createMenuController({ menu, trigger, onOpen, onClose }) {
+    const controller = { menu, defaultTrigger: trigger, trigger, onOpen, onClose };
+    controller.open = (options) => openControlledMenu(controller, options);
+    controller.close = (options) => closeControlledMenu(controller, options);
+    controller.toggle = () => menu.hidden ? controller.open() : controller.close();
+    controller.onOutsideClick = (e) => {
+      if (!menu.contains(e.target) && !controller.trigger.contains(e.target)) controller.close();
+    };
+    controller.onKeyDown = (e) => handleControlledMenuKey(e, controller);
+    return controller;
   }
 
   function configureFolderMenu(folderId) {
@@ -1101,71 +1163,31 @@
     }
   }
 
+  const folderMenuController = createMenuController({
+    menu: els.folderMenu,
+    trigger: els.folderSwitcherBtn,
+    onOpen: () => {
+      document.removeEventListener('keydown', onFolderSwitcherKey, true);
+      const rect = folderMenuController.trigger.getBoundingClientRect();
+      const maxLeft = window.innerWidth - els.folderMenu.offsetWidth - 8;
+      els.folderMenu.style.top = Math.round(rect.bottom + 4) + 'px';
+      els.folderMenu.style.left = Math.max(8, Math.min(Math.round(rect.left), maxLeft)) + 'px';
+    },
+    onClose: () => {
+      state.folderMenuTargetId = null;
+      if (!els.folderSwitcher.hidden) document.addEventListener('keydown', onFolderSwitcherKey, true);
+    },
+  });
+
   function openFolderMenu(folderId, trigger) {
     closeFolderMenu();
     state.folderMenuTargetId = folderId;
     configureFolderMenu(folderId);
-    const rect = trigger.getBoundingClientRect();
-    els.folderMenu.hidden = false; // unhide first so the menu has a measurable width
-    const maxLeft = window.innerWidth - els.folderMenu.offsetWidth - 8;
-    els.folderMenu.style.top = Math.round(rect.bottom + 4) + 'px';
-    els.folderMenu.style.left = Math.max(8, Math.min(Math.round(rect.left), maxLeft)) + 'px';
-    trigger.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onFolderMenuOutsideClick, true);
-    document.addEventListener('keydown', onFolderMenuKey, true);
-    setTimeout(() => focusFolderMenuItem(0), 0);
+    folderMenuController.open({ trigger });
   }
 
-  function closeFolderMenu() {
-    if (els.folderMenu.hidden) return;
-    els.folderMenu.hidden = true;
-    state.folderMenuTargetId = null;
-    document.removeEventListener('click', onFolderMenuOutsideClick, true);
-    document.removeEventListener('keydown', onFolderMenuKey, true);
-    const open = document.querySelector('.folder-menu-btn[aria-expanded="true"]');
-    if (open) open.setAttribute('aria-expanded', 'false');
-  }
-
-  function onFolderMenuOutsideClick(e) {
-    if (els.folderMenu.contains(e.target)) return;
-    closeFolderMenu();
-  }
-
-  function onFolderMenuKey(e) {
-    const items = folderMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeFolderMenu();
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusFolderMenuItem(items.length - 1);
-        break;
-      case 'Tab':
-        closeFolderMenu();
-        break;
-      default:
-        break;
-    }
+  function closeFolderMenu(options) {
+    folderMenuController.close(options);
   }
 
   function openFolderDeleteDialog(folderId) {
@@ -2510,244 +2532,61 @@
   // -------- Overflow menu (#6) --------
   // role="menu" with APG keyboard semantics: focus moves into the menu on open,
   // Up/Down/Home/End cycle items, Esc closes and returns focus to the trigger.
-  function overflowMenuItems() {
-    return Array.from(els.overflowMenu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
-      .filter((item) => !item.hidden && item.offsetParent !== null);
-  }
-
-  function focusOverflowItem(index) {
-    const items = overflowMenuItems();
-    if (!items.length) return;
-    const i = (index + items.length) % items.length;
-    items[i].focus();
-  }
+  const overflowMenuController = createMenuController({
+    menu: els.overflowMenu,
+    trigger: els.overflowBtn,
+  });
 
   function openOverflowMenu() {
-    if (!els.overflowMenu.hidden) return;
-    els.overflowMenu.hidden = false;
-    els.overflowBtn.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onOverflowOutsideClick, true);
-    document.addEventListener('keydown', onOverflowKey, true);
-    setTimeout(() => focusOverflowItem(0), 0);
+    overflowMenuController.open();
   }
 
   function closeOverflowMenu(opts) {
-    if (els.overflowMenu.hidden) return;
-    els.overflowMenu.hidden = true;
-    els.overflowBtn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onOverflowOutsideClick, true);
-    document.removeEventListener('keydown', onOverflowKey, true);
-    if (opts && opts.returnFocus) els.overflowBtn.focus();
+    overflowMenuController.close(opts);
   }
 
   function toggleOverflowMenu() {
-    if (els.overflowMenu.hidden) openOverflowMenu();
-    else closeOverflowMenu();
-  }
-
-  function onOverflowOutsideClick(e) {
-    if (els.overflowMenu.contains(e.target) || els.overflowBtn.contains(e.target)) return;
-    closeOverflowMenu();
-  }
-
-  function onOverflowKey(e) {
-    const items = overflowMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeOverflowMenu({ returnFocus: true });
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusOverflowItem(items.length - 1);
-        break;
-      case 'Tab':
-        // Tab leaves the menu: close it and let focus move on naturally.
-        closeOverflowMenu();
-        break;
-      default:
-        break;
-    }
+    overflowMenuController.toggle();
   }
 
   // -------- List overflow menu --------
   // Same APG pattern as the editor overflow menu, for the sidebar's
   // Manage tags / New folder / Select notes actions.
-  function listMenuItems() {
-    return Array.from(els.listMenu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
-      .filter((item) => !item.hidden && item.offsetParent !== null);
-  }
-
-  function focusListMenuItem(index) {
-    const items = listMenuItems();
-    if (!items.length) return;
-    const i = (index + items.length) % items.length;
-    items[i].focus();
-  }
+  const listMenuController = createMenuController({
+    menu: els.listMenu,
+    trigger: els.listMenuBtn,
+  });
 
   function openListMenu() {
-    if (!els.listMenu.hidden) return;
-    els.listMenu.hidden = false;
-    els.listMenuBtn.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onListMenuOutsideClick, true);
-    document.addEventListener('keydown', onListMenuKey, true);
-    setTimeout(() => focusListMenuItem(0), 0);
+    listMenuController.open();
   }
 
   function closeListMenu(opts) {
-    if (els.listMenu.hidden) return;
-    els.listMenu.hidden = true;
-    els.listMenuBtn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onListMenuOutsideClick, true);
-    document.removeEventListener('keydown', onListMenuKey, true);
-    if (opts && opts.returnFocus) els.listMenuBtn.focus();
+    listMenuController.close(opts);
   }
 
   function toggleListMenu() {
-    if (els.listMenu.hidden) openListMenu();
-    else closeListMenu();
-  }
-
-  function onListMenuOutsideClick(e) {
-    if (els.listMenu.contains(e.target) || els.listMenuBtn.contains(e.target)) return;
-    closeListMenu();
-  }
-
-  function onListMenuKey(e) {
-    const items = listMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeListMenu({ returnFocus: true });
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusListMenuItem(items.length - 1);
-        break;
-      case 'Tab':
-        // Tab leaves the menu: close it and let focus move on naturally.
-        closeListMenu();
-        break;
-      default:
-        break;
-    }
+    listMenuController.toggle();
   }
 
   // -------- Backup menu (sidebar foot) --------
   // Same APG pattern again; opens upward from the backup status chip.
-  function backupMenuItems() {
-    return Array.from(els.backupMenu.querySelectorAll('[role="menuitem"]'))
-      .filter((item) => !item.hidden && item.offsetParent !== null);
-  }
-
-  function focusBackupMenuItem(index) {
-    const items = backupMenuItems();
-    if (!items.length) return;
-    const i = (index + items.length) % items.length;
-    items[i].focus();
-  }
+  const backupMenuController = createMenuController({
+    menu: els.backupMenu,
+    trigger: els.backupChip,
+    onOpen: renderBackupMenuMeta,
+  });
 
   function openBackupMenu() {
-    if (!els.backupMenu.hidden) return;
-    els.backupMenu.hidden = false;
-    els.backupChip.setAttribute('aria-expanded', 'true');
-    renderBackupMenuMeta();
-    document.addEventListener('click', onBackupMenuOutsideClick, true);
-    document.addEventListener('keydown', onBackupMenuKey, true);
-    setTimeout(() => focusBackupMenuItem(0), 0);
+    backupMenuController.open();
   }
 
   function closeBackupMenu(opts) {
-    if (els.backupMenu.hidden) return;
-    els.backupMenu.hidden = true;
-    els.backupChip.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onBackupMenuOutsideClick, true);
-    document.removeEventListener('keydown', onBackupMenuKey, true);
-    if (opts && opts.returnFocus) els.backupChip.focus();
+    backupMenuController.close(opts);
   }
 
   function toggleBackupMenu() {
-    if (els.backupMenu.hidden) openBackupMenu();
-    else closeBackupMenu();
-  }
-
-  function onBackupMenuOutsideClick(e) {
-    if (els.backupMenu.contains(e.target) || els.backupChip.contains(e.target)) return;
-    closeBackupMenu();
-  }
-
-  function onBackupMenuKey(e) {
-    const items = backupMenuItems();
-    const current = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        closeBackupMenu({ returnFocus: true });
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(current < 0 ? 0 : current + 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(current < 0 ? items.length - 1 : current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        e.stopPropagation();
-        focusBackupMenuItem(items.length - 1);
-        break;
-      case 'Tab':
-        // Tab leaves the menu: close it and let focus move on naturally.
-        closeBackupMenu();
-        break;
-      default:
-        break;
-    }
+    backupMenuController.toggle();
   }
 
   function renderAll() {
