@@ -25,7 +25,12 @@ ehthumbs.db
 *.iml
 
 # ---- Local agent/tooling artifacts ----
-.claude/
+.claude/*
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/qspec.md
+!.claude/commands/tdd.md
+!.claude/commands/qcheck.md
 .agents/
 # .impeccable/design.json IS committed — it's the DESIGN.md sidecar (tonal
 # ramps, dark-mode tokens, component snippets) and belongs with the design

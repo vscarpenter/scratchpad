@@ -3,7 +3,7 @@
 Spec: `tasks/spec.md` (approved 2026-08-27)
 
 - [x] Restore the green baseline
-- [ ] Reconcile standards and tooling
+- [x] Reconcile standards and tooling
 - [ ] Remove retired search-scope code
 - [ ] Consolidate accessible menu behavior
 - [ ] Flatten the Indigo on Paper CSS cascade
@@ -12,8 +12,8 @@ Spec: `tasks/spec.md` (approved 2026-08-27)
 
 ## Resuming From Here
 
-- Current phase: reconcile standards and tooling; the complete local baseline is green.
-- Next: make v18 canonical, document the vanilla-JavaScript quality profile, and add deterministic quality gates.
+- Current phase: remove retired search-scope code; v18 and the project quality profile are now mechanically enforced.
+- Next: characterize search clearing and remove the unreachable scope state, rendering, and event path.
 - Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
 - Blockers: none.
 
