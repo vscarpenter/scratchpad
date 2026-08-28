@@ -2,7 +2,7 @@
 
 Spec: `tasks/spec.md` (approved 2026-08-27)
 
-- [ ] Restore the green baseline
+- [x] Restore the green baseline
 - [ ] Reconcile standards and tooling
 - [ ] Remove retired search-scope code
 - [ ] Consolidate accessible menu behavior
@@ -12,8 +12,8 @@ Spec: `tasks/spec.md` (approved 2026-08-27)
 
 ## Resuming From Here
 
-- Current phase: restore the green baseline.
-- Next: measure the desktop sidebar header, fix its 330px contract, stabilize the animated trash-dialog test, and update vendored Marked.
+- Current phase: reconcile standards and tooling; the complete local baseline is green.
+- Next: make v18 canonical, document the vanilla-JavaScript quality profile, and add deterministic quality gates.
 - Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
 - Blockers: none.
 
