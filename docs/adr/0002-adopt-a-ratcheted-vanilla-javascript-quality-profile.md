@@ -21,7 +21,9 @@ Keep the production architecture as static HTML, CSS, and vanilla JavaScript
 with no build step or runtime packages. Enforce v18 incrementally:
 
 - Biome lints all first-party source and formats every supported file changed
-  by a commit or pull request.
+  by a commit or pull request except the two named legacy monoliths in
+  `config/format-baseline.json`. Those files retain the established style until
+  modularization makes a one-time format migration reviewable.
 - TypeScript runs in strict `checkJs` mode for new quality-tooling modules and
   for existing modules as they opt in. Extracted modules must opt in; the
   monolith is not bulk-annotated.

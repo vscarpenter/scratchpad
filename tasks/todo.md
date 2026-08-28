@@ -4,7 +4,7 @@ Spec: `tasks/spec.md` (approved 2026-08-27)
 
 - [x] Restore the green baseline
 - [x] Reconcile standards and tooling
-- [ ] Remove retired search-scope code
+- [x] Remove retired search-scope code
 - [ ] Consolidate accessible menu behavior
 - [ ] Flatten the Indigo on Paper CSS cascade
 - [ ] Run final local, browser, privacy, and visual verification
@@ -12,8 +12,8 @@ Spec: `tasks/spec.md` (approved 2026-08-27)
 
 ## Resuming From Here
 
-- Current phase: remove retired search-scope code; v18 and the project quality profile are now mechanically enforced.
-- Next: characterize search clearing and remove the unreachable scope state, rendering, and event path.
+- Current phase: consolidate accessible menu behavior; search now has one explicit all-fields path.
+- Next: characterize the shared keyboard, focus, outside-click, and ARIA contract across all four menus.
 - Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
 - Blockers: none.
 

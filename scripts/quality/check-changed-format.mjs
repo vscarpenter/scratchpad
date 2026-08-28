@@ -2,9 +2,12 @@
 // @ts-check
 
 import { execFileSync, spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '../..');
+const baseline = JSON.parse(readFileSync(resolve(root, 'config/format-baseline.json'), 'utf8'));
+const legacyFiles = new Set(baseline.legacyFiles);
 const supported = /\.(?:c?js|mjs|json|css)$/;
 const excluded = /^(?:public\/js\/vendor\/|\.impeccable\/|\.verify\/)|^bun\.lock$/;
 
@@ -24,7 +27,7 @@ const candidates = new Set([
   ...gitLines(['ls-files', '--others', '--exclude-standard']),
   ...(base ? gitLines(['diff', '--name-only', '--diff-filter=ACMR', `${base}...HEAD`]) : []),
 ]);
-const files = [...candidates].filter((file) => supported.test(file) && !excluded.test(file));
+const files = [...candidates].filter((file) => supported.test(file) && !excluded.test(file) && !legacyFiles.has(file));
 
 if (!files.length) {
   console.log('Biome format check: no changed supported files.');

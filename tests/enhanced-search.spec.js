@@ -42,6 +42,23 @@ test.describe('enhanced search', () => {
     await expect(page.locator('#note-rendered mark.search-hit')).toContainText('launch');
   });
 
+  test('clearing search restores every field and removes highlights', async ({ page }) => {
+    await seedRawNotes(page, [
+      { id: 'search-title-clear', title: 'Needle title', body: 'Plain body.', tags: [] },
+      { id: 'search-body-clear', title: 'Body match', body: 'Needle body.', tags: [] },
+      { id: 'search-tag-clear', title: 'Tag match', body: 'Plain body.', tags: ['needle-tag'] },
+    ]);
+
+    await page.locator('#search').fill('needle');
+    await expect(page.locator('.note-row')).toHaveCount(3);
+    await expect(page.locator('mark.search-hit')).not.toHaveCount(0);
+
+    await page.locator('#search').press('Escape');
+    await expect(page.locator('#search')).toHaveValue('');
+    await expect(page.locator('.note-row')).toHaveCount(3);
+    await expect(page.locator('mark.search-hit')).toHaveCount(0);
+  });
+
   test('keeps unsaved edits bound to their note while filtering the sidebar', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'dirty-alpha', title: 'Alpha source', body: 'Alpha saved body.', tags: [] },
@@ -72,9 +89,9 @@ test.describe('enhanced search', () => {
     await page.locator('#save-btn').click();
     await expect(page.locator('#save-btn')).toBeHidden();
 
-    const saved = await page.evaluate(async () => Object.fromEntries(
-      (await window.ScratchpadDB.getAll()).map(({ id, title, body }) => [id, { title, body }])
-    ));
+    const saved = await page.evaluate(async () =>
+      Object.fromEntries((await window.ScratchpadDB.getAll()).map(({ id, title, body }) => [id, { title, body }])),
+    );
     expect(saved['dirty-alpha']).toEqual({
       title: 'Alpha unsaved title',
       body: 'Alpha unsaved body.',

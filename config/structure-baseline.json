@@ -6,10 +6,10 @@
   },
   "legacyTotals": {
     "longFunctions": 103,
-    "deepFunctions": 13
+    "deepFunctions": 12
   },
   "oversizeFiles": {
-    "public/js/app.js": 6435,
+    "public/js/app.js": 6407,
     "public/js/db.js": 418,
     "tests/daily-note.spec.js": 405,
     "tests/share-link.spec.js": 430

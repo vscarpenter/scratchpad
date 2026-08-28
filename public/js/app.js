@@ -15,7 +15,6 @@
   const NOTE_TAG_MAX = 48;
   const NOTE_TAGS_MAX = 20;
   const MAX_ROW_TAGS = 2; // chips per note-list row before the +n counter
-  const SEARCH_SCOPES = new Set(['all', 'title', 'body', 'tags']);
   const FOLDER_NAME_MAX = 60;
   const FOLDERS_MAX = 100;
   const IMPORT_MAX_FOLDERS = FOLDERS_MAX + 1;
@@ -47,7 +46,6 @@
     editing: false,
     dirty: false,
     search: '',
-    searchScope: 'all',
     tagFilter: null,
     view: 'active',
     folderViewId: readFolderView(),
@@ -90,7 +88,6 @@
     focusExitBtn: $('focus-exit-btn'),
     focusModeBtn: $('focus-mode-btn'),
     search: $('search'),
-    searchScope: $('search-scope'),
     activeFilter: $('active-filter'),
     activeFilterTag: $('active-filter-tag'),
     clearFilter: $('clear-filter'),
@@ -708,19 +705,12 @@
     return hay.includes(q) || fuzzyIncludes(hay, q);
   }
 
-  function noteSearchText(note, scope) {
-    if (scope === 'title') return note.title || deriveTitle(note);
-    if (scope === 'body') return note.body || '';
-    if (scope === 'tags') return (note.tags || []).join(' ');
+  function noteSearchText(note) {
     return [
       note.title || deriveTitle(note),
       note.body || '',
       (note.tags || []).join(' '),
     ].join('\n');
-  }
-
-  function scopeIncludes(field) {
-    return state.searchScope === 'all' || state.searchScope === field;
   }
 
   function highlightTextNodes(text, query) {
@@ -742,8 +732,8 @@
     return nodes.length ? nodes : [document.createTextNode(source)];
   }
 
-  function highlightedChildren(text, field) {
-    if (!state.search.trim() || !scopeIncludes(field)) return [document.createTextNode(text || '')];
+  function highlightedChildren(text) {
+    if (!state.search.trim()) return [document.createTextNode(text || '')];
     return highlightTextNodes(text || '', state.search);
   }
 
@@ -1407,7 +1397,7 @@
     return currentBaseNotes().filter((n) => {
       if (tag && !(n.tags || []).includes(tag)) return false;
       if (!q) return true;
-      return matchesQuery(noteSearchText(n, state.searchScope), q);
+      return matchesQuery(noteSearchText(n), q);
     });
   }
 
@@ -1432,11 +1422,6 @@
     els.folderSwitcherBtn.setAttribute('aria-pressed', atHome ? 'false' : 'true');
     els.folderSwitcherNew.hidden = state.view === 'archive';
     renderFolderSwitcher();
-  }
-
-  function renderSearchScope() {
-    if (!els.searchScope) return;
-    els.searchScope.value = state.searchScope;
   }
 
   function renderBulkToggle() {
@@ -1502,7 +1487,6 @@
     // Pass the same header node back in so its listeners and els refs survive.
     els.noteList.replaceChildren(els.listHeader, ...children);
     renderViewSwitch();
-    renderSearchScope();
     renderBulkToggle();
   }
 
@@ -1953,7 +1937,7 @@
       el('span', {
         class: 'note-row-title',
         attrs: { 'aria-hidden': 'true' },
-        children: highlightedChildren(truncate(title, 64), 'title'),
+        children: highlightedChildren(truncate(title, 64)),
       }),
     ];
 
@@ -1976,7 +1960,7 @@
       children.push(el('span', {
         class: 'note-row-excerpt',
         attrs: { 'aria-hidden': 'true' },
-        children: highlightedChildren(excerpt, 'body'),
+        children: highlightedChildren(excerpt),
       }));
     }
 
@@ -2011,7 +1995,7 @@
             'data-tag': tag,
             'aria-label': 'Filter notes by tag ' + tag,
           },
-          children: highlightedChildren(tag, 'tags'),
+          children: highlightedChildren(tag),
           on: { click: () => setTagFilter(tag) },
         }));
       if (note.tags.length > MAX_ROW_TAGS) {
@@ -2081,16 +2065,16 @@
     });
     const children = [
       el('span', { class: 'note-row-check', children: [checkbox] }),
-      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64), 'title') }),
+      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64)) }),
       el('span', { class: 'note-row-when', text: lifecycleTimeLabel(note) }),
     ];
-    if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt, 'body') }));
+    if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt) }));
     if (note.tags && note.tags.length) {
       const tagNodes = note.tags.slice(0, MAX_ROW_TAGS).map((t) =>
         el('span', {
           class: 'note-row-tag',
           attrs: { 'data-tag': t },
-          children: highlightedChildren(t, 'tags'),
+          children: highlightedChildren(t),
         })
       );
       if (note.tags.length > MAX_ROW_TAGS) {
@@ -2190,7 +2174,7 @@
 
     els.titleDisplay.hidden = showInput;
     els.titleInput.hidden = !showInput;
-    els.titleDisplay.replaceChildren(...highlightedChildren(deriveTitle(note), 'title'));
+    els.titleDisplay.replaceChildren(...highlightedChildren(deriveTitle(note)));
 
     renderBreadcrumb(note);
     renderEyebrow(note);
@@ -2236,7 +2220,7 @@
         els.rendered.hidden = false;
         Markdown.renderMarkdownInto(els.rendered, note.body || '');
         syncTaskCheckboxes(note);
-        if (scopeIncludes('body')) highlightElementText(els.rendered, state.search);
+        highlightElementText(els.rendered, state.search);
       }
       els.editBtn.hidden = trashed;
       els.saveBtn.hidden = true;
@@ -3227,14 +3211,7 @@
   function clearAllFilters() {
     state.tagFilter = null;
     state.search = '';
-    state.searchScope = 'all';
     els.search.value = '';
-    renderAll();
-  }
-
-  function setSearchScope(scope) {
-    if (!SEARCH_SCOPES.has(scope)) return;
-    state.searchScope = scope;
     renderAll();
   }
 
@@ -5969,11 +5946,6 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
-    // Search-scope select was retired in the Soft Glass redesign; search now
-    // always matches all fields (state.searchScope defaults to 'all').
-    if (els.searchScope) {
-      els.searchScope.addEventListener('change', () => setSearchScope(els.searchScope.value));
-    }
 
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);
