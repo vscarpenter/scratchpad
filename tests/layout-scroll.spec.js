@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedNotes, seedFolders } = require('./helpers');
+const { seedNotes, seedFolders, seedRawNotes } = require('./helpers');
 
 test.describe('sidebar layout — scroll containment', () => {
   test('sidebar stays within viewport when there are many notes', async ({ page }) => {
@@ -88,5 +88,43 @@ test.describe('sidebar layout — scroll containment', () => {
       if (!box) throw new Error(selector + ' has no bounding box');
       expect(box.x, selector + ' is clipped beneath the Chronicle rail').toBeGreaterThanOrEqual(sidebarBox.x - 0.5);
     }
+  });
+
+  test('selected note keeps its full height in an overflowing folder view', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedFolders(page, [{ id: 'f-prompts', name: 'Prompts' }]);
+    await seedRawNotes(
+      page,
+      Array.from({ length: 12 }, (_, i) => ({
+        id: `prompt-${i}`,
+        title: `Prompt note ${i} with a reasonably long title`,
+        body: `Body for prompt note ${i} that gives the row an excerpt line`,
+        folderId: 'f-prompts',
+      })),
+    );
+
+    await page.locator('#folder-switcher-btn').click();
+    await page
+      .locator('#folder-switcher-list .folder-switcher-row[data-folder-id="f-prompts"] .folder-switcher-option')
+      .click();
+    await expect(page.locator('.folder-scope-meta')).toHaveText('12 notes in Prompts');
+
+    // The list must overflow, otherwise flex shrinking never kicks in.
+    const listMetrics = await page.locator('#note-list').evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+    }));
+    expect(listMetrics.scrollHeight).toBeGreaterThan(listMetrics.clientHeight);
+
+    await page.locator('.note-row', { hasText: 'Prompt note 7' }).click();
+
+    // In folder view rows are direct flex children of the scrolling
+    // .note-list; the active row's overflow:hidden zeroes its automatic
+    // min-size, so without flex-shrink:0 it alone gets squashed and clipped.
+    const active = await page.locator('.note-row.is-active').evaluate((el) => ({
+      offsetHeight: el.offsetHeight,
+      scrollHeight: el.scrollHeight,
+    }));
+    expect(active.offsetHeight, 'active row is squashed below its content').toBeGreaterThanOrEqual(active.scrollHeight);
   });
 });

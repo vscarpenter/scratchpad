@@ -1017,6 +1017,10 @@ body:not(.page-privacy) {
   grid-template-columns: 1fr auto;
   column-gap: 10px;
   row-gap: 3px;
+  /* Rows are flex children of the scrolling .note-list; without this the
+     active row's overflow:hidden zeroes its min-size and it alone gets
+     squashed below its content when the list overflows. */
+  flex-shrink: 0;
   width: 100%;
   text-align: left;
   background: transparent;
