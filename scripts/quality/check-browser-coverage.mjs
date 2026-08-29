@@ -34,7 +34,15 @@ async function exerciseCoreWorkflow(page) {
   await page.locator('#note-editor').fill('# Coverage body\n\nworkflow search marker');
   await page.locator('#save-btn').click();
   await page.locator('#search').fill('marker');
-  await page.locator('#search').fill('');
+  await page.locator('#search-results-summary').waitFor();
+  await page.locator('#search').press('ArrowDown');
+  await page.locator('.note-row-open').press('ArrowUp');
+  await page.locator('#search').press('Enter');
+  await page.locator('#search').fill('covrage');
+  await page.locator('#search-results-note').waitFor();
+  await page.locator('#search').fill('no-such-local-note');
+  await page.locator('.search-empty').waitFor();
+  await page.locator('#search-results-clear').click();
   await page.locator('#list-menu-btn').click();
   await page.keyboard.press('Escape');
   await page.locator('#edit-btn').click();
