@@ -95,13 +95,16 @@
               id="search"
               class="input search-input"
               type="search"
-              placeholder="Search"
+              placeholder="Search titles, text, or tags"
               autocomplete="off"
               spellcheck="false"
               aria-label="Search notes"
+              aria-controls="note-list"
+              aria-describedby="search-status"
             />
             <span class="search-hint" aria-hidden="true">⌘K</span>
           </div>
+          <p id="search-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
           <div id="active-filter" class="active-filter" hidden>
             <span class="badge badge-accent">
               tag: <span id="active-filter-tag"></span>
@@ -894,6 +897,8 @@
   <script src="/public/js/markdown.js"></script>
   <script src="/public/js/zip.js"></script>
   <script src="/public/js/seed.js"></script>
+  <script src="/public/js/search.js"></script>
+  <script src="/public/js/search-view.js"></script>
   <script src="/public/js/app.js"></script>
 
   <script>

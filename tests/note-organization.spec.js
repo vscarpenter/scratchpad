@@ -28,17 +28,15 @@ test.describe('note organization and empty states', () => {
 
     await tagPills.getByRole('button', { name: 'Remove tag project-alpha' }).click();
     await expect(tagPills.getByRole('button', { name: 'Filter by project-alpha' })).toHaveCount(0);
-    await expect.poll(() => page.evaluate(async () =>
-      (await window.ScratchpadDB.get('tag-target')).tags
-    )).toEqual(['urgent']);
+    await expect
+      .poll(() => page.evaluate(async () => (await window.ScratchpadDB.get('tag-target')).tags))
+      .toEqual(['urgent']);
     await page.reload();
     await page.locator('.note-row[data-id="tag-target"]').getByRole('button', { name: 'Open Tag target' }).click();
 
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by project-alpha' })).toHaveCount(0);
     await expect(page.locator('#tag-pills').getByRole('button', { name: 'Filter by urgent' })).toBeVisible();
-    const tags = await page.evaluate(async () =>
-      (await window.ScratchpadDB.get('tag-target')).tags
-    );
+    const tags = await page.evaluate(async () => (await window.ScratchpadDB.get('tag-target')).tags);
     expect(tags).toEqual(['urgent']);
   });
 
@@ -49,18 +47,18 @@ test.describe('note organization and empty states', () => {
       { id: 'filter-personal', title: 'Personal list', body: 'Buy groceries.', tags: ['personal'] },
     ]);
 
-    await page.locator('.note-row[data-id="filter-launch"]')
-      .getByRole('button', { name: 'Open Launch plan' }).click();
+    await page.locator('.note-row[data-id="filter-launch"]').getByRole('button', { name: 'Open Launch plan' }).click();
     await page.locator('#tag-pills').getByRole('button', { name: 'Filter by project' }).click();
     await page.locator('#search').fill('archive');
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('.note-row')).toContainText('Archive plan');
 
     await page.locator('#search').fill('no possible match');
-    await expect(page.locator('#empty-no-results')).toBeVisible();
-    await expect(page.locator('.sidebar-empty-title')).toHaveText('No matches');
+    await expect(page.locator('#empty-no-results')).toBeHidden();
+    await expect(page.locator('#note-title-display')).toHaveText('Launch plan');
+    await expect(page.locator('.search-empty .sidebar-empty-title')).toHaveText('No notes match “no possible match”');
 
-    await page.locator('#clear-search-btn').click();
+    await page.locator('#search-results-clear').click();
     await expect(page.locator('#search')).toHaveValue('');
     await expect(page.locator('#active-filter')).toBeHidden();
     await expect(page.locator('.note-row')).toHaveCount(3);
@@ -80,9 +78,7 @@ test.describe('note organization and empty states', () => {
 
     await expect(page.locator('.note-section').first().locator('.note-section-head')).toHaveText('Pinned');
     await expect(page.locator('.note-row').first()).toHaveAttribute('data-id', 'sort-old');
-    await expect.poll(() => page.evaluate(async () =>
-      (await window.ScratchpadDB.get('sort-old')).pinned
-    )).toBe(true);
+    await expect.poll(() => page.evaluate(async () => (await window.ScratchpadDB.get('sort-old')).pinned)).toBe(true);
 
     await page.reload();
     await expect(page.locator('.note-row').first()).toHaveAttribute('data-id', 'sort-old');
@@ -122,8 +118,18 @@ test.describe('note organization and empty states', () => {
 
   test('every row carries excerpt and tag metadata without layout shift', async ({ page }) => {
     await seedRawNotes(page, [
-      { id: 'meta-a', title: 'Meta A', body: 'A long enough body to earn a two-line excerpt in the sidebar list, with plenty of words to wrap.', tags: ['alpha'] },
-      { id: 'meta-b', title: 'Meta B', body: 'Second body, also long enough to spill across two rendered excerpt lines in the sidebar.', tags: ['ops', 'aws'] },
+      {
+        id: 'meta-a',
+        title: 'Meta A',
+        body: 'A long enough body to earn a two-line excerpt in the sidebar list, with plenty of words to wrap.',
+        tags: ['alpha'],
+      },
+      {
+        id: 'meta-b',
+        title: 'Meta B',
+        body: 'Second body, also long enough to spill across two rendered excerpt lines in the sidebar.',
+        tags: ['ops', 'aws'],
+      },
     ]);
 
     // meta-b is newest so the app auto-selects it; meta-a starts inactive.
@@ -180,9 +186,9 @@ test.describe('note organization and empty states', () => {
     await chooser.setFiles({
       name: 'empty-state-import.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify([
-        { id: 'empty-imported', title: 'Imported from empty state', body: 'Recovered.' },
-      ])),
+      buffer: Buffer.from(
+        JSON.stringify([{ id: 'empty-imported', title: 'Imported from empty state', body: 'Recovered.' }]),
+      ),
     });
 
     await expect(page.locator('#import-preview-dialog')).toBeVisible();
@@ -191,9 +197,7 @@ test.describe('note organization and empty states', () => {
   });
 
   test('keeps or discards unsaved edits from the overflow action', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'discard-note', title: 'Discard source', body: 'Saved body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'discard-note', title: 'Discard source', body: 'Saved body.' }]);
     await page.locator('#edit-btn').click();
     await page.locator('#note-editor').fill('Unsaved body.');
 

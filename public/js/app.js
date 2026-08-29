@@ -4,6 +4,8 @@
 
   const DB = window.ScratchpadDB;
   const Markdown = window.ScratchpadMarkdown;
+  const Search = window.ScratchpadSearch;
+  const SearchView = window.ScratchpadSearchView;
   const Zip = window.ScratchpadZip;
   const REVISION_LIMIT = 10;
   const DRAFT_DEBOUNCE_MS = 350;
@@ -88,6 +90,7 @@
     focusExitBtn: $('focus-exit-btn'),
     focusModeBtn: $('focus-mode-btn'),
     search: $('search'),
+    searchStatus: $('search-status'),
     activeFilter: $('active-filter'),
     activeFilterTag: $('active-filter-tag'),
     clearFilter: $('clear-filter'),
@@ -678,84 +681,9 @@
     return '';
   }
 
-  function normalizeSearchText(text) {
-    return String(text || '')
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function fuzzyIncludes(haystack, query) {
-    if (!query) return true;
-    let pos = 0;
-    for (const ch of query) {
-      pos = haystack.indexOf(ch, pos);
-      if (pos === -1) return false;
-      pos += 1;
-    }
-    return true;
-  }
-
-  function matchesQuery(text, query) {
-    const q = normalizeSearchText(query);
-    if (!q) return true;
-    const hay = normalizeSearchText(text);
-    return hay.includes(q) || fuzzyIncludes(hay, q);
-  }
-
-  function noteSearchText(note) {
-    return [
-      note.title || deriveTitle(note),
-      note.body || '',
-      (note.tags || []).join(' '),
-    ].join('\n');
-  }
-
-  function highlightTextNodes(text, query) {
-    const source = String(text || '');
-    const q = String(query || '').trim();
-    if (!q) return [document.createTextNode(source)];
-    const lower = source.toLowerCase();
-    const needle = q.toLowerCase();
-    const nodes = [];
-    let start = 0;
-    let index = lower.indexOf(needle, start);
-    while (index !== -1) {
-      if (index > start) nodes.push(document.createTextNode(source.slice(start, index)));
-      nodes.push(el('mark', { class: 'search-hit', text: source.slice(index, index + q.length) }));
-      start = index + q.length;
-      index = lower.indexOf(needle, start);
-    }
-    if (start < source.length) nodes.push(document.createTextNode(source.slice(start)));
-    return nodes.length ? nodes : [document.createTextNode(source)];
-  }
-
-  function highlightedChildren(text) {
+  function highlightedChildren(text, terms) {
     if (!state.search.trim()) return [document.createTextNode(text || '')];
-    return highlightTextNodes(text || '', state.search);
-  }
-
-  function highlightElementText(root, query) {
-    const q = String(query || '').trim();
-    if (!root || !q) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        const parent = node.parentElement;
-        if (!parent || parent.closest('script, style, textarea, mark')) return NodeFilter.FILTER_REJECT;
-        return node.nodeValue && node.nodeValue.toLowerCase().includes(q.toLowerCase())
-          ? NodeFilter.FILTER_ACCEPT
-          : NodeFilter.FILTER_REJECT;
-      },
-    });
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
-    for (const textNode of textNodes) {
-      const fragment = document.createDocumentFragment();
-      for (const node of highlightTextNodes(textNode.nodeValue || '', q)) fragment.appendChild(node);
-      textNode.replaceWith(fragment);
-    }
+    return SearchView.highlightText(text || '', terms || state.search);
   }
 
   function normalizeTag(t) {
@@ -1413,14 +1341,17 @@
   }
 
   // -------- Sidebar rendering --------
-  function filteredNotes() {
-    const q = state.search.trim();
+  function tagFilteredNotes() {
     const tag = state.tagFilter;
-    return currentBaseNotes().filter((n) => {
-      if (tag && !(n.tags || []).includes(tag)) return false;
-      if (!q) return true;
-      return matchesQuery(noteSearchText(n), q);
-    });
+    return currentBaseNotes().filter((note) => !tag || (note.tags || []).includes(tag));
+  }
+
+  function currentSearchResults() {
+    return Search.rankNotes(tagFilteredNotes(), state.search.trim());
+  }
+  function filteredNotes() {
+    if (!state.search.trim()) return tagFilteredNotes();
+    return currentSearchResults().results.map((result) => result.note);
   }
 
   function sortNotes(list) {
@@ -1453,6 +1384,32 @@
     els.bulkToggle.textContent = state.bulkMode ? 'Done selecting' : 'Select notes';
   }
 
+  function renderSearchMode(children, searchResults) {
+    const chrome = SearchView.createChrome({
+      kind: searchResults.kind,
+      count: searchResults.results.length,
+      view: state.view,
+      query: state.search.trim(),
+      hasTagFilter: !!state.tagFilter,
+      onClear: clearSearchResults,
+    });
+    children.push(chrome.summary);
+    if (chrome.note) children.push(chrome.note);
+    const notes = searchResults.results.map((result) => result.note);
+    if (state.bulkMode && notes.length) children.push(renderBulkToolbar(notes));
+    if (searchResults.results.length) {
+      children.push(...searchResults.results.map((result) => renderRow(result.note, result)));
+    } else if (chrome.empty) children.push(chrome.empty);
+    return chrome.status;
+  }
+
+  function updateSearchPresentation(status) {
+    const searching = !!state.search.trim();
+    els.sidebar.classList.toggle('is-searching', searching);
+    els.listHeader.hidden = searching;
+    els.todayNote.hidden = searching;
+    els.searchStatus.textContent = searching ? status : '';
+  }
   function pruneBulkSelection() {
     const valid = new Set(currentBaseNotes().map((note) => note.id));
     for (const id of [...state.bulkSelectedIds]) {
@@ -1461,12 +1418,17 @@
   }
 
   function renderSidebar() {
-    const filtered = filteredNotes();
-    const sorted = sortNotes(filtered);
+    const searching = !!state.search.trim();
+    const searchResults = currentSearchResults();
+    const filtered = searching ? searchResults.results.map((result) => result.note) : filteredNotes();
+    const sorted = searching ? filtered : sortNotes(filtered);
     const children = [];
+    let searchStatus = '';
     pruneBulkSelection();
 
-    if (state.view === 'trash') {
+    if (searching) {
+      searchStatus = renderSearchMode(children, searchResults);
+    } else if (state.view === 'trash') {
       children.push(el('p', {
         class: 'trash-retention-note',
         text: 'Notes in Trash are deleted forever after 30 days.',
@@ -1487,7 +1449,7 @@
       if (state.bulkMode && sorted.length) children.push(renderBulkToolbar(sorted));
       if (sorted.length) children.push(renderSection('Trash', sorted));
     } else {
-      const flat = !!(state.search.trim() || state.tagFilter);
+      const flat = !!state.tagFilter;
       const scopedNotes = !flat && state.folderViewId
         ? notesForFolder(sorted, state.folderViewId === VIRTUAL_FOLDER_KEY ? null : state.folderViewId)
         : sorted;
@@ -1503,13 +1465,14 @@
       }
     }
 
-    if (!children.length || (state.view === 'trash' && !sorted.length)) {
+    if (!searching && (!children.length || (state.view === 'trash' && !sorted.length))) {
       children.push(renderSidebarEmptyState());
     }
     // Pass the same header node back in so its listeners and els refs survive.
     els.noteList.replaceChildren(els.listHeader, ...children);
     renderViewSwitch();
     renderBulkToggle();
+    updateSearchPresentation(searchStatus);
   }
 
   function selectedBulkNotes() {
@@ -1713,7 +1676,7 @@
       return;
     }
     if (isDailyNotesFolder(folder)) children.push(...renderDailyMonthGroups(notes));
-    else children.push(...notes.map(renderRow));
+    else children.push(...notes.map((note) => renderRow(note)));
   }
 
   function folderMenuIcon() {
@@ -1929,7 +1892,7 @@
       const monthRows = el('div', {
         class: 'daily-month-notes',
         attrs: { id: notesId, hidden: expanded ? null : true },
-        children: monthNotes.map(renderRow),
+        children: monthNotes.map((note) => renderRow(note)),
       });
       return el('div', {
         class: 'daily-month-group',
@@ -1942,24 +1905,25 @@
   function renderSection(label, notes, isPinnedSection) {
     const headingClass = 'eyebrow note-section-head' + (isPinnedSection ? ' is-pinned' : '');
     const heading = el('div', { class: headingClass, text: label });
-    const rows = notes.map(renderRow);
+    const rows = notes.map((note) => renderRow(note));
     return el('div', { class: 'note-section', children: [heading, ...rows] });
   }
 
-  function renderRow(note) {
-    if (state.bulkMode) return renderBulkRow(note);
+  function renderRow(note, searchResult) {
+    if (state.bulkMode) return renderBulkRow(note, searchResult);
     const trashed = isTrashed(note);
     const archived = isArchived(note);
     const pinned = !!(note.pinned && !trashed);
     const effectivePinned = pinned && !archived;
-    const excerpt = noteExcerpt(note);
+    const excerpt = searchResult ? searchResult.excerpt : noteExcerpt(note);
+    const highlightTerms = searchResult ? searchResult.highlightTerms : null;
     const title = deriveTitle(note);
 
     const children = [
       el('span', {
         class: 'note-row-title',
         attrs: { 'aria-hidden': 'true' },
-        children: highlightedChildren(truncate(title, 64)),
+        children: highlightedChildren(truncate(title, 64), highlightTerms),
       }),
     ];
 
@@ -1982,7 +1946,7 @@
       children.push(el('span', {
         class: 'note-row-excerpt',
         attrs: { 'aria-hidden': 'true' },
-        children: highlightedChildren(excerpt),
+        children: highlightedChildren(excerpt, highlightTerms),
       }));
     }
 
@@ -2017,7 +1981,7 @@
             'data-tag': tag,
             'aria-label': 'Filter notes by tag ' + tag,
           },
-          children: highlightedChildren(tag),
+          children: highlightedChildren(tag, highlightTerms),
           on: { click: () => setTagFilter(tag) },
         }));
       if (note.tags.length > MAX_ROW_TAGS) {
@@ -2039,7 +2003,9 @@
       class: 'note-row-open',
       attrs: {
         type: 'button',
-        'aria-label': 'Open ' + title + (archived && note.pinned ? ', pinned when active' : ''),
+        'aria-label': 'Open ' + title +
+          (archived && note.pinned ? ', pinned when active' : '') +
+          (searchResult && searchResult.kind === 'close' ? ', close match' : ''),
         'aria-current': note.id === state.selectedId ? 'true' : null,
       },
       on: { click: () => selectNote(note.id) },
@@ -2051,12 +2017,17 @@
       !isDailyNote(note);
     return el('div', {
       class: 'note-row' +
+        (searchResult ? ' is-search-result' : '') +
         (note.id === state.selectedId ? ' is-active' : '') +
         (trashed ? ' is-trashed' : '') +
         (archived ? ' is-archived' : '') +
         (effectivePinned ? ' is-pinned' : '') +
         (archived && pinned ? ' is-pin-dormant' : ''),
-      attrs: { 'data-id': note.id, draggable: draggable ? 'true' : null },
+      attrs: {
+        'data-id': note.id,
+        'data-search-kind': searchResult ? searchResult.kind : null,
+        draggable: draggable ? 'true' : null,
+      },
       on: draggable ? {
         dragstart: (e) => {
           e.dataTransfer.setData('application/x-scratchpad-note', note.id);
@@ -2069,11 +2040,12 @@
     });
   }
 
-  function renderBulkRow(note) {
+  function renderBulkRow(note, searchResult) {
     const trashed = isTrashed(note);
     const archived = isArchived(note);
     const pinned = !!(note.pinned && !trashed && !archived);
-    const excerpt = noteExcerpt(note);
+    const excerpt = searchResult ? searchResult.excerpt : noteExcerpt(note);
+    const highlightTerms = searchResult ? searchResult.highlightTerms : null;
     const selected = state.bulkSelectedIds.has(note.id);
     const checkbox = el('input', {
       attrs: {
@@ -2087,16 +2059,24 @@
     });
     const children = [
       el('span', { class: 'note-row-check', children: [checkbox] }),
-      el('span', { class: 'note-row-title', children: highlightedChildren(truncate(deriveTitle(note), 64)) }),
+      el('span', {
+        class: 'note-row-title',
+        children: highlightedChildren(truncate(deriveTitle(note), 64), highlightTerms),
+      }),
       el('span', { class: 'note-row-when', text: lifecycleTimeLabel(note) }),
     ];
-    if (excerpt) children.push(el('span', { class: 'note-row-excerpt', children: highlightedChildren(excerpt) }));
+    if (excerpt) {
+      children.push(el('span', {
+        class: 'note-row-excerpt',
+        children: highlightedChildren(excerpt, highlightTerms),
+      }));
+    }
     if (note.tags && note.tags.length) {
       const tagNodes = note.tags.slice(0, MAX_ROW_TAGS).map((t) =>
         el('span', {
           class: 'note-row-tag',
           attrs: { 'data-tag': t },
-          children: highlightedChildren(t),
+          children: highlightedChildren(t, highlightTerms),
         })
       );
       if (note.tags.length > MAX_ROW_TAGS) {
@@ -2242,7 +2222,7 @@
         els.rendered.hidden = false;
         Markdown.renderMarkdownInto(els.rendered, note.body || '');
         syncTaskCheckboxes(note);
-        highlightElementText(els.rendered, state.search);
+        SearchView.highlightElement(els.rendered, state.search);
       }
       els.editBtn.hidden = trashed;
       els.saveBtn.hidden = true;
@@ -2442,6 +2422,7 @@
     const visible = filteredNotes();
     const hasFilter = !!(state.search || state.tagFilter);
     if (state.editing && state.dirty && selectedNoteIsInView()) return;
+    if (state.search.trim() && selectedNoteIsInView()) return;
     if (selectedNoteIsInView() && (!hasFilter || visible.some((n) => n.id === state.selectedId))) return;
     const pinned = state.view === 'active'
       ? sortNotes(visible.filter((n) => n.pinned && !isTrashed(n)))
@@ -2605,6 +2586,8 @@
       showEmpty('archive');
     } else if (state.view === 'active' && activeNotes().length === 0) {
       showEmpty('no-notes');
+    } else if (state.search.trim() && state.selectedId && selectedNoteIsInView()) {
+      renderEditor();
     } else if (filteredNotes().length === 0) {
       showEmpty('no-results');
     } else if (state.selectedId && getNote(state.selectedId)) {
@@ -3052,6 +3035,11 @@
     state.search = '';
     els.search.value = '';
     renderAll();
+  }
+
+  function clearSearchResults() {
+    clearAllFilters();
+    els.search.focus();
   }
 
   function toggleBulkMode() {
@@ -3633,11 +3621,11 @@
   }
 
   function wikilinkSuggestions(query) {
-    const q = normalizeSearchText(query);
+    const q = Search.normalize(query);
     const current = state.selectedId;
     return sortNotes(state.notes.filter((n) => {
       if (n.id === current || isTrashed(n)) return false;
-      return !q || normalizeSearchText(deriveTitle(n)).includes(q);
+      return !q || Search.normalize(deriveTitle(n)).includes(q);
     })).slice(0, 8);
   }
 
@@ -4763,14 +4751,14 @@
   // command's name verbatim always puts it first.
   function filteredCommandItems() {
     const q = els.commandPaletteInput.value;
-    const nq = normalizeSearchText(q);
+    const nq = Search.normalize(q);
     const all = commandDefinitions()
-      .filter((item) => matchesQuery([item.label, item.meta, item.keywords].join(' '), q));
+      .filter((item) => Search.matchesLoose([item.label, item.meta, item.keywords].join(' '), q));
     if (!nq) return all.slice(0, 12);
     const exact = [];
     const fuzzy = [];
     for (const item of all) {
-      const hay = normalizeSearchText([item.label, item.meta, item.keywords].join(' '));
+      const hay = Search.normalize([item.label, item.meta, item.keywords].join(' '));
       (hay.includes(nq) ? exact : fuzzy).push(item);
     }
     return exact.concat(fuzzy).slice(0, 12);
@@ -5785,6 +5773,18 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
+    SearchView.bindKeyboard({
+      input: els.search,
+      list: els.noteList,
+      isSearching: () => !!state.search.trim(),
+      hasActiveFilters: () => !!(state.search || state.tagFilter),
+      sync: () => {
+        if (state.search === els.search.value) return;
+        state.search = els.search.value;
+        renderAll();
+      },
+      clear: clearSearchResults,
+    });
 
     els.clearFilter.addEventListener('click', () => setTagFilter(null));
     els.clearSearchBtn.addEventListener('click', clearAllFilters);

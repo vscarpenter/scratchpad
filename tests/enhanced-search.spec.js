@@ -27,18 +27,20 @@ test.describe('enhanced search', () => {
     await expect(page.locator('.note-row')).toContainText('Tagged note');
   });
 
-  test('supports fuzzy matching and highlights direct matches', async ({ page }) => {
+  test('labels conservative typo matching and highlights direct matches', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'search-fuzzy', title: 'Project archive', body: 'The launch timeline has a blocker.', tags: [] },
       { id: 'search-other', title: 'Meeting notes', body: 'No relevant body.', tags: [] },
     ]);
 
-    await page.locator('#search').fill('prar');
+    await page.locator('#search').fill('projet');
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('.note-row')).toContainText('Project archive');
+    await expect(page.locator('#search-results-count')).toHaveText('1 close match');
 
     await page.locator('#search').fill('launch');
     await expect(page.locator('.note-row mark.search-hit')).toContainText('launch');
+    await page.locator('.note-row').click();
     await expect(page.locator('#note-rendered mark.search-hit')).toContainText('launch');
   });
 
