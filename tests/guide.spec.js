@@ -2,9 +2,19 @@
 const { test, expect } = require('@playwright/test');
 
 const SECTION_IDS = [
-  'first-five-minutes', 'markdown', 'task-lists', 'daily-notes', 'linking',
-  'folders', 'archive-trash', 'organizing', 'history-drafts', 'backups', 'privacy-controls',
-  'offline', 'shortcuts',
+  'first-five-minutes',
+  'markdown',
+  'task-lists',
+  'daily-notes',
+  'linking',
+  'folders',
+  'archive-trash',
+  'organizing',
+  'history-drafts',
+  'backups',
+  'privacy-controls',
+  'offline',
+  'shortcuts',
 ];
 
 test.describe('user guide page', () => {
@@ -22,6 +32,8 @@ test.describe('user guide page', () => {
     await expect(folders).toContainText('Switch folders');
     await expect(folders).toContainText('Home');
     await expect(folders).toContainText('searchable picker');
+    await expect(folders).toContainText('relevance-ranked result list');
+    await expect(page.locator('#organizing').locator('..')).toContainText('ranks title matches first');
   });
 
   test('TOC anchor navigates to its section', async ({ page }) => {
@@ -81,8 +93,7 @@ test.describe('user guide page', () => {
     await page.goto('/guide.html', { waitUntil: 'networkidle' });
     expect(external).toEqual([]);
     // The service worker's app shell must include the guide so it works offline.
-    const swSource = await page.evaluate(() =>
-      fetch('/public/service-worker.js').then((r) => r.text()));
+    const swSource = await page.evaluate(() => fetch('/public/service-worker.js').then((r) => r.text()));
     expect(swSource).toContain("'/guide.html'");
   });
 

@@ -39,9 +39,10 @@ Nothing else is ever uploaded.
   timestamped line from anywhere.
 - Link notes with `[[Title]]` (autocompleted as you type); each note shows
   what links to it, and renaming a linked note offers to update references.
-- Search titles, bodies, and tags; pin important notes; and use bulk tagging,
-  Archive, Trash, and restore tools. Archive clears finished work from Notes
-  without starting Trash's 30-day deletion clock.
+- Search titles, text, and tags in a focused relevance-ranked list across every
+  folder, with clearly labeled title/tag typo fallback; pin important notes;
+  and use bulk tagging, Archive, Trash, and restore tools. Archive clears
+  finished work from Notes without starting Trash's 30-day deletion clock.
 - Import one or many Markdown files, including Scratchpad frontmatter, or use
   validated JSON imports with a conflict preview.
 - Export full JSON backups, encrypted backups, selected notes, or a Markdown
@@ -249,6 +250,8 @@ reports whether it succeeded.
 | `⌘/Ctrl` + `Shift` + `Space`   | Quick capture                             |
 | `⌘/Ctrl` + `S`                 | Save (when editing)                       |
 | `⌘/Ctrl` + `K` or `/`          | Focus the search box                      |
+| `↑` / `↓`                      | Move through search results               |
+| `Enter`                        | Open the focused search result            |
 | `Esc`                          | Clear search when search is focused, or  |
 |                                | exit edit mode (with confirmation if dirty) |
 
