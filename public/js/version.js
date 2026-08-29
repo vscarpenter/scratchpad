@@ -4,7 +4,7 @@
   'use strict';
 
   window.SCRATCHPAD_VERSION = '3.11.0';
-  window.SCRATCHPAD_BUILD_DATE = '2026-08-25';
+  window.SCRATCHPAD_BUILD_DATE = '2026-08-29';
 
   function apply() {
     const v = document.getElementById('app-version');
