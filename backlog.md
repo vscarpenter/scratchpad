@@ -17,3 +17,14 @@ deleted from this list rather than struck through.
 - Manual note ordering inside folders (drag to reorder notes, matching
   what folders themselves already support).
 - Markdown footnotes.
+- WebMCP tools (`document.modelContext`) so browser agents get structured
+  access instead of DOM scraping. Design is decided: one feature-detected
+  module in `public/js/` that registers `create_note` and `append_to_note`
+  unconditionally (content flows in, nothing disclosed), and gates
+  `list_notes` / `search_notes` / `get_note` behind an opt-in setting,
+  default off, because read results enter the agent's model context and
+  leave the browser — document that on privacy.html in the same
+  deliberate-act framing as sharing. Zero page-initiated network calls,
+  so `network-isolation.spec.js` stays as-is. Build when Chrome ships
+  stable (expected Q4 2026) rather than joining the origin trial; the
+  API surface is still moving (navigator → document rename, 2026-08).
