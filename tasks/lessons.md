@@ -18,3 +18,8 @@
 - Ratchets are only honest when their measured baselines tighten after a
   simplification. This pass reduced deep functions from 13 to 12 and raised the
   deterministic browser coverage floor from 35.67% to 36.2%.
+- `check:format` sweeps every changed AND untracked supported file, while
+  `public/css/app.css` and `public/js/app.js` are format-baseline legacy
+  exemptions. When it fails, read which file it actually checked — and never
+  run `biome format --write` on a legacy file to satisfy it: that reformats
+  the whole file and buries the real change under ~1,200 lines of churn.
