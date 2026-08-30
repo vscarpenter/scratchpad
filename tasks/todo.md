@@ -19,7 +19,8 @@ cycle each, one commit per surface, plus a visual-polish and docs commit.
 - [x] 8. Docs commit. No version bump / deploy unless asked.
 
 ## Resuming From Here
-- Done: Phase 2 complete on main, all gates green, committed.
-- Next: nothing pending. Deploy needs an explicit go-ahead (version bump to
-  v3.14.0 + ./deploy.sh).
+- Done: Phase 2 complete, shipped as v3.14.0 on 2026-08-30 (release commit
+  `7bdeacc`, deployed as scratchpad-deploy, invalidation
+  IC2EMHD3PXQ3YEE9IR7Y6LA440, production verified, pushed).
+- Next: nothing pending from the dialog review.
 - Blockers: none.
