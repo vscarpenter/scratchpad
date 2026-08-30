@@ -4845,3 +4845,15 @@ body:not(.page-privacy) {
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* The erase gate is visible: the button reads inert until ERASE is typed.
+   Scoped to this dialog so withBusy's transient disabling stays unstyled. */
+#erase-local-data-dialog .btn-danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Native radios join the one-accent rule. */
+.import-options input[type='radio'] {
+  accent-color: var(--accent);
+}
