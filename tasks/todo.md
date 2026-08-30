@@ -1,26 +1,19 @@
-# Chronicle dialog recipe — Phase 2 implementation
+# Production feedback round — 2026-08-30
 
-Spec: `tasks/spec.md`. All four surfaces shipped as one red/green/refactor
-cycle each, one commit per surface, plus a visual-polish and docs commit.
+Two user-reported issues after v3.14.0.
 
 ## Plan
-- [x] 1. Erase gating (`566a2db`) — disabled-until-ERASE contract; dead
-      error UI removed as the ratchet offset (deviation noted in spec).
-- [x] 2. Import preview (`ed1ece4`) — stat cards, consequence radios,
-      outcome-stating button; new `public/js/dialogs.js` module.
-- [x] 3. About "Your data" (`15e7c52`) — 3 stat cards, meta line, dotted
-      status rows with inline actions; all diagnostic ids preserved.
-- [x] 4. Quick capture spotlight (`e58364a`) — no title bar, live foot
-      preview + destination; pure helpers moved to ScratchpadDialogs.
-- [x] 5. Full verify green; full suite 932 passed / 7 skipped (3 browsers).
-- [x] 6. Light + dark screenshots in `.verify/chronicle-dialogs-phase2/`,
-      reviewed; erase gate made visibly inert + indigo radios (`5140165`).
-- [x] 7. CSP hashes verified unchanged; DESIGN.md Phase 2 note.
-- [x] 8. Docs commit. No version bump / deploy unless asked.
+- [x] 1. Backup chip stuck on "Never backed up" — root cause: exportMarkdownZip
+      was the only full-library export not calling recordBackupDownload.
+      Fixed test-first (`aa8c1a9`).
+- [x] 2. Floating pill site nav (designed in design-reference.html, never
+      built) implemented on guide/about/privacy/terms, tokenized for Indigo
+      on Paper (`a38d8f7`). Theme-toggle scripts untouched → CSP hashes
+      unchanged. share.html keeps its quiet header.
+- [x] 3. Full verify green; full suite 950 passed / 7 skipped; nav verified
+      light + dark + 390/360px in `.verify/site-nav/`.
 
 ## Resuming From Here
-- Done: Phase 2 complete, shipped as v3.14.0 on 2026-08-30 (release commit
-  `7bdeacc`, deployed as scratchpad-deploy, invalidation
-  IC2EMHD3PXQ3YEE9IR7Y6LA440, production verified, pushed).
-- Next: nothing pending from the dialog review.
+- Done: both fixes committed on main, NOT yet deployed or pushed.
+- Next: on go-ahead — push, bump to v3.15.0, ./deploy.sh.
 - Blockers: none.
