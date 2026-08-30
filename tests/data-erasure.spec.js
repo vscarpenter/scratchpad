@@ -18,22 +18,19 @@ test.describe('local data erasure', () => {
 
     await page.locator('#open-about').click();
     await page.locator('#erase-local-data-btn').click();
-    await page.locator('#erase-confirmation').fill('erase');
-    await page.locator('#confirm-erase-local-data').click();
-
-    await expect(page.locator('#erase-confirmation')).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.locator('#erase-confirmation-error')).toContainText('Type ERASE');
-    await expect(page.locator('#erase-local-data-dialog')).toBeVisible();
-
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
     await expect(page).toHaveURL(/\/about\.html$/);
-    await expect.poll(() => page.evaluate(() => ({
-      theme: localStorage.getItem('theme-preview'),
-      backup: localStorage.getItem('scratchpad:lastBackupAt'),
-      snooze: localStorage.getItem('scratchpad:backupReminderSnoozedUntil'),
-      visited: localStorage.getItem('scratchpad-visited'),
-    }))).toEqual({ theme: null, backup: null, snooze: null, visited: null });
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          theme: localStorage.getItem('theme-preview'),
+          backup: localStorage.getItem('scratchpad:lastBackupAt'),
+          snooze: localStorage.getItem('scratchpad:backupReminderSnoozedUntil'),
+          visited: localStorage.getItem('scratchpad-visited'),
+        })),
+      )
+      .toEqual({ theme: null, backup: null, snooze: null, visited: null });
 
     await gotoApp(page);
     const counts = await page.evaluate(async () => ({
@@ -42,6 +39,25 @@ test.describe('local data erasure', () => {
       revisions: (await window.ScratchpadDB.getAllRevisions()).length,
     }));
     expect(counts).toEqual({ notes: 0, drafts: 0, revisions: 0 });
+  });
+
+  test('the erase button unlocks only on an exact ERASE', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator('#open-about').click();
+    await page.locator('#erase-local-data-btn').click();
+    const eraseBtn = page.locator('#confirm-erase-local-data');
+    // Disabled on open, and near-misses (case, whitespace) never enable it.
+    await expect(eraseBtn).toBeDisabled();
+    for (const nearMiss of ['erase', 'ERASE ', 'ERAS']) {
+      await page.locator('#erase-confirmation').fill(nearMiss);
+      await expect(eraseBtn).toBeDisabled();
+    }
+    await page.locator('#erase-confirmation').fill('ERASE');
+    await expect(eraseBtn).toBeEnabled();
+    // Deleting a character re-disables.
+    await page.locator('#erase-confirmation').fill('ERAS');
+    await expect(eraseBtn).toBeDisabled();
+    await expect(page.locator('#erase-local-data-dialog')).toBeVisible();
   });
 
   test('erasing revokes every live share link before the tokens are destroyed', async ({ page }) => {
@@ -74,10 +90,7 @@ test.describe('local data erasure', () => {
     await page.locator('#confirm-erase-local-data').click();
 
     await expect(page).toHaveURL(/\/about\.html$/);
-    expect(revokes.map((r) => r.token).sort()).toEqual([
-      'revoke-token-ShareAaaaaa1',
-      'revoke-token-ShareBbbbbb2',
-    ]);
+    expect(revokes.map((r) => r.token).sort()).toEqual(['revoke-token-ShareAaaaaa1', 'revoke-token-ShareBbbbbb2']);
   });
 
   test('a failed revoke asks before erasing; declining keeps the tokens', async ({ page }) => {

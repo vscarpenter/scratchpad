@@ -1,98 +1,165 @@
-# Standards and simplification implementation
+# Spec: Chronicle dialog recipe — Phase 2
 
-Status: approved 2026-08-27
+Approved directions from the 2026-08 design review
+(`design_handoff_chronicle_dialogs/README.md`, "Phase 2"). Design direction is
+approved; detailed spec derived here from those directions plus the Phase 1
+recipe (DESIGN.md "Dialogs") and existing code. Continuous pass authorized by
+the standing design-approval correction.
 
 ## Goal
 
-Restore every existing quality gate, make the v18 standards enforceable for
-Scratchpad's no-build vanilla-JavaScript architecture, remove retired search
-scope code, consolidate repeated accessible-menu behavior, and flatten the
-legacy Soft Glass cascade beneath the approved Indigo on Paper shell.
+Four dialog surfaces adopt the Phase 2 directions without changing any data
+behavior:
 
-## Inputs and outputs
+1. **About → "Your data" panel** — 3 stat cards (notes / revisions / storage),
+   status rows with state dots and inline actions, links stay demoted in the
+   existing dialog footer.
+2. **Import preview** — counts become stat cards; conflict radios gain
+   one-clause consequence copy; the primary button states the outcome
+   ("Import 16 notes").
+3. **Quick capture → spotlight bar** — no title bar; footer shows a live
+   preview of exactly what will be appended and where.
+4. **Erase button disabled until "ERASE" is fully typed** (visual + JS).
 
-Inputs:
+## Hard constraints (executable in the existing suite)
 
-- `coding-standards.md` v18 and the repository rules in `CLAUDE.md`/`AGENTS.md`
-- The existing Playwright, Lambda, shell, vendor, CSP, and app-shell checks
-- The approved Indigo on Paper specification and `.ui-craft` brief/tokens
-- Current first-party HTML, CSS, JavaScript, scripts, and GitHub workflows
+- Every `#diagnostic-*` id keeps its element and text semantics —
+  `tests/diagnostics.spec.js` asserts each value (`toHaveText('2')` etc.).
+- `#import-preview-counts` keeps a `<dl>` whose `dd` order is unchanged:
+  New notes, Conflicts, Rejected entries, Revision snapshots, Rejected
+  revisions, Folders — `tests/import.spec.js` asserts `dd.nth(0/2/4)`.
+- `#quick-capture-input` / `#quick-capture-submit` ids, Enter-to-capture, and
+  `?action=capture` behavior unchanged (`daily-note.spec.js`,
+  `keyboard-shortcuts.spec.js`).
+- Radio `name="import-conflict-mode"` values `duplicate|replace|skip` and
+  default-to-duplicate on render are unchanged.
+- Recipe rules apply: tokens only in app.css, serif titles, mono small-caps
+  labels, hairlines, indigo action-only, rust erasure-only. No emoji; SVG or
+  Unicode symbols only. No new network calls. No `innerHTML`.
 
-Outputs:
+## 1. Erase gating (JS + markup + CSS)
 
-- A green local and CI-equivalent verification baseline
-- One canonical coding standard plus a documented vanilla-JS enforcement profile
-- Automated format, lint, type, commit, structural, coverage, and CI gates
-- No retired search-scope production path
-- One shared controller for the four ARIA menus
-- A token-driven Indigo on Paper app shell at every breakpoint without legacy glass
+- `#confirm-erase-local-data` gets the `disabled` attribute in markup.
+- On `input` in `#erase-confirmation`: button enabled iff
+  `value === 'ERASE'` (exact, case-sensitive, no trim). Deleting characters
+  re-disables. Dialog open resets input and re-disables.
+- The click-time value guard stays as a one-line defense-in-depth check, but
+  the now-unreachable error UI (`#erase-confirmation-error`, `aria-invalid`
+  toggling) is REMOVED — the structure ratchet requires additions to app.js
+  to pay their way, and dead error plumbing is the in-scope offset.
+  (Deviation from first draft recorded 2026-08-30.)
+- **Spec change to tests**: `data-erasure.spec.js` "wrong text" case becomes:
+  fill `'erase'` → expect button `toBeDisabled()` and dialog still open; fill
+  `'ERASE'` → `toBeEnabled()` → click proceeds. All other erase tests already
+  fill `'ERASE'` first and stay valid.
 
-## Constraints
+## 2. Import preview (JS render + markup + CSS)
 
-- Preserve the static, no-build, same-origin application architecture.
-- Preserve IndexedDB data contracts and the sanctioned encrypted share API calls.
-- Add no production dependencies, remote assets, telemetry, or third-party runtime requests.
-- Never weaken network-isolation, storage-protection, DOM-safety, CSP, or accessibility tests.
-- Keep all inline HTML scripts byte-identical; this work must not move CSP hashes.
-- Preserve dialog/onboarding/static-page glass; only application-shell glass is retired.
-- Keep the chronology rail, folder picker overlay, responsive navigation, and WebKit stacking contract.
-- Use token colors only in `public/css/app.css`; no dark-mode selectors there.
-- Keep every logical unit green and commit it before moving to the next unit.
-- Do not push, deploy, mutate AWS, or bump the release version.
+- `renderImportPreview` wraps each dt/dd pair in a `<div>` (same pattern as
+  the About diagnostics list); dl order unchanged. CSS turns the six pairs
+  into a 3-across stat-card grid (2 rows), dt in the existing Phase 1 mono
+  small-caps voice, dd value in serif 600 ~20px.
+- Each conflict radio label gains a `.import-consequence` line
+  (12px, `--text-secondary`), one clause each:
+  - duplicate: "Conflicting notes come in as copies; nothing is overwritten."
+  - replace: "Existing notes with matching ids are overwritten."
+  - skip: "Only new notes come in; conflicts stay untouched."
+- `#confirm-import` label states the outcome. N = notes that will import for
+  the selected mode: duplicate/replace → `newCount + conflicts`; skip →
+  `newCount`. Label `Import N notes` / `Import 1 note`; when N = 0 the label
+  falls back to plain `Import` (folders may still merge). Recomputed on
+  preview render and on radio change.
+
+## 3. About "Your data" panel (markup + JS + CSS)
+
+- `#diagnostics-title` text becomes "Your data" (verify no test pins
+  "Local diagnostics" first; keep the id).
+- Structure inside `#diagnostics-panel` (all existing ids preserved):
+  - `.data-stats`: three stat cards — Notes (`#diagnostic-active-notes`),
+    Revisions (`#diagnostic-revisions`), Storage (`#diagnostic-storage`).
+    Card label mono small-caps 10px `--text-muted`; value serif 600 20px.
+  - `.data-meta`: one quiet line "`#diagnostic-archived-notes` archived ·
+    `#diagnostic-trashed-notes` in trash · `#diagnostic-drafts` drafts"
+    (ids live on inline spans holding only the number).
+  - `.data-status`: three status rows, each `dot + term + value + inline
+    action`, hairline-separated:
+    - Storage protection → value `#diagnostic-storage-protection`, inline
+      `#protect-storage-btn` (existing hidden logic untouched). Dot state:
+      Persistent → ok, Best effort → warn, Unavailable → muted.
+    - Last backup → value `#diagnostic-last-backup`, no action. Dot: backup
+      recorded → ok, never → warn.
+    - Offline cache → value `#diagnostic-offline-cache`, inline
+      `#refresh-offline-copy-btn` and `#check-updates-btn` (both btn-sm).
+      Dot: Ready → ok, otherwise warn/muted.
+  - `renderDiagnostics` additionally sets `data-state="ok|warn|muted"` on
+    each status row; CSS colors the dot via tokens (`--success`,
+    `--warning`, `--text-muted`). Color is never the only signal — the text
+    value stays.
+- `.about-control-row` disappears (its three buttons moved inline).
+- Footer links: already demoted in `.about-dialog-foot` — no change.
+- Danger zone: unchanged from Phase 1.
+
+## 4. Quick capture spotlight (markup + JS + CSS)
+
+- Remove the entire `.dialog-head` (icon, h2, subtitle, close button). The
+  dialog gets `aria-label="Quick capture"` instead of `aria-labelledby`.
+  Esc still closes (native cancel); no visible close button.
+- `#quick-capture-description` becomes a `visually-hidden` paragraph so the
+  input's `aria-describedby` keeps working for AT.
+- The `.quick-capture-hint` row becomes `.quick-capture-foot`: left side is a
+  live preview `- **HH:MM** <typed text>` (timestamp mono, text plain,
+  `aria-hidden="true"`, muted ellipsis when input empty), right side keeps
+  the destination + `Enter` kbd hint. Destination reads "Today's note", or
+  "today's draft" when the today note is open in the editor (mirrors the
+  `submitQuickCapture` buffer branch).
+- JS: on dialog open and on every `input`, update preview text and
+  destination. Timestamp from the existing `captureTimestamp()`.
+- CSS: head rules for quick-capture (`.quick-capture-dialog .dialog-head*`,
+  `.quick-capture-heading`, `.quick-capture-mark`, `.quick-capture-subtitle`)
+  are removed as dead; body padding compensates for the missing head.
+
+## Anti-goals
+
+- No behavior change to what erase erases, what import writes, what capture
+  appends, or diagnostics computation.
+- No new tokens, no literal colors, no `@font-face`, no shell changes.
+- No Phase 3 inventions (e.g. redesigned radios as cards, capture into
+  arbitrary notes).
 
 ## Edge cases
 
-- The sidebar header must fit at 1440x900 without hiding privacy/status copy or shrinking touch targets.
-- Dialog exit motion may leave controls in the accessibility tree briefly; tests must wait for hidden state.
-- Search must continue matching titles, bodies, and tags after scope state is removed.
-- Menus may have hidden/disabled items, dynamic content, unique positioning, and different focus-return rules.
-- Menu keyboard support must cover Arrow Up/Down, Home, End, Escape, Tab, and outside dismissal.
-- The folder switcher remains a body-level overlay above the editor in WebKit.
-- Mobile list/editor navigation remains one pane below 768px.
-- Dark, light, auto, reduced-motion, and reduced-transparency modes remain intentional.
-- Legacy structural limits cannot become instant repo-wide hard failures; ratchets may only improve.
-
-## Out of scope
-
-- TypeScript migration or a production build pipeline
-- New product features or information-architecture changes
-- Dialog, onboarding, content-page, token-palette, or OG-image redesign
-- Splitting `app.js` or `app.css` solely to satisfy a line count
-- Service-worker scope, sharing infrastructure, CloudFront publishing, release, push, or deployment
+- Erase: paste "ERASE " (trailing space) stays disabled; case-sensitive.
+- Import: N = 0 (folders-only import) → plain "Import" label; 1 → singular.
+- Quick capture: empty input preview shows timestamp + muted placeholder;
+  destination logic when the today note exists but is not open → "Today's
+  note"; input with only spaces behaves as empty (capture already no-ops).
+- About: `storage.persist` unsupported → protection row muted, protect button
+  hidden (existing logic).
 
 ## Acceptance criteria
 
-1. Existing browser and vendor failures are resolved; all project gates pass.
-2. `coding-standards.md` v18 is canonical and repository guidance no longer conflicts.
-3. The project documents and enforces its vanilla-JS profile locally and in CI.
-4. New structural violations fail while recorded legacy counts cannot increase.
-5. Coverage is measured and cannot regress; any gap to 80% is explicit and ratcheted.
-6. Search has no scope state, element lookup, renderer, handler, or compatibility comment.
-7. Search tests prove title/body/tag matching and clearing behavior in all browsers.
-8. All four menus share one narrow controller while retaining existing semantics and positioning.
-9. Menu characterization tests prove focus, keyboard, ARIA, and dismissal behavior.
-10. `.sidebar` and `.main` use semantic opaque surfaces without blur or decorative panel elevation at every breakpoint.
-11. The document remains the only raised application-shell surface.
-12. Light/dark desktop, tablet, and mobile visual verification shows no overflow or unintended redesign.
-13. No new unsafe DOM sink, network request, secret, CSP hash, or deployment-surface expansion is introduced.
+1. New/updated Playwright assertions (red first, then green):
+   - erase button disabled → enabled → re-disabled by input value.
+   - import consequence copy visible; `#confirm-import` reads "Import 2
+     notes" for the markdown-import preview; switching to Skip with 1
+     conflict changes the label accordingly.
+   - About shows "Your data", three `.data-stat` cards, and status rows with
+     `data-state` set.
+   - quick capture has no `h2`, carries `aria-label`, and the foot preview
+     mirrors typed text with a `**HH:MM**`-style timestamp; destination
+     wording flips in the editing-today branch.
+2. Entire existing suite stays green (920 currently) across all 3 browsers.
+3. `bun run verify` green; CSP hashes unchanged
+   (`recompute-csp-hashes.sh` — no inline scripts touched).
+4. Light + dark screenshots of all four surfaces reviewed.
+5. DESIGN.md Dialogs section gains a short Phase 2 note.
 
-## Test stubs
+## Assumptions (explicit)
 
-- Existing red tests:
-  - sidebar header height is at most 330px in all three engines
-  - trash dialog can be cancelled and reopened deterministically
-- Search:
-  - one all-fields query matches title, body, and tags
-  - clearing search restores the complete list and removes highlighting
-- Menus:
-  - shared keyboard navigation skips unavailable items and wraps consistently
-  - Escape/outside dismissal restores focus and `aria-expanded`
-  - each folder/overflow/list/backup trigger opens only its menu
-- CSS:
-  - computed app-shell styles use semantic surfaces and no backdrop blur at 375, 768, and desktop widths
-  - dialogs retain their intended glass treatment
-  - existing token, contrast, touch-target, responsive, scroll, and reduced-motion tests remain green
-- Tooling:
-  - controlled temporary violations prove each new gate fails closed
-  - frozen dependency installation and CI-equivalent verification pass
-
+- "count" card = active notes (archived/trash/drafts stay visible in the meta
+  line so nothing regresses to hidden).
+- Check-for-updates lives on the offline-cache status row (both are
+  service-worker concerns); no dedicated updates row.
+- Removing the quick-capture close button is intended by "spotlight bar";
+  Esc and click-outside behavior are unchanged.
+- Import button counts notes only; folders/revisions ride along silently.

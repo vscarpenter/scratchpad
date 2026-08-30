@@ -236,7 +236,6 @@
     eraseLocalDataBtn: $('erase-local-data-btn'),
     eraseLocalDataDialog: $('erase-local-data-dialog'),
     eraseConfirmation: $('erase-confirmation'),
-    eraseConfirmationError: $('erase-confirmation-error'),
     confirmEraseLocalData: $('confirm-erase-local-data'),
     pwaUpdateNotice: $('pwa-update-notice'),
     pwaUpdateLater: $('pwa-update-later'),
@@ -3987,19 +3986,15 @@
   function openEraseLocalDataDialog() {
     closeDialog(els.aboutDialog);
     els.eraseConfirmation.value = '';
-    els.eraseConfirmation.removeAttribute('aria-invalid');
-    els.eraseConfirmationError.hidden = true;
+    els.confirmEraseLocalData.disabled = true;
     openDialog(els.eraseLocalDataDialog);
     setTimeout(() => els.eraseConfirmation.focus(), 0);
   }
 
   async function eraseLocalData() {
-    if (els.eraseConfirmation.value !== 'ERASE') {
-      els.eraseConfirmation.setAttribute('aria-invalid', 'true');
-      els.eraseConfirmationError.hidden = false;
-      els.eraseConfirmation.focus();
-      return;
-    }
+    // Unreachable through the UI (the button is gated), kept as the last
+    // guard in front of an irreversible wipe.
+    if (els.eraseConfirmation.value !== 'ERASE') return;
     return withBusy('erase-local-data', [els.confirmEraseLocalData], 'Local data could not be erased.', async () => {
       // The shares store holds the only copy of every link's revoke token, so
       // this is the last possible moment to take the published copies down.
@@ -6007,8 +6002,7 @@
     els.eraseLocalDataBtn.addEventListener('click', openEraseLocalDataDialog);
     els.confirmEraseLocalData.addEventListener('click', eraseLocalData);
     els.eraseConfirmation.addEventListener('input', () => {
-      els.eraseConfirmation.removeAttribute('aria-invalid');
-      els.eraseConfirmationError.hidden = true;
+      els.confirmEraseLocalData.disabled = els.eraseConfirmation.value !== 'ERASE';
     });
     els.confirmEncryptedExport.addEventListener('click', exportEncryptedBackup);
     els.confirmEncryptedImport.addEventListener('click', unlockEncryptedBackup);
