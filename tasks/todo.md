@@ -15,9 +15,11 @@ Two user-reported issues after v3.14.0.
 
 ## Resuming From Here
 - Done: v3.15.0 (backup fix + pill nav), v3.16.0 (20px shell footer strip),
-  and v3.17.0 (footer grows to 40px with Guide/About/Privacy/Terms links,
-  meta hidden ≤640px; feature `ef432e9`, release `27a12a9`, invalidation
-  I7NSYVRUH21ZPM448PYLN3JJKP) all shipped 2026-08-30; production verified,
-  pushed and in sync.
+  v3.17.0 (40px footer with site links), and v3.18.0 (footer strip on the
+  share viewer with root-absolute hrefs for /s/<id>, plus the since-v3.11
+  theme-toggle grid-stack fix — shell toggle rules now scoped to
+  body:not(.page-privacy); feature `3e2f686`, release `bfffb34`) all
+  shipped 2026-08-30; production verified on both /share.html and the
+  /s/ route, pushed and in sync.
 - Next: nothing pending.
 - Blockers: none.
