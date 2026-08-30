@@ -7,10 +7,16 @@
   window.SCRATCHPAD_BUILD_DATE = '2026-08-30';
 
   function apply() {
-    const v = document.getElementById('app-version');
-    const d = document.getElementById('app-build-date');
-    if (v) v.textContent = window.SCRATCHPAD_VERSION;
-    if (d) d.textContent = window.SCRATCHPAD_BUILD_DATE;
+    const slots = [
+      ['app-version', window.SCRATCHPAD_VERSION],
+      ['shell-version', window.SCRATCHPAD_VERSION],
+      ['app-build-date', window.SCRATCHPAD_BUILD_DATE],
+      ['shell-build-date', window.SCRATCHPAD_BUILD_DATE],
+    ];
+    for (const [id, value] of slots) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
   }
 
   if (document.readyState === 'loading') {

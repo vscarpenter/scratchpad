@@ -4999,3 +4999,27 @@ body:not(.page-privacy) {
 .import-options input[type='radio'] {
   accent-color: var(--accent);
 }
+
+/* Slim finishing strip under the shell: the page ends on purpose instead of
+   the columns shearing off at the viewport edge. */
+.shell-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 20px;
+  font: 500 10.5px/1 var(--mono);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.shell-foot a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.shell-foot a:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
