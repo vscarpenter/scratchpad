@@ -5115,6 +5115,7 @@
       });
       const blob = new Blob([Zip.createZip(files)], { type: 'application/zip' });
       downloadBlob(blob, `scratchpad-markdown-${exportStamp()}.zip`);
+      recordBackupDownload();
       toast('Markdown ZIP downloaded.');
     });
   }

@@ -15,9 +15,7 @@ async function setLastBackup(page, msAgo) {
 
 test.describe('backup status chip', () => {
   test('shows the missing state when no backup was ever recorded', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'backup-note', title: 'Important local note', body: 'Needs backup.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'backup-note', title: 'Important local note', body: 'Needs backup.' }]);
     await setLastBackup(page, null);
 
     const chip = page.locator('#backup-chip');
@@ -26,9 +24,7 @@ test.describe('backup status chip', () => {
   });
 
   test('shows healthy and aging states from the stored backup time', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'aging-note', title: 'Aging note', body: 'Body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'aging-note', title: 'Aging note', body: 'Body.' }]);
 
     await setLastBackup(page, 3 * DAY_MS);
     const chip = page.locator('#backup-chip');
@@ -41,9 +37,7 @@ test.describe('backup status chip', () => {
   });
 
   test('exporting from the chip menu records the backup and updates the chip immediately', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'backup-export-note', title: 'Export me', body: 'Backup body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'backup-export-note', title: 'Export me', body: 'Backup body.' }]);
     await setLastBackup(page, null);
     await expect(page.locator('#backup-chip')).toHaveAttribute('data-backup-state', 'missing');
 
@@ -60,10 +54,22 @@ test.describe('backup status chip', () => {
     await expect(page.locator('#backup-chip')).toContainText('Backed up today');
   });
 
+  test('a Markdown ZIP export counts as a backup too', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'md-export-note', title: 'Export me as Markdown', body: 'Backup body.' }]);
+    await setLastBackup(page, null);
+    await expect(page.locator('#backup-chip')).toHaveAttribute('data-backup-state', 'missing');
+
+    await openBackupMenu(page);
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#export-markdown-btn').click();
+    await downloadPromise;
+
+    await expect(page.locator('#backup-chip')).toHaveAttribute('data-backup-state', 'healthy');
+    await expect(page.locator('#backup-chip')).toContainText('Backed up today');
+  });
+
   test('the chip menu opens with the keyboard and returns focus on Escape', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'kbd-note', title: 'Keyboard note', body: 'Body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'kbd-note', title: 'Keyboard note', body: 'Body.' }]);
 
     await page.locator('#backup-chip').focus();
     await page.keyboard.press('Enter');
