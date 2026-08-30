@@ -1,30 +1,25 @@
-# Chronicle dialog recipe — apply design handoff
+# Chronicle dialog recipe — Phase 2 implementation
 
-Source spec: `design_handoff_chronicle_dialogs/` (README + snippets). Tier:
-Standard (bounded, exact code provided, no public contract change — ids/roles
-untouched; design already approved, so continuous pass per standing correction).
+Spec: `tasks/spec.md`. All four surfaces shipped as one red/green/refactor
+cycle each, one commit per surface, plus a visual-polish and docs commit.
 
 ## Plan
-- [x] 1. Survey test assertions touching dialog copy/structure — none assert on
-      the changed copy or structure; no spec updates needed.
-- [x] 2. Apply `index.html` hunks 1–3 (share zones, erase zone, palette footer).
-- [x] 3. Append recipe CSS block to end of `public/css/app.css` (order-dependent).
-- [x] 4. Targeted specs 155/155 green, then full `verify` green and full suite
-      920 passed / 7 skipped (chromium, firefox, webkit).
-- [x] 5. Visual check: all five dialogs captured light AND dark in
-      `.verify/chronicle-dialogs/` — rust tints and --accent-text verified.
-- [x] 6. `bash cloudfront/recompute-csp-hashes.sh` — all hashes verified, no
-      change (no inline scripts touched).
-- [x] 7. DESIGN.md: new "Dialogs" section (5 recipe rules) + Typography chrome
-      line amended (dialog titles now serif).
-- [x] 8. Commit. Handoff bundle left untracked (biome-formatted its .css so
-      check:format's untracked-file sweep passes).
+- [x] 1. Erase gating (`566a2db`) — disabled-until-ERASE contract; dead
+      error UI removed as the ratchet offset (deviation noted in spec).
+- [x] 2. Import preview (`ed1ece4`) — stat cards, consequence radios,
+      outcome-stating button; new `public/js/dialogs.js` module.
+- [x] 3. About "Your data" (`15e7c52`) — 3 stat cards, meta line, dotted
+      status rows with inline actions; all diagnostic ids preserved.
+- [x] 4. Quick capture spotlight (`e58364a`) — no title bar, live foot
+      preview + destination; pure helpers moved to ScratchpadDialogs.
+- [x] 5. Full verify green; full suite 932 passed / 7 skipped (3 browsers).
+- [x] 6. Light + dark screenshots in `.verify/chronicle-dialogs-phase2/`,
+      reviewed; erase gate made visibly inert + indigo radios (`5140165`).
+- [x] 7. CSP hashes verified unchanged; DESIGN.md Phase 2 note.
+- [x] 8. Docs commit. No version bump / deploy unless asked.
 
 ## Resuming From Here
-- Done: everything above; working tree committed.
-- Next: nothing pending from this task. Phase 2 of the handoff (About "Your
-  data" panel, import stat cards, quick-capture spotlight bar, erase button
-  gating) is designed but NOT implemented — specs available from the designer
-  on request.
-- Assumption: quick-capture title keeps its 19px size override but picks up
-  the serif family — treated as intended by the recipe.
+- Done: Phase 2 complete on main, all gates green, committed.
+- Next: nothing pending. Deploy needs an explicit go-ahead (version bump to
+  v3.14.0 + ./deploy.sh).
+- Blockers: none.

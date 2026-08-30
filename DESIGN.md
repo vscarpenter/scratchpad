@@ -147,6 +147,18 @@ Rules, in priority order:
 5. **Rust reserved for erasure.** The rust-tinted zone treatment appears only
    in the erase-local-data dialog and the About danger zone.
 
+Phase 2 (2026-08-30) extends the recipe. The About panel is "Your data":
+three stat cards (mono small-caps label, serif value), a quiet meta line,
+and hairline status rows whose token-colored dots pair with a text value —
+color is never the only signal — and carry their actions inline. Import
+preview counts render as the same stat cards, each conflict radio states its
+one-clause consequence, and the primary button states the outcome ("Import
+16 notes"). Quick capture is a spotlight bar — no title bar, `aria-label`
+names it — whose foot previews the exact line to be appended and where it
+lands. The erase button stays visibly disabled until ERASE is typed exactly.
+Native form controls join the one-accent rule via
+`accent-color: var(--accent)`.
+
 ## Interaction and accessibility
 
 - Interactive targets are at least 44px where space allows.

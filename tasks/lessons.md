@@ -23,3 +23,10 @@
   exemptions. When it fails, read which file it actually checked — and never
   run `biome format --write` on a legacy file to satisfy it: that reformats
   the whole file and buries the real change under ~1,200 lines of churn.
+- The structure ratchet counts EVERY function — test bodies and
+  test.describe callbacks included — and pins app.js's total line count.
+  Features pay their way: pure logic goes into a new v18-clean module
+  (window.ScratchpadX, precached in both service workers' shell list,
+  opted into jsconfig include), and app.js edits net out at or below the
+  recorded ceiling. A new test that grows a describe block past 40 lines
+  belongs in its own describe or spec file.
