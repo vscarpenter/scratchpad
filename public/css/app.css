@@ -5001,15 +5001,16 @@ body:not(.page-privacy) {
 }
 
 /* Slim finishing strip under the shell: the page ends on purpose instead of
-   the columns shearing off at the viewport edge. */
+   the columns shearing off at the viewport edge. Site links, then the quiet
+   version/deploy meta. */
 .shell-foot {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 20px;
-  font: 500 10.5px/1 var(--mono);
+  gap: 14px;
+  height: 40px;
+  font: 500 11px/1 var(--mono);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -5022,4 +5023,34 @@ body:not(.page-privacy) {
 .shell-foot a:hover {
   color: var(--accent-text);
   text-decoration: underline;
+}
+
+.shell-foot-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.shell-foot-links a {
+  font: 500 11.5px/1 var(--sans);
+  color: var(--text-secondary);
+}
+
+.shell-foot-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--hairline-color-2);
+}
+
+.shell-foot-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+@media (max-width: 640px) {
+  .shell-foot-divider,
+  .shell-foot-meta {
+    display: none;
+  }
 }
