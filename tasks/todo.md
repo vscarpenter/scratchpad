@@ -14,9 +14,10 @@ Two user-reported issues after v3.14.0.
       light + dark + 390/360px in `.verify/site-nav/`.
 
 ## Resuming From Here
-- Done: v3.15.0 (backup fix + pill nav) and v3.16.0 (20px shell footer
-  strip — version · deploy date · vinny.dev, commit `1793630`, release
-  `5ec8220`) both shipped 2026-08-30; v3.16.0 invalidation
-  I8OTMN9VC19D69PV9XYXNQ81XC, production verified, pushed and in sync.
+- Done: v3.15.0 (backup fix + pill nav), v3.16.0 (20px shell footer strip),
+  and v3.17.0 (footer grows to 40px with Guide/About/Privacy/Terms links,
+  meta hidden ≤640px; feature `ef432e9`, release `27a12a9`, invalidation
+  I7NSYVRUH21ZPM448PYLN3JJKP) all shipped 2026-08-30; production verified,
+  pushed and in sync.
 - Next: nothing pending.
 - Blockers: none.
