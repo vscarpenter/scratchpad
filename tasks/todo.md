@@ -14,9 +14,9 @@ Two user-reported issues after v3.14.0.
       light + dark + 390/360px in `.verify/site-nav/`.
 
 ## Resuming From Here
-- Done: both fixes shipped as v3.15.0 on 2026-08-30 (deployed as
-  scratchpad-deploy, invalidation I8L6VFHV8H4VV0EFHA0Y0QK9BU, production
-  verified — version, nav markup, and the backup-record call all live;
-  pushed through `23f939e`).
+- Done: v3.15.0 (backup fix + pill nav) and v3.16.0 (20px shell footer
+  strip — version · deploy date · vinny.dev, commit `1793630`, release
+  `5ec8220`) both shipped 2026-08-30; v3.16.0 invalidation
+  I8OTMN9VC19D69PV9XYXNQ81XC, production verified, pushed and in sync.
 - Next: nothing pending.
 - Blockers: none.
