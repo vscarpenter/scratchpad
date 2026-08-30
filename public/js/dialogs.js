@@ -68,7 +68,25 @@
     return count === 1 ? 'Import 1 note' : `Import ${count} notes`;
   }
 
+  /**
+   * Maps a diagnostics value to its status-dot state. Attention states and
+   * unknowable states are named; anything else (a timestamp, "Ready",
+   * "Persistent") reads as healthy.
+   * @param {string | null} value
+   */
+  function statusState(value) {
+    const text = (value || '').trim();
+    if (['Best effort', 'No backup recorded', 'Available after reload'].includes(text)) return 'warn';
+    if (!text || text === 'Unavailable' || text === 'Checking...') return 'muted';
+    return 'ok';
+  }
+
   /** @type {Window & typeof globalThis & { ScratchpadDialogs?: object }} */
   const root = window;
-  root.ScratchpadDialogs = Object.freeze({ importPreviewRows, importRejectedContent, importOutcomeLabel });
+  root.ScratchpadDialogs = Object.freeze({
+    importPreviewRows,
+    importRejectedContent,
+    importOutcomeLabel,
+    statusState,
+  });
 }

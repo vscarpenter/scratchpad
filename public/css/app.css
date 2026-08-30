@@ -2184,44 +2184,11 @@ body:not(.page-privacy) {
   margin: 16px 0;
 }
 
-.diagnostics-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.diagnostics-list div {
-  padding: 8px 10px;
-  border: var(--border-hair);
-  border-radius: var(--r-sm);
-  background: var(--paper);
-}
-
-.diagnostics-list dt {
-  color: var(--gray-700);
-  font: 500 11px/1.2 var(--mono);
-  margin-bottom: 5px;
-}
-
-.diagnostics-list dd {
-  margin: 0;
-  color: var(--slate);
-  font: 600 13px/1.25 var(--sans);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-}
-
-.about-control-row,
 .pwa-update-actions,
 .conflict-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.about-control-row {
-  margin-top: 10px;
 }
 
 .danger-zone {
@@ -4848,4 +4815,72 @@ body:not(.page-privacy) {
   font-size: 12px;
   line-height: 1.4;
   color: var(--text-secondary);
+}
+
+/* About — Phase 2 "Your data": stat cards, quiet meta line, dotted status
+   rows with inline actions. */
+.data-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.data-stats div {
+  border: var(--border-hair);
+  border-radius: var(--r-md);
+  background: var(--gray-100);
+  padding: 10px 12px;
+}
+.data-stats dt {
+  font: 600 10px/1.4 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.data-stats dd {
+  margin: 2px 0 0;
+  font: 600 18px/1.25 var(--serif);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.data-meta {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.data-status {
+  margin: 0;
+}
+.data-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 9px 0;
+  border-top: var(--border-hair);
+  font-size: 13px;
+}
+.data-status-row .status-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.data-status-row[data-state='ok'] .status-dot {
+  background: var(--success);
+}
+.data-status-row[data-state='warn'] .status-dot {
+  background: var(--warning);
+}
+.data-status-term {
+  color: var(--text-secondary);
+}
+.data-status-value {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }

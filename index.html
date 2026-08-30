@@ -493,49 +493,47 @@
       </p>
 
       <section id="diagnostics-panel" class="diagnostics-panel" aria-labelledby="diagnostics-title">
-        <h3 id="diagnostics-title" class="about-subhead">Local diagnostics</h3>
-        <dl class="diagnostics-list">
+        <h3 id="diagnostics-title" class="about-subhead">Your data</h3>
+        <dl class="data-stats">
           <div>
-            <dt>Active notes</dt>
+            <dt>Notes</dt>
             <dd id="diagnostic-active-notes">Checking...</dd>
-          </div>
-          <div>
-            <dt>Archived notes</dt>
-            <dd id="diagnostic-archived-notes">Checking...</dd>
-          </div>
-          <div>
-            <dt>Trash</dt>
-            <dd id="diagnostic-trashed-notes">Checking...</dd>
           </div>
           <div>
             <dt>Revisions</dt>
             <dd id="diagnostic-revisions">Checking...</dd>
           </div>
           <div>
-            <dt>Drafts</dt>
-            <dd id="diagnostic-drafts">Checking...</dd>
-          </div>
-          <div>
             <dt>Storage</dt>
             <dd id="diagnostic-storage">Checking...</dd>
           </div>
-          <div>
-            <dt>Storage protection</dt>
-            <dd id="diagnostic-storage-protection">Checking...</dd>
-          </div>
-          <div>
-            <dt>Last backup</dt>
-            <dd id="diagnostic-last-backup">Checking...</dd>
-          </div>
-          <div>
-            <dt>Offline cache</dt>
-            <dd id="diagnostic-offline-cache">Checking...</dd>
-          </div>
         </dl>
-        <div class="about-control-row">
-          <button id="protect-storage-btn" class="btn btn-secondary btn-sm" type="button">Protect local data</button>
-          <button id="check-updates-btn" class="btn btn-secondary btn-sm" type="button">Check for updates</button>
-          <button id="refresh-offline-copy-btn" class="btn btn-secondary btn-sm" type="button">Refresh offline copy</button>
+        <p class="data-meta">
+          Archived <span id="diagnostic-archived-notes">…</span>
+          <span aria-hidden="true">·</span>
+          Trash <span id="diagnostic-trashed-notes">…</span>
+          <span aria-hidden="true">·</span>
+          Drafts <span id="diagnostic-drafts">…</span>
+        </p>
+        <div class="data-status">
+          <div class="data-status-row">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="data-status-term">Storage protection</span>
+            <span id="diagnostic-storage-protection" class="data-status-value">Checking...</span>
+            <button id="protect-storage-btn" class="btn btn-secondary btn-sm" type="button">Protect local data</button>
+          </div>
+          <div class="data-status-row">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="data-status-term">Last backup</span>
+            <span id="diagnostic-last-backup" class="data-status-value">Checking...</span>
+          </div>
+          <div class="data-status-row">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="data-status-term">Offline cache</span>
+            <span id="diagnostic-offline-cache" class="data-status-value">Checking...</span>
+            <button id="refresh-offline-copy-btn" class="btn btn-secondary btn-sm" type="button">Refresh offline copy</button>
+            <button id="check-updates-btn" class="btn btn-secondary btn-sm" type="button">Check for updates</button>
+          </div>
         </div>
       </section>
 

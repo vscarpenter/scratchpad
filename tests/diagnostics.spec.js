@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { gotoApp, seedRawNotes } = require('./helpers');
 
 test.describe('local diagnostics', () => {
   test('reports active, archived, trash, revision, draft, and storage health', async ({ page }) => {
@@ -40,5 +40,21 @@ test.describe('local diagnostics', () => {
     await expect(page.locator('#diagnostic-drafts')).toHaveText('1');
     await expect(page.locator('#diagnostic-storage')).not.toHaveText('Checking...');
     await expect(page.locator('#diagnostic-last-backup')).not.toHaveText('Checking...');
+  });
+});
+
+test.describe('Your data panel', () => {
+  test('shows stat cards and dotted status rows', async ({ page }) => {
+    await gotoApp(page);
+    await page.locator('#open-about').click();
+    await expect(page.locator('#diagnostics-title')).toHaveText('Your data');
+    await expect(page.locator('.data-stats > div')).toHaveCount(3);
+    const rows = page.locator('.data-status-row');
+    await expect(rows).toHaveCount(3);
+    for (let i = 0; i < 3; i += 1) {
+      // The exact state varies by browser capability; every row must still
+      // resolve to a known dot state once diagnostics settle.
+      await expect(rows.nth(i)).toHaveAttribute('data-state', /^(ok|warn|muted)$/);
+    }
   });
 });

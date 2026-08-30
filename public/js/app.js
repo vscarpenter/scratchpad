@@ -4194,6 +4194,7 @@
       }
       els.diagnosticStorageProtection.textContent = granted ? 'Persistent' : 'Best effort';
       els.protectStorageBtn.hidden = granted;
+      syncDataStatusRows();
       toast(
         granted ? 'Local data protection is on.' : 'Protection was not granted. Keep exporting backups.',
         { tone: granted ? 'success' : 'info' }
@@ -4230,6 +4231,14 @@
     await renderStorageProtection();
     els.diagnosticLastBackup.textContent = formatBackupStatus(lastBackupAt());
     els.diagnosticOfflineCache.textContent = offlineCacheStatus();
+    syncDataStatusRows();
+  }
+
+  function syncDataStatusRows() {
+    for (const row of document.querySelectorAll('.data-status-row')) {
+      const value = row.querySelector('.data-status-value');
+      row.dataset.state = window.ScratchpadDialogs.statusState(value ? value.textContent : '');
+    }
   }
 
   function openAboutDialog() {
