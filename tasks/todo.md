@@ -14,6 +14,9 @@ Two user-reported issues after v3.14.0.
       light + dark + 390/360px in `.verify/site-nav/`.
 
 ## Resuming From Here
-- Done: both fixes committed on main, NOT yet deployed or pushed.
-- Next: on go-ahead — push, bump to v3.15.0, ./deploy.sh.
+- Done: both fixes shipped as v3.15.0 on 2026-08-30 (deployed as
+  scratchpad-deploy, invalidation I8L6VFHV8H4VV0EFHA0Y0QK9BU, production
+  verified — version, nav markup, and the backup-record call all live;
+  pushed through `23f939e`).
+- Next: nothing pending.
 - Blockers: none.
