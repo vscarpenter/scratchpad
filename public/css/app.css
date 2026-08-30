@@ -180,7 +180,7 @@ body:not(.page-privacy) {
   color: var(--ink);
 }
 
-.theme-toggle {
+body:not(.page-privacy) .theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -209,7 +209,7 @@ body:not(.page-privacy) {
    entering small enough (0.35) that the swap reads as a new glyph arriving,
    not the old one resizing. First paint applies styles without transitioning,
    so nothing animates on page load. */
-.theme-toggle {
+body:not(.page-privacy) .theme-toggle {
   display: inline-grid;
   place-items: center;
 }

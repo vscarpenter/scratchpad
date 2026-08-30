@@ -22,13 +22,13 @@ async function makeShare(page, payload) {
 
 async function stubShare(page, envelope, options = {}) {
   const { expiresAt = Date.now() + 86400000, status = 200 } = options;
-  await page.route('**/api/share/*', (routeCall) => routeCall.fulfill({
-    status,
-    contentType: 'application/json',
-    body: status === 200
-      ? JSON.stringify({ ...envelope, expiresAt })
-      : JSON.stringify({ error: 'nope' }),
-  }));
+  await page.route('**/api/share/*', (routeCall) =>
+    routeCall.fulfill({
+      status,
+      contentType: 'application/json',
+      body: status === 200 ? JSON.stringify({ ...envelope, expiresAt }) : JSON.stringify({ error: 'nope' }),
+    }),
+  );
 }
 
 const ANY_KEY = 'A'.repeat(43);
@@ -36,7 +36,11 @@ const ANY_KEY = 'A'.repeat(43);
 test.describe('share viewer', () => {
   test('renders a decrypted note', async ({ page }) => {
     const { envelope, key } = await makeShare(page, {
-      v: 1, title: 'Shared note', body: '# Hello\n\nSome **bold** text.', tags: ['ideas'], updatedAt: 1,
+      v: 1,
+      title: 'Shared note',
+      body: '# Hello\n\nSome **bold** text.',
+      tags: ['ideas'],
+      updatedAt: 1,
     });
     await stubShare(page, envelope);
     await page.goto('/share.html?id=AbCdEf123456#k=' + key);
@@ -73,7 +77,11 @@ test.describe('share viewer', () => {
 
   test('escapes the title rather than parsing it as markup', async ({ page }) => {
     const { envelope, key } = await makeShare(page, {
-      v: 1, title: '<img src=x onerror="window.__pwned=true">', body: 'b', tags: [], updatedAt: 1,
+      v: 1,
+      title: '<img src=x onerror="window.__pwned=true">',
+      body: 'b',
+      tags: [],
+      updatedAt: 1,
     });
     await stubShare(page, envelope);
     await page.goto('/share.html?id=AbCdEf123456#k=' + key);
@@ -85,7 +93,11 @@ test.describe('share viewer', () => {
 
   test('escapes tags rather than parsing them as markup', async ({ page }) => {
     const { envelope, key } = await makeShare(page, {
-      v: 1, title: 't', body: 'b', tags: ['<img src=x onerror="window.__pwned=true">'], updatedAt: 1,
+      v: 1,
+      title: 't',
+      body: 'b',
+      tags: ['<img src=x onerror="window.__pwned=true">'],
+      updatedAt: 1,
     });
     await stubShare(page, envelope);
     await page.goto('/share.html?id=AbCdEf123456#k=' + key);
@@ -97,7 +109,11 @@ test.describe('share viewer', () => {
 
   test('opens external links in a new tab with noopener', async ({ page }) => {
     const { envelope, key } = await makeShare(page, {
-      v: 1, title: 't', body: '[out](https://example.com)', tags: [], updatedAt: 1,
+      v: 1,
+      title: 't',
+      body: '[out](https://example.com)',
+      tags: [],
+      updatedAt: 1,
     });
     await stubShare(page, envelope);
     await page.goto('/share.html?id=AbCdEf123456#k=' + key);
@@ -190,14 +206,18 @@ test.describe('share viewer', () => {
     const relative = await page.evaluate(() =>
       [...document.querySelectorAll('script[src], link[href], a[href], img[src]')]
         .map((el) => el.getAttribute('src') || el.getAttribute('href'))
-        .filter((value) => value && !/^(?:\/|https?:|#|data:|mailto:)/.test(value))
+        .filter((value) => value && !/^(?:\/|https?:|#|data:|mailto:)/.test(value)),
     );
     expect(relative, `relative paths break when served at /s/<id>: ${relative.join(', ')}`).toEqual([]);
   });
 
   test('renders when served from an /s/<id> path, not just ?id=', async ({ page }) => {
     const { envelope, key } = await makeShare(page, {
-      v: 1, title: 'From a share path', body: 'Served at /s/<id>.', tags: [], updatedAt: 1,
+      v: 1,
+      title: 'From a share path',
+      body: 'Served at /s/<id>.',
+      tags: [],
+      updatedAt: 1,
     });
     await stubShare(page, envelope);
 
@@ -206,11 +226,14 @@ test.describe('share viewer', () => {
     // resolve its subresources from that path exactly as production does.
     const html = await (await page.request.get('/share.html')).text();
     await page.route('**/s/AbCdEf123456', (routeCall) =>
-      routeCall.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html }));
+      routeCall.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html }),
+    );
 
     const failed = [];
     page.on('requestfailed', (req) => failed.push(req.url()));
-    page.on('response', (res) => { if (res.status() === 404) failed.push(res.url()); });
+    page.on('response', (res) => {
+      if (res.status() === 404) failed.push(res.url());
+    });
 
     await page.goto('/s/AbCdEf123456#k=' + key);
     await expect(page.locator('.share-title')).toHaveText('From a share path');
@@ -230,5 +253,29 @@ test.describe('share viewer', () => {
     await page.locator('#theme-toggle').click();
     await expect(page.locator('#theme-label')).toHaveText('light');
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe('share page footer', () => {
+  test('carries the site strip with root-absolute links', async ({ page }) => {
+    await page.goto('/share.html');
+    const foot = page.locator('.shell-foot');
+    await expect(foot).toBeVisible();
+    // Root-absolute on purpose: share.html also serves at /s/<id>, where a
+    // relative href would resolve into the router's catch-all.
+    for (const target of ['/guide.html', '/about.html', '/privacy.html', '/terms.html']) {
+      await expect(foot.locator(`a[href="${target}"]`)).toBeVisible();
+    }
+    await expect(foot.locator('#shell-version')).toHaveText(/^\d+\.\d+\.\d+$/);
+    await expect(foot.locator('#shell-build-date')).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+    await expect(foot.locator('a[href="https://vinny.dev"]')).toHaveAttribute('rel', /noopener/);
+  });
+
+  test('the header theme toggle renders on one line', async ({ page }) => {
+    // The app shell's glyph-stack grid rule must stay scoped to the shell;
+    // unscoped it turns this text button into two stacked grid rows.
+    await page.goto('/share.html');
+    const clipped = await page.locator('#theme-toggle').evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+    expect(clipped, 'theme toggle stacked into grid rows').toBe(false);
   });
 });
