@@ -2464,60 +2464,8 @@ body:not(.page-privacy) {
   overscroll-behavior: contain;
 }
 
-.quick-capture-dialog .dialog-head {
-  align-items: center;
-  padding: 22px 24px 12px;
-  border-bottom: 0;
-}
-
-.quick-capture-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.quick-capture-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  color: var(--accent-text);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-strong-border);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm);
-}
-
-.quick-capture-mark svg {
-  width: 21px;
-  height: 21px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.quick-capture-dialog .dialog-head h2 {
-  font-size: 19px;
-  letter-spacing: -0.02em;
-}
-
-.quick-capture-subtitle {
-  margin: 3px 0 0;
-  color: var(--text-secondary);
-  font: 400 13px/1.4 var(--sans);
-}
-
-.quick-capture-dialog .dialog-close {
-  flex: 0 0 auto;
-}
-
 .quick-capture-dialog .dialog-body {
-  padding: 6px 24px 24px;
+  padding: 22px 24px 20px;
 }
 
 .quick-capture-control {
@@ -2651,17 +2599,8 @@ body:not(.page-privacy) {
 }
 
 @media (max-width: 480px) {
-  .quick-capture-dialog .dialog-head {
-    padding: 20px 18px 12px;
-  }
-
   .quick-capture-dialog .dialog-body {
-    padding: 6px 18px 20px;
-  }
-
-  .quick-capture-mark {
-    width: 38px;
-    height: 38px;
+    padding: 18px;
   }
 
   .quick-capture-hint {
@@ -4883,4 +4822,26 @@ body:not(.page-privacy) {
   font-weight: 600;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+
+/* Quick capture — Phase 2 spotlight: no title bar; the foot previews the
+   exact line that will be appended. */
+.quick-capture-preview {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+}
+.quick-capture-stamp {
+  margin-right: 6px;
+  font: 600 11px/1 var(--mono);
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+}
+.quick-capture-text.is-empty {
+  color: var(--text-muted);
+  font-style: italic;
 }

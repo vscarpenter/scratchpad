@@ -68,6 +68,35 @@
     return count === 1 ? 'Import 1 note' : `Import ${count} notes`;
   }
 
+  /** HH:MM for the line quick capture appends. */
+  function captureTimestamp() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  /**
+   * @param {string} body
+   * @param {string} line
+   */
+  function appendCaptureLine(body, line) {
+    const trimmed = (body || '').replace(/\s+$/, '');
+    return (trimmed ? trimmed + '\n' : '') + line + '\n';
+  }
+
+  /**
+   * The spotlight foot mirrors the capture line: bold timestamp, then the
+   * typed text — or a muted placeholder while the input is empty.
+   * @param {string} stamp
+   * @param {string} text
+   */
+  function capturePreview(stamp, text) {
+    const stampEl = textEl('strong', stamp);
+    stampEl.className = 'quick-capture-stamp';
+    const body = textEl('span', text || 'your note…');
+    body.className = text ? 'quick-capture-text' : 'quick-capture-text is-empty';
+    return [stampEl, body];
+  }
+
   /**
    * Maps a diagnostics value to its status-dot state. Attention states and
    * unknowable states are named; anything else (a timestamp, "Ready",
@@ -88,5 +117,8 @@
     importRejectedContent,
     importOutcomeLabel,
     statusState,
+    captureTimestamp,
+    appendCaptureLine,
+    capturePreview,
   });
 }

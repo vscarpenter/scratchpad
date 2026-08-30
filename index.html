@@ -794,26 +794,11 @@
     </div>
   </dialog>
 
-  <dialog id="quick-capture-dialog" class="dialog quick-capture-dialog" aria-labelledby="quick-capture-title">
-    <div class="dialog-head">
-      <div class="quick-capture-heading">
-        <span class="quick-capture-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path d="M7 6.5h7M7 10.5h5" />
-            <path d="M6.5 3.5h9a2 2 0 0 1 2 2v7.25L12.25 18H6.5a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z" />
-            <path d="M12.25 18v-3.25a2 2 0 0 1 2-2h3.25" />
-          </svg>
-        </span>
-        <div>
-          <h2 id="quick-capture-title">Quick capture</h2>
-          <p id="quick-capture-description" class="quick-capture-subtitle">
-            Add a timestamped line to today’s note.
-          </p>
-        </div>
-      </div>
-      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
-    </div>
+  <dialog id="quick-capture-dialog" class="dialog quick-capture-dialog" aria-label="Quick capture">
     <div class="dialog-body">
+      <p id="quick-capture-description" class="visually-hidden">
+        Add a timestamped line to today’s note.
+      </p>
       <div class="quick-capture-control">
         <label class="visually-hidden" for="quick-capture-input">Capture text</label>
         <input
@@ -823,7 +808,7 @@
           placeholder="What’s on your mind?"
           autocomplete="off"
           spellcheck="true"
-          aria-describedby="quick-capture-description quick-capture-hint"
+          aria-describedby="quick-capture-description"
         />
         <button
           id="quick-capture-submit"
@@ -837,8 +822,9 @@
           </svg>
         </button>
       </div>
-      <div id="quick-capture-hint" class="quick-capture-hint">
-        <span class="quick-capture-destination">Today’s note</span>
+      <div class="quick-capture-hint">
+        <p id="quick-capture-preview" class="quick-capture-preview" aria-hidden="true"></p>
+        <span id="quick-capture-destination" class="quick-capture-destination">Today’s note</span>
         <span class="quick-capture-shortcut"><kbd>Enter</kbd> to capture</span>
       </div>
     </div>
