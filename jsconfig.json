@@ -13,6 +13,12 @@
     "target": "ES2022",
     "types": ["node"]
   },
-  "include": ["playwright.config.js", "public/js/search.js", "public/js/search-view.js", "scripts/quality/**/*.mjs"],
+  "include": [
+    "playwright.config.js",
+    "public/js/dialogs.js",
+    "public/js/search.js",
+    "public/js/search-view.js",
+    "scripts/quality/**/*.mjs"
+  ],
   "exclude": ["node_modules", "public/js/vendor"]
 }

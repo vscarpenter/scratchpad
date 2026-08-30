@@ -5441,36 +5441,23 @@
   }
 
   function renderImportPreview(preview) {
-    const rows = [
-      ['New notes', preview.newCount],
-      ['Conflicts', preview.conflicts],
-      ['Rejected entries', preview.invalid + preview.invalidFolders],
-      ['Revision snapshots', preview.revisions.length],
-      ['Rejected revisions', preview.invalidRevisions],
-      ['Folders', preview.folders.length],
-    ].map(([label, value]) => [
-      el('dt', { text: label }),
-      el('dd', { text: String(value) }),
-    ]).flat();
-    els.importPreviewCounts.replaceChildren(...rows);
+    els.importPreviewCounts.replaceChildren(...window.ScratchpadDialogs.importPreviewRows(preview));
     const rejected = [...preview.rejectedNotes, ...preview.rejectedFolders, ...preview.rejectedRevisions];
-    if (rejected.length) {
-      const shown = rejected.slice(0, 5);
-      const items = shown.map((msg) => el('li', { text: msg }));
-      if (rejected.length > shown.length) {
-        items.push(el('li', { text: `${rejected.length - shown.length} more rejected entr${rejected.length - shown.length === 1 ? 'y' : 'ies'}.` }));
-      }
-      els.importPreviewErrors.replaceChildren(
-        el('p', { text: 'Skipped invalid import content' }),
-        el('ul', { children: items })
-      );
-      els.importPreviewErrors.hidden = false;
-    } else {
-      els.importPreviewErrors.replaceChildren();
-      els.importPreviewErrors.hidden = true;
-    }
+    els.importPreviewErrors.hidden = !rejected.length;
+    els.importPreviewErrors.replaceChildren(
+      ...(rejected.length ? window.ScratchpadDialogs.importRejectedContent(rejected) : [])
+    );
     const duplicate = document.querySelector('input[name="import-conflict-mode"][value="duplicate"]');
     if (duplicate) duplicate.checked = true;
+    updateImportOutcome();
+  }
+
+  function updateImportOutcome() {
+    const selected = document.querySelector('input[name="import-conflict-mode"]:checked');
+    els.confirmImport.textContent = window.ScratchpadDialogs.importOutcomeLabel(
+      state.importPreview,
+      selected ? selected.value : 'duplicate'
+    );
   }
 
   async function confirmImport() {
@@ -6032,6 +6019,9 @@
       worker.postMessage({ type: 'SKIP_WAITING' });
     });
     els.confirmImport.addEventListener('click', confirmImport);
+    for (const radio of document.querySelectorAll('input[name="import-conflict-mode"]')) {
+      radio.addEventListener('change', updateImportOutcome);
+    }
     els.confirmTagDelete.addEventListener('click', deletePendingTag);
     els.bulkApplyTag.addEventListener('click', applyBulkTag);
     els.bulkTagInput.addEventListener('keydown', (e) => {

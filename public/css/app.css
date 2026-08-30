@@ -4818,3 +4818,34 @@ body:not(.page-privacy) {
   color: var(--text-muted);
 }
 .command-palette-foot .kbd { font-size: 10px; }
+
+/* Import preview — Phase 2: counts as stat cards, radios carry their
+   consequence. Overrides the base .import-counts grid above by source order. */
+.import-counts {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+.import-counts div {
+  border: var(--border-hair);
+  border-radius: var(--r-md);
+  background: var(--gray-100);
+  padding: 10px 12px;
+}
+.import-counts dd {
+  margin: 2px 0 0;
+  font: 600 20px/1.2 var(--serif);
+  color: var(--ink);
+}
+.import-options label {
+  align-items: flex-start;
+}
+.import-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.import-consequence {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}

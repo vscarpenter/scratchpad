@@ -24,9 +24,9 @@ test.describe('import — validation and conflicts', () => {
     await chooser.setFiles({
       name: 'about-import.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify([
-        { id: 'about-imported', title: 'About import', body: 'Imported from About.' },
-      ])),
+      buffer: Buffer.from(
+        JSON.stringify([{ id: 'about-imported', title: 'About import', body: 'Imported from About.' }]),
+      ),
     });
 
     await expect(page.locator('#import-preview-dialog')).toBeVisible();
@@ -57,6 +57,7 @@ test.describe('import — validation and conflicts', () => {
     await expect(page.locator('#import-preview-counts dd').nth(0)).toHaveText('1');
     await expect(page.locator('#import-preview-counts dd').nth(2)).toHaveText('3');
     await expect(page.locator('#import-preview-counts dd').nth(4)).toHaveText('1');
+    await expect(page.locator('#import-preview-counts > div')).toHaveCount(6);
 
     await page.locator('#confirm-import').click();
     await expect(page.locator('#import-preview-dialog')).toBeHidden();
@@ -65,17 +66,15 @@ test.describe('import — validation and conflicts', () => {
   });
 
   test('replaces matching ids only when the replace conflict mode is selected', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'same-id', title: 'Existing note', body: 'Old body', tags: [] },
-    ]);
+    await seedRawNotes(page, [{ id: 'same-id', title: 'Existing note', body: 'Old body', tags: [] }]);
 
     await importJson(page, {
-      notes: [
-        { id: 'same-id', title: 'Imported replacement', body: 'New body', tags: ['new'] },
-      ],
+      notes: [{ id: 'same-id', title: 'Imported replacement', body: 'New body', tags: ['new'] }],
     });
     await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    await expect(page.locator('.import-consequence')).toHaveCount(3);
     await page.locator('input[name="import-conflict-mode"][value="replace"]').check();
+    await expect(page.locator('#confirm-import')).toHaveText('Import 1 note');
     await page.locator('#confirm-import').click();
 
     await expect(page.locator('.note-row')).toHaveCount(1);
@@ -84,17 +83,15 @@ test.describe('import — validation and conflicts', () => {
   });
 
   test('skips matching ids when the skip conflict mode is selected', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'skip-id', title: 'Existing note', body: 'Untouched body', tags: [] },
-    ]);
+    await seedRawNotes(page, [{ id: 'skip-id', title: 'Existing note', body: 'Untouched body', tags: [] }]);
 
     await importJson(page, {
-      notes: [
-        { id: 'skip-id', title: 'Should not import', body: 'New body', tags: ['new'] },
-      ],
+      notes: [{ id: 'skip-id', title: 'Should not import', body: 'New body', tags: ['new'] }],
     });
     await expect(page.locator('#import-preview-dialog')).toBeVisible();
+    // Nothing new would import in skip mode, so the label stays generic.
     await page.locator('input[name="import-conflict-mode"][value="skip"]').check();
+    await expect(page.locator('#confirm-import')).toHaveText('Import');
     await page.locator('#confirm-import').click();
 
     await expect(page.locator('.note-row')).toHaveCount(1);
@@ -153,34 +150,37 @@ test.describe('import — validation and conflicts', () => {
     const oversizedBody = 'x'.repeat(2 * 1024 * 1024 + 1);
     const oversizedTitle = 'T'.repeat(241);
     const oversizedTags = Array.from({ length: 21 }, (_, index) =>
-      index === 20 ? 'tag-' + 'z'.repeat(49) : `tag-${index}`
+      index === 20 ? 'tag-' + 'z'.repeat(49) : `tag-${index}`,
     );
-    await page.evaluate(async ({ body, title, tags }) => {
-      const timestamp = Date.now();
-      await window.ScratchpadDB.put({
-        id: 'native-large-note',
-        title,
-        body,
-        tags,
-        pinned: false,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        deletedAt: null,
-        lastDraftAt: null,
-      });
-      await window.ScratchpadDB.putRevision({
-        id: 'native-large-revision',
-        noteId: 'native-large-note',
-        title,
-        body: body.slice(0, 200001),
-        tags,
-        pinned: false,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        savedAt: timestamp,
-        deletedAt: null,
-      });
-    }, { body: oversizedBody, title: oversizedTitle, tags: oversizedTags });
+    await page.evaluate(
+      async ({ body, title, tags }) => {
+        const timestamp = Date.now();
+        await window.ScratchpadDB.put({
+          id: 'native-large-note',
+          title,
+          body,
+          tags,
+          pinned: false,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          deletedAt: null,
+          lastDraftAt: null,
+        });
+        await window.ScratchpadDB.putRevision({
+          id: 'native-large-revision',
+          noteId: 'native-large-note',
+          title,
+          body: body.slice(0, 200001),
+          tags,
+          pinned: false,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          savedAt: timestamp,
+          deletedAt: null,
+        });
+      },
+      { body: oversizedBody, title: oversizedTitle, tags: oversizedTags },
+    );
 
     await openBackupMenu(page);
     const downloadPromise = page.waitForEvent('download');
@@ -263,9 +263,10 @@ test.describe('import — validation and conflicts', () => {
       const originalImportRecords = db.importRecords.bind(db);
       /** @type {undefined | (() => void)} */
       let release;
-      db.importRecords = (notes, revisions, revisionLimit) => new Promise((resolve, reject) => {
-        release = () => originalImportRecords(notes, revisions, revisionLimit).then(resolve, reject);
-      });
+      db.importRecords = (notes, revisions, revisionLimit) =>
+        new Promise((resolve, reject) => {
+          release = () => originalImportRecords(notes, revisions, revisionLimit).then(resolve, reject);
+        });
       /** @type {any} */ (window).__releaseImportRecords = () => release && release();
     });
 
@@ -285,13 +286,20 @@ test.describe('import — validation and conflicts', () => {
     await page.evaluate(() => {
       const db = /** @type {any} */ (window.ScratchpadDB);
       const originalImportRecords = db.importRecords.bind(db);
-      db.importRecords = (notes, _revisions, revisionLimit) => originalImportRecords(notes, [{
-        id: 'uncloneable-revision',
-        noteId: notes[0].id,
-        title: 'Cannot clone',
-        body: () => 'functions cannot be stored in IndexedDB',
-        savedAt: Date.now(),
-      }], revisionLimit);
+      db.importRecords = (notes, _revisions, revisionLimit) =>
+        originalImportRecords(
+          notes,
+          [
+            {
+              id: 'uncloneable-revision',
+              noteId: notes[0].id,
+              title: 'Cannot clone',
+              body: () => 'functions cannot be stored in IndexedDB',
+              savedAt: Date.now(),
+            },
+          ],
+          revisionLimit,
+        );
     });
 
     await page.locator('#confirm-import').click();

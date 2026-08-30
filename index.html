@@ -611,9 +611,27 @@
       <div id="import-preview-errors" class="import-errors" hidden></div>
       <fieldset class="import-options">
         <legend>Conflicts</legend>
-        <label><input type="radio" name="import-conflict-mode" value="duplicate" checked /> Import as duplicates</label>
-        <label><input type="radio" name="import-conflict-mode" value="replace" /> Replace matching ids</label>
-        <label><input type="radio" name="import-conflict-mode" value="skip" /> Skip conflicts</label>
+        <label>
+          <input type="radio" name="import-conflict-mode" value="duplicate" checked />
+          <span class="import-choice">
+            <span>Import as duplicates</span>
+            <span class="import-consequence">Conflicting notes come in as copies; nothing is overwritten.</span>
+          </span>
+        </label>
+        <label>
+          <input type="radio" name="import-conflict-mode" value="replace" />
+          <span class="import-choice">
+            <span>Replace matching ids</span>
+            <span class="import-consequence">Existing notes with matching ids are overwritten.</span>
+          </span>
+        </label>
+        <label>
+          <input type="radio" name="import-conflict-mode" value="skip" />
+          <span class="import-choice">
+            <span>Skip conflicts</span>
+            <span class="import-consequence">Only new notes come in; conflicts stay untouched.</span>
+          </span>
+        </label>
       </fieldset>
     </div>
     <div class="dialog-foot">
@@ -911,6 +929,7 @@
   <script src="/public/js/seed.js"></script>
   <script src="/public/js/search.js"></script>
   <script src="/public/js/search-view.js"></script>
+  <script src="/public/js/dialogs.js"></script>
   <script src="/public/js/app.js"></script>
 
   <script>

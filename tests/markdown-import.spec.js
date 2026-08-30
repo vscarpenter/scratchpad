@@ -8,20 +8,22 @@ test.describe('Markdown import', () => {
       {
         name: 'frontmatter.md',
         mimeType: 'text/markdown',
-        buffer: Buffer.from([
-          '---',
-          'title: "Imported plan"',
-          'tags: ["work", "private"]',
-          'pinned: true',
-          'monthlyReviewMonth: "2026-07"',
-          'createdAt: "2026-07-01T12:00:00.000Z"',
-          'updatedAt: "2026-07-02T12:00:00.000Z"',
-          '---',
-          '',
-          '# Imported plan',
-          '',
-          'Keep this local.',
-        ].join('\n')),
+        buffer: Buffer.from(
+          [
+            '---',
+            'title: "Imported plan"',
+            'tags: ["work", "private"]',
+            'pinned: true',
+            'monthlyReviewMonth: "2026-07"',
+            'createdAt: "2026-07-01T12:00:00.000Z"',
+            'updatedAt: "2026-07-02T12:00:00.000Z"',
+            '---',
+            '',
+            '# Imported plan',
+            '',
+            'Keep this local.',
+          ].join('\n'),
+        ),
       },
       {
         name: 'plain-note.markdown',
@@ -32,6 +34,7 @@ test.describe('Markdown import', () => {
 
     await expect(page.locator('#import-preview-dialog')).toBeVisible();
     await expect(page.locator('#import-preview-counts')).toContainText('2');
+    await expect(page.locator('#confirm-import')).toHaveText('Import 2 notes');
     await page.locator('#confirm-import').click();
 
     const imported = await page.evaluate(async () =>
@@ -43,7 +46,7 @@ test.describe('Markdown import', () => {
           pinned,
           monthlyReviewMonth,
         }))
-        .sort((a, b) => a.title.localeCompare(b.title))
+        .sort((a, b) => a.title.localeCompare(b.title)),
     );
     expect(imported).toEqual([
       {
