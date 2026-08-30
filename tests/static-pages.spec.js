@@ -31,19 +31,17 @@ test.describe('shared static-page behavior', () => {
     });
   }
 
-  test('the theme control keeps its text-button width on every content page', async ({ page }) => {
-    // Regression guard: the app shell styles .theme-toggle as a 28px square
-    // icon button. Content pages render "Theme: auto" as text, so inheriting
-    // that rule collapses the control. The square rules must stay scoped to
-    // body:not(.page-privacy).
+  test('the theme control is a compact icon button on every content page', async ({ page }) => {
+    // The pill nav renders the toggle as a small circular icon control; the
+    // cycling state text stays for AT via the visually hidden #theme-label.
     for (const pageInfo of PAGES) {
       await page.goto(pageInfo.path);
       const toggle = page.locator('#theme-toggle');
       await expect(toggle).toBeVisible();
+      await expect(toggle).toHaveAttribute('aria-label', /theme/i);
       const box = await toggle.boundingBox();
-      expect(box.width, `${pageInfo.path} theme toggle width`).toBeGreaterThan(60);
-      const clipped = await toggle.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
-      expect(clipped, `${pageInfo.path} theme toggle text clipped`).toBe(false);
+      expect(box.width, `${pageInfo.path} theme toggle width`).toBeLessThan(48);
+      expect(Math.abs(box.width - box.height), `${pageInfo.path} toggle squareness`).toBeLessThanOrEqual(2);
     }
   });
 
@@ -54,5 +52,26 @@ test.describe('shared static-page behavior', () => {
     await page.locator('a.btn-primary[href="index.html"]').first().click();
     await expect(page).toHaveURL(/\/index\.html$/);
     await expect(page.locator('#app-shell')).toBeVisible();
+  });
+});
+
+test.describe('site navigation', () => {
+  for (const pageInfo of PAGES) {
+    test(`${pageInfo.path} marks itself current in the pill nav`, async ({ page }) => {
+      await page.goto(pageInfo.path);
+      const nav = page.locator('.site-nav');
+      await expect(nav).toBeVisible();
+      await expect(nav.locator('a[aria-current="page"]')).toHaveAttribute('href', pageInfo.path.slice(1));
+      await expect(nav.locator('a.site-nav-cta[href="index.html"]')).toHaveText('Open app');
+      await expect(nav.locator('.site-nav-brand')).toBeVisible();
+    });
+  }
+
+  test('the pill nav does not overflow a narrow viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/guide.html');
+    await expect(page.locator('.site-nav')).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(overflow, 'horizontal page overflow at 390px').toBe(false);
   });
 });

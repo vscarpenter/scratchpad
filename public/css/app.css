@@ -2946,6 +2946,7 @@ body:not(.page-privacy) {
   overflow: visible;
 }
 
+/* Quiet top bar — still used by the share viewer (share.html). */
 .privacy-header {
   flex-shrink: 0;
   display: flex;
@@ -2969,21 +2970,162 @@ body:not(.page-privacy) {
 .brand-link:hover { color: var(--accent); }
 .brand-title-inline { font: inherit; }
 
-/* About page: the header becomes a centered floating glass nav pill. */
-.page-about .privacy-header {
-  width: fit-content;
-  max-width: calc(100% - 40px);
-  margin: 20px auto 0;
-  justify-content: flex-start;
+/* Floating pill site nav — every content page (design-reference 1e,
+   tokenized for Indigo on Paper). */
+.site-nav-wrap {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 20px 16px 4px;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
   gap: 20px;
-  height: 48px;
-  padding: 0 8px 0 18px;
-  border: var(--glass-border);
+  max-width: 100%;
+  height: 52px;
+  padding: 0 10px 0 16px;
+  background: var(--paper);
+  border: var(--border-hair);
   border-radius: var(--r-pill);
-  background: var(--glass-bg-pill);
-  -webkit-backdrop-filter: blur(var(--glass-blur-pill));
-  backdrop-filter: blur(var(--glass-blur-pill));
-  box-shadow: var(--shadow-pill-float);
+  box-shadow: var(--shadow-md);
+}
+
+.site-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.site-nav-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--accent-grad);
+  color: var(--on-accent);
+}
+
+.site-nav-mark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.site-nav-wordmark {
+  font: 600 16px/1 var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.site-nav-links a {
+  font: 500 13.5px/1 var(--sans);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-nav-links a:hover {
+  color: var(--ink);
+}
+
+.site-nav-links a[aria-current='page'] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.site-nav-theme {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--control-fill);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.site-nav-theme svg {
+  width: 17px;
+  height: 17px;
+}
+
+.site-nav-theme:hover {
+  color: var(--ink);
+}
+
+.site-nav-cta {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .site-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+    height: 48px;
+    padding: 0 8px 0 10px;
+  }
+
+  .site-nav-wordmark {
+    display: none;
+  }
+
+  .site-nav-links {
+    gap: 12px;
+  }
+
+  .site-nav-links a {
+    font-size: 12.5px;
+  }
+
+  .site-nav-cta {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 430px) {
+  .site-nav-wrap {
+    padding: 14px 8px 4px;
+  }
+
+  .site-nav {
+    gap: 7px;
+  }
+
+  .site-nav-links {
+    gap: 8px;
+  }
+
+  .site-nav-links a {
+    font-size: 12px;
+  }
+
+  .site-nav-theme {
+    width: 34px;
+    height: 34px;
+  }
+
+  .site-nav-cta {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 12.5px;
+  }
 }
 
 .privacy-main {
