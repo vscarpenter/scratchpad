@@ -1,41 +1,30 @@
-# Standards and simplification — implementation
+# Chronicle dialog recipe — apply design handoff
 
-Spec: `tasks/spec.md` (approved 2026-08-27)
+Source spec: `design_handoff_chronicle_dialogs/` (README + snippets). Tier:
+Standard (bounded, exact code provided, no public contract change — ids/roles
+untouched; design already approved, so continuous pass per standing correction).
 
-- [x] Restore the green baseline
-- [x] Reconcile standards and tooling
-- [x] Remove retired search-scope code
-- [x] Consolidate accessible menu behavior
-- [x] Flatten the Indigo on Paper CSS cascade
-- [x] Run final local, browser, privacy, and visual verification
-- [x] Produce the change report and comprehension quiz
-
-## Resuming From Here
-
-- Current phase: complete on local branch `refactor/standards-and-simplification`.
-- Verification: `npm run verify`; frozen install; vendor currency; JavaScript and shell syntax; 890 Playwright tests passed with 7 intentional skips across Chromium, Firefox, and WebKit; nine responsive light/dark screenshots reviewed.
-- Next: answer the comprehension quiz in the change report before any merge. Push, deploy, release, AWS, and CSP publication remain unauthorised and were not performed.
-- Assumptions: v18 becomes canonical; legacy structural and coverage gaps use non-regression ratchets; the accepted plan authorizes continuous implementation and focused local commits.
-- Blockers: none.
-
----
-
-# Indigo on Paper (v5) — implementation history
-
-Spec: docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md (approved)
-
-- [x] RED: typography.spec.js flipped to serif contract; design-tokens.spec.js added (warmth + AA + dark parity + accent pin); both failed for the right reason
-- [x] GREEN: inkwell-tokens.css warm swap (light + both dark blocks byte-parallel)
-- [x] GREEN: app.css serif voice (doc title, list heading, rendered headings, date spine)
-- [x] Sweep: select chevrons re-hued (components light %2375706A, tokens dark %23948A79)
-- [x] Verify: full Playwright suite 871/871 green (chromium/firefox/webkit); browser screenshots light+dark in .verify/indigo-on-paper-*.jpg
-- [x] Docs: repo CLAUDE.md design section, DESIGN.md front matter + body
-- [x] Commit d6c4878 (version.js pre-existing edit and GSD-Design-Reference.html left alone)
-
-- [x] Released: v3.10.0 bump (264040c), pushed, deployed as scratchpad-deploy, invalidation I6MKSI3CEGAC5D388MBCL0823D; production verified (3.10.0 + warm tokens live)
+## Plan
+- [x] 1. Survey test assertions touching dialog copy/structure — none assert on
+      the changed copy or structure; no spec updates needed.
+- [x] 2. Apply `index.html` hunks 1–3 (share zones, erase zone, palette footer).
+- [x] 3. Append recipe CSS block to end of `public/css/app.css` (order-dependent).
+- [x] 4. Targeted specs 155/155 green, then full `verify` green and full suite
+      920 passed / 7 skipped (chromium, firefox, webkit).
+- [x] 5. Visual check: all five dialogs captured light AND dark in
+      `.verify/chronicle-dialogs/` — rust tints and --accent-text verified.
+- [x] 6. `bash cloudfront/recompute-csp-hashes.sh` — all hashes verified, no
+      change (no inline scripts touched).
+- [x] 7. DESIGN.md: new "Dialogs" section (5 recipe rules) + Typography chrome
+      line amended (dialog titles now serif).
+- [x] 8. Commit. Handoff bundle left untracked (biome-formatted its .css so
+      check:format's untracked-file sweep passes).
 
 ## Resuming From Here
-- Done: v5 designed, implemented, tested (871 green), committed, pushed, and deployed to notes.vinny.dev as v3.10.0.
-- Next (only if asked): OG image warm refresh (public/og-image.svg → rsvg-convert; banner still shows cool porcelain); .impeccable/design.json regeneration (left stale on purpose — accent unchanged).
-- Assumptions: --text-muted stays decorative-secondary (ratios match or beat v4, documented in spec); pure-white --paper is intentional per GSD surface.
-- Blockers: none.
+- Done: everything above; working tree committed.
+- Next: nothing pending from this task. Phase 2 of the handoff (About "Your
+  data" panel, import stat cards, quick-capture spotlight bar, erase button
+  gating) is designed but NOT implemented — specs available from the designer
+  on request.
+- Assumption: quick-capture title keeps its 19px size override but picks up
+  the serif family — treated as intended by the recipe.

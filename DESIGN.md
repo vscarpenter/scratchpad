@@ -82,7 +82,8 @@ Use platform fonts only.
 
 - The editorial serif carries the display voice: the document title, the list
   date heading, the date-spine numeral, and rendered prose headings.
-- System sans owns the chrome: rail, note index rows, controls, and dialogs.
+- System sans owns the chrome: rail, note index rows, controls, and dialog
+  bodies. Dialog titles take the serif (see Dialogs).
 - Monospace is reserved for compact metadata and keyboard hints — it is
   Scratchpad's second signature alongside indigo.
 
@@ -125,6 +126,26 @@ the primary New note action.
 At desktop widths the open document has a left-hand date marker and a thin
 vertical Indigo rule. It should align with the title block and feel printed into
 the page, not floated above it.
+
+## Dialogs
+
+Every dialog follows the Chronicle dialog recipe (2026-08 design review).
+Rules, in priority order:
+
+1. **Serif titles.** Dialog titles render in the editorial serif at weight 600,
+   20px, -0.01em tracking. Everything else in the dialog chrome stays sans.
+2. **Mono small-caps zone labels.** Sections inside a dialog are named by a
+   `.zone-label`: mono, 600, 9.5–10px, 0.14em tracking, uppercase. Labels name
+   trust boundaries, not headings — "On this device — nothing is sent",
+   "Public link — uploads an encrypted copy", "This browser will forget".
+3. **Hairlines for structure.** Zones are `--r-md` boxes with hairline or
+   tinted one-pixel borders. No new shadows; dialog primary and danger buttons
+   carry no glow.
+4. **Indigo for action only.** Primary buttons, the command palette's selected
+   row (accent-soft fill plus a two-pixel inset indigo bar — the app's
+   selected-row signature), and the public share zone's border.
+5. **Rust reserved for erasure.** The rust-tinted zone treatment appears only
+   in the erase-local-data dialog and the About danger zone.
 
 ## Interaction and accessibility
 
