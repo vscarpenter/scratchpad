@@ -668,7 +668,10 @@
       <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
     </div>
     <div class="dialog-body passphrase-form">
-      <p>This cannot be undone. Export a backup first if you may need these notes again.</p>
+      <div class="erase-zone">
+        <p class="zone-label zone-label-danger">This browser will forget</p>
+        <p>Every note, draft, revision, and Scratchpad preference — with no undo and no server copy to recover from. Export a backup first if you may need these notes again.</p>
+      </div>
       <div>
         <label class="field-label" for="erase-confirmation">Type <strong>ERASE</strong> to confirm</label>
         <input id="erase-confirmation" class="input" type="text" autocomplete="off" spellcheck="false" />
@@ -713,6 +716,11 @@
         aria-live="polite"
         aria-atomic="true"
       ></p>
+      <div class="command-palette-foot" aria-hidden="true">
+        <span><kbd class="kbd">↑↓</kbd> navigate</span>
+        <span><kbd class="kbd">↵</kbd> open</span>
+        <span><kbd class="kbd">esc</kbd> close</span>
+      </div>
     </div>
   </dialog>
 
@@ -827,18 +835,20 @@
       <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
     </div>
     <div class="dialog-body">
-      <p>Copying and emailing happen on this device — nothing is sent anywhere.</p>
-      <p id="share-mailto-warning" class="share-warning" hidden>
-        This note is long. The email draft will be truncated; copy to clipboard to send the full note.
-      </p>
-      <div class="share-actions">
-        <button id="share-copy" class="btn btn-primary" type="button">Copy to clipboard</button>
-        <button id="share-email" class="btn btn-secondary" type="button">Open in email</button>
+      <div class="share-zone share-zone-local">
+        <p class="zone-label zone-label-local"><span class="zone-dot" aria-hidden="true"></span>On this device — nothing is sent</p>
+        <p id="share-mailto-warning" class="share-warning" hidden>
+          This note is long. The email draft will be truncated; copy to clipboard to send the full note.
+        </p>
+        <div class="share-actions">
+          <button id="share-copy" class="btn btn-primary" type="button">Copy to clipboard</button>
+          <button id="share-email" class="btn btn-secondary" type="button">Open in email</button>
+        </div>
+        <p id="share-status" class="share-status" role="status" aria-live="polite" hidden></p>
       </div>
-      <p id="share-status" class="share-status" role="status" aria-live="polite" hidden></p>
 
-      <section class="share-link-section" aria-labelledby="share-link-heading">
-        <h3 id="share-link-heading" class="share-link-heading">Public link</h3>
+      <section class="share-link-section share-zone share-zone-public" aria-labelledby="share-link-heading">
+        <h3 id="share-link-heading" class="share-link-heading zone-label zone-label-public">Public link — uploads an encrypted copy</h3>
 
         <div id="share-explainer" class="share-explainer" hidden>
           <p>A public link uploads an <strong>encrypted copy</strong> of this note’s title, text, and tags.</p>
