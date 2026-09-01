@@ -25,20 +25,14 @@ before refactoring shared behavior. Keep commits focused and use
 
 ### Full-suite release gate
 
-The complete suite saturates a 14-core machine to the point where Playwright
-starves attaching the guide popup's new page target (`guide.spec.js` — the
-test is deterministic solo and in every subset, and only fails under the full
-52-file parallel load). Release verification therefore runs the whole suite
-as two halves at default parallelism:
-
-```sh
-node scripts/release-gate.mjs
-```
-
-Every test still runs across Chromium, Firefox, and WebKit; the halves keep
-the sustained machine load under the target-attach threshold. CI (workers: 1,
-retries: 2) runs the suite in one serialized process and is authoritative for
-pull requests.
+The guide popup test (`guide.spec.js` "command palette opens the guide in a new
+tab") is CI-scoped: new-page target attach is ambient-load-sensitive, and on
+a busy local machine Playwright starves attaching the popup even solo, in a
+pristine process, with long timeouts, and across retries. CI (workers: 1,
+retries: 2) runs serialized on controlled hardware where the assertion is
+deterministic, so the test skips locally with a visible reason and runs in
+CI. Local `npm test` is otherwise the full gate; `CI=1 npm test` forces the
+serialized shape including the popup test.
 
 `npm run verify` enforces the incremental quality contract. Existing file,
 function, nesting, type, and coverage gaps are recorded as ceilings, not

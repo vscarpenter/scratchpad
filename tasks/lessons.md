@@ -40,8 +40,12 @@
   bisect over the tree.
 - The guide popup failure was never app behavior: `window.open` from the
   palette is deterministic solo and in every suite subset, and only Playwright's
-  new-page target attach starves under the complete 52-file parallel load on
-  this machine (a fresh browser launch took 73s in the failing runs). Sticky
-  across retries, immune to worker counts and pristine processes. The release
-  gate now runs the suite as two halves (`scripts/release-gate.mjs`), split at
-  guide.spec.js; CI (workers: 1, retries: 2) stays authoritative for PRs.
+  new-page target attach starves under sustained suite-machine saturation
+  (observed: a fresh browser launch took 73s in failing runs; ambient machine
+  load moves the threshold run to run). No timeout budget (30s through 120s),
+  retry count, worker count, pristine browser process, or suite split made
+  target attach reliable under saturation — a two-half split that passed twice
+  in the morning failed to replicate in the afternoon. The gate that survives
+  a busy machine keeps the test out of the saturated run: full suite minus the
+  popup test, then the popup test solo (`scripts/release-gate.mjs`). CI
+  (workers: 1, retries: 2) stays authoritative for PRs.

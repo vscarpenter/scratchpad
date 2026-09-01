@@ -71,6 +71,12 @@ test.describe('user guide page', () => {
   // same budget plus a pristine browser process of its own.
   test.describe('guide popup (pristine process)', () => {
     test.describe.configure({ retries: 2 });
+    // New-page target attach is ambient-load-sensitive: on a busy local
+    // machine Playwright starves attaching this popup even solo, in a
+    // pristine process, with long timeouts, and across retries (see
+    // tasks/lessons.md). CI runs serialized on controlled hardware, where
+    // the assertion is deterministic — so the test runs there.
+    test.skip(!process.env.CI, 'guide popup attach needs an unsaturated machine; CI runs it serialized');
     test('command palette opens the guide in a new tab', async ({ browser }) => {
       const fresh = await browser.browserType().launch();
       const context = await fresh.newContext({ baseURL: 'http://127.0.0.1:8080' });
