@@ -249,6 +249,7 @@ reports whether it succeeded.
 | `⌘/Ctrl` + `Shift` + `D`       | Open today's note                         |
 | `⌘/Ctrl` + `Shift` + `Space`   | Quick capture                             |
 | `⌘/Ctrl` + `S`                 | Save (when editing)                       |
+| `⌘/Ctrl` + `F`                 | Find and replace (while editing)          |
 | `⌘/Ctrl` + `K` or `/`          | Focus the search box                      |
 | `↑` / `↓`                      | Move through search results               |
 | `Enter`                        | Open the focused search result            |

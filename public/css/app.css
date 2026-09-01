@@ -1533,6 +1533,29 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--text-muted);
 }
 
+@media (pointer: coarse), (max-width: 640px) {
+  .find-bar {
+    inset-inline: 12px;
+  }
+  .find-bar .input {
+    flex: 1 1 auto;
+    width: auto;
+    height: 44px;
+    font-size: 16px; /* keeps iOS from zooming on focus */
+  }
+  .find-chip,
+  .find-bar .icon-btn {
+    height: 44px;
+    min-width: 44px;
+  }
+  .find-bar .btn {
+    min-height: 44px;
+  }
+  .find-row {
+    flex-wrap: wrap;
+  }
+}
+
 .editor-format {
   position: sticky;
   top: 6px;

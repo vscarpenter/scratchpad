@@ -137,6 +137,25 @@
         ticking the wrong line. Edit the note normally to make changes.
       </p>
 
+      <h2 id="find-replace">Find and replace</h2>
+      <p>
+        While editing, press <kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">F</kbd> for a small
+        find bar over the note. Type a query and the count of matches appears beside it;
+        <kbd class="kbd">Enter</kbd> steps through them and
+        <kbd class="kbd">Shift</kbd>+<kbd class="kbd">Enter</kbd> steps back.
+      </p>
+      <p>
+        The <strong>Aa</strong> chip matches case exactly; the <strong>.*</strong> chip switches
+        to regular expressions, where the replacement text understands <code>$1</code>-style
+        capture references. An invalid pattern shows a quiet notice instead of matching anything.
+      </p>
+      <p>
+        Enter replacement text and press <kbd class="kbd">⌘/Ctrl</kbd>+<kbd class="kbd">Enter</kbd>
+        (or <strong>Replace</strong>) to swap the current match, or <strong>Replace all</strong> to
+        rewrite every match at once. <kbd class="kbd">Esc</kbd> closes the bar and puts you back
+        in the text.
+      </p>
+
       <h2 id="daily-notes">Daily notes &amp; quick capture</h2>
       <p>
         The calendar button in the sidebar — or <kbd class="kbd">⌘/Ctrl</kbd><kbd class="kbd">Shift</kbd><kbd class="kbd">D</kbd>,
@@ -460,6 +479,8 @@
           <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">Shift</kbd> <kbd class="kbd">Space</kbd></td><td>Quick capture</td></tr>
           <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">Shift</kbd> <kbd class="kbd">P</kbd></td><td>Command palette</td></tr>
           <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">Shift</kbd> <kbd class="kbd">F</kbd></td><td>Toggle focus mode (hide sidebar and note chrome)</td></tr>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">F</kbd></td><td>Find in note (while editing)</td></tr>
+          <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">Enter</kbd></td><td>Replace the found match</td></tr>
           <tr><td><kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">K</kbd> or <kbd class="kbd">/</kbd></td><td>Focus search</td></tr>
           <tr><td><kbd class="kbd">↑</kbd> / <kbd class="kbd">↓</kbd></td><td>Move through search results</td></tr>
           <tr><td><kbd class="kbd">Enter</kbd></td><td>Open the focused search result</td></tr>

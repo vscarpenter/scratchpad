@@ -39,6 +39,8 @@
     '/public/js/search.js',
     '/public/js/search-view.js',
     '/public/js/dialogs.js',
+    '/public/js/editor-format.js',
+    '/public/js/find-replace.js',
     '/public/js/share.js',
     '/public/js/app.js',
   ];

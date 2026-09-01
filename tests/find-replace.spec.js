@@ -239,6 +239,61 @@ test.describe('find bar replace modes', () => {
   });
 });
 
+test.describe('find bar accessibility', () => {
+  test('exposes toolbar semantics, labeled controls, and pressed toggles', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-a11y', title: 'A11y note', body: 'alpha beta' }]);
+
+    await page.locator('.note-row[data-id="find-a11y"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await expect(page.locator('#find-bar')).toHaveAttribute('role', 'toolbar');
+    await expect(page.locator('#find-bar')).toHaveAccessibleName('Find in note');
+    await expect(page.locator('#find-input')).toHaveAccessibleName('Find in note');
+    await expect(page.locator('#find-replace-input')).toHaveAccessibleName('Replace with');
+    await expect(page.locator('#find-close')).toHaveAccessibleName('Close find bar');
+    await expect(page.locator('#find-case-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#find-case-toggle').click();
+    await expect(page.locator('#find-case-toggle')).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+test.describe('find bar on narrow viewports', () => {
+  test('keeps 44px targets and 16px inputs without horizontal overflow at 390px', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-mobile', title: 'Mobile note', body: 'alpha beta alpha' }]);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('.note-row[data-id="find-mobile"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await expect(page.locator('#find-bar')).toBeVisible();
+
+    const px = (v) => Math.round(v || 0);
+    for (const name of ['#find-input', '#find-case-toggle', '#find-regex-toggle', '#find-close']) {
+      const box = await page.locator(name).boundingBox();
+      expect.soft(px(box && box.height), `${name} height`).toBeGreaterThanOrEqual(44);
+    }
+    const font = await page.locator('#find-input').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(font).toBeGreaterThanOrEqual(16);
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(390);
+  });
+
+  test('stays available in focus mode', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-focus', title: 'Focus note', body: 'alpha beta alpha' }]);
+
+    await page.locator('.note-row[data-id="find-focus"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+Shift+F');
+    await page.keyboard.press('Control+F');
+    await expect(page.locator('#find-bar')).toBeVisible();
+    await page.locator('#find-input').fill('alpha');
+    await expect(page.locator('#find-count')).toHaveText('1 of 2');
+  });
+});
+
 test.describe('find bar in the command palette', () => {
   test('lists Find in note only while editing and opens from the palette', async ({ page }) => {
     await gotoApp(page);
