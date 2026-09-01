@@ -48,6 +48,114 @@ test.describe('find bar and edit mode', () => {
   });
 });
 
+test.describe('find bar matching', () => {
+  test('counts matches and presents the current one as a native selection', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-count', title: 'Counter note', body: 'alpha beta alpha' }]);
+
+    await page.locator('.note-row[data-id="find-count"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('alpha');
+
+    await expect(page.locator('#find-count')).toHaveText('1 of 2');
+    await expect(page.locator('#find-live')).toHaveText('1 of 2');
+    const range = await page.evaluate(() => {
+      const editor = document.getElementById('note-editor');
+      return { start: editor.selectionStart, end: editor.selectionEnd };
+    });
+    expect(range).toEqual({ start: 0, end: 5 });
+  });
+
+  test('Enter and Shift+Enter cycle with wraparound', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-cycle', title: 'Cycle note', body: 'alpha beta alpha alpha' }]);
+
+    await page.locator('.note-row[data-id="find-cycle"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('alpha');
+
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#find-count')).toHaveText('2 of 3');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#find-count')).toHaveText('3 of 3');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#find-count')).toHaveText('1 of 3');
+    await page.keyboard.press('Shift+Enter');
+    await expect(page.locator('#find-count')).toHaveText('3 of 3');
+  });
+});
+
+test.describe('find bar toggles', () => {
+  test('the case chip makes matching case-sensitive and resets to the top', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-case', title: 'Case note', body: 'beta Beta beta' }]);
+
+    await page.locator('.note-row[data-id="find-case"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('Beta');
+    await expect(page.locator('#find-count')).toHaveText('1 of 3');
+
+    await page.locator('#find-case-toggle').click();
+    await expect(page.locator('#find-case-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#find-count')).toHaveText('1 of 1');
+  });
+
+  test('the regex chip matches patterns and invalid patterns show a quiet notice', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-regex', title: 'Regex note', body: 'alpha beta gamma' }]);
+
+    await page.locator('.note-row[data-id="find-regex"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-regex-toggle').click();
+    await page.locator('#find-input').fill('alp.a');
+    await expect(page.locator('#find-count')).toHaveText('1 of 1');
+
+    await page.locator('#find-input').fill('[');
+    await expect(page.locator('#find-notice')).toBeVisible();
+    await expect(page.locator('#find-notice')).toHaveText('Invalid pattern');
+    await expect(page.locator('#find-count')).toBeHidden();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#find-notice')).toBeVisible();
+  });
+});
+
+test.describe('find bar counters track the note', () => {
+  test('the counter updates when the note text changes', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-track', title: 'Track note', body: 'alpha beta' }]);
+
+    await page.locator('.note-row[data-id="find-track"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('alpha');
+    await expect(page.locator('#find-count')).toHaveText('1 of 1');
+
+    // Type another match directly in the editor; the counter must follow.
+    await page.locator('#note-editor').click();
+    await page.keyboard.press('ControlOrMeta+End');
+    await page.keyboard.type(' alpha');
+    await expect(page.locator('#find-count')).toHaveText('1 of 2');
+  });
+
+  test('zero matches read as 0 of 0 and the counter hides for an empty query', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-zero', title: 'Zero note', body: 'alpha beta' }]);
+
+    await page.locator('.note-row[data-id="find-zero"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('zzz');
+    await expect(page.locator('#find-count')).toHaveText('0 of 0');
+
+    await page.locator('#find-input').fill('');
+    await expect(page.locator('#find-count')).toBeHidden();
+  });
+});
+
 test.describe('find bar in the command palette', () => {
   test('lists Find in note only while editing and opens from the palette', async ({ page }) => {
     await gotoApp(page);
