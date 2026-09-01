@@ -3346,62 +3346,7 @@
 
   function applyEditorFormat(format) {
     if (!state.editing || !els.editor || els.editor.hidden) return;
-
-    const editor = els.editor;
-    const value = editor.value;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const selected = value.slice(start, end);
-    let replacement = selected;
-    let nextStart = start;
-    let nextEnd = end;
-
-    if (format === 'bold') {
-      replacement = '**' + (selected || 'bold text') + '**';
-      nextStart = start + 2;
-      nextEnd = nextStart + (selected || 'bold text').length;
-    } else if (format === 'italic') {
-      replacement = '*' + (selected || 'italic text') + '*';
-      nextStart = start + 1;
-      nextEnd = nextStart + (selected || 'italic text').length;
-    } else if (format === 'code') {
-      replacement = '`' + (selected || 'code') + '`';
-      nextStart = start + 1;
-      nextEnd = nextStart + (selected || 'code').length;
-    } else if (format === 'link') {
-      const text = selected || 'link text';
-      const url = 'https://example.com';
-      replacement = '[' + text + '](' + url + ')';
-      if (selected) {
-        nextStart = start + text.length + 3;
-        nextEnd = nextStart + url.length;
-      } else {
-        nextStart = start + 1;
-        nextEnd = nextStart + text.length;
-      }
-    } else if (format === 'h2') {
-      const text = selected || 'Heading';
-      replacement = '## ' + text;
-      nextStart = start + 3;
-      nextEnd = nextStart + text.length;
-    } else if (format === 'list') {
-      const text = selected || 'List item';
-      replacement = '- ' + text;
-      nextStart = start + 2;
-      nextEnd = nextStart + text.length;
-    } else if (format === 'quote') {
-      const text = selected || 'Quote';
-      replacement = '> ' + text;
-      nextStart = start + 2;
-      nextEnd = nextStart + text.length;
-    } else {
-      return;
-    }
-
-    editor.setRangeText(replacement, start, end, 'end');
-    editor.focus();
-    editor.setSelectionRange(nextStart, nextEnd);
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    window.ScratchpadFormat.apply(els.editor, format);
   }
 
   // -------- Dialogs --------
@@ -4720,6 +4665,16 @@
         meta: 'Create a copy of the selected note',
         keywords: 'copy clone duplicate',
         run: duplicateCurrentNote,
+      });
+    }
+
+    if (state.editing && window.ScratchpadFind) {
+      commands.push({
+        id: 'find-in-note',
+        label: 'Find in note',
+        meta: '⌘/Ctrl+F — find and replace in this note',
+        keywords: 'find replace search locate text',
+        run: () => window.ScratchpadFind.open(),
       });
     }
 
@@ -6223,6 +6178,9 @@
       return matches.length ? matches[0].id : null;
     });
     initCrossTabSync();
+    if (window.ScratchpadFind) {
+      window.ScratchpadFind.init({ editor: els.editor, onDirty: markDirty });
+    }
     bindEvents();
     try {
       await purgeExpiredTrash();

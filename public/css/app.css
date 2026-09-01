@@ -1474,6 +1474,65 @@ body:not(.page-privacy) .theme-toggle {
 }
 
 /* Floating format pill: sticks above the writing surface in edit mode. */
+/* Find and replace: a flat tool surface floating over the note document.
+   Opaque and hairlined per the shell rule — not glass. */
+.find-bar {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 8px;
+  z-index: var(--z-raised);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--paper);
+  border: var(--border-hair);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+}
+.find-bar[hidden] { display: none; }
+.find-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.find-bar .input {
+  height: 30px;
+  width: 200px;
+}
+.find-count {
+  font: 12px var(--sans);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.find-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 7px;
+  font: 600 12px var(--sans);
+  color: var(--text-secondary);
+  background: var(--control-fill);
+  border: 1px solid var(--hairline-color-2);
+  border-radius: var(--r-sm);
+}
+.find-chip[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.find-bar .icon-btn {
+  height: 30px;
+  width: 30px;
+}
+.find-notice {
+  margin: 0;
+  font: 12px var(--sans);
+  color: var(--text-muted);
+}
+
 .editor-format {
   position: sticky;
   top: 6px;

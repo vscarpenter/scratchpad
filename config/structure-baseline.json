@@ -5,11 +5,11 @@
     "nestingDepth": 3
   },
   "legacyTotals": {
-    "longFunctions": 103,
-    "deepFunctions": 12
+    "longFunctions": 102,
+    "deepFunctions": 11
   },
   "oversizeFiles": {
-    "public/js/app.js": 6246,
+    "public/js/app.js": 6204,
     "public/js/db.js": 418,
     "tests/daily-note.spec.js": 405,
     "tests/share-link.spec.js": 430
