@@ -32,6 +32,22 @@ const HTML_SHELLS = new Set(shellsMatch[1].split(/\s+/).filter(Boolean));
 
 const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
 
+// The Playwright suite hammers this single server from parallel workers, so
+// cache file bodies keyed by mtime: hundreds of redundant disk reads per run
+// become metadata checks, while a touched file still invalidates instantly
+// during hands-on development.
+const fileCache = new Map();
+
+/** @param {string} file @returns {Promise<Buffer>} */
+async function readDeployed(file) {
+  const stats = await fs.stat(file);
+  const cached = fileCache.get(file);
+  if (cached && cached.mtimeMs === stats.mtimeMs) return cached.body;
+  const body = await fs.readFile(file);
+  fileCache.set(file, { mtimeMs: stats.mtimeMs, body });
+  return body;
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -81,7 +97,7 @@ const server = createServer(async (req, res) => {
   if (!file) return deny(404, 'Not found');
 
   try {
-    const body = await fs.readFile(file);
+    const body = await readDeployed(file);
     res.writeHead(200, {
       'content-type': MIME[extname(file)] || 'application/octet-stream',
       'content-length': body.length,
