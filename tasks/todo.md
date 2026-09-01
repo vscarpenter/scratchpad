@@ -53,20 +53,20 @@ halves, split at guide.spec.js.
   keeps the popup test out of the saturated run entirely: full suite minus
   that test, then the test solo.
 
-## Ship steps — remaining
+## Ship steps — complete
 
-- [ ] 1. `npm test` — official release gate: the full suite, with the
-      CI-scoped popup test skipped locally with a visible reason
-- [ ] 2. `npm run verify` — full quality gate on the final tree
-- [ ] 3. `bash cloudfront/recompute-csp-hashes.sh` — must report no change
-      (all new code is external files; no inline `<script>` was touched)
-- [ ] 4. Visual spot-check via `node scripts/dev-server.mjs`: find bar open,
-      cycling, replace, invalid-regex notice — light + dark, 1440px and 390px;
-      screenshots to `.verify/find-replace/`
-- [ ] 5. Commit `chore(release): v3.19.0 find and replace` (version bump is
-      already in the tree)
-- [ ] 6. Record the ship in this ledger
-- [ ] 7. Deploy only on an explicit "yes, deploy" (`./deploy.sh --dry-run`
+- [x] 1. Release gate: full suite minus the popup test, 1007 passed / 7
+      skipped / 0 failed (2026-09-01, sane ambient); popup test solo green
+      ×5 under light load; CI-scoped in `b8d1a0f`. A fresh evening run was
+      impossible — machine at load 72 with Bitdefender pegging a core —
+      and any timing-sensitive test flakes there, not just this one.
+- [x] 2. `npm run verify` green on the final tree; coverage 40.20%
+- [x] 3. `bash cloudfront/recompute-csp-hashes.sh` — all sources [OK],
+      no change (new code is external files only)
+- [x] 4. Visual spot-check captured to `.verify/find-replace/` — find,
+      replace, replace-all toast, invalid pattern, dark mode, 390px
+- [x] 5. `chore(release): v3.19.0 find and replace` committed
+- [ ] 6. Deploy only on an explicit "yes, deploy" (`./deploy.sh --dry-run`
       first; confirm `aws sts get-caller-identity` is the scratchpad-deploy
       profile)
 
