@@ -18,7 +18,7 @@ const SECTION_IDS = [
 ];
 
 test.describe('user guide page', () => {
-  test('loads with title and every TOC section', async ({ page }) => {
+  test('loads with title and every TOC section', async ({ page, context }) => {
     await page.goto('/guide.html');
     await expect(page.locator('h1')).toContainText('How to use Scratchpad');
     for (const id of SECTION_IDS) {
@@ -26,7 +26,7 @@ test.describe('user guide page', () => {
     }
   });
 
-  test('documents Home, the folder switcher, and global search', async ({ page }) => {
+  test('documents Home, the folder switcher, and global search', async ({ page, context }) => {
     await page.goto('/guide.html');
     const folders = page.locator('#folders').locator('..');
     await expect(folders).toContainText('Switch folders');
@@ -36,7 +36,7 @@ test.describe('user guide page', () => {
     await expect(page.locator('#organizing').locator('..')).toContainText('ranks title matches first');
   });
 
-  test('TOC anchor navigates to its section', async ({ page }) => {
+  test('TOC anchor navigates to its section', async ({ page, context }) => {
     await page.goto('/guide.html');
     await page.locator('.guide-toc a[href="#task-lists"]').click();
     expect(new URL(page.url()).hash).toBe('#task-lists');
@@ -50,7 +50,7 @@ test.describe('user guide page', () => {
     });
   });
 
-  test('every static page footer links to the guide', async ({ page }) => {
+  test('every static page footer links to the guide', async ({ page, context }) => {
     // index.html has no .footer-nav — the app's entry point is the About
     // dialog link, covered by its own test below.
     for (const path of ['/about.html', '/privacy.html', '/terms.html', '/guide.html']) {
@@ -59,24 +59,39 @@ test.describe('user guide page', () => {
     }
   });
 
-  test('about page links to the guide prominently', async ({ page }) => {
+  test('about page links to the guide prominently', async ({ page, context }) => {
     await page.goto('/about.html');
     await expect(page.locator('a[href="guide.html"]', { hasText: /user guide/i }).first()).toBeVisible();
   });
 
-  test('command palette opens the guide in a new tab', async ({ page, context }) => {
-    await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
-    await page.goto('/');
-    await page.locator('#command-palette-btn').click();
-    await page.locator('#command-palette-input').fill('guide');
-    const popupPromise = context.waitForEvent('page');
-    await page.locator('.command-palette-item', { hasText: 'Open user guide' }).click();
-    const popup = await popupPromise;
-    await popup.waitForLoadState();
-    expect(new URL(popup.url()).pathname).toBe('/guide.html');
+  // window.open from a controlled page is load-sensitive inside the harness:
+  // after heavy predecessor tests churn the shared browser process, the new
+  // page's attach/event delivery fails stickily (fresh contexts and retries
+  // do not escape it). CI retries every test twice; locally this test gets the
+  // same budget plus a pristine browser process of its own.
+  test.describe('guide popup (pristine process)', () => {
+    test.describe.configure({ retries: 2 });
+    test('command palette opens the guide in a new tab', async ({ browser }) => {
+      const fresh = await browser.browserType().launch();
+      const context = await fresh.newContext({ baseURL: 'http://127.0.0.1:8080' });
+      const page = await context.newPage();
+      try {
+        await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+        await page.goto('/');
+        await page.locator('#command-palette-btn').click();
+        await page.locator('#command-palette-input').fill('guide');
+        const popupPromise = context.waitForEvent('page');
+        await page.locator('.command-palette-item', { hasText: 'Open user guide' }).click();
+        const popup = await popupPromise;
+        await popup.waitForLoadState();
+        expect(new URL(popup.url()).pathname).toBe('/guide.html');
+      } finally {
+        await fresh.close();
+      }
+    });
   });
 
-  test('About dialog links to the guide', async ({ page }) => {
+  test('About dialog links to the guide', async ({ page, context }) => {
     await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
     await page.goto('/');
     await page.locator('#open-about').click();
@@ -85,7 +100,7 @@ test.describe('user guide page', () => {
     await expect(link).toHaveAttribute('target', '_blank');
   });
 
-  test('guide.html makes no cross-origin requests and ships in the offline shell', async ({ page }) => {
+  test('guide.html makes no cross-origin requests and ships in the offline shell', async ({ page, context }) => {
     const external = [];
     page.on('request', (req) => {
       if (new URL(req.url()).origin !== 'http://127.0.0.1:8080') external.push(req.url());
@@ -97,7 +112,7 @@ test.describe('user guide page', () => {
     expect(swSource).toContain("'/guide.html'");
   });
 
-  test('theme toggle cycles and persists across reload', async ({ page }) => {
+  test('theme toggle cycles and persists across reload', async ({ page, context }) => {
     await page.goto('/guide.html');
     const toggle = page.locator('#theme-toggle');
     await toggle.click(); // auto -> light
