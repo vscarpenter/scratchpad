@@ -3,6 +3,11 @@
 The Playwright suite covers Scratchpad's user-facing browser behavior across
 Chromium, Firefox, and WebKit. The external `mailto:` handoff is verified in
 Chromium because Playwright exposes external-protocol navigation details there.
+The guide popup test (`guide.spec.js` "command palette opens the guide in a new
+tab") launches a pristine browser process and carries a local retry budget:
+new-page target attach is load-sensitive under a fully saturated machine, so
+release verification runs the suite as two halves via
+`node scripts/release-gate.mjs` (see CONTRIBUTING.md).
 
 | Product area | End-to-end specs |
 | --- | --- |
