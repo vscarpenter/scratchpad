@@ -4795,12 +4795,12 @@
     setTimeout(() => els.commandPaletteInput.focus(), 0);
   }
 
-  async function runCommandAt(index) {
+  function runCommandAt(index) {
     const item = state.commandItems[index];
     if (!item) return;
     closeDialog(els.commandPaletteDialog);
     els.commandPaletteInput.value = '';
-    await item.run();
+    item.run();
   }
 
   function onCommandPaletteKey(e) {
