@@ -2652,7 +2652,7 @@
       renderAll();
       state.mobileView = 'editor';
       syncMobileView();
-      setTimeout(() => els.editor.focus(), 0);
+      window.ScratchpadFind.editorFocus(els.editor);
     });
   }
 
@@ -3294,7 +3294,7 @@
       els.titleInput.value = draft.title || '';
       els.editor.value = draft.body || '';
       els.dirtyIndicator.hidden = false;
-      setTimeout(() => els.editor.focus(), 0);
+      window.ScratchpadFind.editorFocus(els.editor);
     } else if (decision === 'discard') {
       await DB.removeDraft(note.id);
       renderAll();
@@ -3478,7 +3478,7 @@
       renderAll();
       state.mobileView = 'editor';
       syncMobileView();
-      setTimeout(() => els.editor.focus(), 0);
+      window.ScratchpadFind.editorFocus(els.editor);
     });
   }
 
@@ -3928,7 +3928,7 @@
       state.mobileView = 'editor';
       renderAll();
       syncMobileView();
-      setTimeout(() => els.editor.focus(), 0);
+      window.ScratchpadFind.editorFocus(els.editor);
       return note;
     });
   }
@@ -5818,7 +5818,7 @@
       state.editing = true;
       state.dirty = false;
       renderEditor();
-      setTimeout(() => els.editor.focus(), 0);
+      window.ScratchpadFind.editorFocus(els.editor);
     });
     els.saveBtn.addEventListener('click', saveCurrent);
     els.historyBtn.addEventListener('click', openHistoryDialog);
@@ -6179,7 +6179,7 @@
     });
     initCrossTabSync();
     if (window.ScratchpadFind) {
-      window.ScratchpadFind.init({ editor: els.editor, onDirty: markDirty });
+      window.ScratchpadFind.init({ editor: els.editor, onToast: toast });
     }
     bindEvents();
     try {

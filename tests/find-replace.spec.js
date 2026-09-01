@@ -156,6 +156,89 @@ test.describe('find bar counters track the note', () => {
   });
 });
 
+test.describe('find bar replacement', () => {
+  test('replaces the focused match with cmd+enter, steps forward, and dirties the note', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-rep', title: 'Replace note', body: 'alpha beta alpha' }]);
+
+    await page.locator('.note-row[data-id="find-rep"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('alpha');
+    await page.locator('#find-replace-input').fill('REPL');
+
+    await page.keyboard.press('ControlOrMeta+Enter');
+    await expect(page.locator('#find-count')).toHaveText('1 of 1');
+    const after = await page.evaluate(() => ({
+      value: document.getElementById('note-editor').value,
+      caret: document.getElementById('note-editor').selectionStart,
+    }));
+    expect(after.value).toBe('REPL beta alpha');
+    expect(after.caret).toBe(4);
+    await expect(page.locator('#dirty-indicator')).toBeVisible();
+
+    await page.keyboard.press('ControlOrMeta+Enter');
+    await expect(page.locator('#find-count')).toHaveText('0 of 0');
+    await page.keyboard.press('Control+S');
+    await expect(page.locator('#note-rendered')).toContainText('REPL beta REPL');
+  });
+});
+
+test.describe('find bar replace all', () => {
+  test('replace all rewrites every match, toasts the count, and disables at zero', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-all', title: 'All note', body: 'alpha beta alpha alpha' }]);
+
+    await page.locator('.note-row[data-id="find-all"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('alpha');
+    await page.locator('#find-replace-input').fill('X');
+    await page.locator('#find-replace-all-btn').click();
+
+    await expect(page.locator('#note-editor')).toHaveValue('X beta X X');
+    await expect(page.locator('.toast')).toContainText('Replaced 3 occurrences');
+    await expect(page.locator('#find-count')).toHaveText('0 of 0');
+
+    await page.locator('#find-input').fill('zzz');
+    await expect(page.locator('#find-replace-all-btn')).toBeDisabled();
+  });
+});
+
+test.describe('find bar replace modes', () => {
+  test('regex capture references work and literal mode inserts them verbatim', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-cap', title: 'Capture note', body: 'user@example host' }]);
+
+    await page.locator('.note-row[data-id="find-cap"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-regex-toggle').click();
+    await page.locator('#find-input').fill('(\\w+)@example');
+    await page.locator('#find-replace-input').fill('$1');
+    await page.locator('#find-replace-all-btn').click();
+    await expect(page.locator('#note-editor')).toHaveValue('user host');
+
+    await page.locator('#find-regex-toggle').click();
+    await page.locator('#find-input').fill('host');
+    await page.locator('#find-replace-input').fill('$1');
+    await page.locator('#find-replace-all-btn').click();
+    await expect(page.locator('#note-editor')).toHaveValue('user $1');
+  });
+
+  test('an empty replacement deletes matches', async ({ page }) => {
+    await gotoApp(page);
+    await seedRawNotes(page, [{ id: 'find-del', title: 'Delete note', body: 'alpha beta' }]);
+
+    await page.locator('.note-row[data-id="find-del"]').click();
+    await page.locator('#edit-btn').click();
+    await page.keyboard.press('Control+F');
+    await page.locator('#find-input').fill('alpha');
+    await page.locator('#find-replace-all-btn').click();
+    await expect(page.locator('#note-editor')).toHaveValue(' beta');
+  });
+});
+
 test.describe('find bar in the command palette', () => {
   test('lists Find in note only while editing and opens from the palette', async ({ page }) => {
     await gotoApp(page);

@@ -9,9 +9,9 @@
   ('use strict');
 
   /** @typedef {{ start: number, end: number }} MatchRange */
-  /** @typedef {{ bar: HTMLElement, input: HTMLInputElement, count: HTMLElement, caseToggle: HTMLButtonElement, regexToggle: HTMLButtonElement, close: HTMLButtonElement, notice: HTMLElement, live: HTMLElement }} FindEls */
-  /** @typedef {{ editor: HTMLTextAreaElement, onDirty?: () => void }} FindDeps */
-  /** @typedef {{ init(deps: FindDeps): void, open(): void, close(returnFocus?: boolean): void, isOpen(): boolean }} FindApi */
+  /** @typedef {{ bar: HTMLElement, input: HTMLInputElement, count: HTMLElement, caseToggle: HTMLButtonElement, regexToggle: HTMLButtonElement, close: HTMLButtonElement, notice: HTMLElement, live: HTMLElement, replaceInput: HTMLInputElement, replaceBtn: HTMLButtonElement, replaceAllBtn: HTMLButtonElement }} FindEls */
+  /** @typedef {{ editor: HTMLTextAreaElement, onToast?: (message: string) => void }} FindDeps */
+  /** @typedef {{ init(deps: FindDeps): void, open(): void, close(returnFocus?: boolean): void, isOpen(): boolean, editorFocus(target: HTMLTextAreaElement): void }} FindApi */
   /** @typedef {{ reset?: boolean, present?: boolean }} RefreshOptions */
 
   /** @type {FindEls | null} */
@@ -19,7 +19,7 @@
   /** @type {HTMLTextAreaElement | null} */
   let editor = null;
   /** @type {(() => void) | null} */
-  let onDirty = null;
+  let onToast = null;
   let barOpen = false;
   let caseSensitive = false;
   let regexMode = false;
@@ -38,7 +38,14 @@
     const close = document.getElementById('find-close');
     const notice = document.getElementById('find-notice');
     const live = document.getElementById('find-live');
-    if (!bar || !input || !count || !caseToggle || !regexToggle || !close || !notice || !live) {
+    const replaceInput = document.getElementById('find-replace-input');
+    const replaceBtn = document.getElementById('find-replace-btn');
+    const replaceAllBtn = document.getElementById('find-replace-all-btn');
+    if (
+      ![bar, input, count, caseToggle, regexToggle, close, notice, live, replaceInput, replaceBtn, replaceAllBtn].every(
+        Boolean,
+      )
+    ) {
       return null;
     }
     return {
@@ -50,6 +57,9 @@
       close: /** @type {HTMLButtonElement} */ (close),
       notice,
       live,
+      replaceInput: /** @type {HTMLInputElement} */ (replaceInput),
+      replaceBtn: /** @type {HTMLButtonElement} */ (replaceBtn),
+      replaceAllBtn: /** @type {HTMLButtonElement} */ (replaceAllBtn),
     };
   }
 
@@ -77,6 +87,17 @@
 
   function anyDialogOpen() {
     return document.querySelector('dialog[open]') !== null;
+  }
+
+  /**
+   * Schedules caret focus for the editor, yielding to an open find bar so a
+   * stale timer from an Edit click can never steal focus from the query.
+   * @param {HTMLTextAreaElement} target
+   */
+  function editorFocus(target) {
+    setTimeout(() => {
+      if (!barOpen) target.focus();
+    }, 0);
   }
 
   /**
@@ -143,14 +164,11 @@
     return found;
   }
 
-  /**
-   * @param {KeyboardEvent} event
-   */
   function onBarKey(event) {
     if (event.key !== 'Enter') return;
-    if (event.metaKey || event.ctrlKey) return; // replace lands with Task 3
     event.preventDefault();
-    cycle(event.shiftKey ? -1 : 1);
+    if (event.metaKey || event.ctrlKey) replaceCurrent();
+    else cycle(event.shiftKey ? -1 : 1);
   }
 
   /**
@@ -184,6 +202,43 @@
     els.count.hidden = false;
     els.count.textContent = label;
     if (els.live.textContent !== label) els.live.textContent = label;
+    const actionable = matches.length > 0 && !invalid;
+    els.replaceBtn.disabled = !actionable;
+    els.replaceAllBtn.disabled = !actionable;
+  }
+
+  /** Swaps the focused match for the replacement text and leaves the caret at its end. */
+  function replaceCurrent() {
+    if (!els || !editor || invalid || !matches.length) return;
+    const match = matches[matchIndex];
+    const replacement = regexMode
+      ? editor.value
+          .slice(match.start, match.end)
+          .replace(new RegExp(els.input.value, caseSensitive ? '' : 'i'), els.replaceInput.value)
+      : els.replaceInput.value;
+    editor.setRangeText(replacement, match.start, match.end, 'end');
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  /** Rewrites every match in one value change, then toasts the count. */
+  function replaceAllMatches() {
+    if (!els || !editor || invalid || !matches.length) return;
+    const replacement = els.replaceInput.value;
+    const count = matches.length;
+    if (regexMode) {
+      editor.value = editor.value.replace(new RegExp(els.input.value, caseSensitive ? 'g' : 'gi'), replacement);
+    } else {
+      let value = editor.value;
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const match = matches[i];
+        value = value.slice(0, match.start) + replacement + value.slice(match.end);
+      }
+      editor.value = value;
+    }
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    if (typeof onToast === 'function') {
+      onToast('Replaced ' + count + (count === 1 ? ' occurrence' : ' occurrences'));
+    }
   }
 
   /** Shows the focused match as the textarea's native selection. */
@@ -234,12 +289,14 @@
     els = els || lookup();
     if (!els) return;
     editor = deps.editor || null;
-    onDirty = typeof deps.onDirty === 'function' ? deps.onDirty : null;
+    onToast = typeof deps.onToast === 'function' ? deps.onToast : null;
     if (!editor) return;
 
     els.close.addEventListener('click', () => close());
     window.addEventListener('keydown', onGlobalKey, true);
     els.bar.addEventListener('keydown', onBarKey);
+    els.replaceBtn.addEventListener('click', replaceCurrent);
+    els.replaceAllBtn.addEventListener('click', replaceAllMatches);
 
     els.input.addEventListener('input', () => refresh({ reset: true, present: true }));
     editor.addEventListener('input', () => {
@@ -264,5 +321,5 @@
   }
 
   /** @type {FindApi} */
-  window.ScratchpadFind = { init, open, close, isOpen };
+  window.ScratchpadFind = { init, open, close, isOpen, editorFocus };
 }
