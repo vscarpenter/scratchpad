@@ -16,6 +16,7 @@
   "include": [
     "playwright.config.js",
     "public/js/dialogs.js",
+    "public/js/html-to-markdown.js",
     "public/js/search.js",
     "public/js/search-view.js",
     "scripts/quality/**/*.mjs"
