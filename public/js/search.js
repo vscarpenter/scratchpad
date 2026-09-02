@@ -6,7 +6,12 @@
   /** @typedef {{ id: string, title?: string, body?: string, tags?: string[], updatedAt?: number, archivedAt?: number, deletedAt?: number }} SearchNote */
   /** @typedef {{ note: SearchNote, kind: 'direct' | 'close', score: number, highlightTerms: string[], excerpt: string }} SearchResult */
   /** @typedef {{ raw: string, phrase: string, terms: string[] }} QueryInfo */
-  /** @typedef {{ rankNotes(notes: SearchNote[], query: string): { kind: 'direct' | 'close', results: SearchResult[] }, normalize(value: unknown): string, matchesLoose(text: string, query: string): boolean }} SearchApi */
+  /** @typedef {{ tags: string[], titles: string[], folders: string[] }} QueryFilters */
+  /** @typedef {{ text: string, filters: QueryFilters }} ParsedQuery */
+  /** @typedef {(note: SearchNote) => string} FolderNameOf */
+  /** @typedef {{ kind: 'direct' | 'close', results: SearchResult[] }} RankedNotes */
+  /** @typedef {RankedNotes & ParsedQuery} SearchOutcome */
+  /** @typedef {{ rankNotes(notes: SearchNote[], query: string): RankedNotes, searchNotes(notes: SearchNote[], query: string, options?: { folderNameOf?: FolderNameOf }): SearchOutcome, parseQuery(query: string): ParsedQuery, normalize(value: unknown): string, matchesLoose(text: string, query: string): boolean }} SearchApi */
 
   /** @param {unknown} value */
   function normalize(value) {
@@ -47,6 +52,41 @@
   /** @param {string} query */
   function queryInfo(query) {
     return { raw: query.trim(), phrase: normalize(query), terms: words(query) };
+  }
+
+  const OPERATOR_PATTERN = /(^|\s)(tag|title|folder):(\S*)/giu;
+
+  /** @param {QueryFilters} filters @param {string} key */
+  function filterBucket(filters, key) {
+    const lower = key.toLowerCase();
+    if (lower === 'tag') return filters.tags;
+    if (lower === 'title') return filters.titles;
+    return filters.folders;
+  }
+
+  /** @param {string} query @returns {ParsedQuery} */
+  function parseQuery(query) {
+    /** @type {QueryFilters} */
+    const filters = { tags: [], titles: [], folders: [] };
+    const text = String(query || '')
+      .replace(OPERATOR_PATTERN, (_match, lead, key, value) => {
+        const normalized = normalize(value);
+        if (normalized) filterBucket(filters, key).push(normalized);
+        return lead;
+      })
+      .replace(/\s+/g, ' ')
+      .trim();
+    return { text, filters };
+  }
+
+  /** @param {SearchNote} note @param {QueryFilters} filters @param {FolderNameOf | undefined} folderNameOf */
+  function passesFilters(note, filters, folderNameOf) {
+    const tags = (note.tags || []).map(normalize);
+    if (!filters.tags.every((value) => tags.includes(value))) return false;
+    const title = normalize(note.title);
+    if (!filters.titles.every((value) => title.includes(value))) return false;
+    const folder = normalize(folderNameOf ? folderNameOf(note) : '');
+    return filters.folders.every((value) => folder.includes(value));
   }
 
   /** @param {string} text @param {string[]} terms */
@@ -150,13 +190,17 @@
     return prefix + text.slice(start, end).trim() + suffix;
   }
 
+  /** @param {string} text */
+  function leadExcerpt(text) {
+    return text.length > 112 ? text.slice(0, 111).trimEnd() + '…' : text;
+  }
+
   /** @param {SearchNote} note @param {QueryInfo} query */
   function resultExcerpt(note, query) {
     const text = plainBody(note.body || '');
     if (!text) return '';
     const position = matchPosition(text, query);
-    if (position) return clipAround(text, position.index, position.length);
-    return text.length > 112 ? text.slice(0, 111).trimEnd() + '…' : text;
+    return position ? clipAround(text, position.index, position.length) : leadExcerpt(text);
   }
 
   /** @param {SearchNote} note */
@@ -208,7 +252,28 @@
     };
   }
 
+  /** @param {SearchNote[]} notes @returns {RankedNotes} */
+  function recentResults(notes) {
+    const results = notes.map((note) => ({
+      note,
+      score: 0,
+      kind: /** @type {'direct'} */ ('direct'),
+      highlightTerms: [],
+      excerpt: leadExcerpt(plainBody(note.body || '')),
+    }));
+    return { kind: 'direct', results: results.sort(compareResults) };
+  }
+
+  /** @param {SearchNote[]} notes @param {string} query @param {{ folderNameOf?: FolderNameOf }} [options] @returns {SearchOutcome} */
+  function searchNotes(notes, query, options) {
+    const parsed = parseQuery(query);
+    const folderNameOf = options ? options.folderNameOf : undefined;
+    const scoped = notes.filter((note) => passesFilters(note, parsed.filters, folderNameOf));
+    const ranked = parsed.text ? rankNotes(scoped, parsed.text) : recentResults(scoped);
+    return { ...ranked, ...parsed };
+  }
+
   /** @type {Window & typeof globalThis & { ScratchpadSearch?: SearchApi }} */
   const root = window;
-  root.ScratchpadSearch = Object.freeze({ rankNotes, normalize, matchesLoose });
+  root.ScratchpadSearch = Object.freeze({ rankNotes, searchNotes, parseQuery, normalize, matchesLoose });
 }

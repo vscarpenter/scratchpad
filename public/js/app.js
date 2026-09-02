@@ -1348,11 +1348,11 @@
   }
 
   function currentSearchResults() {
-    return Search.rankNotes(tagFilteredNotes(), state.search.trim());
+    const folderNameOf = (note) => folderDisplayName(noteFolderId(note));
+    return Search.searchNotes(tagFilteredNotes(), state.search.trim(), { folderNameOf });
   }
   function filteredNotes() {
-    if (!state.search.trim()) return tagFilteredNotes();
-    return currentSearchResults().results.map((result) => result.note);
+    return state.search.trim() ? currentSearchResults().results.map((result) => result.note) : tagFilteredNotes();
   }
 
   function sortNotes(list) {
