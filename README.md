@@ -38,7 +38,8 @@ Nothing else is ever uploaded.
   Daily Notes folder. Daily notes group into collapsible months, and an
   on-demand Monthly Review creates reflection prompts plus links to that
   month's notes without copying their contents. Quick capture appends a
-  timestamped line from anywhere.
+  timestamped line from anywhere, and any folder named Templates turns its
+  notes into palette commands that seed new notes.
 - Link notes with `[[Title]]` (autocompleted as you type); each note shows
   what links to it and which notes mention its title without linking, with
   one-click linking, and renaming a linked note offers to update references.
