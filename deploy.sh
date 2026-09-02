@@ -188,6 +188,7 @@ INVALIDATION_PATHS=(
   "/service-worker.js"
   "/public/manifest.webmanifest"
   "/public/service-worker.js*"
+  "/public/*"
 )
 
 INVALIDATION_DISPLAY=$( IFS=' '; echo "${INVALIDATION_PATHS[*]}" )
