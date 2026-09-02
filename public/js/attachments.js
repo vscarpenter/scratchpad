@@ -154,10 +154,18 @@
     api.insert(editor, lead + '![' + baseName(record.name) + '](' + PREFIX + record.id + ')\n');
   }
 
+  /** @type {Promise<void>} */
+  let queue = Promise.resolve();
+
   /** @param {HTMLTextAreaElement} editor @param {ArrayLike<File>} files */
-  async function attachFiles(editor, files) {
-    if (!deps) return;
-    for (const file of Array.from(files)) await attach(editor, file, deps);
+  function attachFiles(editor, files) {
+    if (!deps) return Promise.resolve();
+    const api = deps;
+    // One queue across paste, drop, and the menu so insertions land in event order.
+    for (const file of Array.from(files)) {
+      queue = queue.then(() => attach(editor, file, api)).catch((error) => console.warn('Attachment failed', error));
+    }
+    return queue;
   }
 
   /** @param {HTMLTextAreaElement} editor */
@@ -190,5 +198,112 @@
     }
   }
 
-  root.ScratchpadAttachments = Object.freeze({ get, forNote, all, put, blobOf, init, warm, resolve, attachFiles });
+  /** @typedef {{ id: string, noteId: string, name: string, type: string, size: number, createdAt: number, data: string }} AttachmentEntry */
+
+  /** @param {ArrayBuffer} bytes */
+  function toBase64(bytes) {
+    const view = new Uint8Array(bytes);
+    let binary = '';
+    for (let i = 0; i < view.length; i += 0x8000) {
+      binary += String.fromCharCode.apply(null, Array.from(view.subarray(i, i + 0x8000)));
+    }
+    return btoa(binary);
+  }
+
+  /** @param {string} data */
+  function fromBase64(data) {
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  /** @param {Set<string> | null} noteIds @returns {Promise<AttachmentEntry[]>} */
+  async function serialize(noteIds) {
+    const records = (await all()).filter((record) => !noteIds || noteIds.has(record.noteId));
+    return records.map((record) => ({
+      id: record.id,
+      noteId: record.noteId,
+      name: record.name,
+      type: record.type,
+      size: record.size,
+      createdAt: record.createdAt,
+      data: toBase64(record.bytes),
+    }));
+  }
+
+  /** @param {unknown} raw @returns {AttachmentEntry[]} */
+  function parseBackup(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(
+      (entry) =>
+        entry &&
+        typeof entry.id === 'string' &&
+        typeof entry.noteId === 'string' &&
+        TYPES.has(entry.type) &&
+        typeof entry.data === 'string',
+    );
+  }
+
+  /** @param {AttachmentEntry[]} entries @param {Map<string, string>} idMap @param {() => string} uuid */
+  function forImport(entries, idMap, uuid) {
+    /** @type {Map<string, string>} */
+    const renamed = new Map();
+    /** @type {AttachmentRecord[]} */
+    const records = [];
+    for (const entry of entries) {
+      const noteId = idMap.get(entry.noteId);
+      if (!noteId) continue;
+      const id = noteId === entry.noteId ? entry.id : uuid();
+      if (id !== entry.id) renamed.set(entry.id, id);
+      const bytes = fromBase64(entry.data);
+      records.push({
+        id,
+        noteId,
+        name: entry.name,
+        type: entry.type,
+        size: bytes.byteLength,
+        createdAt: entry.createdAt,
+        bytes,
+      });
+    }
+    /** @param {string} body */
+    const rewrite = (body) =>
+      body.replace(/attachment:([0-9a-f-]+)/gi, (match, id) =>
+        renamed.has(id) ? 'attachment:' + renamed.get(id) : match,
+      );
+    return { records, rewrite };
+  }
+
+  /** @param {Set<string>} noteIds */
+  async function forZip(noteIds) {
+    const records = (await all()).filter((record) => noteIds.has(record.noteId));
+    /** @type {Map<string, string>} */
+    const paths = new Map();
+    const files = records.map((record) => {
+      const safe = String(record.name || 'image').replace(/[^\w.-]+/g, '-');
+      const path = 'attachments/' + record.id + '-' + safe;
+      paths.set(record.id, path);
+      return { name: path, bytes: new Uint8Array(record.bytes) };
+    });
+    /** @param {string} body */
+    const rewrite = (body) => body.replace(/attachment:([0-9a-f-]+)/gi, (match, id) => paths.get(id) || match);
+    return { files, rewrite };
+  }
+
+  root.ScratchpadAttachments = Object.freeze({
+    get,
+    forNote,
+    all,
+    put,
+    blobOf,
+    init,
+    warm,
+    resolve,
+    attachFiles,
+    serialize,
+    parseBackup,
+    forImport,
+    forZip,
+  });
 }

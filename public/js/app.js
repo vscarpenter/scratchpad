@@ -3165,12 +3165,13 @@
       const payload = {
         app: 'scratchpad',
         version: window.SCRATCHPAD_VERSION || 'unknown',
-        schemaVersion: 4,
+        schemaVersion: 5,
         exportedAt: new Date().toISOString(),
         notes: selected.filter((note) => !isTrashed(note)),
         trashedNotes: selected.filter(isTrashed),
         revisions,
         folders: sortedFolders().filter((f) => usedFolderIds.has(f.id)),
+        attachments: window.ScratchpadAttachments ? await window.ScratchpadAttachments.serialize(selectedIds) : [],
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       downloadBlob(blob, `scratchpad-selected-${exportStamp()}.json`);
@@ -4904,12 +4905,13 @@
     return {
       app: 'scratchpad',
       version: window.SCRATCHPAD_VERSION || 'unknown',
-      schemaVersion: 4,
+      schemaVersion: 5,
       exportedAt: new Date().toISOString(),
       notes: notes.filter((n) => !isTrashed(n)),
       trashedNotes: notes.filter(isTrashed),
       revisions,
       folders,
+      attachments: window.ScratchpadAttachments ? await window.ScratchpadAttachments.serialize(null) : [],
     };
   }
 
@@ -5043,6 +5045,7 @@
       // ('Report' twice plus 'Report 2' all reduce to report-2), and a ZIP
       // with duplicate entry names silently drops a note in most extractors.
       const taken = new Set();
+      const bundle = await window.ScratchpadAttachments.forZip(new Set(notes.map((note) => note.id)));
       const files = notes.map((note) => {
         const folderId = noteFolderId(note);
         const archiveDir = isArchived(note) ? 'archive/' : '';
@@ -5052,8 +5055,9 @@
         let name = `${base}.md`;
         for (let n = 2; taken.has(name); n += 1) name = `${base}-${n}.md`;
         taken.add(name);
-        return { name, content: noteToMarkdown(note) };
+        return { name, content: bundle.rewrite(noteToMarkdown(note)) };
       });
+      files.push(...bundle.files);
       const blob = new Blob([Zip.createZip(files)], { type: 'application/zip' });
       downloadBlob(blob, `scratchpad-markdown-${exportStamp()}.zip`);
       recordBackupDownload();
@@ -5068,9 +5072,7 @@
       'tags: [' + (note.tags || []).map((tag) => JSON.stringify(tag)).join(', ') + ']',
       'pinned: ' + (!!note.pinned ? 'true' : 'false'),
       ...(note.dailyDate ? ['dailyDate: ' + JSON.stringify(note.dailyDate)] : []),
-      ...(note.monthlyReviewMonth
-        ? ['monthlyReviewMonth: ' + JSON.stringify(note.monthlyReviewMonth)]
-        : []),
+      ...(note.monthlyReviewMonth ? ['monthlyReviewMonth: ' + JSON.stringify(note.monthlyReviewMonth)] : []),
       ...(isArchived(note) ? ['archivedAt: ' + JSON.stringify(new Date(note.archivedAt).toISOString())] : []),
       'createdAt: ' + JSON.stringify(new Date(note.createdAt).toISOString()),
       'updatedAt: ' + JSON.stringify(new Date(note.updatedAt).toISOString()),
@@ -5293,6 +5295,7 @@
       notes: [],
       revisions: [],
       folders: [],
+      attachments: [],
       invalid: 0,
       invalidRevisions: 0,
       invalidFolders: 0,
@@ -5385,6 +5388,7 @@
       notes,
       revisions,
       folders,
+      attachments: window.ScratchpadAttachments ? window.ScratchpadAttachments.parseBackup(data.attachments) : [],
       invalid: rejectedNotes.length,
       invalidRevisions: rejectedRevisions.length,
       invalidFolders: rejectedFolders.length,
@@ -5440,6 +5444,8 @@
       const revisionsToImport = preview.revisions
         .filter((rev) => idMap.has(rev.noteId))
         .map((rev) => ({ ...rev, id: uuid(), noteId: idMap.get(rev.noteId) }));
+      const attachments = window.ScratchpadAttachments.forImport(preview.attachments || [], idMap, uuid);
+      for (const note of notesToImport) note.body = attachments.rewrite(note.body || '');
       // Folders merge by id (overwrite); a new id with a clashing name gets a
       // numeric suffix. Anything past FOLDERS_MAX is dropped.
       const existingFolderIds = new Set(state.folders.map((f) => f.id));
@@ -5462,14 +5468,8 @@
         foldersToImport.push({ ...folder, name });
         if (!isDailyNotesFolder(folder)) importedUserFolderCount += 1;
       }
-      await DB.importRecords(notesToImport, revisionsToImport, REVISION_LIMIT, foldersToImport);
-      for (const note of notesToImport) {
-        broadcastChange({
-          type: 'note-changed',
-          noteId: note.id,
-          updatedAt: note.updatedAt,
-        });
-      }
+      await DB.importRecords(notesToImport, revisionsToImport, REVISION_LIMIT, foldersToImport, attachments.records);
+      for (const note of notesToImport) broadcastChange({ type: 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
       if (foldersToImport.length) broadcastChange({ type: 'folders-changed' });
       state.importPreview = null;
       closeDialog(els.importPreviewDialog);

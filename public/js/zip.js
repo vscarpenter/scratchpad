@@ -9,7 +9,7 @@
     let offset = 0;
     for (const file of files) {
       const name = encoder.encode(file.name);
-      const data = encoder.encode(file.content);
+      const data = file.bytes ? file.bytes : encoder.encode(file.content);
       const crc = crc32(data);
       const local = zipLocalHeader(name, data, crc);
       localParts.push(local, data);

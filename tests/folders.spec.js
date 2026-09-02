@@ -281,7 +281,7 @@ test.describe('backups with folders', () => {
     await expect(page.locator('.note-row', { hasText: 'Legacy' })).toBeVisible();
   });
 
-  test('exportAll payload remains schemaVersion 4 with folders', async ({ page }) => {
+  test('exportAll payload remains schemaVersion 5 with folders', async ({ page }) => {
     await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
     const download = page.waitForEvent('download');
     await openBackupMenu(page);
@@ -291,7 +291,7 @@ test.describe('backups with folders', () => {
     const chunks = [];
     for await (const chunk of stream) chunks.push(chunk);
     const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-    expect(data.schemaVersion).toBe(4);
+    expect(data.schemaVersion).toBe(5);
     expect(data.folders.map((folder) => folder.name).sort()).toEqual(['Daily Notes', 'Work']);
   });
 });

@@ -27,7 +27,7 @@ test.describe('Archive portability', () => {
     await page.locator('#export-btn').click();
     const payload = JSON.parse((await downloadBuffer(await downloadPromise)).toString('utf8'));
 
-    expect(payload.schemaVersion).toBe(4);
+    expect(payload.schemaVersion).toBe(5);
     expect(payload.notes.map((note) => note.id).sort()).toEqual(['json-active-v4', 'json-archive-v4']);
     expect(payload.notes.find((note) => note.id === 'json-archive-v4').archivedAt).toBe(archivedAt);
     expect(payload.trashedNotes[0].archivedAt).toBe(archivedAt);

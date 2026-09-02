@@ -217,3 +217,66 @@ test('a missing attachment and the share viewer show a placeholder', async ({ pa
   });
   expect(text).toBe('(image not included: pic)');
 });
+
+async function attachOne(page, id, name) {
+  await openForEditing(page, id);
+  await page.setInputFiles('#attach-image-input', pngFile(name));
+  await expect(page.locator('#note-editor')).toHaveValue(/attachment:/);
+  await page.locator('#save-btn').click();
+  await expect(page.locator('#save-btn')).toBeHidden();
+}
+
+async function downloadFrom(page, buttonId) {
+  await openBackupMenu(page);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#' + buttonId).click()]);
+  return fs.readFileSync(await download.path());
+}
+
+test('backups embed attachments as base64 under schema 5 and re-import them', async ({ page, context }) => {
+  await seedRawNotes(page, [{ id: 'host', title: 'Host', body: 'Intro' }]);
+  await attachOne(page, 'host', 'pic.png');
+  const payload = JSON.parse((await downloadFrom(page, 'export-btn')).toString('utf8'));
+  expect(payload.schemaVersion).toBe(5);
+  expect(payload.attachments).toHaveLength(1);
+  expect(payload.attachments[0]).toMatchObject({ noteId: 'host', type: 'image/png', name: 'pic.png' });
+  expect(Buffer.from(payload.attachments[0].data, 'base64').length).toBeGreaterThan(20);
+  const fresh = await context.newPage();
+  await gotoApp(fresh);
+  await importJson(fresh, payload);
+  await fresh.locator('#confirm-import').click();
+  await expect(fresh.locator('.note-row[data-id="host"]')).toBeVisible();
+  await fresh.locator('.note-row[data-id="host"]').click();
+  await expect(fresh.locator('#note-rendered img')).toHaveAttribute('src', /^blob:/);
+});
+
+test('importing a backup as duplicates gives the copy its own attachment ids', async ({ page }) => {
+  await seedRawNotes(page, [{ id: 'host', title: 'Host', body: 'Intro' }]);
+  await attachOne(page, 'host', 'pic.png');
+  const payload = JSON.parse((await downloadFrom(page, 'export-btn')).toString('utf8'));
+  await importJson(page, payload);
+  await page.locator('#confirm-import').click();
+  await expect(page.locator('.note-row')).toHaveCount(2);
+  const state = await page.evaluate(async () => {
+    const notes = await window.ScratchpadDB.getAll();
+    const attachments = await window.ScratchpadAttachments.all();
+    return {
+      notes: notes.map((n) => ({ id: n.id, body: n.body })),
+      attachments: attachments.map((a) => ({ id: a.id, noteId: a.noteId })),
+    };
+  });
+  expect(state.attachments).toHaveLength(2);
+  const copy = state.notes.find((n) => n.id !== 'host');
+  const copyAttachment = state.attachments.find((a) => a.noteId === copy.id);
+  expect(copy.body).toContain('attachment:' + copyAttachment.id);
+  expect(copyAttachment.id).not.toBe(state.attachments.find((a) => a.noteId === 'host').id);
+});
+
+test('the markdown zip carries attachment files and relative links', async ({ page }) => {
+  await seedRawNotes(page, [{ id: 'host', title: 'Host', body: 'Intro' }]);
+  await attachOne(page, 'host', 'pic.png');
+  const zip = (await downloadFrom(page, 'export-markdown-btn')).toString('latin1');
+  const id = await page.evaluate(async () => (await window.ScratchpadAttachments.forNote('host'))[0].id);
+  expect(zip).toContain('attachments/' + id + '-pic.png');
+  expect(zip).toContain('](attachments/' + id + '-pic.png)');
+  expect(zip).not.toContain('attachment:' + id);
+});

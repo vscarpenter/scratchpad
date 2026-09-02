@@ -91,7 +91,7 @@ test.describe('sharing and portable exports', () => {
     const payload = JSON.parse((await downloadBuffer(download)).toString('utf8'));
 
     expect(download.suggestedFilename()).toMatch(/^scratchpad-.*\.json$/);
-    expect(payload).toMatchObject({ app: 'scratchpad', schemaVersion: 4 });
+    expect(payload).toMatchObject({ app: 'scratchpad', schemaVersion: 5 });
     expect(payload.notes.map((note) => note.id)).toEqual(['json-active']);
     expect(payload.trashedNotes.map((note) => note.id)).toEqual(['json-trash']);
     expect(payload.revisions.map((revision) => revision.id)).toEqual(['json-revision']);
@@ -147,7 +147,7 @@ test.describe('sharing and portable exports', () => {
     await page.locator('#export-btn').click();
     const jsonPayload = JSON.parse((await downloadBuffer(await jsonDownloadPromise)).toString('utf8'));
     expect(jsonPayload.notes[0].monthlyReviewMonth).toBe('2026-07');
-    expect(jsonPayload.schemaVersion).toBe(4);
+    expect(jsonPayload.schemaVersion).toBe(5);
 
     await openBackupMenu(page);
     const markdownDownloadPromise = page.waitForEvent('download');
