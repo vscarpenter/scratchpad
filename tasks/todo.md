@@ -1,45 +1,28 @@
-# v3.21 paste as markdown — ship round (2026-09-01)
+# One-pass train v3.22 → v4.1 (2026-09-01) — v3.22 shipped, v3.23 next
 
-Implementation is complete and committed as v3.21.0. Production serves
-v3.19.0 (checked 2026-09-01). v3.20.0 is pushed; the seven v3.21 commits
-are local only. Neither release is deployed. Push and deploy only on an
-explicit go-ahead.
+Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 and v3.22.0 are
+local only. Nothing is deployed. Push and deploy only on an explicit
+go-ahead. Port 8080 is occupied by a `python -m http.server` serving
+another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
 
-## Done and committed
+## v3.22 unlinked mentions — done
 
-- `603f05f` docs(design): approve paste as markdown design
-- `d39274d` docs(design): paste as markdown implementation plan
-- `23c72ed` feat(editor): html to markdown converter over an inert parsed
-  document (`public/js/html-to-markdown.js`, 263 lines, strict-typed)
-- `64679d4` feat(editor): paste html as markdown with native undo
-  (`public/js/paste.js`; app.js net minus one line)
-- `14f776a` docs(guide): paste as markdown and the plain-text paste
-  shortcuts
-- `1450636` chore(release): v3.21.0 paste as markdown
-- Gate: `npm run verify` green (coverage 40.01%, floor 36.2%); full suite
-  1075 passed / 17 skipped / 0 failed on three browsers (2.1m); CSP hashes
-  unchanged; dry run lists both new modules and the service worker
+- `7dba47d` spec, `f7d3f1f` plan, `6379380` style(markdown) biome pass,
+  `8d9a600` feat(links) mentions panel, `c13fced` docs, `dbe1147` release.
+- Tooling on the way: `b1563c4` SCRATCHPAD_TEST_PORT for Playwright, the
+  guide origin test now derives its origin from baseURL.
+- Gate: verify green (coverage 40.19%); suite 1087 passed / 17 skipped on
+  8091 (3 guide-origin failures fixed in the same round); CSP unchanged.
 
 ## Resuming From Here
 
-- Done: v3.21.0 end to end. `tests/paste-as-markdown.spec.js` holds 13
-  tests: 7 pure converter cases on all browsers, 5 synthetic-event handler
-  cases (skipped on Firefox, whose synthetic ClipboardEvent carries an
-  unreadable DataTransfer), and 1 Chromium-only real-clipboard paste plus
-  undo.
-- Not verified by automation: the plain-text paste bypass. Headless
-  Chromium on macOS does not route the shortcut, and the Chrome extension's
-  synthetic keys never reach clipboard commands. Please try once by hand:
-  copy bold text from any web page, paste into a note (expect Markdown),
-  ⌘Z (expect it gone), then the browser's plain-text paste (⌥⇧⌘V in Chrome
-  and Safari on a Mac, ⇧⌘V in Firefox) and expect plain text.
-- Next: deploy on an explicit yes (dry run first; confirm the
-  scratchpad-deploy identity). Then v3.22 Unlinked mentions from
-  `tasks/roadmap.md` (decide title minimum, alias-preserving replacement,
-  and draft-conflict rows).
-- Blockers: none.
-- Assumptions: app.js sits one line under its ceiling (6203 as the ratchet
-  counts); the next app.js addition of two or more lines needs offsets.
+- Next: v3.23 callouts (spec and plan committed next), then v3.24 syntax
+  highlighting, v3.25 templates folder, v4.0 image attachments (needs a
+  CSP publish before deploy), v4.1 linked folder.
+- Blockers: none. Assumptions: app.js at 6200 (ratchet count), 4 lines of
+  slack under the 6204 ceiling.
+- Lesson recorded below: exploration-agent claims about exports must be
+  verified before a design leans on them (scanOutsideFences was private).
 
 ## Release train after v3.19 (approved order)
 
@@ -67,7 +50,7 @@ tightened or held, real deploys gated on an explicit yes.
 - [x] **v3.21 Paste as Markdown** (committed 2026-09-01 as v3.21.0) — HTML clipboard → Markdown on paste in the
       editor; vendored minimal converter; establishes the paste handler that
       v4.0 images later extends
-- [ ] **v3.22 Unlinked mentions** — extend the backlinks panel with
+- [x] **v3.22 Unlinked mentions** (committed 2026-09-01 as v3.22.0) — extend the backlinks panel with
       plain-text mentions of the note title, one-click "link this"
 - [ ] **v3.23 Callouts** — `> [!NOTE]` marked extension + token CSS; warms the
       renderer-extension pattern; keep `share.html`'s viewer working under CSP

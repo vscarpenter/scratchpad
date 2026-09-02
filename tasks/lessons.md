@@ -70,3 +70,14 @@
   Chromium on macOS to route it.
 - commitlint here enforces a 72-character header and a lower-case subject,
   so product names like DOMParser cannot appear in a commit subject.
+- Verify an exploration agent's claim about a module's exports by reading
+  the export object before designing against it. `scanOutsideFences` was
+  reported as exported and was private; the mentions feature silently found
+  nothing until the probe showed `keys` of the global.
+- When summarizing a Playwright run, never `tail` the failure list. A cut
+  list made Chromium look green while all three browsers had failed the same
+  tests, and the missing lines hid the real cause for a round.
+- Playwright reuses whatever answers on the configured port. A stray
+  `python -m http.server 8080` served another site to every test; run with
+  `SCRATCHPAD_TEST_PORT=<free port>` and never assert a literal port inside
+  a test.
