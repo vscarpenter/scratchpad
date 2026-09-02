@@ -6178,9 +6178,8 @@
       return matches.length ? matches[0].id : null;
     });
     initCrossTabSync();
-    if (window.ScratchpadFind) {
-      window.ScratchpadFind.init({ editor: els.editor, onToast: toast });
-    }
+    if (window.ScratchpadFind) window.ScratchpadFind.init({ editor: els.editor, onToast: toast });
+    if (window.ScratchpadPaste) window.ScratchpadPaste.bind(els.editor);
     bindEvents();
     try {
       await purgeExpiredTrash();

@@ -42,6 +42,7 @@
     '/public/js/editor-format.js',
     '/public/js/find-replace.js',
     '/public/js/html-to-markdown.js',
+    '/public/js/paste.js',
     '/public/js/share.js',
     '/public/js/app.js',
   ];

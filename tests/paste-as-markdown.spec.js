@@ -63,3 +63,116 @@ test('drops scripts and styles, collapses whitespace, and escapes markdown synta
   expect(await convert(page, html)).toBe('a \\*b\\* \\[c\\] \\<d>\n\n\\# not heading\n\n2\\. not list\n\n\\- not item');
   expect(await convert(page, '')).toBe('');
 });
+
+async function openEditor(page, body) {
+  await gotoApp(page);
+  await createAndSaveNote(page, 'Paste target', body);
+  await page.locator('#edit-btn').click();
+  await page.locator('#note-editor').focus();
+  await page.evaluate(() => {
+    const editor = /** @type {HTMLTextAreaElement} */ (document.getElementById('note-editor'));
+    editor.setSelectionRange(editor.value.length, editor.value.length);
+  });
+}
+
+function pasteInto(page, payload) {
+  return page.evaluate(({ html, text, withFile }) => {
+    try {
+      const editor = document.getElementById('note-editor');
+      const data = new DataTransfer();
+      if (html) data.setData('text/html', html);
+      if (text) data.setData('text/plain', text);
+      if (withFile) data.items.add(new File(['x'], 'x.png', { type: 'image/png' }));
+      const event = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true });
+      const readable = event.clipboardData && (!html || event.clipboardData.getData('text/html') === html);
+      if (!readable) return 'unsupported';
+      editor.dispatchEvent(event);
+      return event.defaultPrevented ? 'converted' : 'native';
+    } catch (error) {
+      return 'unsupported';
+    }
+  }, payload);
+}
+
+test('an html paste is inserted as markdown at the caret and dirties the note', async ({ page }) => {
+  await openEditor(page, 'Start. ');
+  const result = await pasteInto(page, { html: '<p>Hello <b>world</b></p>', text: 'Hello world' });
+  test.skip(result === 'unsupported', 'browser cannot construct a ClipboardEvent with a DataTransfer');
+  expect(result).toBe('converted');
+  await expect(page.locator('#note-editor')).toHaveValue('Start. Hello **world**');
+  await expect(page.locator('#dirty-indicator')).toBeVisible();
+  const caret = await page.evaluate(() => document.getElementById('note-editor').selectionStart);
+  expect(caret).toBe('Start. Hello **world**'.length);
+});
+
+test('a selection is replaced by the converted markdown', async ({ page }) => {
+  await openEditor(page, 'keep REPLACE keep');
+  await page.evaluate(() => document.getElementById('note-editor').setSelectionRange(5, 12));
+  const result = await pasteInto(page, { html: '<em>new</em>', text: 'new' });
+  test.skip(result === 'unsupported', 'browser cannot construct a ClipboardEvent with a DataTransfer');
+  await expect(page.locator('#note-editor')).toHaveValue('keep *new* keep');
+});
+
+test('plain-only, file, and equal-text clipboards are left to the native paste', async ({ page }) => {
+  await openEditor(page, 'Untouched');
+  expect(await pasteInto(page, { text: 'just text' })).toBe('native');
+  const withFile = await pasteInto(page, { html: '<p>x</p>', text: 'x', withFile: true });
+  test.skip(withFile === 'unsupported', 'browser cannot construct a ClipboardEvent with a DataTransfer');
+  expect(withFile).toBe('native');
+  const equal = await pasteInto(page, { html: '<span style="color:red">  same   text </span>', text: 'same text' });
+  expect(equal).toBe('native');
+  await expect(page.locator('#note-editor')).toHaveValue('Untouched');
+});
+
+test('a converter failure leaves the native paste in charge', async ({ page }) => {
+  await openEditor(page, 'Safe');
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'ScratchpadHtmlToMarkdown', {
+      value: {
+        convert: () => {
+          throw new Error('boom');
+        },
+      },
+      configurable: true,
+    });
+  });
+  const result = await pasteInto(page, { html: '<p>x</p>', text: 'y' });
+  test.skip(result === 'unsupported', 'browser cannot construct a ClipboardEvent with a DataTransfer');
+  expect(result).toBe('native');
+  await expect(page.locator('#note-editor')).toHaveValue('Safe');
+});
+
+test('pasting a remote image and link causes no network request', async ({ page }) => {
+  await openEditor(page, 'Quiet');
+  const requests = [];
+  page.on('request', (request) => {
+    const url = request.url();
+    if (!url.startsWith('data:') && !url.startsWith('blob:')) requests.push(url);
+  });
+  const result = await pasteInto(page, {
+    html: '<p><a href="https://example.invalid/page">link</a> <img alt="pic" src="https://example.invalid/i.png"></p>',
+    text: 'link',
+  });
+  test.skip(result === 'unsupported', 'browser cannot construct a ClipboardEvent with a DataTransfer');
+  await expect(page.locator('#note-editor')).toHaveValue('Quiet[link](https://example.invalid/page) pic');
+  await page.waitForTimeout(300);
+  expect(requests).toEqual([]);
+});
+
+test('a real clipboard paste converts and undoes', async ({ page, context, browserName }) => {
+  test.skip(browserName !== 'chromium', 'clipboard permissions and paste shortcuts are only scriptable in Chromium');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await openEditor(page, 'Real: ');
+  await page.evaluate(async () => {
+    const item = new ClipboardItem({
+      'text/html': new Blob(['<p>Hi <strong>there</strong></p>'], { type: 'text/html' }),
+      'text/plain': new Blob(['Hi there'], { type: 'text/plain' }),
+    });
+    await navigator.clipboard.write([item]);
+  });
+  await page.locator('#note-editor').focus();
+  await page.keyboard.press('ControlOrMeta+v');
+  await expect(page.locator('#note-editor')).toHaveValue('Real: Hi **there**');
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(page.locator('#note-editor')).toHaveValue('Real: ');
+});
