@@ -33,6 +33,9 @@ Nothing else is ever uploaded.
   Markdown on the way in.
 - Tick task-list checkboxes right in the rendered note — `- [ ]` items are
   clickable in view mode and write back to the Markdown source.
+- Attach images by paste, drop, or the note menu; they stay in this browser,
+  render from the note's Markdown, travel with backups and the Markdown ZIP,
+  and are never uploaded when a note is shared.
 - Jump to today's note with one command; it is created on first use from a
   note titled "Daily template" (or a minimal default) and kept in the managed
   Daily Notes folder. Daily notes group into collapsible months, and an

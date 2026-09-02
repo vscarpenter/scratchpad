@@ -5,6 +5,7 @@ const SECTION_IDS = [
   'first-five-minutes',
   'markdown',
   'task-lists',
+  'images',
   'daily-notes',
   'linking',
   'folders',

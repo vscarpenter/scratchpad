@@ -19,7 +19,7 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 | Markdown rendering, callouts, syntax highlighting, sanitization, task lists, wikilinks, backlinks, and unlinked mentions | `notes-crud.spec.js`, `callouts.spec.js`, `syntax-highlighting.spec.js`, `sanitization.spec.js`, `task-lists.spec.js`, `wikilinks.spec.js`, `unlinked-mentions.spec.js` |
 | Daily notes, month grouping, Monthly Reviews, managed folders, templates, quick capture, action URLs, and keyboard shortcuts | `daily-note.spec.js`, `templates.spec.js`, `folders.spec.js`, `keyboard-shortcuts.spec.js`, `markdown-import.spec.js`, `share-export.spec.js` |
 | Drafts, revisions, failed writes, and multi-tab conflicts | `reliability.spec.js`, `revision-history.spec.js`, `cross-tab-conflicts.spec.js` |
-| JSON, Markdown, and encrypted import/export plus sharing | `import.spec.js`, `markdown-import.spec.js`, `encrypted-backup.spec.js`, `share-export.spec.js`, `backup-reminder.spec.js` |
+| JSON, Markdown, and encrypted import/export, image attachments, plus sharing | `import.spec.js`, `attachments.spec.js`, `markdown-import.spec.js`, `encrypted-backup.spec.js`, `share-export.spec.js`, `backup-reminder.spec.js` |
 | Diagnostics, persistent storage, data erasure, and update recovery | `diagnostics.spec.js`, `storage-protection.spec.js`, `data-erasure.spec.js`, `pwa-lifecycle.spec.js` |
 | Offline shell, same-origin privacy, and static pages | `pwa.spec.js`, `network-isolation.spec.js`, `guide.spec.js`, `static-pages.spec.js` |
 | Theme, accessibility semantics, touch targets, and responsive layout | `theme.spec.js`, `static-pages.spec.js`, `accessibility-semantics.spec.js`, `touch-targets.spec.js`, `layout-scroll.spec.js` |

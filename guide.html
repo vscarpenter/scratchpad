@@ -76,6 +76,7 @@
         <a href="#first-five-minutes">First five minutes</a>
         <a href="#markdown">Markdown</a>
         <a href="#task-lists">Task lists</a>
+        <a href="#images">Images</a>
         <a href="#daily-notes">Daily notes &amp; capture</a>
         <a href="#linking">Linking notes</a>
         <a href="#folders">Folders</a>
@@ -168,6 +169,20 @@
         (or <strong>Replace</strong>) to swap the current match, or <strong>Replace all</strong> to
         rewrite every match at once. <kbd class="kbd">Esc</kbd> closes the bar and puts you back
         in the text.
+      </p>
+
+      <h2 id="images">Images</h2>
+      <p>
+        Paste an image, drop one onto the editor, or choose <strong>Attach image…</strong> from the
+        note's ⋯ menu while editing. Scratchpad stores the image in this browser alongside your
+        notes and writes <code>![name](attachment:…)</code> into the Markdown, so the note stays plain
+        text. PNG, JPEG, GIF, and WebP are accepted; anything wider or taller than 2048px is scaled
+        down first, and images over 4MB are refused.
+      </p>
+      <p>
+        Images travel with your JSON backups and the Markdown ZIP (as files under
+        <code>attachments/</code>). They are never uploaded when you share a note; the shared copy
+        shows an <em>image not included</em> placeholder instead.
       </p>
 
       <h2 id="daily-notes">Daily notes &amp; quick capture</h2>
