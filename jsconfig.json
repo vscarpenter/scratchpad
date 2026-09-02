@@ -15,6 +15,7 @@
   },
   "include": [
     "playwright.config.js",
+    "public/js/attachments.js",
     "public/js/dialogs.js",
     "public/js/html-to-markdown.js",
     "public/js/mentions.js",

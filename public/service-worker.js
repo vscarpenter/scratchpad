@@ -46,6 +46,7 @@
     '/public/js/paste.js',
     '/public/js/mentions.js',
     '/public/js/templates.js',
+    '/public/js/attachments.js',
     '/public/js/share.js',
     '/public/js/app.js',
   ];

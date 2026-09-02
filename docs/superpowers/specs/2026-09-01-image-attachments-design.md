@@ -31,7 +31,8 @@ v4.0 deploy. Ships as v4.0.0.
 ## Storage contract
 
 - `DB_VERSION = 5`. Store `attachments` `{ id, noteId, name, type, size,
-  blob, createdAt }` with index `noteId`; store `settings` keyed by `key`
+  bytes, createdAt }` with index `noteId` (bytes is an ArrayBuffer: WebKit
+  cannot store an in-memory Blob in IndexedDB, so blobs are built on read); store `settings` keyed by `key`
   (unused until v4.1). The upgrade stays idempotent presence checks, now
   driven by a schema table.
 - Accepted types: `image/png`, `image/jpeg`, `image/gif`, `image/webp`.

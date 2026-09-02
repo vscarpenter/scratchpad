@@ -3,14 +3,19 @@
   'use strict';
 
   const DB_NAME = 'scratchpad';
-  const DB_VERSION = 4;
-  const STORES = {
-    notes: 'notes',
-    drafts: 'drafts',
-    revisions: 'revisions',
-    folders: 'folders',
-    shares: 'shares',
-  };
+  const DB_VERSION = 5;
+  // [store, keyPath, indexes]. Presence checks keep the upgrade idempotent
+  // from any earlier version, so there are no per-version branches.
+  const SCHEMA = [
+    ['notes', 'id', ['updatedAt', 'deletedAt']],
+    ['drafts', 'noteId', ['updatedAt']],
+    ['revisions', 'id', ['noteId', 'updatedAt']],
+    ['folders', 'id', []],
+    ['shares', 'id', ['noteId', 'expiresAt']],
+    ['attachments', 'id', ['noteId']],
+    ['settings', 'key', []],
+  ];
+  const STORES = Object.fromEntries(SCHEMA.map(([name]) => [name, name]));
 
   let dbPromise = null;
 
@@ -28,30 +33,13 @@
         dbPromise = null;
         reject(error);
       };
-      req.onupgradeneeded = (e) => {
+      req.onupgradeneeded = () => {
         const db = req.result;
-        if (!db.objectStoreNames.contains(STORES.notes)) {
-          const store = db.createObjectStore(STORES.notes, { keyPath: 'id' });
-          store.createIndex('updatedAt', 'updatedAt');
-        }
-        const notes = req.transaction.objectStore(STORES.notes);
-        if (!notes.indexNames.contains('deletedAt')) notes.createIndex('deletedAt', 'deletedAt');
-        if (!db.objectStoreNames.contains(STORES.drafts)) {
-          const drafts = db.createObjectStore(STORES.drafts, { keyPath: 'noteId' });
-          drafts.createIndex('updatedAt', 'updatedAt');
-        }
-        if (!db.objectStoreNames.contains(STORES.revisions)) {
-          const revisions = db.createObjectStore(STORES.revisions, { keyPath: 'id' });
-          revisions.createIndex('noteId', 'noteId');
-          revisions.createIndex('updatedAt', 'updatedAt');
-        }
-        if (!db.objectStoreNames.contains(STORES.folders)) {
-          db.createObjectStore(STORES.folders, { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains(STORES.shares)) {
-          const shares = db.createObjectStore(STORES.shares, { keyPath: 'id' });
-          shares.createIndex('noteId', 'noteId');
-          shares.createIndex('expiresAt', 'expiresAt');
+        for (const [name, keyPath, indexes] of SCHEMA) {
+          const store = db.objectStoreNames.contains(name)
+            ? req.transaction.objectStore(name)
+            : db.createObjectStore(name, { keyPath });
+          for (const index of indexes) if (!store.indexNames.contains(index)) store.createIndex(index, index);
         }
       };
       req.onsuccess = () => {
@@ -245,14 +233,14 @@
     return transactionDone(t);
   }
 
-  async function importRecords(notes, revisions, revisionLimit, folders) {
+  async function importRecords(notes, revisions, revisionLimit, folders, attachments) {
     folders = Array.isArray(folders) ? folders : [];
     const db = await open();
     return new Promise((resolve, reject) => {
       let failure = null;
       let t;
       try {
-        t = db.transaction([STORES.notes, STORES.revisions, STORES.folders], 'readwrite');
+        t = db.transaction([STORES.notes, STORES.revisions, STORES.folders, STORES.attachments], 'readwrite');
       } catch (error) {
         reject(error);
         return;
@@ -278,6 +266,8 @@
         for (const revision of revisions) revisionStore.put(revision);
         const folderStore = t.objectStore(STORES.folders);
         for (const folder of folders) folderStore.put(folder);
+        const attachmentStore = t.objectStore(STORES.attachments);
+        for (const attachment of attachments || []) attachmentStore.put(attachment);
 
         const keep = Math.max(0, Number.isFinite(revisionLimit) ? revisionLimit : 0);
         const noteIds = new Set(revisions.map((revision) => revision.noteId));
@@ -298,23 +288,27 @@
     });
   }
 
+  function deleteByNoteId(t, storeName, noteId) {
+    const store = t.objectStore(storeName);
+    const req = store.index('noteId').getAll(noteId);
+    req.onsuccess = () => {
+      for (const row of req.result || []) store.delete(row.id);
+    };
+  }
+
   async function deleteNoteEverywhere(noteId) {
     const db = await open();
-    const t = db.transaction([STORES.notes, STORES.drafts, STORES.revisions, STORES.shares], 'readwrite');
+    const t = db.transaction(
+      [STORES.notes, STORES.drafts, STORES.revisions, STORES.shares, STORES.attachments],
+      'readwrite',
+    );
     t.objectStore(STORES.notes).delete(noteId);
     t.objectStore(STORES.drafts).delete(noteId);
-    const revisions = t.objectStore(STORES.revisions);
-    const req = revisions.index('noteId').getAll(noteId);
-    req.onsuccess = () => {
-      for (const rev of req.result || []) revisions.delete(rev.id);
-    };
-    // Local rows only. Revoking the shares themselves is a network call the
-    // caller makes first; a deletion must not be blocked by a failed revoke.
-    const shares = t.objectStore(STORES.shares);
-    const shareReq = shares.index('noteId').getAll(noteId);
-    shareReq.onsuccess = () => {
-      for (const share of shareReq.result || []) shares.delete(share.id);
-    };
+    deleteByNoteId(t, STORES.revisions, noteId);
+    // Local share rows only. Revoking the shares themselves is a network call
+    // the caller makes first; a deletion must not be blocked by a failed revoke.
+    deleteByNoteId(t, STORES.shares, noteId);
+    deleteByNoteId(t, STORES.attachments, noteId);
     return transactionDone(t);
   }
 
@@ -371,15 +365,9 @@
 
   async function clearAllStores() {
     const db = await open();
-    const t = db.transaction(
-      [STORES.notes, STORES.drafts, STORES.revisions, STORES.folders, STORES.shares],
-      'readwrite'
-    );
-    t.objectStore(STORES.notes).clear();
-    t.objectStore(STORES.drafts).clear();
-    t.objectStore(STORES.revisions).clear();
-    t.objectStore(STORES.folders).clear();
-    t.objectStore(STORES.shares).clear();
+    const names = Object.values(STORES);
+    const t = db.transaction(names, 'readwrite');
+    for (const name of names) t.objectStore(name).clear();
     return transactionDone(t);
   }
 
@@ -413,5 +401,8 @@
     removeShare,
     removeSharesForNote,
     pruneExpiredShares,
+    tx,
+    reqToPromise,
+    transactionDone,
   };
 })();
