@@ -1,6 +1,6 @@
-# One-pass train v3.22 → v4.1 (2026-09-01) — v3.24 shipped, v3.25 next
+# One-pass train v3.22 → v4.1 (2026-09-01) — v3.25 shipped, v4.0 next
 
-Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v3.24.0 are
+Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v3.25.0 are
 local only. Nothing is deployed. Push and deploy only on an explicit
 go-ahead. Port 8080 is occupied by a `python -m http.server` serving
 another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
@@ -28,10 +28,16 @@ another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
   Prism (docs folded in), `e4d4a76` release. Gate: verify green (40.01%);
   suite 1114 passed / 17 skipped; check:vendor ok; CSP unchanged.
 
+## v3.25 templates folder — done
+
+- `85a5889` spec + plan, `9aef80c` feat(palette) templates, docs commit,
+  `ede76da` release. Gate: verify green (39.90%); suite 1120 passed / 17
+  skipped (one over-specified palette assertion fixed); CSP unchanged.
+
 ## Resuming From Here
 
-- Next: v3.25 templates folder (spec and plan committed next; one palette
-  command per template instead of a second-stage picker), v3.25 templates folder, v4.0 image attachments (needs a
+- Next: v4.0 image attachments (spec committed; plan next; needs a CSP
+  publish adding blob: to img-src before its deploy), v3.25 templates folder, v4.0 image attachments (needs a
   CSP publish before deploy), v4.1 linked folder.
 - Blockers: none. Assumptions: app.js at 6200 (ratchet count), 4 lines of
   slack under the 6204 ceiling.
@@ -70,7 +76,7 @@ tightened or held, real deploys gated on an explicit yes.
       renderer-extension pattern; keep `share.html`'s viewer working under CSP
 - [x] **v3.24 Syntax highlighting** (committed 2026-09-01 as v3.24.0) — vendored highlighter scoped to ~10
       common languages (~30KB), payload-conscious
-- [ ] **v3.25 Templates folder** — convention + "New note from template"
+- [x] **v3.25 Templates folder** (committed 2026-09-01 as v3.25.0) — convention + "New note from template"
       palette command; mirrors the daily-template precedent
 - [ ] **v4.0 Image attachments** — DB_VERSION 4→5 (blob store), backup
       schema 5, export strategy decision, size caps, paste/drop; decide
