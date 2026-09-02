@@ -207,9 +207,98 @@
     if ((await permission()) === 'granted') await writeAll();
   }
 
-  async function readAll() {
-    lastRead = deps ? deps.now() : 0;
-    return 0;
+  /** @param {FileSystemDirectoryHandle} dir @param {string} prefix @returns {Promise<Array<{ path: string, handle: FileSystemFileHandle }>>} */
+  async function walk(dir, prefix) {
+    /** @type {Array<{ path: string, handle: FileSystemFileHandle }>} */
+    const files = [];
+    for await (const [name, entry] of /** @type {any} */ (dir).entries()) {
+      if (entry.kind === 'directory') {
+        if (name !== 'attachments') files.push(...(await walk(entry, prefix + name + '/')));
+      } else if (name.endsWith('.md')) {
+        files.push({ path: prefix + name, handle: entry });
+      }
+    }
+    return files;
+  }
+
+  /** @param {string} text */
+  function referencesFromPaths(text) {
+    return text.replace(/\]\(attachments\/([0-9a-f-]+)-[^)]+\)/gi, '](attachment:$1)');
+  }
+
+  /** @param {string} path */
+  function folderIdForPath(path) {
+    if (!deps) return null;
+    const api = deps;
+    const dirs = path
+      .split('/')
+      .slice(0, -1)
+      .filter((part) => part !== 'archive');
+    if (!dirs.length) return null;
+    const folder = api.folders().find((item) => api.slugify(item.name) === dirs[0]);
+    return folder ? folder.id : null;
+  }
+
+  /** @param {Note} existing @param {Note} parsed @param {number} known @param {number} mtime @param {Deps} api */
+  async function applyToExisting(existing, parsed, known, mtime, api) {
+    const noteChangedSince = (existing.updatedAt || 0) > known;
+    if (noteChangedSince && (existing.updatedAt || 0) > mtime) {
+      await api.storeRevision({ ...existing, title: parsed.title, body: parsed.body, tags: parsed.tags });
+      pending.add(existing.id);
+      return 0;
+    }
+    if ((existing.body || '') === (parsed.body || '') && (existing.title || '') === (parsed.title || '')) return 0;
+    await api.storeRevision(existing);
+    await api.putNoteRecord({
+      ...existing,
+      title: parsed.title,
+      body: parsed.body,
+      tags: parsed.tags,
+      updatedAt: api.now(),
+    });
+    return 1;
+  }
+
+  /** @param {{ path: string, handle: FileSystemFileHandle }} file @param {Deps} api @param {LinkRecord} rec */
+  async function applyFile(file, api, rec) {
+    const blob = await file.handle.getFile();
+    const mtime = blob.lastModified;
+    const known = rec.written[file.path] || 0;
+    if (mtime <= known) return 0;
+    const parsed = api.parseMarkdownNote(referencesFromPaths(await blob.text()));
+    const existing = api.notes().find((note) => note.id === parsed.id);
+    let changed = 0;
+    if (existing && !api.isTrashed(existing)) {
+      changed = await applyToExisting(existing, parsed, known, mtime, api);
+    } else if (!existing) {
+      const archivedAt = file.path.startsWith('archive/') ? api.now() : null;
+      await api.putNoteRecord({ ...parsed, folderId: folderIdForPath(file.path), archivedAt });
+      rec.paths[parsed.id] = file.path;
+      changed = 1;
+    }
+    rec.written[file.path] = mtime;
+    return changed;
+  }
+
+  /** @param {boolean} [quiet] */
+  async function readAll(quiet) {
+    if (!deps || !record || (await permission()) !== 'granted') return 0;
+    const api = deps;
+    const rec = record;
+    lastRead = api.now();
+    let changed = 0;
+    try {
+      for (const file of await walk(rec.handle, '')) changed += await applyFile(file, api, rec);
+      await saveRecord();
+      if (changed) await api.reload();
+    } catch (error) {
+      api.toast('Could not read the linked folder.', { tone: 'error' });
+      console.warn('Linked folder read failed', error);
+      return changed;
+    }
+    if (!quiet || changed)
+      api.toast('Read ' + changed + ' changed file' + (changed === 1 ? '' : 's') + ' from “' + rec.name + '”.');
+    return changed;
   }
 
   async function render() {
@@ -251,11 +340,11 @@
       const count = await writeAll();
       api.toast('Wrote ' + count + ' note' + (count === 1 ? '' : 's') + ' to “' + (record ? record.name : '') + '”.');
     });
-    bindButton('read', readAll);
+    bindButton('read', () => readAll(false));
     bindButton('reconnect', reconnect);
     bindButton('unlink', unlink);
     window.addEventListener('focus', () => {
-      if (record && api.now() - lastRead > READ_THROTTLE) readAll();
+      if (record && api.now() - lastRead > READ_THROTTLE) readAll(true);
     });
     loadRecord()
       .then(render)

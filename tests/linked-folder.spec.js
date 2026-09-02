@@ -23,7 +23,12 @@ async function opfs(page, action, path, content) {
       let dir = await navigator.storage.getDirectory();
       const parts = path.split('/');
       const name = parts.pop();
-      for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: action === 'write' });
+      try {
+        for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: action === 'write' });
+      } catch (error) {
+        if (action === 'exists') return false;
+        throw error;
+      }
       if (action === 'write') {
         const handle = await dir.getFileHandle(name, { create: true });
         const writable = await handle.createWritable();
@@ -87,4 +92,77 @@ test('saving a note rewrites its file and trashing removes it', async ({ page })
   await page.locator('#delete-btn').click();
   await page.locator('#confirm-delete').click();
   await expect.poll(() => opfs(page, 'exists', 'sharper-idea.md')).toBe(false);
+});
+
+test('reading applies an external edit, keeps a conflict loser as a revision, and adopts new files', async ({
+  page,
+}) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  const original = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside'));
+  await opfs(page, 'write', 'fresh-thought.md', '---\ntitle: "Fresh thought"\ntags: ["new"]\n---\n\nTyped elsewhere');
+  await page.locator('#linked-folder-read').click();
+  await expect(page.locator('#toast-region')).toContainText(/Read 2/);
+  const notes = await page.evaluate(() => window.ScratchpadDB.getAll());
+  expect(notes.find((n) => n.id === 'loose-note').body).toBe('Edited outside');
+  const fresh = notes.find((n) => n.title === 'Fresh thought');
+  expect(fresh).toMatchObject({ body: 'Typed elsewhere', tags: ['new'], folderId: null });
+  await expect.poll(() => opfs(page, 'read', 'fresh-thought.md')).toContain('id: "' + fresh.id + '"');
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="loose-note"]').click();
+  await page.locator('#edit-btn').click();
+  await page.locator('#note-editor').fill('Edited inside');
+  await page.locator('#save-btn').click();
+  await expect.poll(() => opfs(page, 'read', 'loose-idea.md')).toContain('Edited inside');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside again'));
+  await page.locator('#open-about').click();
+  await page.locator('#linked-folder-read').click();
+  await expect
+    .poll(() => page.evaluate(() => window.ScratchpadDB.get('loose-note').then((n) => n.body)))
+    .toBe('Edited outside again');
+  expect((await page.evaluate(() => window.ScratchpadDB.getRevisions('loose-note'))).length).toBeGreaterThanOrEqual(2);
+});
+
+test('attachments are written as files and read back as references', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="loose-note"]').click();
+  await page.locator('#edit-btn').click();
+  await page.setInputFiles('#attach-image-input', {
+    name: 'pic.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64',
+    ),
+  });
+  await expect(page.locator('#note-editor')).toHaveValue(/attachment:/);
+  await page.locator('#save-btn').click();
+  const id = await page.evaluate(async () => (await window.ScratchpadAttachments.forNote('loose-note'))[0].id);
+  await expect.poll(() => opfs(page, 'exists', 'attachments/' + id + '-pic.png')).toBe(true);
+  await expect.poll(() => opfs(page, 'read', 'loose-idea.md')).toContain('](attachments/' + id + '-pic.png)');
+  const file = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', file + '\n\nMore text');
+  await page.locator('#open-about').click();
+  await page.locator('#linked-folder-read').click();
+  await expect(page.locator('#toast-region')).toContainText(/Read 1/);
+  const body = (await page.evaluate(() => window.ScratchpadDB.get('loose-note'))).body;
+  expect(body).toContain('attachment:' + id);
+  expect(body).toContain('More text');
+});
+
+test('unlink forgets the folder but leaves files, and the row hides without the api', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  await page.locator('#linked-folder-unlink').click();
+  await expect(page.locator('#linked-folder-status')).toHaveText('Not linked');
+  expect(await opfs(page, 'exists', 'loose-idea.md')).toBe(true);
+  await page.addInitScript(() => {
+    delete window.showDirectoryPicker;
+  });
+  await page.reload();
+  await page.locator('#open-about').click();
+  await expect(page.locator('#linked-folder-row')).toBeHidden();
 });
