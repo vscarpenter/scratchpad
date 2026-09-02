@@ -106,10 +106,11 @@ test.describe('user guide page', () => {
     await expect(link).toHaveAttribute('target', '_blank');
   });
 
-  test('guide.html makes no cross-origin requests and ships in the offline shell', async ({ page, context }) => {
+  test('guide.html makes no cross-origin requests and ships in the offline shell', async ({ page, baseURL }) => {
     const external = [];
+    const origin = new URL(String(baseURL)).origin;
     page.on('request', (req) => {
-      if (new URL(req.url()).origin !== 'http://127.0.0.1:8080') external.push(req.url());
+      if (new URL(req.url()).origin !== origin) external.push(req.url());
     });
     await page.goto('/guide.html', { waitUntil: 'networkidle' });
     expect(external).toEqual([]);
