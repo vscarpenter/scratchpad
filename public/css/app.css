@@ -1965,7 +1965,8 @@ body:not(.page-privacy) .theme-toggle {
 .note-rendered ol { padding-left: 1.3em; margin: 0.6em 0; }
 .note-rendered li { margin: 0.2em 0; }
 /* Blockquote: accent-soft box with a pill-shaped accent bar (the ::before). */
-.note-rendered blockquote {
+.note-rendered blockquote,
+.share-body blockquote {
   display: flex;
   gap: 12px;
   margin: 1.2em 0;
@@ -1975,15 +1976,18 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--text-quote);
   font-style: italic;
 }
-.note-rendered blockquote::before {
+.note-rendered blockquote::before,
+.share-body blockquote::before {
   content: "";
   flex: none;
   width: 3.5px;
   border-radius: var(--r-pill);
   background: var(--accent);
 }
-.note-rendered blockquote p { margin: 0; }
-.note-rendered code {
+.note-rendered blockquote p,
+.share-body blockquote p { margin: 0; }
+.note-rendered code,
+.share-body code {
   font-family: var(--mono);
   font-size: 0.88em;
   background: var(--code-fill);
@@ -1992,7 +1996,9 @@ body:not(.page-privacy) .theme-toggle {
   border-radius: var(--r-code);
 }
 .note-rendered pre,
-.note-rendered pre.code-block {
+.note-rendered pre.code-block,
+.share-body pre,
+.share-body pre.code-block {
   margin: 1.2em 0;
   padding: 16px 18px;
   background: var(--code-fill);
@@ -2004,11 +2010,37 @@ body:not(.page-privacy) .theme-toggle {
   line-height: 1.6;
   color: var(--ink);
 }
-.note-rendered pre code {
+.note-rendered pre code,
+.share-body pre code {
   background: transparent;
   padding: 0;
   font-size: inherit;
 }
+/* Callouts: > [!NOTE] blocks. Kinds map to the existing color families. */
+.note-rendered blockquote.callout,
+.share-body blockquote.callout {
+  display: block;
+  font-style: normal;
+  color: var(--text-body);
+  border-left: 3.5px solid var(--callout-bar);
+  background: var(--callout-fill);
+  border-radius: var(--r-md);
+}
+.note-rendered blockquote.callout::before,
+.share-body blockquote.callout::before { display: none; }
+.note-rendered .callout-title,
+.share-body .callout-title {
+  margin: 0 0 4px;
+  font: 600 11.5px/1.4 var(--sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--callout-text);
+}
+.callout-note { --callout-bar: var(--accent); --callout-fill: var(--accent-soft); --callout-text: var(--accent-text); }
+.callout-tip { --callout-bar: var(--success); --callout-fill: var(--success-tint); --callout-text: var(--success-text); }
+.callout-important { --callout-bar: var(--info); --callout-fill: color-mix(in srgb, var(--info) 12%, transparent); --callout-text: var(--info); }
+.callout-warning { --callout-bar: var(--warning); --callout-fill: var(--warning-tint); --callout-text: var(--warning-dark); }
+.callout-caution { --callout-bar: var(--rust); --callout-fill: var(--rust-tint); --callout-text: var(--rust); }
 .note-rendered table {
   width: 100%;
   border-collapse: collapse;

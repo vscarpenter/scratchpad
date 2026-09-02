@@ -34,6 +34,48 @@
     });
   }
 
+  const CALLOUT_PATTERN = /^\[!(note|tip|important|warning|caution)\](?:[ \t]+(.*))?$/i;
+
+  // GitHub-style callouts: a blockquote whose first paragraph starts with a
+  // [!KIND] line. That line becomes the title; the rest is re-lexed inline.
+  function tagCallout(token) {
+    if (token.type !== 'blockquote' || !token.tokens || !token.tokens.length) return;
+    const paragraph = token.tokens[0];
+    if (paragraph.type !== 'paragraph' || typeof paragraph.text !== 'string') return;
+    const lines = paragraph.text.split('\n');
+    const match = CALLOUT_PATTERN.exec(lines[0]);
+    if (!match) return;
+    token.callout = { kind: match[1].toLowerCase(), title: (match[2] || '').trim() };
+    const rest = lines.slice(1).join('\n');
+    if (!rest) {
+      token.tokens.shift();
+      return;
+    }
+    paragraph.text = rest;
+    paragraph.raw = rest;
+    paragraph.tokens = window.marked.Lexer.lexInline(rest);
+  }
+
+  function renderBlockquote(token) {
+    const body = this.parser.parse(token.tokens);
+    if (!token.callout) return '<blockquote>\n' + body + '</blockquote>\n';
+    const kind = token.callout.kind;
+    const title = token.callout.title || kind.charAt(0).toUpperCase() + kind.slice(1);
+    return (
+      '<blockquote class="callout callout-' +
+      kind +
+      '"><p class="callout-title">' +
+      escapeHtml(title) +
+      '</p>' +
+      body +
+      '</blockquote>\n'
+    );
+  }
+
+  if (window.marked && typeof window.marked.use === 'function') {
+    window.marked.use({ walkTokens: tagCallout, renderer: { blockquote: renderBlockquote } });
+  }
+
   function el(tag, options) {
     const node = document.createElement(tag);
     if (!options) return node;
@@ -77,6 +119,7 @@
     if (firstP && firstP.textContent.length > 60) firstP.classList.add('is-lede');
 
     for (const bq of root.querySelectorAll('blockquote')) {
+      if (bq.classList.contains('callout')) continue;
       const ps = bq.querySelectorAll('p');
       if (ps.length === 1 && ps[0].textContent.length < 200) {
         bq.classList.add('is-pullquote');
