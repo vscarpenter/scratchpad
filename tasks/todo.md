@@ -1,6 +1,6 @@
-# One-pass train v3.22 → v4.1 (2026-09-01) — v3.25 shipped, v4.0 next
+# One-pass train v3.22 → v4.1 (2026-09-01) — v4.0 shipped, v4.1 next
 
-Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v3.25.0 are
+Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v4.0.0 are
 local only. Nothing is deployed. Push and deploy only on an explicit
 go-ahead. Port 8080 is occupied by a `python -m http.server` serving
 another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
@@ -34,10 +34,25 @@ another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
   `ede76da` release. Gate: verify green (39.90%); suite 1120 passed / 17
   skipped (one over-specified palette assertion fixed); CSP unchanged.
 
+## v4.0 image attachments — done
+
+- `278587a` spec, `9c8d5fb` plan, `b79f7bb` feat(db) schema 5, `0bc851e`
+  feat(editor) attachments, `7931eb3` style pass on four never-formatted
+  files, `fe1e573` feat(backup) attachments in backups and the ZIP,
+  `4790c4b` docs, `1ea58e7` release. Gate: verify green (39.77%); suite 1147
+  passed / 22 skipped (one WebKit folder-storage flake, passes alone).
+- **Deploy prerequisite:** publish the CloudFront security-headers function
+  with `img-src 'self' blob: data:` (both cloudfront/ sources already carry
+  it; hashes unchanged) BEFORE deploying v4.0.0, or images will not render
+  in production. Use the csp-update skill; it is a prod change gated on a
+  yes.
+- Design notes: attachment bytes are stored as ArrayBuffer (WebKit cannot
+  persist in-memory Blobs in IndexedDB); attach operations are serialized
+  through one queue so paste, drop, and menu insertions land in order.
+
 ## Resuming From Here
 
-- Next: v4.0 image attachments (spec committed; plan next; needs a CSP
-  publish adding blob: to img-src before its deploy), v3.25 templates folder, v4.0 image attachments (needs a
+- Next: v4.1 linked folder (spec and plan committed next). v3.25 templates folder, v4.0 image attachments (needs a
   CSP publish before deploy), v4.1 linked folder.
 - Blockers: none. Assumptions: app.js at 6200 (ratchet count), 4 lines of
   slack under the 6204 ceiling.
@@ -78,7 +93,7 @@ tightened or held, real deploys gated on an explicit yes.
       common languages (~30KB), payload-conscious
 - [x] **v3.25 Templates folder** (committed 2026-09-01 as v3.25.0) — convention + "New note from template"
       palette command; mirrors the daily-template precedent
-- [ ] **v4.0 Image attachments** — DB_VERSION 4→5 (blob store), backup
+- [x] **v4.0 Image attachments** (committed 2026-09-01 as v4.0.0; CSP publish required before deploy) — DB_VERSION 4→5 (blob store), backup
       schema 5, export strategy decision, size caps, paste/drop; decide
       shares stay text-only (recommended — object URLs are per-browser)
 - [ ] **v4.1 Linked plain-text folder** — File System Access two-way `.md`
