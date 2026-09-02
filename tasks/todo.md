@@ -21,12 +21,14 @@ serving another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
   WebKit cannot persist a directory handle, CI-only guide popup).
 - Next, in order, each on an explicit go-ahead:
   1. `git push origin main` (47 commits ahead).
-  2. Publish the CloudFront security-headers function with
-     `img-src 'self' blob: data:` (both `cloudfront/` sources already
-     carry it; the csp-update skill runs it). Required before v4.0.0 or
-     later is served, or images will not render in production.
+  2. DONE 2026-09-02 03:36Z: the security-headers function is published
+     to LIVE with `img-src 'self' blob: data:` (verified at the edge on /
+     and /s/; the other seven headers unchanged). deployAll.sh would
+     republish the same code harmlessly.
   3. `./deploy.sh --dry-run`, confirm the scratchpad-deploy identity, then
-     `./deploy.sh`. One deploy carries v3.20 through v4.1.
+     `./deploy.sh`. One deploy carries v3.20 through v4.1. deploy.sh now
+     invalidates `/public/*` and the worker precaches with cache: 'reload'
+     (`daea59e`, `9465818`), so the five-minute stale-asset window is gone.
   4. Hands-on checks that automation could not do: plain-text paste
      bypass (⌥⇧⌘V in Chrome/Safari on a Mac, ⇧⌘V in Firefox) and linking
      a real directory in Chrome (tests use the origin-private file system).
