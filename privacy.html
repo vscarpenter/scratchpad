@@ -76,6 +76,8 @@
       <h2>The short version</h2>
       <ul>
         <li>Your notes are stored in this browser using IndexedDB. They stay on this device.</li>
+        <li>Images you attach are stored in the same browser database. They are never uploaded, not even in a share link.</li>
+        <li>If you link a folder, Scratchpad writes plain-text copies of your notes, and their images, to that directory on this device.</li>
         <li>There are no analytics, no trackers, no advertising IDs, no third-party scripts.</li>
         <li>While you write, read, search, import, or export, the app makes no network requests at all.</li>
         <li>The one exception is a share link, which you create per note, one note at a time. See <a href="#sharing">Sharing</a>.</li>
@@ -100,6 +102,18 @@
           <strong>Drafts and revision history</strong> — kept in the same IndexedDB database, in
           <code>drafts</code> and <code>revisions</code> object stores. Drafts support unsaved-edit
           recovery. Scratchpad keeps up to ten saved revisions per note.
+        </li>
+        <li>
+          <strong>Images</strong> — kept in the same IndexedDB database, in an
+          <code>attachments</code> object store. Each attachment holds its id, the note it belongs
+          to, its file name, type, size, and the image bytes. Images are included in your backups
+          and the Markdown ZIP, and never in a share link.
+        </li>
+        <li>
+          <strong>Linked folder</strong> — if you link a directory, a <code>settings</code> object
+          store keeps the browser's handle for it and the paths Scratchpad has written. The files
+          themselves live in the directory you chose, on this device. Unlinking forgets the handle
+          and leaves the files alone.
         </li>
         <li>
           <strong>App preferences</strong> — small <em>localStorage</em> entries remember the theme,
@@ -129,7 +143,7 @@
       <h2>What we don't do</h2>
       <ul>
         <li><strong>No accounts.</strong> There is nothing to sign up for. There is no identity.</li>
-        <li><strong>No sync.</strong> Notes live only in this browser, on this device.</li>
+        <li><strong>No sync.</strong> Notes live only in this browser, on this device. A linked folder is a plain-text copy on the same device that you own — not a service, and not another device.</li>
         <li><strong>No analytics or telemetry.</strong> We don't count visits, clicks, or sessions.</li>
         <li><strong>No third-party scripts.</strong> Every script and stylesheet is served from the same origin as the app.</li>
         <li><strong>No external fonts.</strong> Typography uses platform-native fonts only — nothing is fetched from a font CDN.</li>
@@ -163,6 +177,7 @@
       <p>
         Sharing a note is the only feature that sends note content off your device. It is always
         something you start, one note at a time, from that note's Share dialog.
+        Images attached to a note are never part of a share; the shared copy shows a placeholder.
       </p>
       <p>When you create a share link, your browser encrypts the note first. What gets uploaded is:</p>
       <ul>

@@ -240,7 +240,9 @@
           <h3 class="about-step-title">Your notes stay put.</h3>
           <p class="about-step-body">
             There is nowhere for them to go. No fetch, no XHR, no
-            beacon, no sync. Close the tab and reopen it next week —
+            beacon, no sync. Link a folder and they also become plain-text
+            files in a directory you chose on this device, and that is as
+            far as they travel. Close the tab and reopen it next week —
             everything is exactly where you left it.
           </p>
         </li>
@@ -263,7 +265,7 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
           </span>
           <h3 class="about-feature-title">Markdown editing</h3>
-          <p class="about-feature-body">Headings, lists, code, tables, pull-quotes. Render preview with one click; edit on the next.</p>
+          <p class="about-feature-body">Headings, lists, tables, pull-quotes, <code>[!NOTE]</code> callouts, and syntax-highlighted code. Paste from a web page or a document and it arrives as Markdown. Render preview with one click; edit on the next.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
@@ -284,14 +286,28 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </span>
           <h3 class="about-feature-title">Linked notes</h3>
-          <p class="about-feature-body">Connect notes with [[Title]] links, autocompleted as you type. Every note shows what links to it, and renames offer to update references.</p>
+          <p class="about-feature-body">Connect notes with [[Title]] links, autocompleted as you type. Every note shows what links to it and which notes mention it without a link, one click from becoming one. Renames offer to update references.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           </span>
           <h3 class="about-feature-title">Fast organization</h3>
-          <p class="about-feature-body">Open one focused folder at a time, return Home for pinned and recent notes, drag to file a note, or use ranked search across titles, text, and tags in every folder.</p>
+          <p class="about-feature-body">Open one focused folder at a time, return Home for pinned and recent notes, drag to file a note, or use ranked search across titles, text, and tags in every folder, narrowed with <code>tag:</code>, <code>title:</code>, and <code>folder:</code>. A folder named Templates turns its notes into palette commands.</p>
+        </li>
+        <li class="about-feature">
+          <span class="about-feature-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg>
+          </span>
+          <h3 class="about-feature-title">Images, kept local</h3>
+          <p class="about-feature-body">Paste, drop, or attach an image and it lives in this browser beside the note, referenced from plain Markdown. Images travel with backups and the Markdown ZIP, and never with a share link.</p>
+        </li>
+        <li class="about-feature">
+          <span class="about-feature-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>
+          </span>
+          <h3 class="about-feature-title">A folder you own</h3>
+          <p class="about-feature-body">In browsers with the File System Access API, link a directory and every note is written there as a Markdown file with frontmatter. Edit the files anywhere and Scratchpad reads them back. A plain-text copy on your device, not a service.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
