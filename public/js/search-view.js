@@ -4,7 +4,8 @@
   ('use strict');
 
   /** @typedef {'direct' | 'close'} SearchKind */
-  /** @typedef {{ kind: SearchKind, count: number, view: string, query: string, hasTagFilter: boolean, onClear: () => void }} ChromeOptions */
+  /** @typedef {{ tags: string[], titles: string[], folders: string[] }} QueryFilters */
+  /** @typedef {{ kind: SearchKind, count: number, view: string, query: string, hasTagFilter: boolean, filters?: QueryFilters, onClear: () => void }} ChromeOptions */
   /** @typedef {{ summary: HTMLElement, note: HTMLElement | null, empty: HTMLElement | null, status: string }} SearchChrome */
   /** @typedef {{ input: HTMLInputElement, list: HTMLElement, isSearching: () => boolean, hasActiveFilters: () => boolean, sync: () => void, clear: () => void }} KeyboardOptions */
   /** @typedef {{ highlightText(text: string, queryOrTerms: string | string[]): Node[], highlightElement(root: HTMLElement | null, query: string): void, createChrome(options: ChromeOptions): SearchChrome, bindKeyboard(options: KeyboardOptions): void }} SearchViewApi */
@@ -102,13 +103,41 @@
     return count + (count === 1 ? ' result' : ' results');
   }
 
+  /** @type {QueryFilters} */
+  const EMPTY_FILTERS = { tags: [], titles: [], folders: [] };
+
+  /** @param {QueryFilters} filters */
+  function filterParts(filters) {
+    const parts = [];
+    if (filters.folders.length) parts.push('folder ' + filters.folders.join(', '));
+    if (filters.tags.length) parts.push('tag ' + filters.tags.join(', '));
+    if (filters.titles.length) parts.push('title ' + filters.titles.join(', '));
+    return parts;
+  }
+
+  /** @param {ChromeOptions} options */
+  function scopeLabel(options) {
+    const filters = options.filters || EMPTY_FILTERS;
+    const parts = filterParts(filters);
+    if (!filters.folders.length) parts.unshift('all folders');
+    return [viewLabel(options.view), ...parts].join(' · ');
+  }
+
+  /** @param {ChromeOptions} options */
+  function scopeSentence(options) {
+    const filters = options.filters || EMPTY_FILTERS;
+    const folderScope = filters.folders.length ? '' : ' across all folders';
+    const parts = filterParts(filters).map((part) => ', ' + part);
+    return viewLabel(options.view) + folderScope + parts.join('');
+  }
+
   /** @param {ChromeOptions} options */
   function createSummary(options) {
     const summary = element('div', { className: 'search-results-summary', id: 'search-results-summary' });
     const meta = element('div', { className: 'search-results-meta' });
     meta.append(
       element('strong', { id: 'search-results-count', text: countLabel(options.kind, options.count) }),
-      element('span', { id: 'search-results-scope', text: viewLabel(options.view) + ' · all folders' }),
+      element('span', { id: 'search-results-scope', text: scopeLabel(options) }),
     );
     const clear = element('button', { className: 'search-results-clear', id: 'search-results-clear', text: 'Clear' });
     clear.setAttribute('type', 'button');
@@ -124,7 +153,11 @@
       element('p', { className: 'sidebar-empty-title', text: 'No notes match “' + options.query + '”' }),
       element('p', {
         className: 'sidebar-empty-copy',
-        text: 'Search checks titles, text, and tags in ' + viewLabel(options.view) + ' across all folders.',
+        text: 'Search checks titles, text, and tags in ' + scopeSentence(options) + '.',
+      }),
+      element('p', {
+        className: 'sidebar-empty-copy search-empty-hint',
+        text: 'Narrow with tag:name, title:word, or folder:name.',
       }),
     );
     const clear = element('button', {
@@ -151,7 +184,7 @@
       summary: createSummary(options),
       note,
       empty: options.count ? null : createEmpty(options),
-      status: countLabel(options.kind, options.count) + ' in ' + viewLabel(options.view) + ' across all folders.',
+      status: countLabel(options.kind, options.count) + ' in ' + scopeSentence(options) + '.',
     };
   }
 

@@ -4,7 +4,7 @@ const { seedRawNotes, seedFolders } = require('./helpers');
 
 async function seedOperatorNotes(page) {
   await seedRawNotes(page, [
-    { id: 'plan-work', title: 'Launch plan', body: 'Alpha milestone.', tags: ['work', 'draft'], folderId: 'f-work' },
+    { id: 'plan-work', title: 'Launch plan', body: 'Alpha tag:work.', tags: ['work', 'draft'], folderId: 'f-work' },
     { id: 'plan-daily', title: 'Daily plan', body: 'Alpha checklist.', tags: ['work'], folderId: 'f-daily' },
     { id: 'loose-idea', title: 'Loose idea', body: 'Alpha thought at 10:30 sharp.', tags: ['idea'] },
     { id: 'cafe-menu', title: 'Café menu', body: 'Beta list.', tags: ['café'] },
@@ -90,4 +90,34 @@ test('operator values ignore case and diacritics', async ({ page }) => {
   await expectRows(page, ['cafe-menu']);
   await page.locator('#search').fill('FOLDER:Daily');
   await expectRows(page, ['plan-daily']);
+});
+
+test('the scope line and live region name the operators', async ({ page }) => {
+  await seedOperatorNotes(page);
+  await page.locator('#search').fill('folder:daily tag:work');
+  await expect(page.locator('#search-results-scope')).toHaveText('Notes · folder daily · tag work');
+  await expect(page.locator('#search-status')).toHaveText('1 result in Notes, folder daily, tag work.');
+  await page.locator('#search').fill('title:plan');
+  await expect(page.locator('#search-results-scope')).toHaveText('Notes · all folders · title plan');
+  await expect(page.locator('#search-status')).toHaveText('2 results in Notes across all folders, title plan.');
+});
+
+test('the empty state names the operators and the folder scope', async ({ page }) => {
+  await seedOperatorNotes(page);
+  await page.locator('#search').fill('folder:zzz');
+  await expect(page.locator('.search-empty')).toContainText('titles, text, and tags in Notes, folder zzz.');
+  await expect(page.locator('.search-empty-hint')).toHaveText('Narrow with tag:name, title:word, or folder:name.');
+  await page.locator('#search').fill('tag:zzz');
+  await expect(page.locator('.search-empty')).toContainText('in Notes across all folders, tag zzz.');
+});
+
+test('operator words never highlight rows or the open note', async ({ page }) => {
+  await seedOperatorNotes(page);
+  await page.locator('#search').fill('tag:work alpha');
+  const rowMarks = page.locator('.note-row mark.search-hit');
+  await expect(rowMarks.first()).toHaveText('Alpha');
+  expect(await rowMarks.allTextContents()).not.toContain('work');
+  await page.locator('.note-row[data-id="plan-work"]').click();
+  await expect(page.locator('#note-rendered mark.search-hit')).toHaveText(['Alpha']);
+  await expect(page.locator('#note-title-display mark.search-hit')).toHaveCount(0);
 });

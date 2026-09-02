@@ -684,7 +684,7 @@
 
   function highlightedChildren(text, terms) {
     if (!state.search.trim()) return [document.createTextNode(text || '')];
-    return SearchView.highlightText(text || '', terms || state.search);
+    return SearchView.highlightText(text || '', terms || Search.parseQuery(state.search).text);
   }
 
   function normalizeTag(t) {
@@ -1392,15 +1392,15 @@
       view: state.view,
       query: state.search.trim(),
       hasTagFilter: !!state.tagFilter,
+      filters: searchResults.filters,
       onClear: clearSearchResults,
     });
     children.push(chrome.summary);
     if (chrome.note) children.push(chrome.note);
     const notes = searchResults.results.map((result) => result.note);
     if (state.bulkMode && notes.length) children.push(renderBulkToolbar(notes));
-    if (searchResults.results.length) {
-      children.push(...searchResults.results.map((result) => renderRow(result.note, result)));
-    } else if (chrome.empty) children.push(chrome.empty);
+    if (notes.length) children.push(...searchResults.results.map((result) => renderRow(result.note, result)));
+    else if (chrome.empty) children.push(chrome.empty);
     return chrome.status;
   }
 
@@ -2223,7 +2223,7 @@
         els.rendered.hidden = false;
         Markdown.renderMarkdownInto(els.rendered, note.body || '');
         syncTaskCheckboxes(note);
-        SearchView.highlightElement(els.rendered, state.search);
+        SearchView.highlightElement(els.rendered, Search.parseQuery(state.search).text);
       }
       els.editBtn.hidden = trashed;
       els.saveBtn.hidden = true;
