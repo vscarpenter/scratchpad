@@ -1,6 +1,6 @@
-# One-pass train v3.22 → v4.1 (2026-09-01) — v3.22 shipped, v3.23 next
+# One-pass train v3.22 → v4.1 (2026-09-01) — v3.23 shipped, v3.24 next
 
-Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 and v3.22.0 are
+Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v3.23.0 are
 local only. Nothing is deployed. Push and deploy only on an explicit
 go-ahead. Port 8080 is occupied by a `python -m http.server` serving
 another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
@@ -14,10 +14,16 @@ another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
 - Gate: verify green (coverage 40.19%); suite 1087 passed / 17 skipped on
   8091 (3 guide-origin failures fixed in the same round); CSP unchanged.
 
+## v3.23 callouts — done
+
+- `b7c2520` spec + plan, `c0888be` feat(markdown) callouts, `d4ab928`
+  docs, `5732cd0` release. Gate: verify green (40.05%); suite 1102 passed /
+  17 skipped; CSP unchanged. Note: verify's coverage step times out when
+  the full suite runs alongside it; rerun after the suite, it is contention.
+
 ## Resuming From Here
 
-- Next: v3.23 callouts (spec and plan committed next), then v3.24 syntax
-  highlighting, v3.25 templates folder, v4.0 image attachments (needs a
+- Next: v3.24 syntax highlighting (spec and plan committed next), v3.25 templates folder, v4.0 image attachments (needs a
   CSP publish before deploy), v4.1 linked folder.
 - Blockers: none. Assumptions: app.js at 6200 (ratchet count), 4 lines of
   slack under the 6204 ceiling.
@@ -52,7 +58,7 @@ tightened or held, real deploys gated on an explicit yes.
       v4.0 images later extends
 - [x] **v3.22 Unlinked mentions** (committed 2026-09-01 as v3.22.0) — extend the backlinks panel with
       plain-text mentions of the note title, one-click "link this"
-- [ ] **v3.23 Callouts** — `> [!NOTE]` marked extension + token CSS; warms the
+- [x] **v3.23 Callouts** (committed 2026-09-01 as v3.23.0) — `> [!NOTE]` marked extension + token CSS; warms the
       renderer-extension pattern; keep `share.html`'s viewer working under CSP
 - [ ] **v3.24 Syntax highlighting** — vendored highlighter scoped to ~10
       common languages (~30KB), payload-conscious
