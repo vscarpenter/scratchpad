@@ -18,6 +18,7 @@
     "public/js/attachments.js",
     "public/js/dialogs.js",
     "public/js/html-to-markdown.js",
+    "public/js/linked-folder.js",
     "public/js/mentions.js",
     "public/js/paste.js",
     "public/js/search.js",

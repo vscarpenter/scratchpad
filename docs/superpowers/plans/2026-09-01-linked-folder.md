@@ -102,7 +102,7 @@ async function opfs(page, action, path, content) {
 }
 
 async function link(page) {
-  await page.locator('#about-btn').click();
+  await page.locator('#open-about').click();
   await page.locator('#linked-folder-link').click();
   const status = page.locator('#linked-folder-status');
   await expect(status).toContainText(/Linked|could not/);
@@ -119,7 +119,7 @@ test('linking writes every preserved note as markdown with its id', async ({ pag
   expect(work.trim().endsWith('Plan body')).toBe(true);
   expect(await opfs(page, 'exists', 'loose-idea.md')).toBe(true);
   await page.reload();
-  await page.locator('#about-btn').click();
+  await page.locator('#open-about').click();
   await expect(page.locator('#linked-folder-status')).toContainText('Linked');
 });
 
@@ -432,7 +432,7 @@ test('reading applies an external edit, keeps a conflict loser as a revision, an
   await page.locator('#save-btn').click();
   await expect.poll(() => opfs(page, 'read', 'loose-idea.md')).toContain('Edited inside');
   await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside again'));
-  await page.locator('#about-btn').click();
+  await page.locator('#open-about').click();
   await page.locator('#linked-folder-read').click();
   await expect.poll(() => page.evaluate(() => window.ScratchpadDB.get('loose-note').then((n) => n.body))).toBe('Edited outside again');
   expect((await page.evaluate(() => window.ScratchpadDB.getRevisions('loose-note'))).length).toBeGreaterThanOrEqual(2);
@@ -454,7 +454,7 @@ test('attachments are written as files and read back as references', async ({ pa
   const id = await page.evaluate(async () => (await window.ScratchpadAttachments.forNote('loose-note'))[0].id);
   await expect.poll(() => opfs(page, 'exists', 'attachments/' + id + '-pic.png')).toBe(true);
   await expect.poll(() => opfs(page, 'read', 'loose-idea.md')).toContain('](attachments/' + id + '-pic.png)');
-  await page.locator('#about-btn').click();
+  await page.locator('#open-about').click();
   await page.locator('#linked-folder-read').click();
   await expect(page.locator('#toast-region')).toContainText(/Read/);
   expect((await page.evaluate(() => window.ScratchpadDB.get('loose-note'))).body).toContain('attachment:' + id);
@@ -470,7 +470,7 @@ test('unlink forgets the folder but leaves files, and the row hides without the 
     delete window.showDirectoryPicker;
   });
   await page.reload();
-  await page.locator('#about-btn').click();
+  await page.locator('#open-about').click();
   await expect(page.locator('#linked-folder-row')).toBeHidden();
 });
 ```

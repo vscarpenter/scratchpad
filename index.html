@@ -592,6 +592,16 @@
             <button id="refresh-offline-copy-btn" class="btn btn-secondary btn-sm" type="button">Refresh offline copy</button>
             <button id="check-updates-btn" class="btn btn-secondary btn-sm" type="button">Check for updates</button>
           </div>
+          <div id="linked-folder-row" class="data-status-row" hidden>
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="data-status-term">Linked folder</span>
+            <span id="linked-folder-status" class="data-status-value">Not linked</span>
+            <button id="linked-folder-link" class="btn btn-secondary btn-sm" type="button">Link a folder…</button>
+            <button id="linked-folder-write" class="btn btn-secondary btn-sm" type="button" hidden>Write now</button>
+            <button id="linked-folder-read" class="btn btn-secondary btn-sm" type="button" hidden>Read now</button>
+            <button id="linked-folder-reconnect" class="btn btn-secondary btn-sm" type="button" hidden>Reconnect</button>
+            <button id="linked-folder-unlink" class="btn btn-ghost btn-sm" type="button" hidden>Unlink</button>
+          </div>
         </div>
       </section>
 
@@ -980,6 +990,7 @@
   <script src="/public/js/mentions.js"></script>
   <script src="/public/js/templates.js"></script>
   <script src="/public/js/attachments.js"></script>
+  <script src="/public/js/linked-folder.js"></script>
   <script src="/public/js/app.js"></script>
 
   <script>

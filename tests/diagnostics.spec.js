@@ -50,8 +50,8 @@ test.describe('Your data panel', () => {
     await expect(page.locator('#diagnostics-title')).toHaveText('Your data');
     await expect(page.locator('.data-stats > div')).toHaveCount(3);
     const rows = page.locator('.data-status-row');
-    await expect(rows).toHaveCount(3);
-    for (let i = 0; i < 3; i += 1) {
+    await expect(rows).toHaveCount(4);
+    for (let i = 0; i < 4; i += 1) {
       // The exact state varies by browser capability; every row must still
       // resolve to a known dot state once diagnostics settle.
       await expect(rows.nth(i)).toHaveAttribute('data-state', /^(ok|warn|muted)$/);

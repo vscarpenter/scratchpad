@@ -310,14 +310,14 @@
 
   async function putNoteRecord(note, changeType) {
     await DB.put(note);
+    if (window.ScratchpadLinkedFolder) window.ScratchpadLinkedFolder.noteChanged(note);
     broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
   }
 
   async function bulkPutNoteRecords(notes, changeType) {
     await DB.bulkPut(notes);
-    for (const note of notes) {
-      broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
-    }
+    for (const note of notes) broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
+    if (window.ScratchpadLinkedFolder) for (const note of notes) window.ScratchpadLinkedFolder.noteChanged(note);
   }
 
   async function deleteNoteRecord(noteId) {
@@ -5068,6 +5068,7 @@
   function noteToMarkdown(note) {
     const lines = [
       '---',
+      'id: ' + JSON.stringify(note.id),
       'title: ' + JSON.stringify(deriveTitle(note)),
       'tags: [' + (note.tags || []).map((tag) => JSON.stringify(tag)).join(', ') + ']',
       'pinned: ' + (!!note.pinned ? 'true' : 'false'),
@@ -5194,7 +5195,7 @@
         ? metadata.tags.split(',')
         : [];
     const candidate = normalizeNote({
-      id: uuid(),
+      id: typeof metadata.id === 'string' && metadata.id ? metadata.id : uuid(),
       title: typeof metadata.title === 'string' ? metadata.title : '',
       body,
       tags,
@@ -6166,20 +6167,19 @@
     initCrossTabSync();
     if (window.ScratchpadFind) window.ScratchpadFind.init({ editor: els.editor, onToast: toast });
     if (window.ScratchpadPaste) window.ScratchpadPaste.bind(els.editor);
-    if (window.ScratchpadMentions) window.ScratchpadMentions.init({
-      notes: () => state.notes, editing: () => state.editing, deriveTitle, isTrashed, isArchived,
-      openNote: openNoteFromCommand, mutateNoteBody, getDrafts: () => DB.getAllDrafts(), rerender: renderEditor, toast,
-    });
-    if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({
-      notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
+    if (window.ScratchpadMentions) window.ScratchpadMentions.init({ notes: () => state.notes, editing: () => state.editing, deriveTitle, isTrashed, isArchived,
+      openNote: openNoteFromCommand, mutateNoteBody, getDrafts: () => DB.getAllDrafts(), rerender: renderEditor, toast });
+    if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({ notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
       isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
-      openNote: openNoteFromCommand, deriveTitle, toast,
-    });
+      openNote: openNoteFromCommand, deriveTitle, toast });
     if (window.ScratchpadAttachments) {
       Markdown.setAttachmentResolver((id) => window.ScratchpadAttachments.resolve(id));
-      window.ScratchpadAttachments.init({ noteId: () => state.selectedId, editing: () => state.editing, uuid, now, toast,
-        rerender: renderEditor, insert: window.ScratchpadPaste.insert, editor: els.editor });
+      window.ScratchpadAttachments.init({ noteId: () => state.selectedId, editing: () => state.editing, uuid, now, toast, rerender: renderEditor, insert: window.ScratchpadPaste.insert, editor: els.editor });
     }
+    if (window.ScratchpadLinkedFolder) window.ScratchpadLinkedFolder.init({
+      notes: () => state.notes, folders: () => state.folders, noteToMarkdown, parseMarkdownNote, storeRevision, putNoteRecord,
+      deriveTitle, slugify, noteFolderId, folderDisplayName, isArchived, isTrashed, uuid, now, toast, reload: loadAll,
+    });
     bindEvents();
     try {
       await purgeExpiredTrash();
