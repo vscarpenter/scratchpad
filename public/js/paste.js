@@ -5,7 +5,7 @@
 
   /** @typedef {{ convert(html: string): string }} Converter */
 
-  /** @type {Window & typeof globalThis & { ScratchpadHtmlToMarkdown?: Converter, ScratchpadPaste?: { bind(editor: HTMLTextAreaElement): void } }} */
+  /** @type {Window & typeof globalThis & { ScratchpadHtmlToMarkdown?: Converter, ScratchpadAttachments?: { attachFiles(editor: HTMLTextAreaElement, files: File[]): Promise<void> }, ScratchpadPaste?: { bind(editor: HTMLTextAreaElement): void, insert(editor: HTMLTextAreaElement, text: string): void } }} */
   const root = window;
 
   /** @param {string} text */
@@ -44,6 +44,12 @@
   function onPaste(event, editor) {
     const data = event.clipboardData;
     if (!data) return;
+    const images = data.files ? Array.from(data.files).filter((file) => file.type.startsWith('image/')) : [];
+    if (images.length && root.ScratchpadAttachments) {
+      event.preventDefault();
+      root.ScratchpadAttachments.attachFiles(editor, images);
+      return;
+    }
     let markdown = null;
     try {
       markdown = markdownFor(data);
@@ -60,5 +66,5 @@
     editor.addEventListener('paste', (event) => onPaste(event, editor));
   }
 
-  root.ScratchpadPaste = Object.freeze({ bind });
+  root.ScratchpadPaste = Object.freeze({ bind, insert });
 }

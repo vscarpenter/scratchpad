@@ -172,6 +172,7 @@
             <p id="backup-menu-meta" class="backup-menu-meta"></p>
           </div>
           <input id="import-file" type="file" accept="application/json,.json,text/markdown,.md,.markdown,.scratchpad" multiple hidden />
+          <input id="attach-image-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden />
         </div>
       </div>
     </aside>
@@ -204,6 +205,7 @@
                 <button id="share-btn" role="menuitem" type="button" aria-label="Share note" title="Share note">Share…</button>
                 <button id="move-note-overflow" role="menuitem" type="button" data-action="move">Move to folder…</button>
                 <button id="duplicate-overflow-btn" role="menuitem" type="button" data-action="duplicate">Duplicate</button>
+                <button id="attach-image-btn" role="menuitem" type="button" hidden>Attach image…</button>
                 <button id="history-btn" role="menuitem" type="button" data-action="history">History</button>
                 <button id="export-overflow-btn" role="menuitem" type="button" data-action="export">Export Markdown ZIP</button>
                 <hr class="menu-divider"/>

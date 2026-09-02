@@ -2066,6 +2066,8 @@ body:not(.page-privacy) .theme-toggle {
 .code-block .token.attr-name { color: var(--warning-dark); }
 .code-block .token.bold { font-weight: 600; }
 .code-block .token.italic { font-style: italic; }
+.note-rendered .image-placeholder,
+.share-body .image-placeholder { color: var(--text-muted); font-style: italic; }
 .note-rendered table {
   width: 100%;
   border-collapse: collapse;

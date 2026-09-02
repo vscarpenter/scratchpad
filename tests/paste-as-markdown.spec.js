@@ -82,7 +82,7 @@ function pasteInto(page, payload) {
       const data = new DataTransfer();
       if (html) data.setData('text/html', html);
       if (text) data.setData('text/plain', text);
-      if (withFile) data.items.add(new File(['x'], 'x.png', { type: 'image/png' }));
+      if (withFile) data.items.add(new File(['x'], 'notes.txt', { type: 'text/plain' }));
       const event = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true });
       const readable = event.clipboardData && (!html || event.clipboardData.getData('text/html') === html);
       if (!readable) return 'unsupported';
@@ -113,7 +113,7 @@ test('a selection is replaced by the converted markdown', async ({ page }) => {
   await expect(page.locator('#note-editor')).toHaveValue('keep *new* keep');
 });
 
-test('plain-only, file, and equal-text clipboards are left to the native paste', async ({ page }) => {
+test('plain-only, non-image file, and equal-text clipboards are left to the native paste', async ({ page }) => {
   await openEditor(page, 'Untouched');
   expect(await pasteInto(page, { text: 'just text' })).toBe('native');
   const withFile = await pasteInto(page, { html: '<p>x</p>', text: 'x', withFile: true });

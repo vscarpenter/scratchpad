@@ -2232,6 +2232,7 @@
     els.dirtyIndicator.hidden = !state.dirty || trashed;
     renderBacklinks(note);
     if (window.ScratchpadMentions) window.ScratchpadMentions.render(note);
+    if (window.ScratchpadAttachments) window.ScratchpadAttachments.warm(note ? note.id : null);
   }
 
   function renderBreadcrumb(note) {
@@ -4898,10 +4899,8 @@
     const revisions = (await DB.getAllRevisions())
       .map((rev) => normalizeRevision(rev, rev.noteId))
       .filter((rev) => rev && noteIds.has(rev.noteId));
-    const folders = (await DB.getAllFolders())
-      .map((f, i) => normalizeFolder(f, i))
-      .filter(Boolean)
-      .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.createdAt - b.createdAt));
+    const folders = (await DB.getAllFolders()).map((f, i) => normalizeFolder(f, i)).filter(Boolean);
+    folders.sort((a, b) => (a.sortOrder - b.sortOrder) || (a.createdAt - b.createdAt));
     return {
       app: 'scratchpad',
       version: window.SCRATCHPAD_VERSION || 'unknown',
@@ -4926,14 +4925,10 @@
 
   // v2 backups predate folders; v3 adds folders; v4 adds Archive provenance.
   function isNativeBackup(data) {
-    return !!data &&
-      !Array.isArray(data) &&
-      data.app === 'scratchpad' &&
-      (data.schemaVersion === 2 || data.schemaVersion === 3 || data.schemaVersion === 4) &&
-      Array.isArray(data.notes) &&
-      Array.isArray(data.trashedNotes) &&
-      Array.isArray(data.revisions) &&
-      (data.folders === undefined || Array.isArray(data.folders));
+    if (!data || Array.isArray(data) || data.app !== 'scratchpad') return false;
+    if (![2, 3, 4, 5].includes(data.schemaVersion)) return false;
+    const lists = [data.notes, data.trashedNotes, data.revisions].every(Array.isArray);
+    return lists && (data.folders === undefined || Array.isArray(data.folders));
   }
 
   function resetPassphraseDialog() {
@@ -6180,6 +6175,11 @@
       isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
       openNote: openNoteFromCommand, deriveTitle, toast,
     });
+    if (window.ScratchpadAttachments) {
+      Markdown.setAttachmentResolver((id) => window.ScratchpadAttachments.resolve(id));
+      window.ScratchpadAttachments.init({ noteId: () => state.selectedId, editing: () => state.editing, uuid, now, toast,
+        rerender: renderEditor, insert: window.ScratchpadPaste.insert, editor: els.editor });
+    }
     bindEvents();
     try {
       await purgeExpiredTrash();

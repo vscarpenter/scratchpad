@@ -13,6 +13,16 @@
     RETURN_DOM_FRAGMENT: true,
   });
 
+  // blob: URLs are same-origin object URLs minted by attachments.js; they are
+  // admitted on img[src] only, never on links.
+  if (window.DOMPurify && typeof window.DOMPurify.addHook === 'function') {
+    window.DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+      const prefix = 'blob:' + window.location.origin + '/';
+      if (node.nodeName === 'IMG' && data.attrName === 'src' && data.attrValue.startsWith(prefix))
+        data.forceKeepAttr = true;
+    });
+  }
+
   if (window.marked && typeof window.marked.setOptions === 'function') {
     window.marked.setOptions({ breaks: false, gfm: true });
   }
@@ -85,7 +95,10 @@
   }
 
   if (window.marked && typeof window.marked.use === 'function') {
-    window.marked.use({ walkTokens: tagCallout, renderer: { blockquote: renderBlockquote, code: renderCode } });
+    window.marked.use({
+      walkTokens: tagCallout,
+      renderer: { blockquote: renderBlockquote, code: renderCode, image: renderImage },
+    });
   }
 
   function el(tag, options) {
@@ -147,6 +160,24 @@
 
   function setWikilinkResolver(fn) {
     wikilinkResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  let attachmentResolver = null;
+  function setAttachmentResolver(fn) {
+    attachmentResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  const ATTACHMENT_PREFIX = 'attachment:';
+
+  // ![alt](attachment:<id>) resolves to an object URL when the id is loaded;
+  // otherwise, including in the share viewer, it becomes a visible placeholder.
+  function renderImage(token) {
+    const href = String(token.href || '');
+    if (!href.startsWith(ATTACHMENT_PREFIX)) return false;
+    const url = attachmentResolver ? attachmentResolver(href.slice(ATTACHMENT_PREFIX.length)) : null;
+    const alt = escapeHtml(token.text || '');
+    if (url) return '<img src="' + escapeHtml(url) + '" alt="' + alt + '">';
+    return '<span class="image-placeholder">(image not included' + (alt ? ': ' + alt : '') + ')</span>';
   }
 
   function escapeHtml(text) {
@@ -268,6 +299,7 @@
     renderEmptyBody,
     findTaskMarkers,
     setWikilinkResolver,
+    setAttachmentResolver,
     extractWikilinkTargets,
     scanOutsideFences,
   };
