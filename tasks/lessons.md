@@ -57,3 +57,16 @@
 - The structure ratchet counts app.js lines as `wc -l` + 1 (the trailing
   newline is a line). A recorded ceiling of 6204 with wc at 6203 is zero
   slack: every added app.js line needs a removed one in the same change.
+- Firefox's `ClipboardEvent` constructor accepts a `clipboardData` member but
+  exposes a protected DataTransfer whose `getData` returns empty strings, so a
+  synthetic paste can never be observed there. Detect it by reading the
+  payload back and skip with a reason; prove the real path in Chromium with
+  `context.grantPermissions(['clipboard-read', 'clipboard-write'])`,
+  `navigator.clipboard.write`, and a real `ControlOrMeta+v`.
+- Plain-text paste is a browser shortcut that differs by platform:
+  Ctrl+Shift+V on Windows and Linux, Cmd+Shift+V in Firefox on a Mac, and
+  Cmd+Option+Shift+V in Chrome and Safari on a Mac. Do not document
+  "Cmd/Ctrl+Shift+V" as if it were universal, and do not expect headless
+  Chromium on macOS to route it.
+- commitlint here enforces a 72-character header and a lower-case subject,
+  so product names like DOMParser cannot appear in a commit subject.

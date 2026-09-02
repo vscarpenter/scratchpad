@@ -1,46 +1,45 @@
-# v3.20 search operators — ship round (2026-09-01)
+# v3.21 paste as markdown — ship round (2026-09-01)
 
-Implementation is complete and committed as v3.20.0. Production serves
-v3.19.0 (checked 2026-09-01), so the next deploy carries v3.20.0 only.
-Deploy only on an explicit "yes, deploy".
+Implementation is complete and committed as v3.21.0. Production serves
+v3.19.0 (checked 2026-09-01). v3.20.0 is pushed; the seven v3.21 commits
+are local only. Neither release is deployed. Push and deploy only on an
+explicit go-ahead.
 
 ## Done and committed
 
-- `6ea8665` docs(design): approve search operators design
-- `03a8539` docs(design): search operators implementation plan
-- `8ac4b5c` feat(search): tag, title, and folder operators filter before
-  ranking (parseQuery before the word splitter; folder names via callback)
-- `2ec2855` feat(search): scope line, live region, and hint name the
-  operators (residual-only highlights in the open note)
-- `d9038c8` docs(guide): search operators in the guide, readme, and test map
-- `2d7dc49` chore(release): v3.20.0 search operators
-- Gate: `npm run verify` green (coverage 40.77%, floor 36.2%); full suite
-  1043 passed / 10 skipped / 0 failed on Chromium, Firefox, WebKit (2.0m);
-  `bash cloudfront/recompute-csp-hashes.sh` all `[OK]`, no change;
-  `./deploy.sh --dry-run` lists search.js, search-view.js, app.js,
-  version.js, and the HTML shells; spot-check in `.verify/search-operators/`
-  (light results and empty, dark 390 results and empty)
+- `603f05f` docs(design): approve paste as markdown design
+- `d39274d` docs(design): paste as markdown implementation plan
+- `23c72ed` feat(editor): html to markdown converter over an inert parsed
+  document (`public/js/html-to-markdown.js`, 263 lines, strict-typed)
+- `64679d4` feat(editor): paste html as markdown with native undo
+  (`public/js/paste.js`; app.js net minus one line)
+- `14f776a` docs(guide): paste as markdown and the plain-text paste
+  shortcuts
+- `1450636` chore(release): v3.21.0 paste as markdown
+- Gate: `npm run verify` green (coverage 40.01%, floor 36.2%); full suite
+  1075 passed / 17 skipped / 0 failed on three browsers (2.1m); CSP hashes
+  unchanged; dry run lists both new modules and the service worker
 
 ## Resuming From Here
 
-- Done: v3.20.0 search operators end to end (spec, plan, TDD code, docs,
-  release commit). `tests/search-operators.spec.js` holds 12 tests.
-- Next: deploy on an explicit yes (`./deploy.sh --dry-run` first; confirm
-  `aws sts get-caller-identity` is the scratchpad-deploy profile). Then
-  v3.21 Paste as Markdown: brainstorm from `tasks/roadmap.md` (decide own
-  converter versus vendored turndown, the bypass modifier, and Google Docs
-  wrapper handling).
+- Done: v3.21.0 end to end. `tests/paste-as-markdown.spec.js` holds 13
+  tests: 7 pure converter cases on all browsers, 5 synthetic-event handler
+  cases (skipped on Firefox, whose synthetic ClipboardEvent carries an
+  unreadable DataTransfer), and 1 Chromium-only real-clipboard paste plus
+  undo.
+- Not verified by automation: the plain-text paste bypass. Headless
+  Chromium on macOS does not route the shortcut, and the Chrome extension's
+  synthetic keys never reach clipboard commands. Please try once by hand:
+  copy bold text from any web page, paste into a note (expect Markdown),
+  ⌘Z (expect it gone), then the browser's plain-text paste (⌥⇧⌘V in Chrome
+  and Safari on a Mac, ⇧⌘V in Firefox) and expect plain text.
+- Next: deploy on an explicit yes (dry run first; confirm the
+  scratchpad-deploy identity). Then v3.22 Unlinked mentions from
+  `tasks/roadmap.md` (decide title minimum, alias-preserving replacement,
+  and draft-conflict rows).
 - Blockers: none.
-- Assumptions: the working-tree build-date edit found at session start was
-  folded into the v3.20.0 bump; app.js now sits exactly at its recorded
-  ceiling (6204 as the ratchet counts, 6203 by `wc -l`), so the next app.js
-  addition must remove a line or move logic into a module.
-
-## Discrepancies carried forward
-
-- `scripts/release-gate.mjs` (named in `tasks/lessons.md` and the v3.19
-  record) was never committed; today's gate is `npm run verify` + `npm test`
-  with the guide popup test CI-only.
+- Assumptions: app.js sits one line under its ceiling (6203 as the ratchet
+  counts); the next app.js addition of two or more lines needs offsets.
 
 ## Release train after v3.19 (approved order)
 
@@ -65,7 +64,7 @@ tightened or held, real deploys gated on an explicit yes.
 - [x] **v3.20 Search operators** (committed 2026-09-01 as v3.20.0) — `tag:`, `title:`, `folder:` composing with
       the scope picker (from `backlog.md`); search.js + search-view plumbing +
       guide copy
-- [ ] **v3.21 Paste as Markdown** — HTML clipboard → Markdown on paste in the
+- [x] **v3.21 Paste as Markdown** (committed 2026-09-01 as v3.21.0) — HTML clipboard → Markdown on paste in the
       editor; vendored minimal converter; establishes the paste handler that
       v4.0 images later extends
 - [ ] **v3.22 Unlinked mentions** — extend the backlinks panel with
