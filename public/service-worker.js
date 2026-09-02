@@ -66,7 +66,17 @@
   }
 
   self.addEventListener('install', (event) => {
-    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL).then(() => cacheOptional(cache))));
+    // cache: 'reload' bypasses the HTTP cache so a fresh worker never freezes a
+    // stale asset served from the browser cache under the new cache name.
+    event.waitUntil(
+      caches
+        .open(CACHE_NAME)
+        .then((cache) =>
+          cache
+            .addAll(APP_SHELL.map((path) => new Request(new URL(path, self.location.origin), { cache: 'reload' })))
+            .then(() => cacheOptional(cache, { cache: 'reload' })),
+        ),
+    );
   });
 
   self.addEventListener('message', (event) => {
