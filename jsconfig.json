@@ -20,6 +20,7 @@
     "public/js/mentions.js",
     "public/js/paste.js",
     "public/js/search.js",
+    "public/js/templates.js",
     "public/js/search-view.js",
     "scripts/quality/**/*.mjs"
   ],

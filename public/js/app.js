@@ -4672,16 +4672,13 @@
       });
     }
 
+    if (window.ScratchpadTemplates) commands.push(...window.ScratchpadTemplates.commands());
     const notes = sortNotes(state.notes)
       .slice(0, 8)
       .map((note) => ({
         id: 'note-' + note.id,
         label: deriveTitle(note),
-        meta: isTrashed(note)
-          ? 'Open note in Trash'
-          : isArchived(note)
-            ? 'Open note in Archive'
-            : 'Open note',
+        meta: isTrashed(note) ? 'Open note in Trash' : isArchived(note) ? 'Open note in Archive' : 'Open note',
         keywords: [note.body || '', (note.tags || []).join(' ')].join(' '),
         run: () => openNoteFromCommand(note.id),
       }));
@@ -6177,6 +6174,11 @@
     if (window.ScratchpadMentions) window.ScratchpadMentions.init({
       notes: () => state.notes, editing: () => state.editing, deriveTitle, isTrashed, isArchived,
       openNote: openNoteFromCommand, mutateNoteBody, getDrafts: () => DB.getAllDrafts(), rerender: renderEditor, toast,
+    });
+    if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({
+      notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
+      isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
+      openNote: openNoteFromCommand, deriveTitle, toast,
     });
     bindEvents();
     try {
