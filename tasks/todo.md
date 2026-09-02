@@ -1,6 +1,6 @@
-# One-pass train v3.22 → v4.1 (2026-09-01) — v3.23 shipped, v3.24 next
+# One-pass train v3.22 → v4.1 (2026-09-01) — v3.24 shipped, v3.25 next
 
-Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v3.23.0 are
+Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v3.24.0 are
 local only. Nothing is deployed. Push and deploy only on an explicit
 go-ahead. Port 8080 is occupied by a `python -m http.server` serving
 another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
@@ -21,9 +21,17 @@ another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
   17 skipped; CSP unchanged. Note: verify's coverage step times out when
   the full suite runs alongside it; rerun after the suite, it is contention.
 
+## v3.24 syntax highlighting — done
+
+- `822d372` spec + plan, `d9220fa` chore(hooks) mnemonic-prefix fix (the
+  innerHTML guard was rejecting vendored code), `26adeea` feat(markdown)
+  Prism (docs folded in), `e4d4a76` release. Gate: verify green (40.01%);
+  suite 1114 passed / 17 skipped; check:vendor ok; CSP unchanged.
+
 ## Resuming From Here
 
-- Next: v3.24 syntax highlighting (spec and plan committed next), v3.25 templates folder, v4.0 image attachments (needs a
+- Next: v3.25 templates folder (spec and plan committed next; one palette
+  command per template instead of a second-stage picker), v3.25 templates folder, v4.0 image attachments (needs a
   CSP publish before deploy), v4.1 linked folder.
 - Blockers: none. Assumptions: app.js at 6200 (ratchet count), 4 lines of
   slack under the 6204 ceiling.
@@ -60,7 +68,7 @@ tightened or held, real deploys gated on an explicit yes.
       plain-text mentions of the note title, one-click "link this"
 - [x] **v3.23 Callouts** (committed 2026-09-01 as v3.23.0) — `> [!NOTE]` marked extension + token CSS; warms the
       renderer-extension pattern; keep `share.html`'s viewer working under CSP
-- [ ] **v3.24 Syntax highlighting** — vendored highlighter scoped to ~10
+- [x] **v3.24 Syntax highlighting** (committed 2026-09-01 as v3.24.0) — vendored highlighter scoped to ~10
       common languages (~30KB), payload-conscious
 - [ ] **v3.25 Templates folder** — convention + "New note from template"
       palette command; mirrors the daily-template precedent
