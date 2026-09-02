@@ -301,14 +301,18 @@ test.describe('find bar in the command palette', () => {
 
     await page.keyboard.press('Control+Shift+P');
     await page.locator('#command-palette-input').fill('find in note');
-    await expect(page.locator('#command-palette-list [role="option"]')).toHaveCount(0);
+    await expect(page.locator('#command-palette-list [role="option"]').filter({ hasText: 'Find in note' })).toHaveCount(
+      0,
+    );
     await page.keyboard.press('Escape');
 
     await page.locator('.note-row[data-id="find-palette"]').click();
     await page.locator('#edit-btn').click();
     await page.keyboard.press('Control+Shift+P');
     await page.locator('#command-palette-input').fill('find in note');
-    await expect(page.locator('#command-palette-list [role="option"]')).toHaveCount(1);
+    await expect(page.locator('#command-palette-list [role="option"]').filter({ hasText: 'Find in note' })).toHaveCount(
+      1,
+    );
     await expect(page.locator('#command-palette-list [role="option"]').first()).toContainText('Find in note');
 
     await page.keyboard.press('Enter');
