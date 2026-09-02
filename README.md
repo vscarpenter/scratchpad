@@ -39,7 +39,8 @@ Nothing else is ever uploaded.
   month's notes without copying their contents. Quick capture appends a
   timestamped line from anywhere.
 - Link notes with `[[Title]]` (autocompleted as you type); each note shows
-  what links to it, and renaming a linked note offers to update references.
+  what links to it and which notes mention its title without linking, with
+  one-click linking, and renaming a linked note offers to update references.
 - Search titles, text, and tags in a focused relevance-ranked list across every
   folder, narrow with `tag:`, `title:`, and `folder:` operators, and fall back
   to clearly labeled title/tag typo matches; pin important notes; and use bulk
