@@ -13,6 +13,7 @@ const SECTION_IDS = [
   'organizing',
   'history-drafts',
   'backups',
+  'linked-folder',
   'privacy-controls',
   'offline',
   'shortcuts',

@@ -36,6 +36,9 @@ Nothing else is ever uploaded.
 - Attach images by paste, drop, or the note menu; they stay in this browser,
   render from the note's Markdown, travel with backups and the Markdown ZIP,
   and are never uploaded when a note is shared.
+- Link a local folder (browsers with the File System Access API) and
+  Scratchpad writes every note there as a Markdown file with frontmatter and
+  reads your edits back, keeping the other text in History when both changed.
 - Jump to today's note with one command; it is created on first use from a
   note titled "Daily template" (or a minimal default) and kept in the managed
   Daily Notes folder. Daily notes group into collapsible months, and an

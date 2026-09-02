@@ -84,6 +84,7 @@
         <a href="#organizing">Finding &amp; organizing</a>
         <a href="#history-drafts">History &amp; drafts</a>
         <a href="#backups">Backups</a>
+        <a href="#linked-folder">Linked folder</a>
         <a href="#sharing">Sharing a note</a>
         <a href="#privacy-controls">Privacy controls</a>
         <a href="#offline">Offline &amp; installing</a>
@@ -426,6 +427,22 @@
       </ul>
       <p>
         Scratchpad reminds you gently when it's been a while since your last backup.
+      </p>
+
+      <h2 id="linked-folder">Linked folder</h2>
+      <p>
+        In Chrome and other browsers with the File System Access API, <strong>Your data</strong>
+        offers <em>Link a folder…</em>. Pick a directory and Scratchpad writes every note there as a
+        Markdown file with frontmatter, in the same layout as the Markdown ZIP, and keeps each file
+        current as you save. Images are written under <code>attachments/</code>.
+      </p>
+      <p>
+        Edit those files in any text editor and press <em>Read now</em>, or simply return to the
+        Scratchpad tab, and the changes land in your notes. New <code>.md</code> files become new
+        notes. When a note and its file have both changed, the newer one wins and the other text is
+        kept in the note's History. If the browser forgets its permission, <em>Reconnect</em>
+        restores it; <em>Unlink</em> forgets the folder and leaves your files in place. Nothing
+        leaves your device: the folder is a plain-text copy you own, not a service.
       </p>
 
       <h2 id="sharing">Sharing a note</h2>
