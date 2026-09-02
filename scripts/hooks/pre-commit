@@ -44,7 +44,7 @@ awk '
   /^\+\+\+ / {
     file = substr($0, 5)
     sub(/^"/, "", file); sub(/"$/, "", file); sub(/\t$/, "", file)
-    sub(/^b\//, "", file)
+    sub(/^[abciw]\//, "", file)
     skip = (file ~ /^public\/js\/vendor\// || file ~ /(^|\/)node_modules\//)
     next
   }
