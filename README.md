@@ -27,8 +27,9 @@ Nothing else is ever uploaded.
 
 ### Notes workflow
 
-- Write and preview Markdown with formatting shortcuts, autosaved drafts, and
-  the last 10 saved revisions per note.
+- Write and preview Markdown with formatting shortcuts, autosaved drafts, the
+  last 10 saved revisions per note, and rich-text pastes converted to Markdown
+  on the way in.
 - Tick task-list checkboxes right in the rendered note — `- [ ]` items are
   clickable in view mode and write back to the Markdown source.
 - Jump to today's note with one command; it is created on first use from a
@@ -251,6 +252,7 @@ reports whether it succeeded.
 | `⌘/Ctrl` + `Shift` + `Space`   | Quick capture                             |
 | `⌘/Ctrl` + `S`                 | Save (when editing)                       |
 | `⌘/Ctrl` + `F`                 | Find and replace (while editing)          |
+| Browser plain-text paste       | Paste as plain text: `Ctrl`+`Shift`+`V`, or on a Mac `⌘`+`Option`+`Shift`+`V` (Chrome, Safari) / `⌘`+`Shift`+`V` (Firefox) |
 | `⌘/Ctrl` + `K` or `/`          | Focus the search box                      |
 | `↑` / `↓`                      | Move through search results               |
 | `Enter`                        | Open the focused search result            |
