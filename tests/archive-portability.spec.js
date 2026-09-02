@@ -55,19 +55,16 @@ test.describe('Archive portability', () => {
     await page.setInputFiles('#import-file', {
       name: 'archived-note.md',
       mimeType: 'text/markdown',
-      buffer: Buffer.from([
-        '---',
-        'title: "Imported archive"',
-        'archivedAt: "2026-07-01T12:00:00.000Z"',
-        '---',
-        '',
-        'Imported body',
-      ].join('\n')),
+      buffer: Buffer.from(
+        ['---', 'title: "Imported archive"', 'archivedAt: "2026-07-01T12:00:00.000Z"', '---', '', 'Imported body'].join(
+          '\n',
+        ),
+      ),
     });
     await page.locator('#confirm-import').click();
 
     const note = await page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).find((item) => item.title === 'Imported archive')
+      (await window.ScratchpadDB.getAll()).find((item) => item.title === 'Imported archive'),
     );
     expect(note.archivedAt).toBe(Date.parse('2026-07-01T12:00:00.000Z'));
     await page.locator('#archive-view').click();
@@ -81,12 +78,14 @@ test.describe('Archive portability', () => {
       version: 'legacy',
       schemaVersion: 3,
       exportedAt: new Date().toISOString(),
-      notes: [{
-        id: 'legacy-v3',
-        title: 'Legacy active',
-        body: 'Body',
-        archivedAt: Date.now(),
-      }],
+      notes: [
+        {
+          id: 'legacy-v3',
+          title: 'Legacy active',
+          body: 'Body',
+          archivedAt: Date.now(),
+        },
+      ],
       trashedNotes: [],
       revisions: [],
       folders: [],
@@ -106,12 +105,14 @@ test.describe('Archive portability', () => {
       version: 'current',
       schemaVersion: 4,
       exportedAt: new Date().toISOString(),
-      notes: [{
-        id: 'duplicate-archive-id',
-        title: 'Imported archived copy',
-        body: 'Archived',
-        archivedAt,
-      }],
+      notes: [
+        {
+          id: 'duplicate-archive-id',
+          title: 'Imported archived copy',
+          body: 'Archived',
+          archivedAt,
+        },
+      ],
       trashedNotes: [],
       revisions: [],
       folders: [],
@@ -119,7 +120,7 @@ test.describe('Archive portability', () => {
     await page.locator('#confirm-import').click();
 
     const imported = await page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).find((note) => note.title === 'Imported archived copy')
+      (await window.ScratchpadDB.getAll()).find((note) => note.title === 'Imported archived copy'),
     );
     expect(imported.id).not.toBe('duplicate-archive-id');
     expect(imported.archivedAt).toBe(archivedAt);

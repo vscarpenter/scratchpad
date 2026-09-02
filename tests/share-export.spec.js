@@ -21,9 +21,7 @@ test.describe('sharing and portable exports', () => {
         },
       });
     });
-    await seedRawNotes(page, [
-      { id: 'share-copy', title: 'Share title', body: 'Body with **Markdown**.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'share-copy', title: 'Share title', body: 'Body with **Markdown**.' }]);
 
     await openOverflowMenu(page);
     await page.locator('#share-btn').click();
@@ -31,16 +29,18 @@ test.describe('sharing and portable exports', () => {
     await page.locator('#share-copy').click();
 
     await expect(page.locator('#share-status')).toHaveText('Copied to clipboard.');
-    await expect.poll(() => page.evaluate(() => window.__scratchpadCopiedText)).toBe(
-      'Share title\n\nBody with **Markdown**.'
-    );
+    await expect
+      .poll(() => page.evaluate(() => window.__scratchpadCopiedText))
+      .toBe('Share title\n\nBody with **Markdown**.');
   });
 
-  test('hands a long note to the email client as a safe truncated mailto URL', async ({ page, context, browserName }) => {
+  test('hands a long note to the email client as a safe truncated mailto URL', async ({
+    page,
+    context,
+    browserName,
+  }) => {
     test.skip(browserName !== 'chromium', 'External-protocol navigation details require Chromium CDP events.');
-    await seedRawNotes(page, [
-      { id: 'share-email', title: 'Email title', body: 'x'.repeat(2400) },
-    ]);
+    await seedRawNotes(page, [{ id: 'share-email', title: 'Email title', body: 'x'.repeat(2400) }]);
 
     const cdp = await context.newCDPSession(page);
     await cdp.send('Page.enable');
@@ -132,13 +132,15 @@ test.describe('sharing and portable exports', () => {
   });
 
   test('preserves monthly review identity in native and Markdown exports', async ({ page }) => {
-    await seedRawNotes(page, [{
-      id: 'monthly-review-export',
-      title: 'July retrospective',
-      body: '## Highlights\n\nShipped the review flow.',
-      tags: ['monthly-review'],
-      monthlyReviewMonth: '2026-07',
-    }]);
+    await seedRawNotes(page, [
+      {
+        id: 'monthly-review-export',
+        title: 'July retrospective',
+        body: '## Highlights\n\nShipped the review flow.',
+        tags: ['monthly-review'],
+        monthlyReviewMonth: '2026-07',
+      },
+    ]);
 
     await openBackupMenu(page);
     const jsonDownloadPromise = page.waitForEvent('download');
@@ -156,11 +158,11 @@ test.describe('sharing and portable exports', () => {
   });
 
   test('reports that there is nothing to export when only Trash has notes', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'zip-only-trash', title: 'Only trash', body: 'Deleted.', deletedAt: Date.now() },
-    ]);
+    await seedRawNotes(page, [{ id: 'zip-only-trash', title: 'Only trash', body: 'Deleted.', deletedAt: Date.now() }]);
     let downloaded = false;
-    page.on('download', () => { downloaded = true; });
+    page.on('download', () => {
+      downloaded = true;
+    });
 
     await openBackupMenu(page);
     await page.locator('#export-markdown-btn').click();

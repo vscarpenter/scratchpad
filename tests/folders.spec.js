@@ -1,6 +1,14 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, seedFolders, importJson, enterBulkMode, openListMenu, openBackupMenu } = require('./helpers');
+const {
+  gotoApp,
+  seedRawNotes,
+  seedFolders,
+  importJson,
+  enterBulkMode,
+  openListMenu,
+  openBackupMenu,
+} = require('./helpers');
 
 const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
 
@@ -36,8 +44,18 @@ test.describe('folder storage', () => {
   test('putFolder/getAllFolders/removeFolder round-trip', async ({ page }) => {
     await gotoApp(page);
     const names = await page.evaluate(async () => {
-      await window.ScratchpadDB.putFolder({ id: 'f-1', name: 'Work', color: 'olive', sortOrder: 0, parentId: null, createdAt: 1, updatedAt: 1 });
-      await window.ScratchpadDB.bulkPutFolders([{ id: 'f-2', name: 'Ideas', color: null, sortOrder: 1, parentId: null, createdAt: 2, updatedAt: 2 }]);
+      await window.ScratchpadDB.putFolder({
+        id: 'f-1',
+        name: 'Work',
+        color: 'olive',
+        sortOrder: 0,
+        parentId: null,
+        createdAt: 1,
+        updatedAt: 1,
+      });
+      await window.ScratchpadDB.bulkPutFolders([
+        { id: 'f-2', name: 'Ideas', color: null, sortOrder: 1, parentId: null, createdAt: 2, updatedAt: 2 },
+      ]);
       const all = (await window.ScratchpadDB.getAllFolders()).map((folder) => folder.name).sort();
       await window.ScratchpadDB.removeFolder('f-1');
       const after = (await window.ScratchpadDB.getAllFolders()).map((folder) => folder.name).sort();
@@ -95,7 +113,10 @@ test.describe('folder switcher', () => {
       { id: 'work-note', title: 'Work only', body: 'x', folderId: 'f-work' },
       { id: 'idea-note', title: 'Idea outside', body: 'x', folderId: 'f-ideas' },
     ]);
-    await seedFolders(page, [{ id: 'f-work', name: 'Work' }, { id: 'f-ideas', name: 'Ideas' }]);
+    await seedFolders(page, [
+      { id: 'f-work', name: 'Work' },
+      { id: 'f-ideas', name: 'Ideas' },
+    ]);
 
     await openFolderSwitcher(page);
     await page.locator('#folder-switcher-search').fill('idea');
@@ -114,8 +135,18 @@ test.describe('folder switcher', () => {
     const currentKey = localMonthKey(current);
     const previousKey = localMonthKey(previous);
     await seedRawNotes(page, [
-      { id: 'current-day', title: 'Current day', body: 'x', dailyDate: localDateKey(current.getFullYear(), current.getMonth(), 2) },
-      { id: 'previous-day', title: 'Previous day', body: 'x', dailyDate: localDateKey(previous.getFullYear(), previous.getMonth(), 2) },
+      {
+        id: 'current-day',
+        title: 'Current day',
+        body: 'x',
+        dailyDate: localDateKey(current.getFullYear(), current.getMonth(), 2),
+      },
+      {
+        id: 'previous-day',
+        title: 'Previous day',
+        body: 'x',
+        dailyDate: localDateKey(previous.getFullYear(), previous.getMonth(), 2),
+      },
     ]);
 
     await selectFolder(page, DAILY_NOTES_FOLDER_ID);
@@ -125,7 +156,10 @@ test.describe('folder switcher', () => {
     await expect(previousGroup.locator('.daily-month-toggle')).toHaveAttribute('aria-expanded', 'false');
     await previousGroup.locator('.daily-month-toggle').click();
     await page.reload();
-    await expect(page.locator(`.daily-month-group[data-month="${previousKey}"] .daily-month-toggle`)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator(`.daily-month-group[data-month="${previousKey}"] .daily-month-toggle`)).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
   });
 });
 
@@ -195,7 +229,10 @@ test.describe('folder capture and management', () => {
   });
 
   test('bulk move remains available from Home', async ({ page }) => {
-    await seedRawNotes(page, [{ id: 'n-1', title: 'One', body: 'x' }, { id: 'n-2', title: 'Two', body: 'x' }]);
+    await seedRawNotes(page, [
+      { id: 'n-1', title: 'One', body: 'x' },
+      { id: 'n-2', title: 'Two', body: 'x' },
+    ]);
     await seedFolders(page, [{ id: 'f-1', name: 'Work' }]);
     await enterBulkMode(page);
     await page.locator('.note-row', { hasText: 'One' }).locator('input[type="checkbox"]').check();
@@ -223,14 +260,22 @@ test.describe('drag-to-file', () => {
   });
 });
 
+const V2_BACKUP = {
+  app: 'scratchpad',
+  version: 'test',
+  schemaVersion: 2,
+  exportedAt: new Date().toISOString(),
+  notes: [
+    { id: 'n-v2', title: 'Legacy', body: 'x', tags: [], pinned: false, createdAt: 1, updatedAt: 1, deletedAt: null },
+  ],
+  trashedNotes: [],
+  revisions: [],
+};
+
 test.describe('backups with folders', () => {
   test('v2 backup still imports notes into Notes', async ({ page }) => {
     await gotoApp(page);
-    await importJson(page, {
-      app: 'scratchpad', version: 'test', schemaVersion: 2, exportedAt: new Date().toISOString(),
-      notes: [{ id: 'n-v2', title: 'Legacy', body: 'x', tags: [], pinned: false, createdAt: 1, updatedAt: 1, deletedAt: null }],
-      trashedNotes: [], revisions: [],
-    });
+    await importJson(page, V2_BACKUP);
     await page.locator('#confirm-import').click();
     await selectFolder(page, '__notes__');
     await expect(page.locator('.note-row', { hasText: 'Legacy' })).toBeVisible();
