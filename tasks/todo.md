@@ -1,76 +1,60 @@
-# v3.19 find and replace — ship round (2026-09-01)
+# v3.20 search operators — ship round (2026-09-01)
 
-Feature implementation is complete and committed. The blocker that stalled the
-release all of 2026-08-31 is root-caused and resolved: the guide popup test
-failure was a machine-load artifact (Playwright starving new-page target
-attach under the complete 52-file parallel suite), never app behavior. The
-release gate is now `node scripts/release-gate.mjs` — the full suite in two
-halves, split at guide.spec.js.
+Implementation is complete and committed as v3.20.0. Production serves
+v3.19.0 (checked 2026-09-01), so the next deploy carries v3.20.0 only.
+Deploy only on an explicit "yes, deploy".
 
 ## Done and committed
 
-- `34ca86c` docs(design): approve find-and-replace design and plan
-- `cc7432e` feat(editor): find bar opens with cmd+f while editing
-- `08a867b` feat(editor): match counter, cycling, and case/regex toggles
-- `1620fa8` feat(editor): replace current and replace all
-- `7f9b3da` docs(guide): find and replace guide, shortcuts, and offline shell
-- `80e357d` docs(tasks): record the v3.19 ship-round handoff
-- `87238d7` fix(palette): dispatch commands without await to keep user
-  activation (slow-machine popup robustness, surfaced by the investigation)
-- `30ffd67` test(guide): isolate the popup assertion in a pristine browser
-  process (CI-deterministic; pristine + retries survived pair and serialized
-  runs that poisoned the old fixture version)
-- `056493c` perf(dev-server): cache file bodies keyed by mtime (removes ~20k
-  redundant disk reads per suite run; correct during hands-on dev because
-  mtime invalidates instantly)
-- `npm run verify` green earlier in the round; coverage 40.20% (floor 35.6%);
-  structure ratchet tightened and recorded: app.js 6246 → 6204, longFunctions
-  103 → 102, deepFunctions 12 → 11
-- `tests/find-replace.spec.js`: 51 assertions across 9 describes, green on all
-  three browsers in isolation
+- `6ea8665` docs(design): approve search operators design
+- `03a8539` docs(design): search operators implementation plan
+- `8ac4b5c` feat(search): tag, title, and folder operators filter before
+  ranking (parseQuery before the word splitter; folder names via callback)
+- `2ec2855` feat(search): scope line, live region, and hint name the
+  operators (residual-only highlights in the open note)
+- `d9038c8` docs(guide): search operators in the guide, readme, and test map
+- `2d7dc49` chore(release): v3.20.0 search operators
+- Gate: `npm run verify` green (coverage 40.77%, floor 36.2%); full suite
+  1043 passed / 10 skipped / 0 failed on Chromium, Firefox, WebKit (2.0m);
+  `bash cloudfront/recompute-csp-hashes.sh` all `[OK]`, no change;
+  `./deploy.sh --dry-run` lists search.js, search-view.js, app.js,
+  version.js, and the HTML shells; spot-check in `.verify/search-operators/`
+  (light results and empty, dark 390 results and empty)
 
-## Blocker resolution (for the record)
+## Resuming From Here
 
-- Every instrument built to measure the flake lied until a clean bisect:
-  a `window.open` probe wrapper suppresses the popup it measures; the SW stub
-  and pristine-launch probes changed the answer under test;
-  `context.pages()` cannot see lazily unattached popups; server request logs
-  are polluted by per-context SW precache installs. See tasks/lessons.md.
-- Verified with clean instruments: the test passes when ambient machine load
-  is light (solo, pairs, every prefix subset, half-runs — five solo greens
-  before noon) and fails once ambient load rises, regardless of workers,
-  retries, timeouts, or pristine processes. The trace names the hang:
-  `Wait for event "page"` — new-page target attach starves while the machine
-  is saturated (a fresh launch took 73s in a failing run; ambient load on this
-  box runs 8-12 from Ghostty, WindowServer, Gemini, Chrome, sync services).
-  Resolution: the test is CI-scoped (skips locally with a reason; runs
-  serialized in CI where it is deterministic). `CI=1 npm test` forces the
-  serialized shape locally on a quiet machine.
-- v3.18.0 sat just under this machine's threshold; v3.19's +51 tests and
-  +2 per-page script fetches tipped it, and ambient machine load (ambient load
-  average 8-12 on this box) moves the threshold run to run. Suite splits that
-  passed in the morning failed to replicate in the afternoon, so the gate
-  keeps the popup test out of the saturated run entirely: full suite minus
-  that test, then the test solo.
+- Done: v3.20.0 search operators end to end (spec, plan, TDD code, docs,
+  release commit). `tests/search-operators.spec.js` holds 12 tests.
+- Next: deploy on an explicit yes (`./deploy.sh --dry-run` first; confirm
+  `aws sts get-caller-identity` is the scratchpad-deploy profile). Then
+  v3.21 Paste as Markdown: brainstorm from `tasks/roadmap.md` (decide own
+  converter versus vendored turndown, the bypass modifier, and Google Docs
+  wrapper handling).
+- Blockers: none.
+- Assumptions: the working-tree build-date edit found at session start was
+  folded into the v3.20.0 bump; app.js now sits exactly at its recorded
+  ceiling (6204 as the ratchet counts, 6203 by `wc -l`), so the next app.js
+  addition must remove a line or move logic into a module.
 
-## Ship steps — complete
+## Discrepancies carried forward
 
-- [x] 1. Release gate: full suite minus the popup test, 1007 passed / 7
-      skipped / 0 failed (2026-09-01, sane ambient); popup test solo green
-      ×5 under light load; CI-scoped in `b8d1a0f`. A fresh evening run was
-      impossible — machine at load 72 with Bitdefender pegging a core —
-      and any timing-sensitive test flakes there, not just this one.
-- [x] 2. `npm run verify` green on the final tree; coverage 40.20%
-- [x] 3. `bash cloudfront/recompute-csp-hashes.sh` — all sources [OK],
-      no change (new code is external files only)
-- [x] 4. Visual spot-check captured to `.verify/find-replace/` — find,
-      replace, replace-all toast, invalid pattern, dark mode, 390px
-- [x] 5. `chore(release): v3.19.0 find and replace` committed
-- [ ] 6. Deploy only on an explicit "yes, deploy" (`./deploy.sh --dry-run`
-      first; confirm `aws sts get-caller-identity` is the scratchpad-deploy
-      profile)
+- `scripts/release-gate.mjs` (named in `tasks/lessons.md` and the v3.19
+  record) was never committed; today's gate is `npm run verify` + `npm test`
+  with the guide popup test CI-only.
 
 ## Release train after v3.19 (approved order)
+
+Per-feature groundwork lives in `tasks/roadmap.md` (2026-09-01): what each
+feature touches today, the proposed shape, the decisions its design gate
+must settle, and the cross-cutting ratchet, CSP, sanitizer, and precache
+constraints. Two discrepancies found while writing it:
+
+- `scripts/release-gate.mjs` is referenced above and in `tasks/lessons.md`
+  but was never committed; today's gate is `npm run verify` + `npm test`.
+- `public/js/version.js` carries an uncommitted build-date bump to
+  2026-09-01 while the v3.19.0 commit says 2026-08-30.
+- The "scope picker" in the v3.20 line no longer exists (removed in
+  `e51b143`); operators compose with the lifecycle switch and tag chip.
 
 Each feature gets its own brainstorm → spec + plan under `docs/superpowers/`
 → TDD → ship cycle, one feature per release. Standing constraints: zero
@@ -78,7 +62,7 @@ network (`network-isolation.spec.js` untouched), vendored-only deps,
 tokens-only CSS, no inline `<script>` changes, structure/format baselines
 tightened or held, real deploys gated on an explicit yes.
 
-- [ ] **v3.20 Search operators** — `tag:`, `title:`, `folder:` composing with
+- [x] **v3.20 Search operators** (committed 2026-09-01 as v3.20.0) — `tag:`, `title:`, `folder:` composing with
       the scope picker (from `backlog.md`); search.js + search-view plumbing +
       guide copy
 - [ ] **v3.21 Paste as Markdown** — HTML clipboard → Markdown on paste in the

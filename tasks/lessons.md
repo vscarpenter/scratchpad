@@ -49,3 +49,11 @@
   a busy machine keeps the test out of the saturated run: full suite minus the
   popup test, then the popup test solo (`scripts/release-gate.mjs`). CI
   (workers: 1, retries: 2) stays authoritative for PRs.
+- Assert on state that only exists after the change. A `toHaveCount(n)` that
+  the pre-search list already satisfies passes before the 150ms search
+  debounce fires and then reads stale rows; poll the row ids with
+  `expect.poll` or assert the results counter first. Three v3.20 tests passed
+  red for exactly this reason.
+- The structure ratchet counts app.js lines as `wc -l` + 1 (the trailing
+  newline is a line). A recorded ceiling of 6204 with wc at 6203 is zero
+  slack: every added app.js line needs a removed one in the same change.
