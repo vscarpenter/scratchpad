@@ -18,6 +18,12 @@ const vendors = [
     file: 'public/js/vendor/purify.min.js',
     versionPattern: /DOMPurify ([0-9]+\.[0-9]+\.[0-9]+)/,
   },
+  {
+    name: 'Prism',
+    npmPackage: 'prismjs',
+    file: 'public/js/vendor/prism.min.js',
+    versionPattern: /PrismJS ([0-9]+\.[0-9]+\.[0-9]+)/,
+  },
 ];
 
 async function latestVersion(npmPackage) {

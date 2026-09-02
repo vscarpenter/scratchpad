@@ -2041,6 +2041,31 @@ body:not(.page-privacy) .theme-toggle {
 .callout-important { --callout-bar: var(--info); --callout-fill: color-mix(in srgb, var(--info) 12%, transparent); --callout-text: var(--info); }
 .callout-warning { --callout-bar: var(--warning); --callout-fill: var(--warning-tint); --callout-text: var(--warning-dark); }
 .callout-caution { --callout-bar: var(--rust); --callout-fill: var(--rust-tint); --callout-text: var(--rust); }
+/* Code tokens (Prism classes), colored from the palette only. */
+.code-block .token.comment,
+.code-block .token.prolog,
+.code-block .token.doctype,
+.code-block .token.cdata { color: var(--text-muted); font-style: italic; }
+.code-block .token.punctuation { color: var(--text-secondary); }
+.code-block .token.keyword,
+.code-block .token.atrule,
+.code-block .token.tag,
+.code-block .token.selector,
+.code-block .token.important { color: var(--accent-d); }
+.code-block .token.function,
+.code-block .token.class-name,
+.code-block .token.property { color: var(--accent); }
+.code-block .token.string,
+.code-block .token.char,
+.code-block .token.attr-value,
+.code-block .token.regex { color: var(--success-text); }
+.code-block .token.number,
+.code-block .token.boolean,
+.code-block .token.constant,
+.code-block .token.symbol,
+.code-block .token.attr-name { color: var(--warning-dark); }
+.code-block .token.bold { font-weight: 600; }
+.code-block .token.italic { font-style: italic; }
 .note-rendered table {
   width: 100%;
   border-collapse: collapse;

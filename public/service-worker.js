@@ -29,6 +29,7 @@
     '/public/css/app.css',
     '/public/js/vendor/marked.min.js',
     '/public/js/vendor/purify.min.js',
+    '/public/js/vendor/prism.min.js',
     '/public/js/crypto.js',
     '/public/js/db.js',
     '/public/js/erase-landing.js',

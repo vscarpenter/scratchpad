@@ -28,8 +28,9 @@ Nothing else is ever uploaded.
 ### Notes workflow
 
 - Write and preview Markdown with formatting shortcuts, autosaved drafts, the
-  last 10 saved revisions per note, GitHub-style `[!NOTE]` callouts, and
-  rich-text pastes converted to Markdown on the way in.
+  last 10 saved revisions per note, GitHub-style `[!NOTE]` callouts, syntax
+  highlighting for common languages, and rich-text pastes converted to
+  Markdown on the way in.
 - Tick task-list checkboxes right in the rendered note — `- [ ]` items are
   clickable in view mode and write back to the Markdown source.
 - Jump to today's note with one command; it is created on first use from a

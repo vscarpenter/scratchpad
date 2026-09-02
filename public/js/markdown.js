@@ -72,8 +72,20 @@
     );
   }
 
+  function renderCode(token) {
+    const lang = String(token.lang || '')
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase();
+    const prism = window.Prism;
+    const grammar = lang && prism && prism.languages ? prism.languages[lang] : null;
+    const inner = grammar ? prism.highlight(token.text, grammar, lang) : escapeHtml(token.text);
+    const attr = lang ? ' class="language-' + escapeHtml(lang) + '"' : '';
+    return '<pre><code' + attr + '>' + inner + '\n</code></pre>\n';
+  }
+
   if (window.marked && typeof window.marked.use === 'function') {
-    window.marked.use({ walkTokens: tagCallout, renderer: { blockquote: renderBlockquote } });
+    window.marked.use({ walkTokens: tagCallout, renderer: { blockquote: renderBlockquote, code: renderCode } });
   }
 
   function el(tag, options) {
