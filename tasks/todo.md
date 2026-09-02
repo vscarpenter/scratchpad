@@ -30,8 +30,10 @@ serving another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
      invalidates `/public/*` and the worker precaches with cache: 'reload'
      (`daea59e`, `9465818`), so the five-minute stale-asset window is gone.
   4. Hands-on checks that automation could not do: plain-text paste
-     bypass (⌥⇧⌘V in Chrome/Safari on a Mac, ⇧⌘V in Firefox) and linking
-     a real directory in Chrome (tests use the origin-private file system).
+     bypass — DONE, verified by hand 2026-09-02 (rich paste converts, ⌘Z
+     undoes, the browser's plain-text shortcut pastes raw text). Still
+     open: linking a real directory in Chrome (tests use the origin-private
+     file system).
 - Blockers: none.
 - Open discrepancies: `scripts/release-gate.mjs` is named in lessons.md but
   was never committed (today's gate is verify + suite); the 8080 squatter
