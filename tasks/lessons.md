@@ -81,3 +81,17 @@
   `python -m http.server 8080` served another site to every test; run with
   `SCRATCHPAD_TEST_PORT=<free port>` and never assert a literal port inside
   a test.
+- Touching a never-formatted non-exempt file drags the whole file into the
+  format sweep. Land a separate `style:` commit first (checkout, format,
+  commit), then the feature diff stays readable; check the structure
+  ratchet after formatting because expanded fixtures can push a describe or
+  a test past 40 lines.
+- WebKit cannot store an in-memory Blob in IndexedDB ("Error preparing
+  Blob/File data"); persist an ArrayBuffer and build Blobs on read.
+- The pre-commit innerHTML guard reads file names from `+++` headers; with
+  `diff.mnemonicPrefix` those arrive as `i/…`, which defeated the vendor
+  exemption until the prefix strip accepted any single letter.
+- Concurrent async event handlers that insert into the same textarea race;
+  serialize them through one promise queue rather than loosening tests.
+- Playwright's `hasText` string filter is case-insensitive and substring-
+  based: "Old" matched "folder". Use a regex when the intent is exact.

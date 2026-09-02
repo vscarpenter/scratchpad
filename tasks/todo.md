@@ -1,63 +1,44 @@
-# One-pass train v3.22 → v4.1 (2026-09-01) — v4.0 shipped, v4.1 next
+# One-pass train v3.22 → v4.1 — complete (2026-09-01)
 
-Production serves v3.19.0. v3.20.0 is pushed; v3.21.0 through v4.0.0 are
-local only. Nothing is deployed. Push and deploy only on an explicit
-go-ahead. Port 8080 is occupied by a `python -m http.server` serving
-another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
+All six features are implemented, verified, and committed locally, one
+release each: v3.22.0, v3.23.0, v3.24.0, v3.25.0, v4.0.0, v4.1.0. Nothing
+from v3.21.0 onward is pushed or deployed; production serves v3.19.0 and
+origin has v3.20.0. Port 8080 is occupied by a `python -m http.server`
+serving another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
 
-## v3.22 unlinked mentions — done
+## Release commits
 
-- `7dba47d` spec, `f7d3f1f` plan, `6379380` style(markdown) biome pass,
-  `8d9a600` feat(links) mentions panel, `c13fced` docs, `dbe1147` release.
-- Tooling on the way: `b1563c4` SCRATCHPAD_TEST_PORT for Playwright, the
-  guide origin test now derives its origin from baseURL.
-- Gate: verify green (coverage 40.19%); suite 1087 passed / 17 skipped on
-  8091 (3 guide-origin failures fixed in the same round); CSP unchanged.
-
-## v3.23 callouts — done
-
-- `b7c2520` spec + plan, `c0888be` feat(markdown) callouts, `d4ab928`
-  docs, `5732cd0` release. Gate: verify green (40.05%); suite 1102 passed /
-  17 skipped; CSP unchanged. Note: verify's coverage step times out when
-  the full suite runs alongside it; rerun after the suite, it is contention.
-
-## v3.24 syntax highlighting — done
-
-- `822d372` spec + plan, `d9220fa` chore(hooks) mnemonic-prefix fix (the
-  innerHTML guard was rejecting vendored code), `26adeea` feat(markdown)
-  Prism (docs folded in), `e4d4a76` release. Gate: verify green (40.01%);
-  suite 1114 passed / 17 skipped; check:vendor ok; CSP unchanged.
-
-## v3.25 templates folder — done
-
-- `85a5889` spec + plan, `9aef80c` feat(palette) templates, docs commit,
-  `ede76da` release. Gate: verify green (39.90%); suite 1120 passed / 17
-  skipped (one over-specified palette assertion fixed); CSP unchanged.
-
-## v4.0 image attachments — done
-
-- `278587a` spec, `9c8d5fb` plan, `b79f7bb` feat(db) schema 5, `0bc851e`
-  feat(editor) attachments, `7931eb3` style pass on four never-formatted
-  files, `fe1e573` feat(backup) attachments in backups and the ZIP,
-  `4790c4b` docs, `1ea58e7` release. Gate: verify green (39.77%); suite 1147
-  passed / 22 skipped (one WebKit folder-storage flake, passes alone).
-- **Deploy prerequisite:** publish the CloudFront security-headers function
-  with `img-src 'self' blob: data:` (both cloudfront/ sources already carry
-  it; hashes unchanged) BEFORE deploying v4.0.0, or images will not render
-  in production. Use the csp-update skill; it is a prod change gated on a
-  yes.
-- Design notes: attachment bytes are stored as ArrayBuffer (WebKit cannot
-  persist in-memory Blobs in IndexedDB); attach operations are serialized
-  through one queue so paste, drop, and menu insertions land in order.
+- v3.22.0 `dbe1147` unlinked mentions · v3.23.0 `5732cd0` callouts ·
+  v3.24.0 `e4d4a76` syntax highlighting · v3.25.0 `ede76da` templates
+  folder · v4.0.0 `1ea58e7` image attachments · v4.1.0 `2c4e5aa` linked
+  folder. Each has its spec and plan under `docs/superpowers/` and a full
+  three-browser gate recorded in the commit message.
 
 ## Resuming From Here
 
-- Next: v4.1 linked folder (spec and plan committed next). v3.25 templates folder, v4.0 image attachments (needs a
-  CSP publish before deploy), v4.1 linked folder.
-- Blockers: none. Assumptions: app.js at 6200 (ratchet count), 4 lines of
-  slack under the 6204 ceiling.
-- Lesson recorded below: exploration-agent claims about exports must be
-  verified before a design leans on them (scanOutsideFences was private).
+- Done: the whole train. Final suite 1157 passed / 27 skipped (documented:
+  Firefox synthetic clipboard, Chromium-only real clipboard and drag/drop,
+  WebKit cannot persist a directory handle, CI-only guide popup).
+- Next, in order, each on an explicit go-ahead:
+  1. `git push origin main` (47 commits ahead).
+  2. Publish the CloudFront security-headers function with
+     `img-src 'self' blob: data:` (both `cloudfront/` sources already
+     carry it; the csp-update skill runs it). Required before v4.0.0 or
+     later is served, or images will not render in production.
+  3. `./deploy.sh --dry-run`, confirm the scratchpad-deploy identity, then
+     `./deploy.sh`. One deploy carries v3.20 through v4.1.
+  4. Hands-on checks that automation could not do: plain-text paste
+     bypass (⌥⇧⌘V in Chrome/Safari on a Mac, ⇧⌘V in Firefox) and linking
+     a real directory in Chrome (tests use the origin-private file system).
+- Blockers: none.
+- Open discrepancies: `scripts/release-gate.mjs` is named in lessons.md but
+  was never committed (today's gate is verify + suite); the 8080 squatter
+  is outside this repo.
+- Assumptions: app.js sits at 6202 (ratchet 6203, ceiling 6204); db.js at
+  408 under its 418 allowance; the coverage floor stayed 36.2% while the
+  measured value drifted from 40.20% to 39.41% as untested-by-workflow
+  modules grew — raise the floor or extend the coverage workflow when the
+  next feature lands.
 
 ## Release train after v3.19 (approved order)
 
@@ -96,7 +77,7 @@ tightened or held, real deploys gated on an explicit yes.
 - [x] **v4.0 Image attachments** (committed 2026-09-01 as v4.0.0; CSP publish required before deploy) — DB_VERSION 4→5 (blob store), backup
       schema 5, export strategy decision, size caps, paste/drop; decide
       shares stay text-only (recommended — object URLs are per-browser)
-- [ ] **v4.1 Linked plain-text folder** — File System Access two-way `.md`
+- [x] **v4.1 Linked plain-text folder** (committed 2026-09-01 as v4.1.0; Chromium-only by platform) — File System Access two-way `.md`
       round-trip with a user-chosen local directory; biggest and last; it
       inherits the image-export decisions from v4.0; never use the word
       "sync" in copy (terminology ban)
