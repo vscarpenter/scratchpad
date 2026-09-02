@@ -24,8 +24,11 @@
     window.marked.use({
       renderer: {
         checkbox({ checked }) {
-          return '<span class="task-checkbox" role="checkbox" tabindex="0" aria-checked="' +
-            (checked ? 'true' : 'false') + '"></span>';
+          return (
+            '<span class="task-checkbox" role="checkbox" tabindex="0" aria-checked="' +
+            (checked ? 'true' : 'false') +
+            '"></span>'
+          );
         },
       },
     });
@@ -92,40 +95,42 @@
   }
 
   function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   const WIKILINK_TOKEN = /^\[\[([^\[\]\n|]+?)(?:\|([^\[\]\n]+?))?\]\]/;
 
   if (window.marked && typeof window.marked.use === 'function') {
     window.marked.use({
-      extensions: [{
-        name: 'wikilink',
-        level: 'inline',
-        start(src) { return src.indexOf('[['); },
-        tokenizer(src) {
-          const match = WIKILINK_TOKEN.exec(src);
-          if (!match) return undefined;
-          return {
-            type: 'wikilink',
-            raw: match[0],
-            target: match[1].trim(),
-            alias: (match[2] || '').trim(),
-          };
+      extensions: [
+        {
+          name: 'wikilink',
+          level: 'inline',
+          start(src) {
+            return src.indexOf('[[');
+          },
+          tokenizer(src) {
+            const match = WIKILINK_TOKEN.exec(src);
+            if (!match) return undefined;
+            return {
+              type: 'wikilink',
+              raw: match[0],
+              target: match[1].trim(),
+              alias: (match[2] || '').trim(),
+            };
+          },
+          renderer(token) {
+            const resolved = wikilinkResolver ? wikilinkResolver(token.target) : null;
+            const text = escapeHtml(token.alias || token.target);
+            if (resolved) {
+              return '<a class="wikilink" href="#note:' + encodeURIComponent(resolved) + '">' + text + '</a>';
+            }
+            return (
+              '<a class="wikilink is-phantom" href="#new:' + encodeURIComponent(token.target) + '">' + text + '</a>'
+            );
+          },
         },
-        renderer(token) {
-          const resolved = wikilinkResolver ? wikilinkResolver(token.target) : null;
-          const text = escapeHtml(token.alias || token.target);
-          if (resolved) {
-            return '<a class="wikilink" href="#note:' + encodeURIComponent(resolved) + '">' + text + '</a>';
-          }
-          return '<a class="wikilink is-phantom" href="#new:' + encodeURIComponent(token.target) + '">' + text + '</a>';
-        },
-      }],
+      ],
     });
   }
 
@@ -198,7 +203,7 @@
           el('em', { text: 'Edit' }),
           document.createTextNode(' to start writing.'),
         ],
-      })
+      }),
     );
   }
 
