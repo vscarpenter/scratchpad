@@ -43,6 +43,7 @@
     '/public/js/find-replace.js',
     '/public/js/html-to-markdown.js',
     '/public/js/paste.js',
+    '/public/js/mentions.js',
     '/public/js/share.js',
     '/public/js/app.js',
   ];

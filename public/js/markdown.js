@@ -214,5 +214,6 @@
     findTaskMarkers,
     setWikilinkResolver,
     extractWikilinkTargets,
+    scanOutsideFences,
   };
 })();

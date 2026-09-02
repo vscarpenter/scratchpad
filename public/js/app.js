@@ -2231,6 +2231,7 @@
 
     els.dirtyIndicator.hidden = !state.dirty || trashed;
     renderBacklinks(note);
+    if (window.ScratchpadMentions) window.ScratchpadMentions.render(note);
   }
 
   function renderBreadcrumb(note) {
@@ -3524,22 +3525,15 @@
     if (!wanted) return [];
     return sortNotes(state.notes.filter((n) => {
       if (n.id === excludeId || isTrashed(n)) return false;
-      return Markdown.extractWikilinkTargets(n.body || '')
-        .some((t) => t.toLowerCase() === wanted);
+      return Markdown.extractWikilinkTargets(n.body || '').some((t) => t.toLowerCase() === wanted);
     }));
   }
 
   function renderBacklinks(note) {
     const show = note && !isTrashed(note) && !state.editing;
     const sources = show ? linkingNotesTo(deriveTitle(note), note.id) : [];
-    if (!sources.length) {
-      els.backlinksSection.hidden = true;
-      els.backlinksList.replaceChildren();
-      return;
-    }
-    els.backlinksSection.hidden = false;
-    els.backlinksSummary.textContent =
-      'Linked from ' + sources.length + ' note' + (sources.length === 1 ? '' : 's');
+    els.backlinksSection.hidden = !sources.length;
+    els.backlinksSummary.textContent = 'Linked from ' + sources.length + ' note' + (sources.length === 1 ? '' : 's');
     els.backlinksList.replaceChildren(...sources.map((source) => el('li', {
       children: [el('button', {
         class: 'backlink-btn',
@@ -6180,6 +6174,10 @@
     initCrossTabSync();
     if (window.ScratchpadFind) window.ScratchpadFind.init({ editor: els.editor, onToast: toast });
     if (window.ScratchpadPaste) window.ScratchpadPaste.bind(els.editor);
+    if (window.ScratchpadMentions) window.ScratchpadMentions.init({
+      notes: () => state.notes, editing: () => state.editing, deriveTitle, isTrashed, isArchived,
+      openNote: openNoteFromCommand, mutateNoteBody, getDrafts: () => DB.getAllDrafts(), rerender: renderEditor, toast,
+    });
     bindEvents();
     try {
       await purgeExpiredTrash();

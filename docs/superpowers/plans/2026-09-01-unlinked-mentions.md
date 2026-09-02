@@ -35,14 +35,16 @@ Biome, `tsc` strict on the module.
 
 **Files:**
 - Create: `public/js/mentions.js`
-- Modify: `index.html` (markup after `#backlinks-section`, script tag),
+- Modify: `public/js/markdown.js` (export `scanOutsideFences`),
+  `index.html` (markup after `#backlinks-section`, script tag),
   `public/service-worker.js`, `jsconfig.json`, `public/js/app.js`
   (`linkingNotesTo`, `renderBacklinks`, boot init, `renderEditor` call),
   `public/css/app.css` (after the `.backlinks-list .backlink-btn:hover` rule)
 - Test: `tests/unlinked-mentions.spec.js` (create)
 
 **Interfaces:**
-- Consumes: `window.ScratchpadMarkdown.scanOutsideFences(src, cb)`;
+- Consumes: `scanOutsideFences(src, cb)` from `public/js/markdown.js`, which
+  this task adds to that module's export object (it was private);
   app.js `deriveTitle`, `isTrashed`, `isArchived`, `openNoteFromCommand`,
   `mutateNoteBody`, `renderEditor`, `toast`, `DB.getAllDrafts`, `state`.
 - Produces: `ScratchpadMentions.findMentions(notes, title, excludeId)`

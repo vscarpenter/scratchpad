@@ -17,6 +17,7 @@
     "playwright.config.js",
     "public/js/dialogs.js",
     "public/js/html-to-markdown.js",
+    "public/js/mentions.js",
     "public/js/paste.js",
     "public/js/search.js",
     "public/js/search-view.js",
