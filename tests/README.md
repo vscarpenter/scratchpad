@@ -15,7 +15,7 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 | Create, edit, save, format, pin, delete, restore, and empty states | `notes-crud.spec.js`, `note-organization.spec.js` |
 | In-note find and replace | `find-replace.spec.js` |
 | Archive lifecycle, organization integrations, cross-tab routing, and portability | `archive.spec.js`, `archive-integrations.spec.js`, `archive-portability.spec.js` |
-| Focused ranked search, filters, tags, ordering, bulk actions, and mobile navigation | `focused-search.spec.js`, `enhanced-search.spec.js`, `note-organization.spec.js`, `reliability.spec.js`, `bulk-actions.spec.js`, `mobile-navigation.spec.js` |
+| Focused ranked search, operators, filters, tags, ordering, bulk actions, and mobile navigation | `focused-search.spec.js`, `search-operators.spec.js`, `enhanced-search.spec.js`, `note-organization.spec.js`, `reliability.spec.js`, `bulk-actions.spec.js`, `mobile-navigation.spec.js` |
 | Markdown rendering, sanitization, task lists, wikilinks, and backlinks | `notes-crud.spec.js`, `sanitization.spec.js`, `task-lists.spec.js`, `wikilinks.spec.js` |
 | Daily notes, month grouping, Monthly Reviews, managed folders, quick capture, action URLs, and keyboard shortcuts | `daily-note.spec.js`, `folders.spec.js`, `keyboard-shortcuts.spec.js`, `markdown-import.spec.js`, `share-export.spec.js` |
 | Drafts, revisions, failed writes, and multi-tab conflicts | `reliability.spec.js`, `revision-history.spec.js`, `cross-tab-conflicts.spec.js` |
