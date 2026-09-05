@@ -18,6 +18,7 @@
   const pending = new Set();
   let writeTimer = 0;
   let lastRead = 0;
+  let reads = 0;
 
   /** @type {Window & typeof globalThis & { ScratchpadDB?: any, ScratchpadAttachments?: any, ScratchpadLinkedFolder?: object, showDirectoryPicker?: (options?: object) => Promise<FileSystemDirectoryHandle> }} */
   const root = window;
@@ -135,7 +136,7 @@
 
   async function flush() {
     writeTimer = 0;
-    if (!deps || !record || (await permission()) !== 'granted') return;
+    if (reads || !deps || !record || (await permission()) !== 'granted') return;
     const api = deps;
     const ids = Array.from(pending);
     pending.clear();
@@ -152,11 +153,17 @@
     }
   }
 
+  /* Write-backs wait while a read is adopting files: until that read reloads memory, a new note is absent
+     there and would look trashed, so flush would remove the very file it came from. */
+  function scheduleFlush() {
+    if (pending.size && !writeTimer && !reads) writeTimer = window.setTimeout(flush, WRITE_DELAY);
+  }
+
   /** @param {Note} note */
   function noteChanged(note) {
     if (!record) return;
     pending.add(note.id);
-    if (!writeTimer) writeTimer = window.setTimeout(flush, WRITE_DELAY);
+    scheduleFlush();
   }
 
   async function writeAll() {
@@ -287,6 +294,7 @@
     const rec = record;
     lastRead = api.now();
     let changed = 0;
+    reads += 1;
     try {
       for (const file of await walk(rec.handle, '')) changed += await applyFile(file, api, rec);
       await saveRecord();
@@ -295,6 +303,9 @@
       api.toast('Could not read the linked folder.', { tone: 'error' });
       console.warn('Linked folder read failed', error);
       return changed;
+    } finally {
+      reads -= 1;
+      scheduleFlush();
     }
     if (!quiet || changed)
       api.toast('Read ' + changed + ' changed file' + (changed === 1 ? '' : 's') + ' from “' + rec.name + '”.');

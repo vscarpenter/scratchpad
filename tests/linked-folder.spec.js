@@ -166,3 +166,25 @@ test('unlink forgets the folder but leaves files, and the row hides without the 
   await page.locator('#open-about').click();
   await expect(page.locator('#linked-folder-row')).toBeHidden();
 });
+
+test('a read slower than the write-back delay never deletes the files it is adopting', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  const names = ['alpha', 'beta', 'gamma'];
+  for (const name of names) {
+    await opfs(page, 'write', name + '.md', '---\ntitle: "' + name + '"\n---\n\nBody ' + name);
+  }
+  // Each database write now outlasts the 800 ms write-back timer, so the
+  // write-back fires while the read is still adopting files.
+  await page.evaluate(() => {
+    const db = window.ScratchpadDB;
+    const put = db.put;
+    db.put = (note) => new Promise((resolve) => setTimeout(resolve, 700)).then(() => put(note));
+  });
+  await page.locator('#linked-folder-read').click();
+  await expect(page.locator('#toast-region')).toContainText(/Read 3/);
+  for (const name of names) expect(await opfs(page, 'exists', name + '.md')).toBe(true);
+  for (const name of names) {
+    await expect.poll(() => opfs(page, 'read', name + '.md')).toContain('id: "');
+  }
+});
