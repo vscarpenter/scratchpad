@@ -95,3 +95,12 @@
   serialize them through one promise queue rather than loosening tests.
 - Playwright's `hasText` string filter is case-insensitive and substring-
   based: "Old" matched "folder". Use a regex when the intent is exact.
+- A write-back that keys off "note missing from memory" is a delete waiting
+  to happen whenever memory lags the database. The linked folder's read
+  adopts files through `putNoteRecord` and only reloads `state.notes` after
+  the whole walk, so any read longer than the 800 ms flush timer looked like
+  a mass trash and removed its own source files. Hold write-backs while a
+  read is in flight (a counter, since reads overlap), keep `pending` intact,
+  and schedule the deferred flush from the read's `finally`. To reproduce a
+  timing race deterministically in Playwright, slow the real seam
+  (`window.ScratchpadDB.put`) instead of piling on fixtures.

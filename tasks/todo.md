@@ -1,3 +1,44 @@
+# Linked folder: a slow read must never delete the files it adopts (2026-09-05)
+
+Tier: Standard (one module, one spec file, no public contract change).
+
+Root cause (traced 2026-09-05 against ~/Projects/ScratchPad-Content):
+`applyFile` records a path for each adopted note and stores it through
+`putNoteRecord`, which schedules `flush` 800 ms later. `flush` looks each
+pending id up in `state.notes`, which `readAll` only refreshes via
+`api.reload()` after the whole walk. A note missing from memory is treated
+as trashed and its remembered path is removed, so a read longer than 800 ms
+deletes the source files it just imported and writes nothing back. The spec
+promises files are never deleted except for a trashed note.
+
+## Plan
+
+- [x] RED: `tests/linked-folder.spec.js` — slow the real `ScratchpadDB.put`
+      so the write-back fires mid-read; assert adopted files survive and
+      still receive their id afterwards. Watch it fail on `exists` = false.
+- [x] GREEN: `public/js/linked-folder.js` — hold write-backs while a read is
+      in flight (counter), skip a flush that fires mid-read without clearing
+      `pending`, and schedule the deferred flush when the read finishes.
+- [x] Linked-folder spec on all three browsers (12 passed, 6 WebKit skips)
+      and `npm run verify` green. Full suite: see Resuming From Here.
+- [x] Full suite 1160 passed / 28 skipped (2.2 m). Committed as a
+      fix(data) commit plus this docs(tasks) commit; lesson distilled into
+      lessons.md.
+
+## Resuming From Here
+
+- Done: read-race fix in `public/js/linked-folder.js` with a regression
+  test, verify gate and full three-browser suite green, committed locally.
+  Production still serves the unguarded v4.1.0.
+- Next: bump `public/js/version.js` to 4.1.1 and deploy, each on an
+  explicit yes. Then tidy `~/Projects/ScratchPad-Content` by hand: 20
+  byte-identical duplicates under `blogs/` and the empty `blog/`
+  directory, and move the 57 unfiled imported notes into Blogs from the app,
+  never on disk.
+- Blockers: none.
+- Assumptions: the fix commit carries no version bump; releasing is a
+  separate decision.
+
 # One-pass train v3.22 → v4.1 — complete (2026-09-01)
 
 All six features are implemented, verified, and committed locally, one
