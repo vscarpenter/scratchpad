@@ -27,17 +27,20 @@ promises files are never deleted except for a trashed note.
 
 ## Resuming From Here
 
-- Done: read-race fix in `public/js/linked-folder.js` with a regression
-  test, verify gate and full three-browser suite green, committed locally.
-  Production still serves the unguarded v4.1.0.
-- Next: bump `public/js/version.js` to 4.1.1 and deploy, each on an
-  explicit yes. Then tidy `~/Projects/ScratchPad-Content` by hand: 20
-  byte-identical duplicates under `blogs/` and the empty `blog/`
-  directory, and move the 57 unfiled imported notes into Blogs from the app,
-  never on disk.
+- Done: read-race fix (d0d9339) with a regression test; verify gate and
+  full suite green. SHIPPED as v4.1.1 (`1dbaee6`) on 2026-09-05, deployed
+  as scratchpad-deploy, invalidation I4ZFMA8Y9FEI30S8OYVUE90WLN, verified
+  live (version.js 4.1.1 / 2026-09-05, guard present in linked-folder.js,
+  CSP and HSTS unchanged). The content folder is reconciled: 83 of the 85
+  imported notes are in Blogs on disk and in the app, one is unfiled by
+  choice (September Read List), one was trashed (Blog Posts); zero
+  duplicate ids, the empty `blog/` directory removed.
+- Next: `git push origin main` (6 commits ahead) on an explicit go-ahead.
+  Optional, Vinny's call: four pre-import posts still unfiled at the root
+  (CI/CD pipeline, skills guide, LLM critics, long-titled bottleneck), and
+  five same-title note pairs at the root with a "-2" suffix.
 - Blockers: none.
-- Assumptions: the fix commit carries no version bump; releasing is a
-  separate decision.
+- Assumptions: none outstanding.
 
 # One-pass train v3.22 → v4.1 — complete (2026-09-01)
 
