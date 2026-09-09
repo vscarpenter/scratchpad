@@ -7,6 +7,10 @@
       "!public/js/vendor/**",
       "!.verify/**",
       "!.impeccable/**",
+      "!.agents/**",
+      "!.claude/**",
+      "!.github/agents/**",
+      "!.github/skills/**",
       "!playwright-report/**",
       "!test-results/**"
     ]

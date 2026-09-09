@@ -39,6 +39,15 @@ ehthumbs.db
 .impeccable/*
 !.impeccable/design.json
 
+# ---- Locally installed agent tooling ----
+# Skill and subagent payloads that tools write into the repo. The Impeccable
+# copy alone is 15 MB of vendored bundles and generated JSON. The format gate
+# reads untracked files, so leaving these here blocks every commit. The
+# canonical copies live under ~/.claude. Note that .github/workflows/ stays
+# tracked.
+.github/skills/
+.github/agents/
+
 # ---- Logs ----
 *.log
 npm-debug.log*
