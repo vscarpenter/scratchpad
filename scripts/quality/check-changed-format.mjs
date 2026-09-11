@@ -9,7 +9,7 @@ const root = resolve(import.meta.dirname, '../..');
 const baseline = JSON.parse(readFileSync(resolve(root, 'config/format-baseline.json'), 'utf8'));
 const legacyFiles = new Set(baseline.legacyFiles);
 const supported = /\.(?:c?js|mjs|json|css)$/;
-const excluded = /^(?:public\/js\/vendor\/|\.impeccable\/|\.verify\/)|^bun\.lock$/;
+const excluded = /^(?:public\/js\/vendor\/|\.impeccable\/|\.saggar\/|\.verify\/)|^bun\.lock$/;
 
 /** @param {string[]} args */
 function gitLines(args) {
