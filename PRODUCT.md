@@ -110,7 +110,9 @@ wording is now inaccurate.
 - **Sharing.** A user-triggered public read-only link at `/s/<id>`. The note is
   encrypted in the browser first, the host stores ciphertext and an IV, and the
   key travels in the URL fragment. Links expire after a sender-chosen 7, 14,
-  21, or 30 days, and they can be revoked sooner.
+  21, or 30 days, and they can be revoked sooner. A recipient can save a copy
+  into Scratchpad in their own browser. The copy is tagged `shared`, and saving
+  uploads nothing.
 - **Storage reality.** IndexedDB can be evicted by the browser. Scratchpad
   requests persistent storage on a best-effort basis, surfaces the result
   honestly, reminds users to back up, and treats backups and the linked folder,

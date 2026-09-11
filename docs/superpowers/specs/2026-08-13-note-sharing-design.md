@@ -34,6 +34,7 @@ the product's privacy copy changes to say so precisely rather than absolutely.
 - No sharing of folders, tag queries, the Archive, or multiple notes at once.
 - No comments, reactions, view counters, or analytics on the shared page.
 - No "Save a copy to my Scratchpad" button on the viewer. The viewer is inert.
+  (Superseded on 2026-09-10 by `2026-09-10-save-shared-note-design.md`.)
 - No passphrase-protected shares in this version.
 - No sync. Shares are still created from, and revocable only by, one browser.
 
