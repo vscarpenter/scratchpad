@@ -56,18 +56,13 @@ test('captures into today note, creating it when needed', async ({ page }) => {
   await page.locator('#quick-capture-input').fill('second thought');
   await page.keyboard.press('Enter');
   await expect(page.locator('.toast', { hasText: 'Captured to today’s note.' }).last()).toBeVisible();
-  await page.waitForFunction(async () => {
-    const all = await window.ScratchpadDB.getAll();
-    const daily = all.find((n) => n.dailyDate);
-    return daily && daily.body.includes('second thought');
-  });
-  const after = await page.evaluate(async () => {
-    const all = await window.ScratchpadDB.getAll();
-    return all.filter((n) => n.dailyDate);
-  });
+  // waitForFunction never awaits an async predicate, so its Promise passed at
+  // once. Poll the database until the second capture's write has landed.
+  const dailyNotes = () => page.evaluate(async () => (await window.ScratchpadDB.getAll()).filter((n) => n.dailyDate));
+  await expect.poll(async () => (await dailyNotes())[0]?.body).toMatch(/second thought\n$/);
+  const after = await dailyNotes();
   expect(after.length).toBe(1);
   expect(after[0].body).toContain('remember the milk');
-  expect(after[0].body).toMatch(/second thought\n$/);
 });
 
 test('capture while editing today note appends to the buffer, not the DB', async ({ page }) => {
