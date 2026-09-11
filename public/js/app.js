@@ -6141,17 +6141,15 @@
     }
   }
 
-  // OS-level PWA shortcuts land on /?action=<name>. Handle once at boot,
-  // then clean the URL so reload/bookmark behaves normally. The service
-  // worker matches navigations by pathname, so these URLs work offline.
+  // PWA shortcuts and the share viewer's save button land on /?action=<name>. Handle once at boot, then clean
+  // the URL so reload/bookmark behaves normally. The service worker matches navigations by pathname, so these work offline.
   async function handleActionParam() {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     if (!action) return;
     window.history.replaceState(null, '', window.location.pathname);
-    if (action === 'new') await createNote();
-    else if (action === 'today') await openTodayNote();
-    else if (action === 'capture') openQuickCapture();
+    const handler = new Map([['new', () => createNote()], ['today', openTodayNote], ['capture', openQuickCapture], ['save-shared', () => window.ScratchpadSharedCopy && window.ScratchpadSharedCopy.saveStashed()]]).get(action);
+    if (handler) await handler();
   }
 
   async function init() {
@@ -6159,9 +6157,7 @@
     Markdown.setWikilinkResolver((target) => {
       const wanted = (target || '').trim().toLowerCase();
       if (!wanted) return null;
-      const matches = sortNotes(state.notes.filter(
-        (n) => !isTrashed(n) && deriveTitle(n).trim().toLowerCase() === wanted
-      ));
+      const matches = sortNotes(state.notes.filter((n) => !isTrashed(n) && deriveTitle(n).trim().toLowerCase() === wanted));
       return matches.length ? matches[0].id : null;
     });
     initCrossTabSync();
@@ -6172,6 +6168,8 @@
     if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({ notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
       isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
       openNote: openNoteFromCommand, deriveTitle, toast });
+    if (window.ScratchpadSharedCopy) window.ScratchpadSharedCopy.init({ notes: () => state.notes, isTrashed, normalizeNote, normalizeTag, putNoteRecord, uuid, now, toast,
+      addNote: (note) => state.notes.push(note), openNote: (id) => { if (state.folderViewId) setFolderView(null, false); return openNoteFromCommand(id); }, limits: { title: NOTE_TITLE_MAX, body: NOTE_BODY_MAX, tag: NOTE_TAG_MAX, tags: NOTE_TAGS_MAX } });
     if (window.ScratchpadAttachments) {
       Markdown.setAttachmentResolver((id) => window.ScratchpadAttachments.resolve(id));
       window.ScratchpadAttachments.init({ noteId: () => state.selectedId, editing: () => state.editing, uuid, now, toast, rerender: renderEditor, insert: window.ScratchpadPaste.insert, editor: els.editor });
