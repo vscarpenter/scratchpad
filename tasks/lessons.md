@@ -123,3 +123,13 @@
   space-separated list passes one nonexistent path and silently diffs
   nothing, which made a dash scan report clean. Spell out the paths or use an
   array.
+- Playwright's `page.waitForFunction` does not await an async predicate. The
+  returned Promise is truthy, so the wait passes at once; a probe predicate
+  that always resolved `false` returned in 68 ms on 1.62.1. Poll async state
+  with `expect.poll(() => page.evaluate(...))` instead. The quick capture test
+  flaked in CI this way, and `wikilinks.spec.js` and `pwa.spec.js` still use
+  the async form.
+- Confirm a path is free before writing a new file there. `tests/README.md`
+  did not list `tests/quick-capture.spec.js`, and the Write tool overwrote
+  that tracked, never-read file without refusing. A `git status` pre-check
+  caught it before any commit.

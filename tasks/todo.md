@@ -1,3 +1,31 @@
+# Quick capture test: an async wait that never waited (2026-09-11)
+
+Tier: Standard (two test files and a test index row; no app change).
+
+Root cause: `page.waitForFunction` does not await an async predicate, so the
+test's wait for the second capture passed at once. The toast check before it
+can match the first capture's toast, so a slow second write lost the race in
+CI (run 34602801946). A probe predicate that always resolved `false` passed in
+68 ms. A repro that slowed `putIfUnchanged` by 1.5 s failed every time with
+the old wait and passed with `expect.poll`.
+
+- [x] Move the two quick capture tests from daily-note.spec.js into the
+      existing quick-capture.spec.js (7c6cd06). daily-note.spec.js sat at its
+      405-line ceiling unformatted, so it could not take an edit in place. An
+      accidental overwrite of quick-capture.spec.js was caught by a
+      `git status` pre-check and restored before any commit.
+- [x] Replace the wait with `expect.poll` over a database read (fd6b22e).
+      Ten repeated runs and all three browsers green.
+
+## Resuming From Here
+
+- Done: both commits above, plus two lessons in lessons.md. Not pushed.
+- Next, Vinny's call: push main. `wikilinks.spec.js:110` and `pwa.spec.js:10`
+  use the same async `waitForFunction` form and may flake the same way. The
+  guide popup test still fails in CI on all three browsers.
+- Blockers: none.
+- Assumptions: none outstanding.
+
 # Save a shared note into your own Scratchpad (2026-09-11)
 
 Tier: Non-trivial (two surfaces, a new module, and the privacy test contract).
