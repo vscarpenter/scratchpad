@@ -3517,7 +3517,7 @@ body:not(.page-privacy) .theme-toggle {
   margin: 10px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--danger);
+  color: var(--rust);
 }
 
 .share-expiry-picker {

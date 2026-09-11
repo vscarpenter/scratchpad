@@ -150,5 +150,15 @@ test('a blocked stash write shows the error and stays on the share', async ({ pa
   await expect(page.locator('#share-save-error')).toHaveText(
     'This browser blocked saving the note. Allow site data for this site, then try again.',
   );
+  const colors = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--rust)';
+    document.body.append(probe);
+    return {
+      error: getComputedStyle(document.getElementById('share-save-error')).color,
+      rust: getComputedStyle(probe).color,
+    };
+  });
+  expect(colors.error).toBe(colors.rust);
   expect(new URL(page.url()).pathname).toBe('/share.html');
 });
