@@ -124,6 +124,29 @@ async function openTagManagerViaMenu(page) {
   await expect(page.locator('#tag-manager-dialog')).toBeVisible();
 }
 
+// Encrypts a payload with the app's own crypto, so share tests run real
+// decryption against a stubbed API.
+async function makeShare(page, payload) {
+  await page.goto('/share.html');
+  await page.waitForFunction(() => !!window.ScratchpadCrypto);
+  return page.evaluate(async (p) => {
+    const C = window.ScratchpadCrypto;
+    const key = await C.generateShareKey();
+    return { envelope: await C.encryptShare(p, key), key: await C.exportShareKey(key) };
+  }, payload);
+}
+
+async function stubShare(page, envelope, options = {}) {
+  const { expiresAt = Date.now() + 86400000, status = 200 } = options;
+  await page.route('**/api/share/*', (routeCall) =>
+    routeCall.fulfill({
+      status,
+      contentType: 'application/json',
+      body: status === 200 ? JSON.stringify({ ...envelope, expiresAt }) : JSON.stringify({ error: 'nope' }),
+    }),
+  );
+}
+
 module.exports = {
   gotoApp,
   seedNotes,
@@ -136,4 +159,6 @@ module.exports = {
   openOverflowMenu,
   openBackupMenu,
   openTagManagerViaMenu,
+  makeShare,
+  stubShare,
 };

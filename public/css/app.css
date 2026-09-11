@@ -3601,6 +3601,26 @@ body:not(.page-privacy) .theme-toggle {
   overflow-wrap: anywhere;
 }
 
+.share-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 20px;
+}
+
+.share-save-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.share-save .share-link-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .share-body {
   padding-top: 18px;
   border-top: var(--border-hair);

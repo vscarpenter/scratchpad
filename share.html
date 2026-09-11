@@ -53,6 +53,11 @@
       <p class="eyebrow">Shared note</p>
       <h1 class="share-title" id="share-title"></h1>
       <ul class="share-tags" id="share-tags"></ul>
+      <div class="share-save">
+        <button class="btn btn-primary btn-sm" id="share-save" type="button">Save to my Scratchpad</button>
+        <p class="share-save-hint">Adds an editable copy to Scratchpad in this browser. It stays after the link expires.</p>
+        <p class="share-link-error" id="share-save-error" role="alert" hidden>This browser blocked saving the note. Allow site data for this site, then try again.</p>
+      </div>
       <div class="share-body" id="share-body"></div>
     </article>
 
@@ -118,6 +123,7 @@
   <script src="/public/js/crypto.js"></script>
   <script src="/public/js/markdown.js"></script>
   <script src="/public/js/version.js"></script>
+  <script src="/public/js/shared-copy.js"></script>
   <script src="/public/js/share.js"></script>
   <script>
     (function () {

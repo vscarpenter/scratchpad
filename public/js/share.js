@@ -1,8 +1,9 @@
 /* Scratchpad share viewer. Fetches one encrypted share, decrypts it with the
    key from the URL fragment, and renders it read-only.
 
-   This page touches no storage: no IndexedDB, no note state, no writes. It is
-   also the only surface in the product that renders markdown originating
+   This page opens no IndexedDB and holds no note state. Its one write is a
+   sessionStorage stash, made only when the reader clicks Save to my Scratchpad.
+   It is also the only surface in the product that renders markdown originating
    outside the user's own browser, so all rendering goes through
    Markdown.renderMarkdownInto and every other field is set with textContent. */
 (function () {
@@ -19,6 +20,8 @@
     missing: document.getElementById('share-missing'),
     badkey: document.getElementById('share-badkey'),
     offline: document.getElementById('share-offline'),
+    save: document.getElementById('share-save'),
+    saveError: document.getElementById('share-save-error'),
   };
 
   const STATES = ['loading', 'doc', 'expired', 'missing', 'badkey', 'offline'];
@@ -72,6 +75,20 @@
         day: 'numeric',
       });
     els.expiry.hidden = false;
+  }
+
+  // Only the app creates notes. Its save path writes the linked folder, tells
+  // other tabs, and seeds a first visit, so this page just hands the note over.
+  function bindSave(note) {
+    els.save.addEventListener('click', () => {
+      try {
+        ScratchpadSharedCopy.stash(note);
+      } catch {
+        els.saveError.hidden = false;
+        return;
+      }
+      location.assign('/?action=save-shared');
+    });
   }
 
   async function main() {
@@ -153,6 +170,7 @@
     // other notes, so every [[target]] renders as inert phantom text.
     ScratchpadMarkdown.renderMarkdownInto(els.body, typeof note.body === 'string' ? note.body : '');
     renderExpiry(envelope.expiresAt);
+    bindSave(note);
     show('doc');
   }
 

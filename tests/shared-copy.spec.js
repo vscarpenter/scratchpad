@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, seedFolders } = require('./helpers');
+const { gotoApp, seedRawNotes, seedFolders, makeShare, stubShare } = require('./helpers');
 
 const STASH_KEY = 'scratchpad:pendingSharedNote';
 
@@ -112,4 +112,43 @@ test('a hostile shared title renders as text in the app', async ({ page }) => {
   await expect(page.locator('#note-title-display')).toContainText('<img');
   await expect(page.locator('#note-title-display img')).toHaveCount(0);
   expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
+});
+
+test('saving from the share viewer opens the copy in the app', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+  const note = { v: 1, title: 'From a friend', body: 'Read this.', tags: ['ideas'], updatedAt: 1 };
+  const { envelope, key } = await makeShare(page, note);
+  await stubShare(page, envelope);
+  await page.goto('/share.html?id=AbCdEf123456#k=' + key);
+  await page.locator('#share-save').click();
+  await expect(page.locator('#note-title-display')).toHaveText('From a friend');
+  await expect(page.locator('#toast-region')).toContainText('Saved to your Scratchpad.');
+  expect(new URL(page.url()).search).toBe('');
+  const copy = (await storedNotes(page)).find((stored) => stored.title === 'From a friend');
+  expect(copy).toMatchObject({ body: 'Read this.', tags: ['ideas', 'shared'], folderId: null });
+  expect(await page.evaluate((stashKey) => sessionStorage.getItem(stashKey), STASH_KEY)).toBeNull();
+});
+
+test('the save action exists but stays hidden when the share has expired', async ({ page }) => {
+  await stubShare(page, null, { status: 410 });
+  await page.goto('/share.html?id=AbCdEf123456#k=' + 'A'.repeat(43));
+  await expect(page.locator('#share-expired')).toBeVisible();
+  await expect(page.locator('#share-save')).toHaveCount(1);
+  await expect(page.locator('#share-save')).toBeHidden();
+});
+
+test('a blocked stash write shows the error and stays on the share', async ({ page }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.setItem = () => {
+      throw new DOMException('Storage is blocked', 'SecurityError');
+    };
+  });
+  const { envelope, key } = await makeShare(page, { v: 1, title: 'Stuck', body: 'b', tags: [], updatedAt: 1 });
+  await stubShare(page, envelope);
+  await page.goto('/share.html?id=AbCdEf123456#k=' + key);
+  await page.locator('#share-save').click();
+  await expect(page.locator('#share-save-error')).toHaveText(
+    'This browser blocked saving the note. Allow site data for this site, then try again.',
+  );
+  expect(new URL(page.url()).pathname).toBe('/share.html');
 });

@@ -1,6 +1,14 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote, importJson, openBackupMenu, openOverflowMenu } = require('./helpers');
+const {
+  gotoApp,
+  createAndSaveNote,
+  importJson,
+  openBackupMenu,
+  openOverflowMenu,
+  makeShare,
+  stubShare,
+} = require('./helpers');
 
 /**
  * Privacy guarantee: after page load, the app makes zero network calls, and the
@@ -117,7 +125,7 @@ test.describe('network isolation', () => {
     expect(requests, `unexpected requests: ${describeRequests(requests)}`).toEqual([]);
   });
 
-  // These two stub /api/share. WebKit routes requests from a
+  // These stub /api/share. WebKit routes requests from a
   // service-worker-controlled page around page.route, so the stub has to be made
   // authoritative by blocking the worker. The zero-request tests above keep the
   // service worker ACTIVE on purpose -- that is the stronger assertion, since it
@@ -181,6 +189,39 @@ test.describe('network isolation', () => {
       await expect(page.locator('.share-link-url').first()).toBeVisible();
 
       for (const entry of seen) expect(entry).not.toContain(secret);
+    });
+
+    test('saving a shared note adds no API request and carries no plaintext or key', async ({ page, baseURL }) => {
+      await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
+      const secret = 'CANARY-SHARED-4721';
+      const { envelope, key } = await makeShare(page, {
+        v: 1,
+        title: 'Canary share',
+        body: secret,
+        tags: [],
+        updatedAt: 1,
+      });
+      await stubShare(page, envelope);
+      const seen = [];
+      page.on('request', (req) => {
+        if (/^(data|blob):/.test(req.url())) return;
+        seen.push({ url: new URL(req.url()), method: req.method(), text: req.url() + ' ' + (req.postData() || '') });
+      });
+
+      await page.goto('/share.html?id=AbCdEf123456#k=' + key);
+      await page.locator('#share-save').click();
+      await expect(page.locator('#note-title-display')).toHaveText('Canary share');
+
+      const allowedHost = new URL(baseURL || 'http://127.0.0.1:8080').host;
+      const apiCalls = seen
+        .filter((r) => r.url.pathname.startsWith('/api/'))
+        .map((r) => `${r.method} ${r.url.pathname}`);
+      expect(apiCalls).toEqual(['GET /api/share/AbCdEf123456']);
+      for (const r of seen) {
+        expect(r.url.host).toBe(allowedHost);
+        expect(r.text).not.toContain(secret);
+        expect(r.text).not.toContain(key);
+      }
     });
   });
 });

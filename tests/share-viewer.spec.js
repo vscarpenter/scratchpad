@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { makeShare, stubShare } = require('./helpers');
 
 /**
  * The viewer renders markdown that came from outside this browser -- the only
@@ -9,27 +10,6 @@ const { test, expect } = require('@playwright/test');
  * Every case stubs /api/share/* so no network and no AWS is involved, but the
  * payload is encrypted with the app's own crypto so real decryption runs.
  */
-
-async function makeShare(page, payload) {
-  await page.goto('/share.html');
-  await page.waitForFunction(() => !!window.ScratchpadCrypto);
-  return page.evaluate(async (p) => {
-    const C = window.ScratchpadCrypto;
-    const key = await C.generateShareKey();
-    return { envelope: await C.encryptShare(p, key), key: await C.exportShareKey(key) };
-  }, payload);
-}
-
-async function stubShare(page, envelope, options = {}) {
-  const { expiresAt = Date.now() + 86400000, status = 200 } = options;
-  await page.route('**/api/share/*', (routeCall) =>
-    routeCall.fulfill({
-      status,
-      contentType: 'application/json',
-      body: status === 200 ? JSON.stringify({ ...envelope, expiresAt }) : JSON.stringify({ error: 'nope' }),
-    }),
-  );
-}
 
 const ANY_KEY = 'A'.repeat(43);
 
