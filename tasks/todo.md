@@ -19,10 +19,12 @@ the old wait and passed with `expect.poll`.
 
 ## Resuming From Here
 
-- Done: both commits above, plus two lessons in lessons.md. Not pushed.
-- Next, Vinny's call: push main. `wikilinks.spec.js:110` and `pwa.spec.js:10`
-  use the same async `waitForFunction` form and may flake the same way. The
-  guide popup test still fails in CI on all three browsers.
+- Done: both commits above, plus two lessons in lessons.md, pushed as
+  6c50029. The full local suite passed (1199 tests, 28 skipped), and CI run
+  34611134288 passed all four quick-capture.spec.js tests on three browsers.
+- Next, Vinny's call: `wikilinks.spec.js:110` and `pwa.spec.js:10` use the
+  same async `waitForFunction` form and may flake the same way. The guide
+  popup test still fails in CI on all three browsers and keeps main red.
 - Blockers: none.
 - Assumptions: none outstanding.
 
