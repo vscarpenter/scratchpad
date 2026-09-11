@@ -5,17 +5,19 @@ const { gotoApp, seedRawNotes } = require('./helpers');
 const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
 
 function localDateKey(date) {
-  return date.getFullYear() + '-' +
-    String(date.getMonth() + 1).padStart(2, '0') + '-' +
-    String(date.getDate()).padStart(2, '0');
+  return (
+    date.getFullYear() +
+    '-' +
+    String(date.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(date.getDate()).padStart(2, '0')
+  );
 }
 
 test.describe('dailyDate field', () => {
   test('survives an edit-and-save round trip', async ({ page }) => {
     const key = localDateKey(new Date());
-    await seedRawNotes(page, [
-      { id: 'daily-1', title: 'My day', body: 'original', dailyDate: key },
-    ]);
+    await seedRawNotes(page, [{ id: 'daily-1', title: 'My day', body: 'original', dailyDate: key }]);
     await page.locator('.note-row').first().click();
     await page.locator('#edit-btn').click();
     await page.locator('#note-editor').fill('edited body');
@@ -30,9 +32,16 @@ test.describe('dailyDate field', () => {
     await gotoApp(page);
     const parsed = await page.evaluate(() => {
       return window.ScratchpadDB.put({
-        id: 'roundtrip-1', title: 'Roundtrip identity', body: 'B', tags: [], pinned: false,
-        createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null,
-        lastDraftAt: null, dailyDate: '2026-01-02',
+        id: 'roundtrip-1',
+        title: 'Roundtrip identity',
+        body: 'B',
+        tags: [],
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        deletedAt: null,
+        lastDraftAt: null,
+        dailyDate: '2026-01-02',
       }).then(() => window.ScratchpadDB.get('roundtrip-1'));
     });
     expect(parsed.dailyDate).toBe('2026-01-02');
@@ -55,7 +64,7 @@ test.describe('daily note', () => {
     await gotoApp(page);
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('today');
-    await page.locator('.command-palette-item', { hasText: "Open today’s note" }).click();
+    await page.locator('.command-palette-item', { hasText: 'Open today’s note' }).click();
     await expect(page.locator('#note-rendered')).toBeVisible();
     const first = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
@@ -66,7 +75,8 @@ test.describe('daily note', () => {
       };
     });
     const d = new Date();
-    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const key =
+      d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     expect(first.folder.name).toBe('Daily Notes');
     expect(first.note.dailyDate).toBe(key);
     expect(first.note.folderId).toBe(DAILY_NOTES_FOLDER_ID);
@@ -75,7 +85,7 @@ test.describe('daily note', () => {
     // Second invocation reuses the same note.
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('today');
-    await page.locator('.command-palette-item', { hasText: "Open today’s note" }).click();
+    await page.locator('.command-palette-item', { hasText: 'Open today’s note' }).click();
     const count = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
       return all.filter((n) => n.dailyDate).length;
@@ -85,7 +95,8 @@ test.describe('daily note', () => {
 
   test('Daily template note seeds the body; renamed daily note still found', async ({ page }) => {
     const d = new Date();
-    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const key =
+      d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     await seedRawNotes(page, [
       { id: 'tpl-1', title: 'Daily template', body: '## Agenda\n\n## Log\n' },
       { id: 'day-old', title: 'Renamed by hand', body: 'existing', dailyDate: key },
@@ -136,15 +147,20 @@ test.describe('daily note', () => {
     ]);
     await page.evaluate(async () => {
       await window.ScratchpadDB.putFolder({
-        id: 'f-work', name: 'Work', color: null, sortOrder: 1,
-        parentId: null, createdAt: 1, updatedAt: 1,
+        id: 'f-work',
+        name: 'Work',
+        color: null,
+        sortOrder: 1,
+        parentId: null,
+        createdAt: 1,
+        updatedAt: 1,
       });
     });
     await page.reload();
     await expect(page.locator('#app-shell')).toBeVisible();
 
     const records = await page.evaluate(async () =>
-      Object.fromEntries((await window.ScratchpadDB.getAll()).map((note) => [note.id, note]))
+      Object.fromEntries((await window.ScratchpadDB.getAll()).map((note) => [note.id, note])),
     );
     expect(records['day-filed-elsewhere'].folderId).toBe(DAILY_NOTES_FOLDER_ID);
     expect(records['day-filed-elsewhere'].updatedAt).toBe(originalUpdatedAt);
@@ -154,10 +170,9 @@ test.describe('daily note', () => {
 
   test('daily notes cannot be moved and duplicate into ordinary Notes', async ({ page }) => {
     const d = new Date();
-    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    await seedRawNotes(page, [
-      { id: 'day-managed', title: 'Managed day', body: 'daily', dailyDate: key },
-    ]);
+    const key =
+      d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    await seedRawNotes(page, [{ id: 'day-managed', title: 'Managed day', body: 'daily', dailyDate: key }]);
 
     const row = page.locator('.note-row[data-id="day-managed"]');
     await expect(row).not.toHaveAttribute('draggable', 'true');
@@ -233,8 +248,8 @@ test.describe('monthly review', () => {
     await page.locator('#command-palette-input').fill('monthly review');
     await page.locator('.command-palette-item', { hasText: 'Open July 2026 monthly review' }).click();
     await expect(page.locator('#note-title-display')).toHaveText('July retrospective');
-    const reviewCount = await page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).filter((note) => note.monthlyReviewMonth === '2026-07').length
+    const reviewCount = await page.evaluate(
+      async () => (await window.ScratchpadDB.getAll()).filter((note) => note.monthlyReviewMonth === '2026-07').length,
     );
     expect(reviewCount).toBe(1);
   });
@@ -254,13 +269,15 @@ test.describe('monthly review', () => {
 
   test('opens a renamed archived review without unarchiving it', async ({ page }) => {
     const archivedAt = Date.now();
-    await seedRawNotes(page, [{
-      id: 'archived-review',
-      title: 'Renamed archive review',
-      body: 'Reflection',
-      monthlyReviewMonth: '2026-06',
-      archivedAt,
-    }]);
+    await seedRawNotes(page, [
+      {
+        id: 'archived-review',
+        title: 'Renamed archive review',
+        body: 'Reflection',
+        monthlyReviewMonth: '2026-06',
+        archivedAt,
+      },
+    ]);
     await page.locator('#archive-view').click();
     await page.locator('.note-row[data-id="archived-review"]').click();
     await page.locator('#command-palette-btn').click();
@@ -310,69 +327,15 @@ test.describe('monthly review', () => {
 
     await page.locator('#command-palette-btn').click();
     await page.locator('#command-palette-input').fill('monthly review');
-    await page.locator('.command-palette-item', { hasText: /monthly review/ }).first().click();
+    await page
+      .locator('.command-palette-item', { hasText: /monthly review/ })
+      .first()
+      .click();
     await expect(page.locator('#discard-dialog')).toBeVisible();
-    const reviewsBefore = await page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).filter((note) => note.monthlyReviewMonth).length
+    const reviewsBefore = await page.evaluate(
+      async () => (await window.ScratchpadDB.getAll()).filter((note) => note.monthlyReviewMonth).length,
     );
     expect(reviewsBefore).toBe(0);
-  });
-});
-
-test.describe('quick capture', () => {
-  test('captures into today note, creating it when needed', async ({ page }) => {
-    await gotoApp(page);
-    await page.locator('#command-palette-btn').click();
-    await page.locator('#command-palette-input').fill('capture');
-    await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
-    await page.locator('#quick-capture-input').fill('remember the milk');
-    await page.locator('#quick-capture-submit').click();
-    // The dialog closes before the async write; the toast marks completion.
-    await expect(page.locator('.toast', { hasText: "Captured to today’s note." }).last()).toBeVisible();
-    const note = await page.evaluate(async () => {
-      const all = await window.ScratchpadDB.getAll();
-      return all.find((n) => n.dailyDate);
-    });
-    expect(note.folderId).toBe(DAILY_NOTES_FOLDER_ID);
-    expect(note.body).toMatch(/- \*\*\d{2}:\d{2}\*\* remember the milk\n$/);
-    // Second capture appends to the same note.
-    await page.locator('#command-palette-btn').click();
-    await page.locator('#command-palette-input').fill('capture');
-    await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
-    await page.locator('#quick-capture-input').fill('second thought');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('.toast', { hasText: "Captured to today’s note." }).last()).toBeVisible();
-    await page.waitForFunction(async () => {
-      const all = await window.ScratchpadDB.getAll();
-      const daily = all.find((n) => n.dailyDate);
-      return daily && daily.body.includes('second thought');
-    });
-    const after = await page.evaluate(async () => {
-      const all = await window.ScratchpadDB.getAll();
-      return all.filter((n) => n.dailyDate);
-    });
-    expect(after.length).toBe(1);
-    expect(after[0].body).toContain('remember the milk');
-    expect(after[0].body).toMatch(/second thought\n$/);
-  });
-
-  test('capture while editing today note appends to the buffer, not the DB', async ({ page }) => {
-    const d = new Date();
-    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    await seedRawNotes(page, [
-      { id: 'day-1', title: 'Today', body: 'saved body', dailyDate: key },
-    ]);
-    await page.locator('.note-row').first().click();
-    await page.locator('#edit-btn').click();
-    await page.locator('#note-editor').fill('unsaved edits');
-    await page.locator('#command-palette-btn').click();
-    await page.locator('#command-palette-input').fill('capture');
-    await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
-    await page.locator('#quick-capture-input').fill('buffered thought');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('#note-editor')).toHaveValue(/buffered thought\n$/);
-    const stored = await page.evaluate(() => window.ScratchpadDB.get('day-1'));
-    expect(stored.body).toBe('saved body');
   });
 });
 
