@@ -9,6 +9,7 @@
       "!.impeccable/**",
       "!.agents/**",
       "!.claude/**",
+      "!.saggar/**",
       "!.github/agents/**",
       "!.github/skills/**",
       "!playwright-report/**",
