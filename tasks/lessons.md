@@ -104,3 +104,22 @@
   and schedule the deferred flush from the read's `finally`. To reproduce a
   timing race deterministically in Playwright, slow the real seam
   (`window.ScratchpadDB.put`) instead of piling on fixtures.
+- Biome exits 1 when every path handed to it is ignored under
+  `files.includes`. Excluding a tool directory in biome.json alone blocks any
+  commit where that directory holds the only changed JSON file. The
+  changed-file sweep's own `excluded` regex needs the same entry. The failure
+  hides until the ignored file is the sole candidate.
+- A CSS custom property that no stylesheet defines makes its declaration
+  invalid, and inherited properties such as `color` fall back to the parent.
+  `.share-link-error` pointed at a nonexistent `--danger` and rendered in body
+  ink; the danger token is `--rust`. Before reusing a class, grep for its
+  token's definition. Guard state colors by comparing computed colors against
+  a probe element that uses the token.
+- `check-structure.mjs` measures a function from its first line to its last.
+  Boot `init` in app.js sits near 40 lines. Wiring a new module there can add
+  a long function even while app.js stays under its line ceiling, so count
+  the containing function, not just the file.
+- zsh does not word-split an unquoted `$var`. `git diff -- $files` with a
+  space-separated list passes one nonexistent path and silently diffs
+  nothing, which made a dash scan report clean. Spell out the paths or use an
+  array.

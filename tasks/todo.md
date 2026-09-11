@@ -1,3 +1,46 @@
+# Save a shared note into your own Scratchpad (2026-09-11)
+
+Tier: Non-trivial (two surfaces, a new module, and the privacy test contract).
+Spec: `docs/superpowers/specs/2026-09-10-save-shared-note-design.md`
+Plan: `docs/superpowers/plans/2026-09-10-save-shared-note.md`
+
+## Plan
+
+- [x] Design approved; spec and plan committed (fc949ef).
+- [x] Commit gate unblocked: `.saggar/` excluded in biome.json (639d663), and
+      share.js plus the isolation spec formatted on their own (94112e2).
+- [x] Task 1: the app saves a stashed note (d52924f). Red, then green on
+      Chromium, Firefox, and WebKit.
+- [x] Task 2: the viewer's Save to my Scratchpad button (7367adc). Red, then
+      green on three browsers; CSP hashes unchanged; isolation test added.
+- [x] Task 3: copy in guide, privacy, PRODUCT.md, the test index, and the old
+      spec's pointer (bb75ffa). The first commit attempt failed because the
+      format sweep handed Biome only the ignored `.saggar/project.json`, and
+      Biome exits 1 when it processes nothing. Fixed first (04e0524).
+- [x] Error color (0253cb8): the visual check showed the save error in body ink.
+      `.share-link-error` used the undefined `--danger` token. It now uses
+      `--rust`, guarded by a computed-color assertion that failed first
+      (rgb(33, 30, 26) instead of rgb(176, 74, 63)).
+- [x] Task 4: `bun run verify` green (coverage 39.32% against the 36.2%
+      floor, structure 102 long and 11 deep, audit clean). Full suite green:
+      1199 passed and 28 skipped on three browsers, 39 more passing tests
+      than the v4.1.1 run. Visual check in `.verify/` passed in light and
+      dark at 1280 and 400 pixels. Lessons distilled into lessons.md.
+
+## Resuming From Here
+
+- Done: Save to my Scratchpad is built, tested, and committed on main across
+  eight commits (639d663 through 0253cb8), plus this record. Nothing is
+  pushed or deployed.
+- Next, Vinny's call: push main, cut a release with the release-prep skill
+  (a user-facing feature, so a minor bump fits), and deploy.
+- Leftovers, not committed: `.verify/share-save-shots.mjs` (the throwaway
+  screenshot script) and `tasks/implementation-notes.md` (the deviation
+  ledger, already distilled). The `rm` of the script was declined, so both
+  wait for Vinny.
+- Blockers: none.
+- Assumptions: none outstanding.
+
 # Linked folder: a slow read must never delete the files it adopts (2026-09-05)
 
 Tier: Standard (one module, one spec file, no public contract change).
