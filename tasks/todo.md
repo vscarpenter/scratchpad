@@ -29,11 +29,15 @@ Plan: `docs/superpowers/plans/2026-09-10-save-shared-note.md`
 
 ## Resuming From Here
 
-- Done: Save to my Scratchpad is built, tested, and committed on main across
-  eight commits (639d663 through 0253cb8), plus this record. Nothing is
-  pushed or deployed.
-- Next, Vinny's call: push main, cut a release with the release-prep skill
-  (a user-facing feature, so a minor bump fits), and deploy.
+- Done: SHIPPED as v4.2.0 on 2026-09-11. Release commit 5463aa3 is pushed,
+  deployed with `./deploy.sh` (invalidation I4EGA7BRGLROWEZZM09Z14O3JI), and
+  verified live: version.js serves 4.2.0, shared-copy.js returns 200, the
+  share shell at `/s/<id>` carries the save button, and CSP, HSTS, and
+  X-Frame-Options are intact.
+- Next: check the Quality CI runs for 08cc7ff and 5463aa3. The last run on
+  main before this work (6a48a84) failed on the guide popup test in all three
+  browsers, so compare any red run against that test before blaming this
+  feature.
 - Leftovers, not committed: `.verify/share-save-shots.mjs` (the throwaway
   screenshot script) and `tasks/implementation-notes.md` (the deviation
   ledger, already distilled). The `rm` of the script was declined, so both
