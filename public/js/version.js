@@ -3,8 +3,8 @@
 (function () {
   'use strict';
 
-  window.SCRATCHPAD_VERSION = '4.1.1';
-  window.SCRATCHPAD_BUILD_DATE = '2026-09-05';
+  window.SCRATCHPAD_VERSION = '4.2.0';
+  window.SCRATCHPAD_BUILD_DATE = '2026-09-11';
 
   function apply() {
     const slots = [
