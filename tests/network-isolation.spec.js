@@ -80,7 +80,17 @@ test.describe('network isolation', () => {
     await downloadPromise;
 
     await importJson(page, {
-      notes: [{ id: 'net-import', title: 'Imported', body: 'Body', tags: [], createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null }],
+      notes: [
+        {
+          id: 'net-import',
+          title: 'Imported',
+          body: 'Body',
+          tags: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          deletedAt: null,
+        },
+      ],
     });
     await page.locator('#confirm-import').click();
     await expect(page.locator('#import-preview-dialog')).toBeHidden();
@@ -116,15 +126,17 @@ test.describe('network isolation', () => {
     test.use({ serviceWorkers: 'block' });
 
     test('creating a public link makes exactly one same-origin POST and nothing else', async ({ page, baseURL }) => {
-      await page.route('**/api/share', (routeCall) => routeCall.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'AbCdEf123456',
-          revokeToken: 'revoke-token-abc',
-          expiresAt: Date.now() + 7 * 86400000,
+      await page.route('**/api/share', (routeCall) =>
+        routeCall.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'AbCdEf123456',
+            revokeToken: 'revoke-token-abc',
+            expiresAt: Date.now() + 7 * 86400000,
+          }),
         }),
-      }));
+      );
 
       await gotoApp(page);
       await createAndSaveNote(page, 'Deliberate', 'This one the user chose to publish.');
@@ -145,15 +157,17 @@ test.describe('network isolation', () => {
     });
 
     test('no request in the whole session carries the note plaintext', async ({ page }) => {
-      await page.route('**/api/share', (routeCall) => routeCall.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'AbCdEf123456',
-          revokeToken: 'revoke-token-abc',
-          expiresAt: Date.now() + 7 * 86400000,
+      await page.route('**/api/share', (routeCall) =>
+        routeCall.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'AbCdEf123456',
+            revokeToken: 'revoke-token-abc',
+            expiresAt: Date.now() + 7 * 86400000,
+          }),
         }),
-      }));
+      );
 
       const secret = 'CANARY-PHRASE-9137';
       const seen = [];

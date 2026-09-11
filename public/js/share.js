@@ -64,11 +64,13 @@
 
   function renderExpiry(expiresAt) {
     if (!Number.isFinite(expiresAt)) return;
-    els.expiry.textContent = 'Expires ' + new Date(expiresAt).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    els.expiry.textContent =
+      'Expires ' +
+      new Date(expiresAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
     els.expiry.hidden = false;
   }
 
@@ -144,9 +146,7 @@
     }
 
     // textContent, never innerHTML: the title is user data and is not markdown.
-    els.title.textContent = typeof note.title === 'string' && note.title
-      ? note.title
-      : 'Untitled note';
+    els.title.textContent = typeof note.title === 'string' && note.title ? note.title : 'Untitled note';
     document.title = els.title.textContent + ' — shared from Scratchpad';
     renderTags(note.tags);
     // Wikilinks are left unresolved: the recipient has none of the sender's
