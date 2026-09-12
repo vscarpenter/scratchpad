@@ -1,3 +1,40 @@
+# Architecture diagram with Archify (2026-09-11)
+
+Tier: Standard (a docs-only artifact; no app, test, or deploy change).
+
+Output: `docs/architecture/scratchpad.architecture.json` is the source and
+`docs/architecture/scratchpad-architecture.html` is the rendered viewer. Both
+are uncommitted, and `docs/` already sits outside the deploy scope.
+
+- [x] Map the topology from code rather than memory. The service worker skips
+      non-GET requests and `/api/share*`, so the share POST bypasses it
+      (`public/service-worker.js:126` and `:151`).
+- [x] Author 10 components and 10 relationships with 17 source references
+      pinned to a30b207. Deliver at `showcase` quality: 9/9 checks, 0 errors,
+      0 warnings.
+- [x] Pass `visual-check` at 1440x900, 1600x1000, 1920x1080, and 2048x1320.
+      Two correction rounds fixed a 27px overflow at 1440x900, two labels
+      hugging their nodes, and a three-bend route.
+- [x] Fix the copy the vinny-voice pass flagged: one passive phrase, one
+      fragment, and "every page" where the function covers every response.
+- [x] Wrap only `apigw` and `lambda` in the Share API group, in a third round
+      Vinny approved. The renderer puts every boundary bottom 20 units below
+      its lowest member, whatever `pad` says. A group sharing the AWS region's
+      bottom row drew on its border.
+- [x] Run the repo gates on the new files. `biome lint`, `check:format`, and
+      the pre-commit HTML sink patterns all pass.
+
+## Resuming From Here
+
+- Done: the diagram above, committed with this entry but not pushed. Spec
+  SHA-256 2fdc1eb5, artifact SHA-256 ce6620b2.
+- Next: push when Vinny says so. After an architecture change, bump
+  `meta.repository.revision` and deliver again so source links track the code.
+- Blockers: none.
+- Assumptions: `docs/architecture/` is the right home. Regenerate from the
+  repo root with
+  `node .claude/skills/archify/bin/archify.mjs deliver architecture <spec> <html> --quality showcase --repo-root .`
+
 # Quick capture test: an async wait that never waited (2026-09-11)
 
 Tier: Standard (two test files and a test index row; no app change).

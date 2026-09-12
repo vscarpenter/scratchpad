@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Scratchpad architecture",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [1160, 632],
+    "repository": {
+      "url": "https://github.com/vscarpenter/scratchpad",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "a30b207c62c3b38e0c0a053be65bb296c1c894bc"
+    },
+    "views": [
+      {
+        "id": "local-first",
+        "label": "Local-first notes",
+        "focus": ["app", "idb", "folder"],
+        "note": "Notes persist in the browser and can mirror to a folder on disk, with no network calls."
+      },
+      {
+        "id": "create-share",
+        "label": "Create a share",
+        "focus": ["app", "crypto", "cdn", "apigw", "lambda", "shares"],
+        "note": "The browser encrypts first, then posts only ciphertext through CloudFront to the share Lambda."
+      },
+      {
+        "id": "open-share",
+        "label": "Open a share",
+        "focus": ["viewer", "cdn", "apigw", "lambda", "shares", "crypto"],
+        "note": "The viewer fetches ciphertext and decrypts it with the key from the URL fragment."
+      },
+      {
+        "id": "static-delivery",
+        "label": "Static delivery",
+        "focus": ["app", "cdn", "site"],
+        "note": "CloudFront serves the private site bucket through OAC, with edge functions on every response."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "folder",
+      "type": "external",
+      "label": "Linked folder",
+      "sublabel": "File System Access",
+      "tag": "opt-in",
+      "pos": [56, 56],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "public/js/linked-folder.js",
+          "line": 182,
+          "label": "showDirectoryPicker"
+        }
+      ]
+    },
+    {
+      "id": "idb",
+      "type": "database",
+      "label": "IndexedDB",
+      "sublabel": "notes, attachments",
+      "pos": [56, 196],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "public/js/db.js",
+          "line": 25,
+          "label": "indexedDB.open"
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Scratchpad app",
+      "sublabel": "index.html · app.js",
+      "tag": "PWA",
+      "pos": [316, 196],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "index.html",
+          "label": "app shell"
+        },
+        {
+          "path": "public/js/app.js",
+          "line": 4391,
+          "label": "POST /api/share"
+        },
+        {
+          "path": "public/service-worker.js",
+          "line": 149,
+          "label": "SW skips /api/share"
+        }
+      ]
+    },
+    {
+      "id": "crypto",
+      "type": "security",
+      "label": "Web Crypto",
+      "sublabel": "AES-GCM 256",
+      "pos": [316, 336],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "public/js/crypto.js",
+          "line": 98,
+          "end_line": 130,
+          "label": "share key + encrypt"
+        }
+      ]
+    },
+    {
+      "id": "viewer",
+      "type": "frontend",
+      "label": "Share viewer",
+      "sublabel": "share.html at /s/<id>",
+      "pos": [316, 476],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "share.html",
+          "label": "viewer shell"
+        },
+        {
+          "path": "public/js/share.js",
+          "line": 48,
+          "label": "key from #k fragment"
+        },
+        {
+          "path": "public/js/share.js",
+          "line": 119,
+          "label": "GET /api/share/<id>"
+        }
+      ]
+    },
+    {
+      "id": "site",
+      "type": "cloud",
+      "label": "S3 site bucket",
+      "sublabel": "private, OAC only",
+      "pos": [646, 56],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "deploy.sh",
+          "label": "S3 sync"
+        }
+      ]
+    },
+    {
+      "id": "cdn",
+      "type": "cloud",
+      "label": "CloudFront",
+      "sublabel": "edge functions · WAF",
+      "pos": [646, 196],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "cloudfront/share-router-function.js",
+          "line": 54,
+          "label": "router, viewer-request"
+        },
+        {
+          "path": "cloudfront/security-headers-function.js",
+          "line": 12,
+          "label": "headers, viewer-response"
+        }
+      ]
+    },
+    {
+      "id": "apigw",
+      "type": "cloud",
+      "label": "API Gateway",
+      "sublabel": "HTTP API, throttled",
+      "pos": [936, 196],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "share-infra/provision.sh",
+          "label": "HTTP API provisioning"
+        }
+      ]
+    },
+    {
+      "id": "lambda",
+      "type": "backend",
+      "label": "Share Lambda",
+      "sublabel": "validate, 256 KB cap",
+      "pos": [936, 336],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "share-infra/lambda/handler.mjs",
+          "line": 69,
+          "label": "route()"
+        },
+        {
+          "path": "share-infra/lambda/validate.mjs",
+          "line": 47,
+          "label": "body cap"
+        }
+      ]
+    },
+    {
+      "id": "shares",
+      "type": "database",
+      "label": "S3 shares bucket",
+      "sublabel": "ciphertext + IV",
+      "tag": "auto-expire",
+      "pos": [936, 476],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "share-infra/lifecycle.json",
+          "label": "TTL lifecycle"
+        },
+        {
+          "path": "share-infra/iam-policy.json",
+          "label": "shares/* only"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Browser · local-first",
+      "wraps": ["folder", "idb", "app", "crypto", "viewer"],
+      "pad": 32
+    },
+    {
+      "kind": "region",
+      "label": "AWS · notes.vinny.dev",
+      "wraps": ["site", "cdn", "apigw", "lambda", "shares"],
+      "pad": 32
+    },
+    {
+      "kind": "security-group",
+      "label": "Share API · origin secret",
+      "wraps": ["apigw", "lambda"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "id": "app-to-cdn",
+      "from": "app",
+      "to": "cdn",
+      "label": "POST ciphertext",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cdn-to-apigw",
+      "from": "cdn",
+      "to": "apigw",
+      "label": "/api/share*",
+      "variant": "emphasis"
+    },
+    {
+      "id": "apigw-to-lambda",
+      "from": "apigw",
+      "to": "lambda",
+      "label": "proxy",
+      "variant": "emphasis",
+      "labelAt": [1016, 298]
+    },
+    {
+      "id": "lambda-to-shares",
+      "from": "lambda",
+      "to": "shares",
+      "label": "shares/* only",
+      "variant": "emphasis",
+      "labelAt": [1016, 438]
+    },
+    {
+      "id": "app-to-idb",
+      "from": "app",
+      "to": "idb",
+      "label": "persist"
+    },
+    {
+      "id": "app-to-folder",
+      "from": "app",
+      "to": "folder",
+      "label": "Markdown sync",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [[396, 88]]
+    },
+    {
+      "id": "app-to-crypto",
+      "from": "app",
+      "to": "crypto",
+      "label": "encrypt",
+      "variant": "security",
+      "labelAt": [396, 298]
+    },
+    {
+      "id": "viewer-to-crypto",
+      "from": "viewer",
+      "to": "crypto",
+      "label": "decrypt",
+      "variant": "security",
+      "labelAt": [396, 438]
+    },
+    {
+      "id": "viewer-to-cdn",
+      "from": "viewer",
+      "to": "cdn",
+      "label": "GET ciphertext",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "cdn-to-site",
+      "from": "cdn",
+      "to": "site",
+      "label": "static via OAC",
+      "labelAt": [726, 158]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Local-first by default",
+      "items": [
+        "Notes live in IndexedDB, with no network requests after page load",
+        "The service worker caches the app shell and never intercepts /api/share",
+        "A linked folder keeps a two-way Markdown copy on disk"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Encrypted sharing",
+      "items": [
+        "The browser generates the AES-GCM key and carries it in the #k= fragment",
+        "Only ciphertext and IV reach AWS, and the key never leaves the URL",
+        "Shares expire in 7 to 30 days, and senders can revoke them early"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Hardened edge",
+      "items": [
+        "The router maps unknown paths to real pages so headers always apply",
+        "A viewer-response function adds CSP and HSTS to every response",
+        "The share Lambda answers 404 without the CloudFront origin secret"
+      ]
+    }
+  ]
+}
