@@ -26,9 +26,9 @@ are uncommitted, and `docs/` already sits outside the deploy scope.
 
 ## Resuming From Here
 
-- Done: the diagram above, committed with this entry but not pushed. Spec
-  SHA-256 2fdc1eb5, artifact SHA-256 ce6620b2.
-- Next: push when Vinny says so. After an architecture change, bump
+- Done: the diagram above, committed as 587e903 and pushed to origin/main.
+  Spec SHA-256 2fdc1eb5, artifact SHA-256 ce6620b2.
+- Next: nothing required. After an architecture change, bump
   `meta.repository.revision` and deliver again so source links track the code.
 - Blockers: none.
 - Assumptions: `docs/architecture/` is the right home. Regenerate from the
