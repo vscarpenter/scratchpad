@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly BUN_VERSION='1.4.0'
+readonly ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+step() {
+  local label="$1"
+  shift
+  local started=$SECONDS
+  printf '==> %s\n' "$label"
+  "$@"
+  printf '    completed in %ss\n' "$((SECONDS - started))"
+}
+
+cd "$ROOT"
+
+if ! command -v bun >/dev/null 2>&1 || [[ "$(bun --version)" != "$BUN_VERSION" ]]; then
+  # Orb base images may already provide a standalone /usr/local/bin/bun. npm
+  # needs --force to replace that binary with the repository's pinned version.
+  step "Installing Bun $BUN_VERSION" npm install --global --force "bun@$BUN_VERSION"
+else
+  printf '==> Bun %s is already installed\n' "$BUN_VERSION"
+fi
+
+step 'Installing locked JavaScript dependencies' bun install --frozen-lockfile
+
+playwright_version="$(node -p "require('@playwright/test/package.json').version")"
+playwright_marker="$HOME/.cache/amp/scratchpad-playwright-$playwright_version"
+if [[ ! -f "$playwright_marker" ]]; then
+  step 'Installing Playwright browsers and system dependencies' bunx playwright install --with-deps
+  mkdir -p "$(dirname "$playwright_marker")"
+  touch "$playwright_marker"
+else
+  printf '==> Playwright %s browsers are already installed\n' "$playwright_version"
+fi
+
+git config core.hooksPath scripts/hooks
+printf '==> Scratchpad orb setup complete\n'

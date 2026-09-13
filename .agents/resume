@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Scratchpad has no database, service, or authenticated development dependency
+# to reconnect after an orb wakes.
+printf 'Scratchpad orb resume complete\n'
