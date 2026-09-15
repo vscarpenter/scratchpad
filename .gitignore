@@ -88,3 +88,8 @@ status.html
 # 2026-08-14 and purged from history with git-filter-repo. Keep them local.
 SECURITY-REVIEW.md
 security-review-evidence.md
+
+# Added by saggar — local files that shouldn't be committed
+.saggar/**/*.local.*
+.saggar/scratchpad.md
+.saggar/jobs/
