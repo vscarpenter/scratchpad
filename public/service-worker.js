@@ -50,6 +50,7 @@
     '/public/js/linked-folder.js',
     '/public/js/shared-copy.js',
     '/public/js/share.js',
+    '/public/js/toast.js',
     '/public/js/app.js',
   ];
   const OPTIONAL_SHELL = ['/public/og-image.png', '/public/og-image.svg'];

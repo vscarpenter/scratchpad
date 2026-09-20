@@ -25,6 +25,7 @@
     "public/js/templates.js",
     "public/js/search-view.js",
     "public/js/shared-copy.js",
+    "public/js/toast.js",
     "scripts/quality/**/*.mjs"
   ],
   "exclude": ["node_modules", "public/js/vendor"]

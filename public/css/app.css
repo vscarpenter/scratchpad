@@ -2880,6 +2880,7 @@ body:not(.page-privacy) .theme-toggle {
   }
 }
 .toast {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -2935,12 +2936,38 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--text-muted);
   cursor: default;
 }
+/* The Undo window, drawn. Only a toast with an action gets the bar. toast.js
+   sets --toast-ms and toggles is-paused, so the bar and the clock agree. The
+   wrapper clips the bar to the pill without clipping the focus outlines. */
+.toast-burn {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.toast-burn::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: toast-burn var(--toast-ms) linear forwards;
+}
+.toast.is-paused .toast-burn::after { animation-play-state: paused; }
+@keyframes toast-burn {
+  to { transform: scaleX(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   .toast {
     transform: none;
     transition: opacity var(--t-fast) linear;
   }
   .toast.is-visible { transform: none; }
+  .toast-burn { display: none; }
 }
 
 /* ---------- Footer (shared across pages) ----------

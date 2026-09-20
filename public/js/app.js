@@ -447,68 +447,9 @@
     return els.shareTemplate.content.cloneNode(true);
   }
 
-  // Transient action feedback. The region is an aria-live="polite" status, so
-  // appending a toast announces it. Callers must not fire a toast while a modal
-  // <dialog> is open (a native dialog's top layer would cover it) — close the
-  // dialog first. tone: 'success' | 'info' | 'error'. Errors persist with a
-  // dismiss button; everything else auto-dismisses. Callers may add one
-  // explicit action, such as Undo for a lifecycle transition.
+  // Transient action feedback. toast.js owns the contract and the clock.
   function toast(message, opts) {
-    if (!els.toastRegion) return;
-    opts = opts || {};
-    const tone = opts.tone || 'success';
-    const persist = opts.persist != null ? opts.persist : tone === 'error';
-    const duration = opts.duration || 2600;
-
-    const node = el('div', {
-      class: 'toast is-' + tone,
-      children: [el('span', { class: 'toast-dot', attrs: { 'aria-hidden': 'true' } })],
-    });
-    node.appendChild(document.createTextNode(message));
-
-    let removed = false;
-    const remove = () => {
-      if (removed) return;
-      removed = true;
-      node.classList.remove('is-visible');
-      setTimeout(() => node.remove(), 220);
-    };
-
-    if (persist) {
-      node.appendChild(el('button', {
-        class: 'toast-dismiss',
-        text: '×',
-        attrs: { type: 'button', 'aria-label': 'Dismiss' },
-        on: { click: remove },
-      }));
-    }
-
-    if (opts.actionLabel && typeof opts.action === 'function') {
-      const actionButton = el('button', {
-        class: 'toast-action',
-        text: opts.actionLabel,
-        attrs: { type: 'button' },
-        on: {
-          click: async () => {
-            actionButton.disabled = true;
-            try {
-              await opts.action();
-              remove();
-            } catch (e) {
-              actionButton.disabled = false;
-              console.warn('Toast action failed', e);
-              toast('Undo failed. Your note was not changed.', { tone: 'error' });
-            }
-          },
-        },
-      });
-      node.appendChild(actionButton);
-    }
-
-    els.toastRegion.appendChild(node);
-    requestAnimationFrame(() => node.classList.add('is-visible'));
-    if (!persist) setTimeout(remove, duration);
-    return node;
+    return window.ScratchpadToast.show(els.toastRegion, message, opts);
   }
 
   function setControlsBusy(controls, busy) {
