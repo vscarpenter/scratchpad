@@ -169,6 +169,24 @@ Native form controls join the one-accent rule via
   reduced-transparency preferences.
 - Never hide focus outlines unless a replacement is present.
 
+### Interaction feedback
+
+Four small interactions, each a vanilla rewrite of a React Bits idea. None adds
+a dependency, a token, or a dark-mode rule, and all four honor reduced motion.
+
+- The Undo toast draws its remaining time as a 2px accent bar. Every
+  auto-dismissing toast waits while the pointer or focus is on it
+  (`public/js/toast.js`).
+- A checked task pops its box and draws its tick. Task text never strikes or
+  dims, so a done parent cannot cross out its open sub-tasks.
+- Delete forever and Empty Trash need a one second hold inside their dialogs
+  (`public/js/hold-confirm.js`). The fill is a 28 percent wash of `--ink`.
+  Ink flips with the theme, so the wash raises label contrast in both. A click
+  with no press before it comes from assistive technology and confirms at once.
+- On touch, a note row swipes left for Archive and Trash and right for Pin
+  (`public/js/swipe-row.js`). Rails reuse the button color pairs and exist
+  only while a swipe is live. Mouse keeps the drag to a folder.
+
 ## Responsive behavior
 
 Desktop expresses the full Chronicle concept. Mobile keeps the familiar

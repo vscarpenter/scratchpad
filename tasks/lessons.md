@@ -133,3 +133,29 @@
   did not list `tests/quick-capture.spec.js`, and the Write tool overwrote
   that tracked, never-read file without refusing. A `git status` pre-check
   caught it before any commit.
+- Playwright keeps one browser cache per machine, and another project's
+  `playwright install` can replace the builds this repo's pinned version
+  needs. "Executable doesn't exist at ...chromium_headless_shell-1234" means
+  that, not a broken test. `node_modules/.bin/playwright install chromium
+  firefox webkit` restores them without touching the newer builds.
+- The format sweep covers untracked files, so one unformatted scratch file at
+  the repo root (a new `.mcp.json`) blocks every commit in the repo. Format it
+  in place with Biome and leave it uncommitted.
+- commitlint reads a body line that starts with `word: ` as a footer and warns
+  that the footer needs a leading blank line. Start body lines another way.
+- A render that replaces a node makes CSS transitions on it impossible: the
+  new node starts life in its final state. Mark the new node after the render
+  and run `@keyframes` on the mark. The task tick works this way.
+- Anything laid over a note row must be a sibling, not a child. Row children
+  inherit `pointer-events: none`, and the active row clips its overflow.
+- Two neighboring tokens are not a visible pair in both themes. `--rust-d` on
+  `--rust` is 1.23 to 1 in light and 1.12 to 1 in dark. A wash of `--ink` flips
+  with the theme, so it moves a fill away from the label color in both.
+- A hold implies hover. A hover color that matches the progress fill hides the
+  fill for every mouse user, so pin the resting color on a hold button.
+- Playwright clicks a position relative to the element's own box. A row
+  translated off screen has most of that box outside the viewport, so aim at
+  the part that is still visible.
+- `grep -E` has no `\d`. A failure filter written with it matches nothing and
+  reads as a clean run, and test titles that contain "failed" match a loose
+  filter. Use `^ +[0-9]+\) ` plus the summary counts.

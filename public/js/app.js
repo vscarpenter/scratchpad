@@ -447,68 +447,9 @@
     return els.shareTemplate.content.cloneNode(true);
   }
 
-  // Transient action feedback. The region is an aria-live="polite" status, so
-  // appending a toast announces it. Callers must not fire a toast while a modal
-  // <dialog> is open (a native dialog's top layer would cover it) — close the
-  // dialog first. tone: 'success' | 'info' | 'error'. Errors persist with a
-  // dismiss button; everything else auto-dismisses. Callers may add one
-  // explicit action, such as Undo for a lifecycle transition.
+  // Transient action feedback. toast.js owns the contract and the clock.
   function toast(message, opts) {
-    if (!els.toastRegion) return;
-    opts = opts || {};
-    const tone = opts.tone || 'success';
-    const persist = opts.persist != null ? opts.persist : tone === 'error';
-    const duration = opts.duration || 2600;
-
-    const node = el('div', {
-      class: 'toast is-' + tone,
-      children: [el('span', { class: 'toast-dot', attrs: { 'aria-hidden': 'true' } })],
-    });
-    node.appendChild(document.createTextNode(message));
-
-    let removed = false;
-    const remove = () => {
-      if (removed) return;
-      removed = true;
-      node.classList.remove('is-visible');
-      setTimeout(() => node.remove(), 220);
-    };
-
-    if (persist) {
-      node.appendChild(el('button', {
-        class: 'toast-dismiss',
-        text: '×',
-        attrs: { type: 'button', 'aria-label': 'Dismiss' },
-        on: { click: remove },
-      }));
-    }
-
-    if (opts.actionLabel && typeof opts.action === 'function') {
-      const actionButton = el('button', {
-        class: 'toast-action',
-        text: opts.actionLabel,
-        attrs: { type: 'button' },
-        on: {
-          click: async () => {
-            actionButton.disabled = true;
-            try {
-              await opts.action();
-              remove();
-            } catch (e) {
-              actionButton.disabled = false;
-              console.warn('Toast action failed', e);
-              toast('Undo failed. Your note was not changed.', { tone: 'error' });
-            }
-          },
-        },
-      });
-      node.appendChild(actionButton);
-    }
-
-    els.toastRegion.appendChild(node);
-    requestAnimationFrame(() => node.classList.add('is-visible'));
-    if (!persist) setTimeout(remove, duration);
-    return node;
+    return window.ScratchpadToast.show(els.toastRegion, message, opts);
   }
 
   function setControlsBusy(controls, busy) {
@@ -2969,8 +2910,8 @@
     });
   }
 
-  async function togglePin() {
-    const note = getNote(state.selectedId);
+  async function togglePin(id) {
+    const note = getNote(typeof id === 'string' ? id : state.selectedId);
     if (!note || isTrashed(note)) return;
     return withBusy('pin', [els.pinToggle], 'Pin update failed.', async () => {
       const nextNote = { ...note, pinned: !note.pinned, updatedAt: now() };
@@ -3417,6 +3358,32 @@
     return null;
   }
 
+  // -------- Swipe actions (touch) --------
+  // swipe-row.js owns the gesture. Trash, bulk mode, and search rows opt out.
+  function swipeSidesFor(row) {
+    const note = getNote(row.getAttribute('data-id'));
+    if (!note || isTrashed(note) || state.bulkMode || state.search.trim()) return null;
+    const archived = isArchived(note);
+    const lifecycle = archived
+      ? { id: 'unarchive', label: 'Unarchive', full: true, exits: true }
+      : { id: 'archive', label: 'Archive', full: true, exits: true };
+    return {
+      leading: archived ? [] : [{ id: 'pin', label: note.pinned ? 'Unpin' : 'Pin', full: true }],
+      trailing: [lifecycle, { id: 'trash', label: 'Trash', danger: true }],
+    };
+  }
+
+  // The bulk paths already stay in the current view, revoke live shares before
+  // trashing, and raise Undo for Archive, so a swipe runs them on one id. They
+  // also reset the editing state, which would drop an unsaved draft.
+  function runSwipeAction(id, action) {
+    if (state.editing && state.dirty) return toast('Save or discard your edits first.', { tone: 'info' });
+    if (action === 'pin') return togglePin(id);
+    state.bulkSelectedIds.clear();
+    state.bulkSelectedIds.add(id);
+    return action === 'trash' ? bulkMoveToTrash() : bulkSetArchiveState(action === 'archive');
+  }
+
   // -------- Task toggles --------
   // Rendered task checkboxes are interactive only when the scanner agrees
   // with what marked rendered; any count mismatch marks them inert so a
@@ -3443,7 +3410,11 @@
         const next = body.charAt(marker.offset) === ' ' ? 'x' : ' ';
         return body.slice(0, marker.offset) + next + body.slice(marker.offset + 1);
       }, { coalesceToggles: true }));
-    if (updated) renderAll();
+    if (!updated) return;
+    renderAll();
+    // The render replaced every checkbox, so mark the new one for its tick.
+    const box = els.rendered.querySelectorAll('.task-checkbox')[index];
+    if (box) box.classList.add('is-just-toggled');
   }
 
   function taskCheckboxIndex(target) {
@@ -5712,6 +5683,7 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
+    window.ScratchpadSwipeRow.attach(els.noteList, { describe: swipeSidesFor, onAction: runSwipeAction });
     SearchView.bindKeyboard({
       input: els.search,
       list: els.noteList,

@@ -2157,6 +2157,32 @@ body:not(.page-privacy) .theme-toggle {
   cursor: default;
   opacity: 0.6;
 }
+/* A toggle re-renders the note, so the new box starts life in its final state
+   and a transition could never run. app.js marks the one box the user just
+   toggled, and only that box animates. Opening a note animates nothing. */
+.note-rendered .task-checkbox.is-just-toggled {
+  animation: task-pop var(--t-slow) var(--ease-pop);
+}
+.note-rendered .task-checkbox.is-just-toggled[aria-checked="true"]::after {
+  animation: task-tick-draw var(--t-slow) var(--ease-out);
+}
+@keyframes task-pop {
+  from { transform: scale(0.82); }
+  to { transform: scale(1); }
+}
+/* Short leg first, then the long leg. The clip works in the tick's own box,
+   before its 45 degree rotation, so the 2px strip is the bottom border. */
+@keyframes task-tick-draw {
+  0% { clip-path: inset(calc(100% - 2px) 100% 0 0); }
+  35% { clip-path: inset(calc(100% - 2px) 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-rendered .task-checkbox.is-just-toggled,
+  .note-rendered .task-checkbox.is-just-toggled[aria-checked="true"]::after {
+    animation: none;
+  }
+}
 .note-rendered li:has(> .task-checkbox),
 .note-rendered li:has(> p:first-child > .task-checkbox:first-child) {
   list-style: none;
@@ -2812,6 +2838,64 @@ body:not(.page-privacy) .theme-toggle {
   min-height: 1em;
 }
 
+/* ---------- Swipe actions on note rows (touch; see swipe-row.js) ----------
+   A rail is a sibling laid under the row, positioned over the row's box and
+   only as wide as the gap the sliding row has opened. The list clips sideways
+   so a sliding row never raises a horizontal scrollbar, and pan-y leaves
+   vertical scrolling to the browser. Rail colors reuse the button pairs:
+   --on-accent on --accent, and --on-accent on --rust. */
+.note-list {
+  position: relative;
+  overflow-x: hidden;
+}
+.note-row { touch-action: pan-y; }
+.note-row.is-swiping { transition: none; }
+.note-row.is-swipe-settling { transition: transform var(--t-base) var(--ease-out); }
+.swipe-rail {
+  position: absolute;
+  display: flex;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  pointer-events: none;
+}
+.swipe-rail[hidden] { display: none; }
+.swipe-rail.is-trailing { justify-content: flex-end; }
+.swipe-rail-track {
+  display: flex;
+  width: 0;
+  pointer-events: auto;
+}
+.swipe-rail.is-swipe-settling .swipe-rail-track { transition: width var(--t-base) var(--ease-out); }
+.swipe-action {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 600 12.5px/1 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: flex-grow var(--t-fast) var(--ease-out), opacity var(--t-fast) var(--ease-out);
+}
+.swipe-action.is-danger { background: var(--rust); }
+.swipe-action:focus-visible {
+  outline: 2px solid var(--on-accent);
+  outline-offset: -4px;
+}
+/* Past the commit point the full-swipe action takes the whole rail, so the
+   target is clear before the finger lifts. */
+.swipe-rail.is-committing .swipe-action:not(.is-full) {
+  flex-grow: 0;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-row.is-swipe-settling,
+  .swipe-rail.is-swipe-settling .swipe-rail-track,
+  .swipe-action { transition: none; }
+}
+
 /* ---------- Toast (transient action feedback) ----------
    One polite aria-live region holds the stack, bottom-center. Toasts are
    overlays, so a shadow is allowed here (see Inkwell Flat-Surface Rule).
@@ -2880,6 +2964,7 @@ body:not(.page-privacy) .theme-toggle {
   }
 }
 .toast {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -2935,12 +3020,38 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--text-muted);
   cursor: default;
 }
+/* The Undo window, drawn. Only a toast with an action gets the bar. toast.js
+   sets --toast-ms and toggles is-paused, so the bar and the clock agree. The
+   wrapper clips the bar to the pill without clipping the focus outlines. */
+.toast-burn {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.toast-burn::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: toast-burn var(--toast-ms) linear forwards;
+}
+.toast.is-paused .toast-burn::after { animation-play-state: paused; }
+@keyframes toast-burn {
+  to { transform: scaleX(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   .toast {
     transform: none;
     transition: opacity var(--t-fast) linear;
   }
   .toast.is-visible { transform: none; }
+  .toast-burn { display: none; }
 }
 
 /* ---------- Footer (shared across pages) ----------
@@ -4967,6 +5078,43 @@ body:not(.page-privacy) .theme-toggle {
 }
 .dialog .btn-primary,
 .dialog .btn-danger { box-shadow: none; }
+
+/* Hold to confirm (see hold-confirm.js). The fill sweeps across the button
+   over --hold-ms, which the module sets, and snaps back on an early release.
+   The ::before sits under the label inside the button's own stacking context.
+   The fill is a wash of --ink, which is dark in light mode and light in dark
+   mode. It always moves the button away from its label color, so the label
+   contrast rises in both themes (5.4 to 7.5 light, 5.8 to 7.9 dark). */
+.btn[data-hold-confirm] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+/* A hold implies hover, and the hover color would hide the fill. */
+.btn-danger[data-hold-confirm]:hover { background: var(--rust); }
+.btn[data-hold-confirm]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--t-fast) var(--ease-out);
+}
+.btn[data-hold-confirm].is-holding::before {
+  transform: scaleX(1);
+  transition: transform var(--hold-ms) linear;
+}
+/* The fill reports progress, so reduced motion keeps it and drops the
+   snap-back. */
+@media (prefers-reduced-motion: reduce) {
+  .btn[data-hold-confirm]:not(.is-holding)::before { transition: none; }
+}
 
 /* Zone labels — mono small-caps that name a trust boundary. */
 .zone-label {
