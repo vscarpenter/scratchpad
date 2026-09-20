@@ -28,8 +28,8 @@ Spec: `tasks/spec.md`. Branch: `feat/interaction-polish`. Nothing pushed.
   against the 36.2% floor, structure 102 long and 11 deep, audit clean. The
   CSP hashes did not change. Screenshots of all four surfaces sit in
   `.verify/`, light and dark.
-- Not rerun: the whole suite after cb4b48e. That commit touched one test
-  helper, and the specs it could affect reran green.
+- Final run on 61338b6: the whole suite passed, 1,319 passed and 28 skipped
+  on three browsers, exit 0.
 - Next, Vinny's call: merge the branch (`git merge --ff-only
   feat/interaction-polish` from main), then a version bump and deploy through
   `/release-prep`. A real phone is worth five minutes before release, because
