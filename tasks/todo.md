@@ -5,11 +5,11 @@ Spec: `tasks/spec.md`. Branch: `feat/interaction-polish`. Nothing pushed.
 
 ## Plan
 
-- [ ] 1. Toast burn-down. Move `toast()` into `public/js/toast.js` with a
+- [x] 1. Toast burn-down. Move `toast()` into `public/js/toast.js` with a
       pausable clock and the Undo bar. Red first in `tests/toast.spec.js`.
-- [ ] 2. Task tick. Keyframes on `.task-checkbox.is-just-toggled`, plus one
+- [x] 2. Task tick. Keyframes on `.task-checkbox.is-just-toggled`, plus one
       statement in `toggleTaskAt`.
-- [ ] 3. Hold to confirm. `public/js/hold-confirm.js`, two dialog buttons, a
+- [x] 3. Hold to confirm. `public/js/hold-confirm.js`, two dialog buttons, a
       `holdToConfirm` test helper, three call sites moved to it.
 - [ ] 4. Swipe row. `public/js/swipe-row.js`, delegated from the note list,
       actions through the bulk archive and trash paths.

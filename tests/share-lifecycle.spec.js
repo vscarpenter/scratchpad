@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, enterBulkMode, seedShareRow, stubRevoke } = require('./helpers');
+const { seedRawNotes, enterBulkMode, seedShareRow, stubRevoke, holdToConfirm } = require('./helpers');
 
 /**
  * Trashing or destroying a shared note revokes its public links first. These
@@ -55,7 +55,7 @@ test('Empty Trash revokes lingering links before destroying their tokens', async
 
   await page.locator('#trash-view').click();
   await page.locator('.trash-tools button').click();
-  await page.locator('#confirm-empty-trash').click();
+  await holdToConfirm(page, '#confirm-empty-trash');
   await expect(page.locator('.note-row')).toHaveCount(0);
 
   expect(revokes).toHaveLength(1);

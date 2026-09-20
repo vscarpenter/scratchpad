@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote, openOverflowMenu } = require('./helpers');
+const { gotoApp, createAndSaveNote, openOverflowMenu, holdToConfirm } = require('./helpers');
 
 async function selectEditorText(page, text) {
   await page.locator('#note-editor').evaluate((editor, selectedText) => {
@@ -105,7 +105,7 @@ test.describe('notes — create, edit, persist', () => {
     await page.locator('.note-row').first().click();
     await openOverflowMenu(page);
     await page.locator('#permanent-delete-btn').click();
-    await page.locator('#confirm-permanent-delete').click();
+    await holdToConfirm(page, '#confirm-permanent-delete');
     await expect(page.locator('.note-row')).toHaveCount(0);
   });
 });

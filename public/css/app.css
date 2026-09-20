@@ -5021,6 +5021,43 @@ body:not(.page-privacy) .theme-toggle {
 .dialog .btn-primary,
 .dialog .btn-danger { box-shadow: none; }
 
+/* Hold to confirm (see hold-confirm.js). The fill sweeps across the button
+   over --hold-ms, which the module sets, and snaps back on an early release.
+   The ::before sits under the label inside the button's own stacking context.
+   The fill is a wash of --ink, which is dark in light mode and light in dark
+   mode. It always moves the button away from its label color, so the label
+   contrast rises in both themes (5.4 to 7.5 light, 5.8 to 7.9 dark). */
+.btn[data-hold-confirm] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+/* A hold implies hover, and the hover color would hide the fill. */
+.btn-danger[data-hold-confirm]:hover { background: var(--rust); }
+.btn[data-hold-confirm]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--t-fast) var(--ease-out);
+}
+.btn[data-hold-confirm].is-holding::before {
+  transform: scaleX(1);
+  transition: transform var(--hold-ms) linear;
+}
+/* The fill reports progress, so reduced motion keeps it and drops the
+   snap-back. */
+@media (prefers-reduced-motion: reduce) {
+  .btn[data-hold-confirm]:not(.is-holding)::before { transition: none; }
+}
+
 /* Zone labels — mono small-caps that name a trust boundary. */
 .zone-label {
   display: flex;

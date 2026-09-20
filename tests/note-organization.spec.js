@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, openOverflowMenu } = require('./helpers');
+const { gotoApp, seedRawNotes, openOverflowMenu, holdToConfirm } = require('./helpers');
 
 test.describe('note organization and empty states', () => {
   test('adds, normalizes, filters, removes, and persists inline tags', async ({ page }) => {
@@ -108,7 +108,7 @@ test.describe('note organization and empty states', () => {
     await expect(page.locator('.note-row[data-id="trash-delete"]')).toBeVisible();
 
     await page.getByLabel('Note list').getByRole('button', { name: 'Empty Trash' }).click();
-    await page.locator('#confirm-empty-trash').click();
+    await holdToConfirm(page, '#confirm-empty-trash');
     await expect(page.locator('.sidebar-empty-title')).toHaveText('Trash is empty');
 
     const notes = await page.evaluate(async () => await window.ScratchpadDB.getAll());
