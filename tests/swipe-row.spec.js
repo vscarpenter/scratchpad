@@ -15,6 +15,8 @@ test.use({ viewport: { width: 390, height: 844 } });
  * @param {{ dx?: number, dy?: number, pointerType?: string }} options
  */
 async function drag(page, id, options) {
+  // The list renders after the database loads, and evaluate does not wait.
+  await expect(page.locator(`.note-row[data-id="${id}"]`)).toBeVisible();
   await page.evaluate(
     async ({ noteId, dx, dy, pointerType }) => {
       const row = /** @type {HTMLElement} */ (document.querySelector(`.note-row[data-id="${noteId}"]`));
