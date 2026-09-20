@@ -147,6 +147,38 @@ async function stubShare(page, envelope, options = {}) {
   );
 }
 
+// Records DELETE /api/share/<id> calls and answers them with `status`.
+async function stubRevoke(page, options = {}) {
+  const { status = 204 } = options;
+  const seen = [];
+  await page.route('**/api/share/*', (routeCall) => {
+    const req = routeCall.request();
+    if (req.method() !== 'DELETE') return routeCall.continue();
+    seen.push({ url: req.url(), token: req.headers()['x-revoke-token'] });
+    if (status === 0) return routeCall.abort();
+    routeCall.fulfill({ status, contentType: 'application/json', body: '' });
+  });
+  return seen;
+}
+
+// Seeds a live share row directly, the state a note is in after a link was
+// created in some earlier session.
+async function seedShareRow(page, noteId, shareId) {
+  await page.evaluate(
+    ({ noteId, shareId }) =>
+      window.ScratchpadDB.putShare({
+        id: shareId,
+        noteId,
+        key: 'k'.repeat(43),
+        revokeToken: 'revoke-token-' + shareId,
+        sharedAt: Date.now(),
+        expiresAt: Date.now() + 7 * 86400000,
+        titleAtShare: 'Shared',
+      }),
+    { noteId, shareId },
+  );
+}
+
 module.exports = {
   gotoApp,
   seedNotes,
@@ -161,4 +193,6 @@ module.exports = {
   openTagManagerViaMenu,
   makeShare,
   stubShare,
+  stubRevoke,
+  seedShareRow,
 };

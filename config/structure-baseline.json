@@ -11,7 +11,6 @@
   "oversizeFiles": {
     "public/js/app.js": 6204,
     "public/js/db.js": 418,
-    "tests/daily-note.spec.js": 405,
-    "tests/share-link.spec.js": 430
+    "tests/daily-note.spec.js": 405
   }
 }
