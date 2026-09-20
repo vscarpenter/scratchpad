@@ -13,8 +13,38 @@ Spec: `tasks/spec.md`. Branch: `feat/interaction-polish`. Nothing pushed.
       `holdToConfirm` test helper, three call sites moved to it.
 - [x] 4. Swipe row. `public/js/swipe-row.js`, delegated from the note list,
       actions through the bulk archive and trash paths.
-- [ ] 5. Gates: full suite on three browsers, `npm run verify`, CSP hash
+- [x] 5. Gates: full suite on three browsers, `npm run verify`, CSP hash
       check, light and dark screenshots, DESIGN.md and guide notes.
+
+## Resuming From Here
+
+- Done: all four interactions, on `feat/interaction-polish`, nothing pushed.
+  Commits 7e6c101 (spec), 2d658f0 (toast), 93c5e15 (tick), 26a2dde (share
+  test move), 6020e04 (hold), 5981754 (swipe), cb4b48e (test race fix),
+  93152cd (app.js ceiling 6,204 to 6,173), plus the docs commit after it.
+- Verified: the full suite ran 1,318 passed, 28 skipped, and 1 failed. The
+  failure was a race in the new swipe test helper, fixed in cb4b48e and then
+  green across 225 repeated runs. `npm run verify` exits 0: coverage 39.14%
+  against the 36.2% floor, structure 102 long and 11 deep, audit clean. The
+  CSP hashes did not change. Screenshots of all four surfaces sit in
+  `.verify/`, light and dark.
+- Not rerun: the whole suite after cb4b48e. That commit touched one test
+  helper, and the specs it could affect reran green.
+- Next, Vinny's call: merge the branch (`git merge --ff-only
+  feat/interaction-polish` from main), then a version bump and deploy through
+  `/release-prep`. A real phone is worth five minutes before release, because
+  every swipe test uses synthetic pointer events.
+- Coverage dipped 0.18 points because the coverage gate drives one fixed
+  journey and the three new modules add lines it only touches in passing.
+  Extending that journey with a toast hover and a task toggle would win it
+  back.
+- Blockers: none.
+- Assumptions: 1,000 ms is the right hold. Text-only rail buttons are enough.
+  Search results do not swipe. Swipe actions wait while an edit is unsaved.
+- Left alone: the uncommitted `shadcn` devDependency, `bun.lock`,
+  `skills-lock.json`, and `.mcp.json`. `.mcp.json` was reformatted with Biome
+  in place, because the format sweep covers untracked files and it blocked
+  every commit. The `.verify/shot-*.cjs` scripts are throwaway.
 
 # Architecture diagram with Archify (2026-09-11)
 

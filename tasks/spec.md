@@ -87,26 +87,37 @@ Four small interactions, built in this order, one commit each:
 - Holding the primary pointer, Space, or Enter for 1,000 ms confirms. The
   module then calls `button.click()`, and its own capture-phase click gate
   lets that one click through.
-- A click that follows a press the module saw is a short tap. The gate stops
-  it and writes "Keep holding to confirm." into a visually hidden
-  `aria-live="polite"` hint next to the button.
+- A click that follows a press the module saw is a short tap, and the gate
+  stops it. A press counts until 700 ms after its release, because a touch
+  click can trail its pointerup. An early release writes "Keep holding to
+  confirm." into a visually hidden `aria-live="polite"` hint next to the
+  button.
 - A click with no press before it comes from assistive technology (VoiceOver,
   Voice Control, Switch Control). The gate lets it through, because those
   users cannot hold and the dialog already asked them to confirm.
 - A hold cancels on early release, pointer leave, pointer cancel, window blur,
   a hidden document, or a disabled button. Key repeat does not restart it.
 - Feedback: `is-holding` on the button drives a fill that scales across the
-  button over `--hold-ms`, in the `.btn-danger` color pair. Release snaps the
-  fill back over `--t-fast`.
+  button over `--hold-ms`. Release snaps the fill back over `--t-fast`.
+- Deviation, 2026-09-20: the fill is a 28 percent wash of `--ink`, not
+  `--rust-d`. In dark mode `--rust-d` differs from `--rust` by 1.12 to 1, too
+  faint to read as progress. Ink flips with the theme, so the wash raises
+  label contrast in both (5.4 to 7.5 light, 5.8 to 7.9 dark).
 - Reduced motion keeps the fill, because it reports progress, and drops the
   snap-back.
 - `tests/helpers.js` gains `holdToConfirm(page, selector)`. The three existing
   call sites use it.
+- Deviation, 2026-09-20: `share-link.spec.js` sat one line under its ceiling
+  and unformatted, so it could not take the edit. Four revoke-on-delete tests
+  moved to `share-lifecycle.spec.js` first (26a2dde), and the oversize waiver
+  left the baseline.
 
 ## 4. Swipe row (`public/js/swipe-row.js`, `window.ScratchpadSwipeRow`)
 
-- `ScratchpadSwipeRow.attach(list, { canSwipe, onAction })` delegates from the
+- `ScratchpadSwipeRow.attach(list, { describe, onAction })` delegates from the
   note list, because `renderAll()` replaces rows. `renderRow` does not change.
+  `describe(row)` returns the leading and trailing action lists, or null when
+  the row does not swipe.
 - Touch and pen pointers only. Mouse keeps the HTML5 drag to a folder.
 - Rows get `touch-action: pan-y`. A gesture locks horizontal once it moves
   10px and is wider than it is tall. A vertical start abandons the gesture,
@@ -116,12 +127,17 @@ Four small interactions, built in this order, one commit each:
   least 44px tall, in validated color pairs.
 - The module builds a rail when a swipe starts and removes it when the row
   closes. A closed row has no extra DOM, so existing tests and AT see no
-  change.
+  change. Both rails mount together, and the side that is not in play carries
+  `hidden`, so its buttons leave the tab order and the accessibility tree.
+- A rail is a sibling under the row, not a child. Row children inherit
+  `pointer-events: none`, and the active row clips its overflow.
 - On release, a pure `resolveRelease({ offset, velocity, railWidth,
   rowWidth })` returns `closed`, `open`, or `commit`:
   - `commit` when the offset passes the commit point (the larger of rail
     width plus 64px and 55 percent of the row), or a flick faster than
     0.5 px/ms lands past the rail width.
+  - `closed` when a flick faster than 0.11 px/ms moves back toward closed
+    (added during the build, so a row can be flicked shut from past halfway).
   - `open` when the offset passes half the rail, or a flick faster than
     0.11 px/ms moves in the opening direction.
   - `closed` otherwise.
@@ -131,7 +147,7 @@ Four small interactions, built in this order, one commit each:
 - One row is open at a time. A tap on an open row, a tap elsewhere, a list
   scroll, or a render closes it. The click that ends a swipe does not open the
   note.
-- `canSwipe(row)` is false in Trash, in bulk mode, and in search results.
+- `describe(row)` returns null in Trash, in bulk mode, and in search results.
 - Actions in `app.js`:
   - Archive and Trash reuse `bulkSetArchiveState(true)` and
     `bulkMoveToTrash()` with the row id as the only selected id. Those paths
