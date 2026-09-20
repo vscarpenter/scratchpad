@@ -2157,6 +2157,32 @@ body:not(.page-privacy) .theme-toggle {
   cursor: default;
   opacity: 0.6;
 }
+/* A toggle re-renders the note, so the new box starts life in its final state
+   and a transition could never run. app.js marks the one box the user just
+   toggled, and only that box animates. Opening a note animates nothing. */
+.note-rendered .task-checkbox.is-just-toggled {
+  animation: task-pop var(--t-slow) var(--ease-pop);
+}
+.note-rendered .task-checkbox.is-just-toggled[aria-checked="true"]::after {
+  animation: task-tick-draw var(--t-slow) var(--ease-out);
+}
+@keyframes task-pop {
+  from { transform: scale(0.82); }
+  to { transform: scale(1); }
+}
+/* Short leg first, then the long leg. The clip works in the tick's own box,
+   before its 45 degree rotation, so the 2px strip is the bottom border. */
+@keyframes task-tick-draw {
+  0% { clip-path: inset(calc(100% - 2px) 100% 0 0); }
+  35% { clip-path: inset(calc(100% - 2px) 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-rendered .task-checkbox.is-just-toggled,
+  .note-rendered .task-checkbox.is-just-toggled[aria-checked="true"]::after {
+    animation: none;
+  }
+}
 .note-rendered li:has(> .task-checkbox),
 .note-rendered li:has(> p:first-child > .task-checkbox:first-child) {
   list-style: none;

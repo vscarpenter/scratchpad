@@ -24,7 +24,7 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 | Offline shell, same-origin privacy, and static pages | `pwa.spec.js`, `network-isolation.spec.js`, `guide.spec.js`, `static-pages.spec.js` |
 | Theme, accessibility semantics, touch targets, and responsive layout | `theme.spec.js`, `static-pages.spec.js`, `accessibility-semantics.spec.js`, `touch-targets.spec.js`, `layout-scroll.spec.js` |
 | Command palette and every documented navigation surface | `command-palette.spec.js`, `guide.spec.js`, `static-pages.spec.js` |
-| Interaction feedback: the toast clock and its Undo burn-down bar | `toast.spec.js` |
+| Interaction feedback: the toast clock, its Undo burn-down bar, and the task tick | `toast.spec.js`, `task-tick.spec.js` |
 
 Operational AWS deployment behavior, CloudFront configuration, browser install
 chrome, and the external email client itself are outside the browser E2E

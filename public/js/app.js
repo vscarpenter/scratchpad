@@ -3384,7 +3384,11 @@
         const next = body.charAt(marker.offset) === ' ' ? 'x' : ' ';
         return body.slice(0, marker.offset) + next + body.slice(marker.offset + 1);
       }, { coalesceToggles: true }));
-    if (updated) renderAll();
+    if (!updated) return;
+    renderAll();
+    // The render replaced every checkbox, so mark the new one for its tick.
+    const box = els.rendered.querySelectorAll('.task-checkbox')[index];
+    if (box) box.classList.add('is-just-toggled');
   }
 
   function taskCheckboxIndex(target) {
