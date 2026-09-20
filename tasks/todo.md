@@ -1,3 +1,21 @@
+# Interaction polish: four React Bits ports (2026-09-20)
+
+Tier: Non-trivial (three new modules, shared toast code, a new touch gesture).
+Spec: `tasks/spec.md`. Branch: `feat/interaction-polish`. Nothing pushed.
+
+## Plan
+
+- [ ] 1. Toast burn-down. Move `toast()` into `public/js/toast.js` with a
+      pausable clock and the Undo bar. Red first in `tests/toast.spec.js`.
+- [ ] 2. Task tick. Keyframes on `.task-checkbox.is-just-toggled`, plus one
+      statement in `toggleTaskAt`.
+- [ ] 3. Hold to confirm. `public/js/hold-confirm.js`, two dialog buttons, a
+      `holdToConfirm` test helper, three call sites moved to it.
+- [ ] 4. Swipe row. `public/js/swipe-row.js`, delegated from the note list,
+      actions through the bulk archive and trash paths.
+- [ ] 5. Gates: full suite on three browsers, `npm run verify`, CSP hash
+      check, light and dark screenshots, DESIGN.md and guide notes.
+
 # Architecture diagram with Archify (2026-09-11)
 
 Tier: Standard (a docs-only artifact; no app, test, or deploy change).

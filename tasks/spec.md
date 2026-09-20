@@ -1,165 +1,221 @@
-# Spec: Chronicle dialog recipe — Phase 2
+# Spec: four interaction ports from React Bits (2026-09-20)
 
-Approved directions from the 2026-08 design review
-(`design_handoff_chronicle_dialogs/README.md`, "Phase 2"). Design direction is
-approved; detailed spec derived here from those directions plus the Phase 1
-recipe (DESIGN.md "Dialogs") and existing code. Continuous pass authorized by
-the standing design-approval correction.
+Vinny approved the design in session on 2026-09-20, including three choices:
+Mail-style swipe actions, hold to confirm inside the existing dialogs, and a
+tick-only task animation. The standing design-approval correction authorizes
+one continuous pass from here.
+
+The source ideas come from the React Bits registry (SwipeToast, SpringCheck,
+HoldButton, SwipeRow; MIT plus Commons Clause). No React Bits code ships. Each
+item is a vanilla rewrite that fits the no-build, no-dependency profile.
 
 ## Goal
 
-Four dialog surfaces adopt the Phase 2 directions without changing any data
-behavior:
+Four small interactions, built in this order, one commit each:
 
-1. **About → "Your data" panel** — 3 stat cards (notes / revisions / storage),
-   status rows with state dots and inline actions, links stay demoted in the
-   existing dialog footer.
-2. **Import preview** — counts become stat cards; conflict radios gain
-   one-clause consequence copy; the primary button states the outcome
-   ("Import 16 notes").
-3. **Quick capture → spotlight bar** — no title bar; footer shows a live
-   preview of exactly what will be appended and where.
-4. **Erase button disabled until "ERASE" is fully typed** (visual + JS).
+1. The Undo toast shows how much time is left, and any toast waits while the
+   pointer or focus is on it.
+2. A task checkbox draws its tick when the user checks it.
+3. "Delete forever" and "Empty Trash" need a one-second hold inside their
+   dialogs.
+4. On touch, a note row swipes left for Archive and Trash, and right for Pin.
 
-## Hard constraints (executable in the existing suite)
+## Shared constraints
 
-- Every `#diagnostic-*` id keeps its element and text semantics —
-  `tests/diagnostics.spec.js` asserts each value (`toHaveText('2')` etc.).
-- `#import-preview-counts` keeps a `<dl>` whose `dd` order is unchanged:
-  New notes, Conflicts, Rejected entries, Revision snapshots, Rejected
-  revisions, Folders — `tests/import.spec.js` asserts `dd.nth(0/2/4)`.
-- `#quick-capture-input` / `#quick-capture-submit` ids, Enter-to-capture, and
-  `?action=capture` behavior unchanged (`daily-note.spec.js`,
-  `keyboard-shortcuts.spec.js`).
-- Radio `name="import-conflict-mode"` values `duplicate|replace|skip` and
-  default-to-duplicate on render are unchanged.
-- Recipe rules apply: tokens only in app.css, serif titles, mono small-caps
-  labels, hairlines, indigo action-only, rust erasure-only. No emoji; SVG or
-  Unicode symbols only. No new network calls. No `innerHTML`.
+- Tokens only in `app.css`. No hex values, no new tokens, no `@font-face`, no
+  blur or gradient in the shell, no emoji, no `innerHTML`.
+- No new network calls. `tests/network-isolation.spec.js` stays untouched and
+  green.
+- `public/js/app.js` sits at 6,200 lines against a 6,204 ceiling. Logic goes
+  into new modules that meet the v18 limits: 400 lines per file, 40 per
+  function, nesting depth 3. The `app.js` total must end at or below 6,200.
+- Each new module follows the `dialogs.js` pattern: `// @ts-check`, a block
+  scope, a frozen `window.ScratchpadX` export, JSDoc types. Each one joins
+  `jsconfig.json`, the `APP_SHELL` list in `public/service-worker.js`, and a
+  script tag in `index.html` ahead of `app.js`.
+- No inline script changes, so the CSP hashes stay the same. Confirm with
+  `bash cloudfront/recompute-csp-hashes.sh`.
+- Every animation has a `prefers-reduced-motion: reduce` branch.
+- No dark-mode rules in `app.css`. Color pairs reuse pairs the token tests
+  already validate (`--on-accent` on `--accent`, the `.btn-danger` pair).
 
-## 1. Erase gating (JS + markup + CSS)
+## 1. Toast burn-down (`public/js/toast.js`, `window.ScratchpadToast`)
 
-- `#confirm-erase-local-data` gets the `disabled` attribute in markup.
-- On `input` in `#erase-confirmation`: button enabled iff
-  `value === 'ERASE'` (exact, case-sensitive, no trim). Deleting characters
-  re-disables. Dialog open resets input and re-disables.
-- The click-time value guard stays as a one-line defense-in-depth check, but
-  the now-unreachable error UI (`#erase-confirmation-error`, `aria-invalid`
-  toggling) is REMOVED — the structure ratchet requires additions to app.js
-  to pay their way, and dead error plumbing is the in-scope offset.
-  (Deviation from first draft recorded 2026-08-30.)
-- **Spec change to tests**: `data-erasure.spec.js` "wrong text" case becomes:
-  fill `'erase'` → expect button `toBeDisabled()` and dialog still open; fill
-  `'ERASE'` → `toBeEnabled()` → click proceeds. All other erase tests already
-  fill `'ERASE'` first and stay valid.
+- `toast()` moves out of `app.js` into `ScratchpadToast.show(region, message,
+  opts)`. The options keep their names and defaults: `tone`, `persist`,
+  `duration` (2,600 ms), `actionLabel`, `action`. The returned node, the class
+  names (`toast`, `is-<tone>`, `is-visible`, `toast-dot`, `toast-dismiss`,
+  `toast-action`), and the 220 ms removal delay do not change.
+- `app.js` keeps a one-line `toast` wrapper, so its 100-plus call sites do not
+  change.
+- One pausable clock replaces `setTimeout(remove, duration)`. It pauses while
+  the pointer is over the toast or focus is inside it, and resumes when both
+  have left. Pausing sets `is-paused` on the toast node.
+- A toast that has an action and auto-dismisses gets one
+  `span.toast-burn[aria-hidden="true"]`. CSS draws a 2px `--accent` bar on the
+  bottom edge, clipped to the pill. The bar scales from full to zero over
+  `--toast-ms`, which the module sets from `duration`. `is-paused` pauses the
+  animation, so the bar and the clock cannot drift apart.
+- Toasts without an action get the pause and no bar. Persistent toasts get
+  neither.
+- Reduced motion hides the bar. The pause still works.
+- The failed-action path still raises the "Undo failed" error toast.
 
-## 2. Import preview (JS render + markup + CSS)
+## 2. Task tick (CSS plus one `app.js` statement)
 
-- `renderImportPreview` wraps each dt/dd pair in a `<div>` (same pattern as
-  the About diagnostics list); dl order unchanged. CSS turns the six pairs
-  into a 3-across stat-card grid (2 rows), dt in the existing Phase 1 mono
-  small-caps voice, dd value in serif 600 ~20px.
-- Each conflict radio label gains a `.import-consequence` line
-  (12px, `--text-secondary`), one clause each:
-  - duplicate: "Conflicting notes come in as copies; nothing is overwritten."
-  - replace: "Existing notes with matching ids are overwritten."
-  - skip: "Only new notes come in; conflicts stay untouched."
-- `#confirm-import` label states the outcome. N = notes that will import for
-  the selected mode: duplicate/replace → `newCount + conflicts`; skip →
-  `newCount`. Label `Import N notes` / `Import 1 note`; when N = 0 the label
-  falls back to plain `Import` (folders may still merge). Recomputed on
-  preview render and on radio change.
+- A toggle calls `renderAll()`, which replaces the checkbox node. A CSS
+  transition can never run on a node that starts life checked. So
+  `toggleTaskAt` adds `is-just-toggled` to the checkbox at the same index
+  after the render.
+- `.task-checkbox.is-just-toggled` runs a box pop (about 300 ms,
+  `--ease-pop`). When checked, its `::after` tick draws with a `clip-path`
+  reveal: short leg first, then the long leg. Geometry and colors of the
+  resting state do not change.
+- Unchecking runs the box pop only.
+- Task text is untouched: no strike, no dimming.
+- Opening a note with checked tasks animates nothing, because no node carries
+  the class.
+- Reduced motion: no animation.
 
-## 3. About "Your data" panel (markup + JS + CSS)
+## 3. Hold to confirm (`public/js/hold-confirm.js`, `window.ScratchpadHoldConfirm`)
 
-- `#diagnostics-title` text becomes "Your data" (verify no test pins
-  "Local diagnostics" first; keep the id).
-- Structure inside `#diagnostics-panel` (all existing ids preserved):
-  - `.data-stats`: three stat cards — Notes (`#diagnostic-active-notes`),
-    Revisions (`#diagnostic-revisions`), Storage (`#diagnostic-storage`).
-    Card label mono small-caps 10px `--text-muted`; value serif 600 20px.
-  - `.data-meta`: one quiet line "`#diagnostic-archived-notes` archived ·
-    `#diagnostic-trashed-notes` in trash · `#diagnostic-drafts` drafts"
-    (ids live on inline spans holding only the number).
-  - `.data-status`: three status rows, each `dot + term + value + inline
-    action`, hairline-separated:
-    - Storage protection → value `#diagnostic-storage-protection`, inline
-      `#protect-storage-btn` (existing hidden logic untouched). Dot state:
-      Persistent → ok, Best effort → warn, Unavailable → muted.
-    - Last backup → value `#diagnostic-last-backup`, no action. Dot: backup
-      recorded → ok, never → warn.
-    - Offline cache → value `#diagnostic-offline-cache`, inline
-      `#refresh-offline-copy-btn` and `#check-updates-btn` (both btn-sm).
-      Dot: Ready → ok, otherwise warn/muted.
-  - `renderDiagnostics` additionally sets `data-state="ok|warn|muted"` on
-    each status row; CSS colors the dot via tokens (`--success`,
-    `--warning`, `--text-muted`). Color is never the only signal — the text
-    value stays.
-- `.about-control-row` disappears (its three buttons moved inline).
-- Footer links: already demoted in `.about-dialog-foot` — no change.
-- Danger zone: unchanged from Phase 1.
+- `#confirm-permanent-delete` and `#confirm-empty-trash` gain
+  `data-hold-confirm`. Their labels become "Hold to delete forever" and "Hold
+  to empty Trash". The dialogs, their copy, and Cancel do not change.
+- The module attaches to every `[data-hold-confirm]` button at load. The
+  `app.js` click handlers stay as they are.
+- Holding the primary pointer, Space, or Enter for 1,000 ms confirms. The
+  module then calls `button.click()`, and its own capture-phase click gate
+  lets that one click through.
+- A click that follows a press the module saw is a short tap. The gate stops
+  it and writes "Keep holding to confirm." into a visually hidden
+  `aria-live="polite"` hint next to the button.
+- A click with no press before it comes from assistive technology (VoiceOver,
+  Voice Control, Switch Control). The gate lets it through, because those
+  users cannot hold and the dialog already asked them to confirm.
+- A hold cancels on early release, pointer leave, pointer cancel, window blur,
+  a hidden document, or a disabled button. Key repeat does not restart it.
+- Feedback: `is-holding` on the button drives a fill that scales across the
+  button over `--hold-ms`, in the `.btn-danger` color pair. Release snaps the
+  fill back over `--t-fast`.
+- Reduced motion keeps the fill, because it reports progress, and drops the
+  snap-back.
+- `tests/helpers.js` gains `holdToConfirm(page, selector)`. The three existing
+  call sites use it.
 
-## 4. Quick capture spotlight (markup + JS + CSS)
+## 4. Swipe row (`public/js/swipe-row.js`, `window.ScratchpadSwipeRow`)
 
-- Remove the entire `.dialog-head` (icon, h2, subtitle, close button). The
-  dialog gets `aria-label="Quick capture"` instead of `aria-labelledby`.
-  Esc still closes (native cancel); no visible close button.
-- `#quick-capture-description` becomes a `visually-hidden` paragraph so the
-  input's `aria-describedby` keeps working for AT.
-- The `.quick-capture-hint` row becomes `.quick-capture-foot`: left side is a
-  live preview `- **HH:MM** <typed text>` (timestamp mono, text plain,
-  `aria-hidden="true"`, muted ellipsis when input empty), right side keeps
-  the destination + `Enter` kbd hint. Destination reads "Today's note", or
-  "today's draft" when the today note is open in the editor (mirrors the
-  `submitQuickCapture` buffer branch).
-- JS: on dialog open and on every `input`, update preview text and
-  destination. Timestamp from the existing `captureTimestamp()`.
-- CSS: head rules for quick-capture (`.quick-capture-dialog .dialog-head*`,
-  `.quick-capture-heading`, `.quick-capture-mark`, `.quick-capture-subtitle`)
-  are removed as dead; body padding compensates for the missing head.
+- `ScratchpadSwipeRow.attach(list, { canSwipe, onAction })` delegates from the
+  note list, because `renderAll()` replaces rows. `renderRow` does not change.
+- Touch and pen pointers only. Mouse keeps the HTML5 drag to a folder.
+- Rows get `touch-action: pan-y`. A gesture locks horizontal once it moves
+  10px and is wider than it is tall. A vertical start abandons the gesture,
+  so the list scrolls as before.
+- Swipe left reveals a trailing rail with "Archive" then "Trash". Swipe right
+  reveals a leading rail with "Pin" or "Unpin". Buttons are text only, at
+  least 44px tall, in validated color pairs.
+- The module builds a rail when a swipe starts and removes it when the row
+  closes. A closed row has no extra DOM, so existing tests and AT see no
+  change.
+- On release, a pure `resolveRelease({ offset, velocity, railWidth,
+  rowWidth })` returns `closed`, `open`, or `commit`:
+  - `commit` when the offset passes the commit point (the larger of rail
+    width plus 64px and 55 percent of the row), or a flick faster than
+    0.5 px/ms lands past the rail width.
+  - `open` when the offset passes half the rail, or a flick faster than
+    0.11 px/ms moves in the opening direction.
+  - `closed` otherwise.
+- A full left swipe commits Archive. A full right swipe commits Pin. Past the
+  commit point the full-swipe button grows to fill the rail, so the target is
+  clear before release.
+- One row is open at a time. A tap on an open row, a tap elsewhere, a list
+  scroll, or a render closes it. The click that ends a swipe does not open the
+  note.
+- `canSwipe(row)` is false in Trash, in bulk mode, and in search results.
+- Actions in `app.js`:
+  - Archive and Trash reuse `bulkSetArchiveState(true)` and
+    `bulkMoveToTrash()` with the row id as the only selected id. Those paths
+    already stay in the current view, clear the selection when it was the
+    open note, revoke live shares before trashing, and raise the Undo toast
+    for Archive.
+  - Pin reuses `togglePin`, which gains an optional id.
+  - While an edit is dirty, a swipe action does nothing except raise the info
+    toast "Save or discard your edits first." The bulk trash path resets the
+    editing state, which would drop the draft.
+- In the Archive view the left rail offers "Unarchive" in place of "Archive",
+  and there is no right swipe (archived notes do not pin).
+- No new keyboard path. The document toolbar already pins, archives, and
+  trashes the open note, and bulk mode covers the list. That satisfies WCAG
+  2.5.1, which asks for an alternative to the gesture.
+- Snaps run over `--t-base` with `--ease-out`. Reduced motion snaps at once.
 
 ## Anti-goals
 
-- No behavior change to what erase erases, what import writes, what capture
-  appends, or diagnostics computation.
-- No new tokens, no literal colors, no `@font-face`, no shell changes.
-- No Phase 3 inventions (e.g. redesigned radios as cards, capture into
-  arbitrary notes).
+- No React, no `motion`, no `gsap`, no vendored code, no icons from a package.
+- No liquid fill, no springs driven by script, no sound, no haptics.
+- No swipe on mouse, no swipe in Trash, no swipe to delete forever.
+- No change to what Archive, Trash, Pin, permanent delete, or Empty Trash do.
+- No countdown bar on plain toasts, and no strike or dim on done tasks.
+- No change to `renderRow`, to the dialogs' copy, or to the toast call sites.
 
 ## Edge cases
 
-- Erase: paste "ERASE " (trailing space) stays disabled; case-sensitive.
-- Import: N = 0 (folders-only import) → plain "Import" label; 1 → singular.
-- Quick capture: empty input preview shows timestamp + muted placeholder;
-  destination logic when the today note exists but is not open → "Today's
-  note"; input with only spaces behaves as empty (capture already no-ops).
-- About: `storage.persist` unsupported → protection row muted, protect button
-  hidden (existing logic).
+- Toast: hover and focus at once, then one leaves (stay paused). The action
+  button clicked while paused. Two toasts stacked, each with its own clock.
+- Tick: a count mismatch marks checkboxes inert (existing rule), so no class
+  lands. A trashed note does not toggle.
+- Hold: release at 900 ms (no confirm). Pointer slides off mid-hold. Tab away
+  mid-hold. `withBusy` disables the button. Enter key repeat. Dialog closed
+  with Escape mid-hold.
+- Swipe: diagonal start, second finger down, `pointercancel` from a native
+  scroll, a render mid-swipe (the row leaves the DOM), a swipe on the active
+  row, a swipe that starts on a tag button, right-to-left over-pull past the
+  row width (clamped with resistance).
 
 ## Acceptance criteria
 
-1. New/updated Playwright assertions (red first, then green):
-   - erase button disabled → enabled → re-disabled by input value.
-   - import consequence copy visible; `#confirm-import` reads "Import 2
-     notes" for the markdown-import preview; switching to Skip with 1
-     conflict changes the label accordingly.
-   - About shows "Your data", three `.data-stat` cards, and status rows with
-     `data-state` set.
-   - quick capture has no `h2`, carries `aria-label`, and the foot preview
-     mirrors typed text with a `**HH:MM**`-style timestamp; destination
-     wording flips in the editing-today branch.
-2. Entire existing suite stays green (920 currently) across all 3 browsers.
-3. `bun run verify` green; CSP hashes unchanged
-   (`recompute-csp-hashes.sh` — no inline scripts touched).
-4. Light + dark screenshots of all four surfaces reviewed.
-5. DESIGN.md Dialogs section gains a short Phase 2 note.
+Each item goes red first, then green, on Chromium, Firefox, and WebKit.
 
-## Assumptions (explicit)
+1. `tests/toast.spec.js`
+   - an Undo toast has one `.toast-burn`; a plain toast has none
+   - hovering a 600 ms test toast keeps it past 1,200 ms; leaving dismisses it
+   - focus inside the toast pauses it; blur resumes it
+   - the archive Undo action still restores the note
+2. `tests/task-lists.spec.js` (or a new spec if the ratchet says so)
+   - checking a box leaves exactly one `.is-just-toggled`, on that box
+   - reopening the note shows zero `.is-just-toggled`
+   - reduced motion reports `animation-name: none`
+3. `tests/hold-confirm.spec.js`
+   - a plain click leaves the dialog open, the note intact, and the hint set
+   - a 1,100 ms hold deletes the note
+   - release at 400 ms does not delete
+   - holding Enter confirms; a bare `element.click()` with no press confirms
+   - pointer leave cancels
+   - Empty Trash behaves the same way
+4. `tests/swipe-row.spec.js` (synthetic touch pointer events)
+   - `resolveRelease` table: closed, open, commit, flick open, flick commit
+   - a left drag past half the rail opens it and shows Archive and Trash
+   - tapping Trash moves the note to Trash; tapping Archive raises Undo
+   - a full left swipe archives and Undo restores
+   - a right swipe toggles Pin
+   - a vertical drag and a mouse drag do nothing
+   - no rail in Trash, bulk mode, or search
+   - the click after a swipe does not open the note
+   - a dirty edit blocks the action and raises the info toast
+5. The whole existing suite stays green. `npm run verify` passes, with
+   `app.js` at or below 6,200 lines and no new long or deep functions.
+6. `bash cloudfront/recompute-csp-hashes.sh` reports no new hash.
+7. Light and dark screenshots of all four surfaces land in `.verify/`.
+8. DESIGN.md gains a short note on the four interactions. The guide page
+   mentions the hold and the swipe where it covers Trash and the note list.
 
-- "count" card = active notes (archived/trash/drafts stay visible in the meta
-  line so nothing regresses to hidden).
-- Check-for-updates lives on the offline-cache status row (both are
-  service-worker concerns); no dedicated updates row.
-- Removing the quick-capture close button is intended by "spotlight bar";
-  Esc and click-outside behavior are unchanged.
-- Import button counts notes only; folders/revisions ride along silently.
+## Assumptions
+
+- Work happens on a `feat/interaction-polish` branch. Nothing is pushed.
+- The uncommitted `shadcn` devDependency, `bun.lock`, `skills-lock.json`, and
+  `.mcp.json` are Vinny's and stay out of every commit here.
+- 1,000 ms is the right hold length. It is one constant in the module.
+- Text-only rail buttons are enough. Icons would need new `<template>` SVGs.
+- Search results get no swipe, because a result row can be archived or
+  trashed already and the rail would need more states.
+- The version bump and the deploy are separate, user-invoked steps.
