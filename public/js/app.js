@@ -2910,8 +2910,8 @@
     });
   }
 
-  async function togglePin() {
-    const note = getNote(state.selectedId);
+  async function togglePin(id) {
+    const note = getNote(typeof id === 'string' ? id : state.selectedId);
     if (!note || isTrashed(note)) return;
     return withBusy('pin', [els.pinToggle], 'Pin update failed.', async () => {
       const nextNote = { ...note, pinned: !note.pinned, updatedAt: now() };
@@ -3356,6 +3356,32 @@
       return nextNote;
     }
     return null;
+  }
+
+  // -------- Swipe actions (touch) --------
+  // swipe-row.js owns the gesture. Trash, bulk mode, and search rows opt out.
+  function swipeSidesFor(row) {
+    const note = getNote(row.getAttribute('data-id'));
+    if (!note || isTrashed(note) || state.bulkMode || state.search.trim()) return null;
+    const archived = isArchived(note);
+    const lifecycle = archived
+      ? { id: 'unarchive', label: 'Unarchive', full: true, exits: true }
+      : { id: 'archive', label: 'Archive', full: true, exits: true };
+    return {
+      leading: archived ? [] : [{ id: 'pin', label: note.pinned ? 'Unpin' : 'Pin', full: true }],
+      trailing: [lifecycle, { id: 'trash', label: 'Trash', danger: true }],
+    };
+  }
+
+  // The bulk paths already stay in the current view, revoke live shares before
+  // trashing, and raise Undo for Archive, so a swipe runs them on one id. They
+  // also reset the editing state, which would drop an unsaved draft.
+  function runSwipeAction(id, action) {
+    if (state.editing && state.dirty) return toast('Save or discard your edits first.', { tone: 'info' });
+    if (action === 'pin') return togglePin(id);
+    state.bulkSelectedIds.clear();
+    state.bulkSelectedIds.add(id);
+    return action === 'trash' ? bulkMoveToTrash() : bulkSetArchiveState(action === 'archive');
   }
 
   // -------- Task toggles --------
@@ -5657,6 +5683,7 @@
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
+    window.ScratchpadSwipeRow.attach(els.noteList, { describe: swipeSidesFor, onAction: runSwipeAction });
     SearchView.bindKeyboard({
       input: els.search,
       list: els.noteList,

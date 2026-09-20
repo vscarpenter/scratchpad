@@ -2838,6 +2838,64 @@ body:not(.page-privacy) .theme-toggle {
   min-height: 1em;
 }
 
+/* ---------- Swipe actions on note rows (touch; see swipe-row.js) ----------
+   A rail is a sibling laid under the row, positioned over the row's box and
+   only as wide as the gap the sliding row has opened. The list clips sideways
+   so a sliding row never raises a horizontal scrollbar, and pan-y leaves
+   vertical scrolling to the browser. Rail colors reuse the button pairs:
+   --on-accent on --accent, and --on-accent on --rust. */
+.note-list {
+  position: relative;
+  overflow-x: hidden;
+}
+.note-row { touch-action: pan-y; }
+.note-row.is-swiping { transition: none; }
+.note-row.is-swipe-settling { transition: transform var(--t-base) var(--ease-out); }
+.swipe-rail {
+  position: absolute;
+  display: flex;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  pointer-events: none;
+}
+.swipe-rail[hidden] { display: none; }
+.swipe-rail.is-trailing { justify-content: flex-end; }
+.swipe-rail-track {
+  display: flex;
+  width: 0;
+  pointer-events: auto;
+}
+.swipe-rail.is-swipe-settling .swipe-rail-track { transition: width var(--t-base) var(--ease-out); }
+.swipe-action {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 600 12.5px/1 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: flex-grow var(--t-fast) var(--ease-out), opacity var(--t-fast) var(--ease-out);
+}
+.swipe-action.is-danger { background: var(--rust); }
+.swipe-action:focus-visible {
+  outline: 2px solid var(--on-accent);
+  outline-offset: -4px;
+}
+/* Past the commit point the full-swipe action takes the whole rail, so the
+   target is clear before the finger lifts. */
+.swipe-rail.is-committing .swipe-action:not(.is-full) {
+  flex-grow: 0;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-row.is-swipe-settling,
+  .swipe-rail.is-swipe-settling .swipe-rail-track,
+  .swipe-action { transition: none; }
+}
+
 /* ---------- Toast (transient action feedback) ----------
    One polite aria-live region holds the stack, bottom-center. Toasts are
    overlays, so a shadow is allowed here (see Inkwell Flat-Surface Rule).

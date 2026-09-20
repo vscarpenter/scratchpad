@@ -11,7 +11,7 @@ Spec: `tasks/spec.md`. Branch: `feat/interaction-polish`. Nothing pushed.
       statement in `toggleTaskAt`.
 - [x] 3. Hold to confirm. `public/js/hold-confirm.js`, two dialog buttons, a
       `holdToConfirm` test helper, three call sites moved to it.
-- [ ] 4. Swipe row. `public/js/swipe-row.js`, delegated from the note list,
+- [x] 4. Swipe row. `public/js/swipe-row.js`, delegated from the note list,
       actions through the bulk archive and trash paths.
 - [ ] 5. Gates: full suite on three browsers, `npm run verify`, CSP hash
       check, light and dark screenshots, DESIGN.md and guide notes.

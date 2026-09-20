@@ -27,6 +27,7 @@
     "public/js/shared-copy.js",
     "public/js/toast.js",
     "public/js/hold-confirm.js",
+    "public/js/swipe-row.js",
     "scripts/quality/**/*.mjs"
   ],
   "exclude": ["node_modules", "public/js/vendor"]

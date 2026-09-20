@@ -52,6 +52,7 @@
     '/public/js/share.js',
     '/public/js/toast.js',
     '/public/js/hold-confirm.js',
+    '/public/js/swipe-row.js',
     '/public/js/app.js',
   ];
   const OPTIONAL_SHELL = ['/public/og-image.png', '/public/og-image.svg'];
