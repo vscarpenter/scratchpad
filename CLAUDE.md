@@ -77,10 +77,12 @@ Key rules for anything in `public/css/app.css`:
 
 ### HTML/JS safety
 - **Never set `innerHTML` to untrusted content.** The pre-commit hook at
-  `scripts/hooks/pre-commit` flags staged `innerHTML`/`outerHTML` writes and
-  `insertAdjacentHTML(` calls. For sanitized markdown rendering, use
+  `scripts/hooks/pre-commit` fails closed on staged raw-DOM writes
+  (`innerHTML`/`outerHTML`/`srcdoc` assignment, `insertAdjacentHTML(`,
+  `setHTMLUnsafe(`, `document.write`, `createContextualFragment(`). For
+  sanitized markdown rendering, use
   `DOMPurify.sanitize(raw, { RETURN_DOM_FRAGMENT: true })` and append the
-  fragment — see `public/js/app.js` `renderMarkdownInto()`.
+  fragment — see `public/js/markdown.js` `renderMarkdownInto()`.
 - **For clearing containers**, use `container.replaceChildren()`, not
   `innerHTML = ''`.
 - **For static SVG icons**, use a `<template>` in `index.html` and clone its
@@ -115,6 +117,9 @@ public/
   js/
     db.js                IndexedDB wrapper (one connection, transactional)
     app.js               state, rendering, events
+    markdown.js          marked + DOMPurify rendering (renderMarkdownInto)
+    share.js, crypto.js  share-link creation and client-side AES-GCM
+    …                    feature modules; `ls public/js` for the current set
     version.js           SCRATCHPAD_VERSION + SCRATCHPAD_BUILD_DATE
     vendor/
       marked.min.js
@@ -128,6 +133,8 @@ share-infra/             share API Lambda + AWS provisioning (do NOT deploy)
   README.md              operator guide, incl. single-share takedown
 cloudfront/              CloudFront security-header artifacts (do NOT deploy)
   README.md              operator guide for the function workflow
+  share-router-function.js       viewer-request router: /s/<id> -> share.html,
+                                 unknown paths -> index.html (see below)
   security-headers-function.js   active deployed source: CF Function attached
                                  at viewer-response, emits CSP/HSTS/COOP/CORP/etc.
   response-headers-policy.json   reference-only equivalent declarative policy;
@@ -154,9 +161,10 @@ images, so the PNG is the one social scrapers actually see.
 
 ## Layout tripwires (don't unintentionally regress)
 
-All five pages share `app.css` but split into two layout modes that want
+All six pages share `app.css` but split into two layout modes that want
 opposite behavior: the app shell (`index.html`) and the `.page-privacy`
-content pages (`about.html`, `guide.html`, `privacy.html`, `terms.html`). Three
+content pages (`about.html`, `guide.html`, `privacy.html`, `terms.html`,
+`share.html`). Three
 load-bearing rules in `app.css` make both work simultaneously — touch any
 of them carefully:
 
@@ -192,7 +200,8 @@ preventing flash of incorrect theme. It's byte-identical across all six pages
 
 `share.html` copies the content-page variants **byte for byte** precisely so it
 lands on the existing hashes and needs no CSP change. Verify after any edit with
-`bash cloudfront/recompute-csp-hashes.sh`, which now scans `share.html` too. If
+`bash cloudfront/recompute-csp-hashes.sh`, which scans every shell listed in
+`deploy.sh`. If
 it reports a new hash, you broke that property.
 
 ## Releases and deploys
@@ -213,8 +222,8 @@ HTML (so every asset a fresh page references already exists in the bucket),
 gives both service workers a `no-store` cache so a stale worker can never
 pin users to old code, and invalidates CloudFront for the shell entry
 points. The exact sync order, per-file cache-control values, and
-content-types live in `deploy.sh`; the `release-prep` skill runs the version
-bump + dry-run preflight.
+content-types live in `deploy.sh`. A release is a version bump followed by a
+dry-run preflight.
 
 **Authorization:** never run the real deploy without explicit user
 confirmation in the current turn. Dry-runs are fine to run autonomously
@@ -263,7 +272,7 @@ SP-07 for why it moved. Consequences:
   resolve `/` on its own the way the website endpoint did. The router
   function also rewrites `/` to `/index.html`, so the result does not
   depend on which one CloudFront applies first.
-- **A missing key now returns 403, not 404.** That is normal for a REST
+- **A missing key returns 403 rather than 404.** That is normal for a REST
   origin with no `s3:ListBucket` grant. It only affects `/public/*`
   paths, because everything else is rewritten to `/index.html` before it
   reaches the origin.
@@ -318,8 +327,7 @@ Publishing is push-to-DEVELOPMENT → publish-to-LIVE
 (`aws cloudfront update-function` / `publish-function`) — edge propagation
 is seconds, with **no** `update-distribution` and no invalidation needed
 (the function runs at viewer-response on every response, cached ones
-included). The `csp-update` skill runs this end to end; `cloudfront/README.md`
-has the exact command snippets.
+included). `cloudfront/README.md` has the exact command snippets.
 
 ## Local development
 
@@ -356,26 +364,14 @@ checks; not part of the app and never deployed.
 
 ## What not to deploy
 
-These files exist in the repo but **must not** end up in S3 / CloudFront:
-- `README.md`, `CONTRIBUTING.md`, `ScratchPad-PRD.md`, `CLAUDE.md`, `AGENTS.md`,
-  `coding-standards.md`, `backlog.md`
-- `deploy.sh`, `.env.local`, `.env.local.example`
-- `cloudfront/` (operator-only AWS policy artifacts)
-- `share-infra/` (operator-only share API Lambda, IAM, and provisioning)
-- `package.json`, `bun.lock`, `biome.json`, `commitlint.config.cjs`,
-  `jsconfig.json`, `config/`, `node_modules/`, `tests/`, `scripts/`,
-  `playwright.config.js` (local-only dev/test tooling)
-- `DESIGN.md`, `PRODUCT.md`, `.impeccable/design.json` (design-system record;
-  `design.json` is the DESIGN.md sidecar and the only tracked file under
-  `.impeccable/`)
-- `docs/` (specs and design notes)
-- `SECURITY-REVIEW.md`, `security-review-evidence.md` (security posture record;
-  gitignored and local-only, because they name live AWS resources. Never
-  commit them to this public repo and never serve them)
-- `.git/`, `.verify/`, `.gitignore`
+The deploy is an allowlist: `deploy.sh` uploads only `public/**` (with
+`--delete`), the six HTML shells (`index.html`, `about.html`, `guide.html`,
+`privacy.html`, `terms.html`, `share.html`), and the root
+`service-worker.js`. Everything else in the repo (docs, specs, tooling,
+`cloudfront/`, `share-infra/`, `.env.local`) stays local. Anything placed
+under `public/` ships, so keep operator and design records out of it, and
+don't widen the upload scope.
 
-The deploy script handles this by uploading only `public/**` (with
-`--delete`) plus the six HTML shells explicitly (`index.html`,
-`about.html`, `guide.html`, `privacy.html`, `terms.html`, `share.html`) and the
-root `service-worker.js`. Don't widen the upload scope without adjusting the
-exclusions.
+`SECURITY-REVIEW.md` and `security-review-evidence.md` are gitignored and
+local-only because they name live AWS resources. Never commit them to this
+public repo and never serve them.

@@ -36,7 +36,7 @@ size thresholds until the ratchets actually reach them.
   the executable form of this promise — tighten, never relax.
 - **Never set `innerHTML`/`outerHTML` to untrusted content.** The sanctioned
   pattern is `DOMPurify.sanitize(raw, { RETURN_DOM_FRAGMENT: true })` +
-  `replaceChildren()` — see `public/js/app.js` `renderMarkdownInto()`. Clear with
+  `replaceChildren()` — see `public/js/markdown.js` `renderMarkdownInto()`. Clear with
   `container.replaceChildren()`, not `innerHTML = ''`. Clone static SVG from a
   `<template>`. External links open in new tabs with `rel="noopener noreferrer"`.
 - **Design (Inkwell "Indigo on Paper" v5): colors via `var(--token)` only** in
@@ -49,13 +49,13 @@ size thresholds until the ratchets actually reach them.
   `tests/design-tokens.spec.js`; full spec at
   `docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md`.
 
-## Commands (use these — not the ones in older notes)
+## Commands
 
 ```sh
 node scripts/dev-server.mjs          # serve locally on 127.0.0.1:8080
 npm test                             # Playwright suite; auto-starts dev-server, 3 browsers
 npm test folders.spec.js             # target one spec
-npm test --headed                   # or: -- --ui, -- --report
+npm run test:headed                 # or: test:ui, test:report
 npm run test:lambda                  # node --test on share-infra/lambda
 npm run check:shell                 # app-shell integrity guard
 npm run check:vendor                # vendored marked/DOMPurify currency
@@ -107,7 +107,7 @@ descriptive filenames. Match existing conventions rather than restyling.
 
 ## Testing
 
-There **is** an automated suite: 49 Playwright specs in `tests/`
+There **is** an automated suite: the Playwright specs in `tests/`
 (`npm test`), plus `node --test` on the share Lambda (`npm run test:lambda`)
 and the `check:shell` / `check:vendor` guards. After any UI change run the
 relevant specs (note CRUD, search, import/export, theme, share flows,
