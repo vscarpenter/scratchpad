@@ -93,8 +93,33 @@ try {
   await waitForServer();
   browser = await chromium.launch();
   const page = await browser.newPage();
+  /** @type {string[]} */
+  const pageLog = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') {
+      pageLog.push(`console.${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on('pageerror', (error) => pageLog.push(`pageerror: ${error.message}`));
   await page.coverage.startJSCoverage({ resetOnNavigation: false });
-  await exerciseCoreWorkflow(page);
+  try {
+    await exerciseCoreWorkflow(page);
+  } catch (error) {
+    // The workflow is deterministic on a developer machine. When CI disagrees,
+    // print what the page saw so the difference is visible in the job log.
+    const snapshot = await page
+      .evaluate(() => ({
+        url: location.href,
+        search: /** @type {HTMLInputElement | null} */ (document.querySelector('#search'))?.value ?? null,
+        summary: document.querySelector('#search-results-summary')?.textContent ?? null,
+        activeElement: document.activeElement?.id || document.activeElement?.tagName || null,
+        list: (document.querySelector('#note-list')?.outerHTML ?? '').slice(0, 4000),
+      }))
+      .catch(() => null);
+    console.error('Coverage workflow failed. Page log:', pageLog.length ? pageLog : '(none)');
+    console.error('Page snapshot:', JSON.stringify(snapshot, null, 2));
+    throw error;
+  }
   const entries = (await page.coverage.stopJSCoverage()).filter(
     (entry) => entry.url.startsWith(`${baseUrl}/public/js/`) && !entry.url.includes('/vendor/'),
   );
