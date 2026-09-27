@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes } = require('./helpers');
+const { gotoApp, seedRawNotes, openSettings } = require('./helpers');
 
 test.describe('local diagnostics', () => {
   test('reports active, archived, trash, revision, draft, and storage health', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('local diagnostics', () => {
       });
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await expect(page.locator('#diagnostic-active-notes')).toHaveText('2');
     await expect(page.locator('#diagnostic-archived-notes')).toHaveText('1');
     await expect(page.locator('#diagnostic-trashed-notes')).toHaveText('1');
@@ -46,7 +46,7 @@ test.describe('local diagnostics', () => {
 test.describe('Your data panel', () => {
   test('shows stat cards and dotted status rows', async ({ page }) => {
     await gotoApp(page);
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await expect(page.locator('#diagnostics-title')).toHaveText('Your data');
     await expect(page.locator('.data-stats > div')).toHaveCount(3);
     const rows = page.locator('.data-status-row');

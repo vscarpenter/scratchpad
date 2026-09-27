@@ -29,6 +29,7 @@
     "public/js/hold-confirm.js",
     "public/js/swipe-row.js",
     "public/js/mobile-view.js",
+    "public/js/settings.js",
     "scripts/quality/**/*.mjs"
   ],
   "exclude": ["node_modules", "public/js/vendor"]

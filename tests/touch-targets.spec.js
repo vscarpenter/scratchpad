@@ -59,7 +59,7 @@ test.describe('accessibility — touch targets', () => {
       ['trash view', page.locator('#trash-view')],
       ['list menu trigger', page.locator('#list-menu-btn')],
       ['about button', page.locator('#open-about')],
-      ['theme toggle', page.locator('#theme-toggle')],
+      ['settings button', page.locator('#open-settings')],
     ];
 
     for (const [name, locator] of listControls) {

@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote, holdToConfirm } = require('./helpers');
+const { gotoApp, createAndSaveNote, holdToConfirm, openSettings } = require('./helpers');
 
 // WebKit routes requests from a service-worker-controlled page around
 // page.route, so the stubbed DELETE /api/share/<id> in the revocation tests
@@ -16,7 +16,7 @@ test.describe('local data erasure', () => {
       localStorage.setItem('scratchpad:backupReminderSnoozedUntil', String(Date.now() + 1000));
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
@@ -43,7 +43,7 @@ test.describe('local data erasure', () => {
 
   test('the erase button unlocks only on an exact ERASE', async ({ page }) => {
     await gotoApp(page);
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     const eraseBtn = page.locator('#confirm-erase-local-data');
     // Disabled on open, and near-misses (case, whitespace) never enable it.
@@ -84,7 +84,7 @@ test.describe('local data erasure', () => {
       }
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
@@ -112,7 +112,7 @@ test.describe('local data erasure', () => {
       });
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
@@ -147,7 +147,7 @@ test.describe('local data erasure', () => {
       });
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();

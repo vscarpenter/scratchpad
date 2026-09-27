@@ -199,6 +199,9 @@
     historyList: $('history-list'),
     aboutDialog: $('about-dialog'),
     openAbout: $('open-about'),
+    openSettings: $('open-settings'),
+    settingsDialog: $('settings-dialog'),
+    themeChoice: $('theme-choice'),
     exportBtn: $('export-btn'),
     exportEncryptedBtn: $('export-encrypted-btn'),
     exportMarkdownBtn: $('export-markdown-btn'),
@@ -4075,18 +4078,6 @@
     return value.toFixed(value >= 10 ? 0 : 1) + ' ' + unit;
   }
 
-  async function storageSummary() {
-    if (!navigator.storage || typeof navigator.storage.estimate !== 'function') return 'Unavailable';
-    try {
-      const estimate = await navigator.storage.estimate();
-      const usage = formatBytes(estimate.usage || 0);
-      const quota = Number.isFinite(estimate.quota) && estimate.quota > 0 ? formatBytes(estimate.quota) : null;
-      return quota ? usage + ' of ' + quota : usage;
-    } catch (e) {
-      return 'Unavailable';
-    }
-  }
-
   async function storageProtectionStatus() {
     if (!navigator.storage || typeof navigator.storage.persisted !== 'function') return 'Unavailable';
     try {
@@ -4123,12 +4114,6 @@
     });
   }
 
-  function offlineCacheStatus() {
-    if (!('serviceWorker' in navigator)) return 'Unavailable';
-    if (navigator.serviceWorker.controller) return 'Ready';
-    return 'Available after reload';
-  }
-
   async function renderDiagnostics() {
     if (!els.diagnosticActiveNotes) return;
     els.diagnosticActiveNotes.textContent = String(activeNotes().length);
@@ -4139,7 +4124,7 @@
       const [revisions, drafts, storage] = await Promise.all([
         DB.getAllRevisions(),
         DB.getAllDrafts(),
-        storageSummary(),
+        window.ScratchpadSettings.storageSummary(formatBytes),
       ]);
       els.diagnosticRevisions.textContent = String(revisions.length);
       els.diagnosticDrafts.textContent = String(drafts.length);
@@ -4151,7 +4136,7 @@
     }
     await renderStorageProtection();
     els.diagnosticLastBackup.textContent = formatBackupStatus(lastBackupAt());
-    els.diagnosticOfflineCache.textContent = offlineCacheStatus();
+    els.diagnosticOfflineCache.textContent = window.ScratchpadSettings.offlineCacheStatus();
     syncDataStatusRows();
   }
 
@@ -4163,8 +4148,15 @@
   }
 
   function openAboutDialog() {
-    renderDiagnostics();
     openDialog(els.aboutDialog);
+  }
+
+  let syncThemeChoice = () => {};
+
+  function openSettingsDialog() {
+    syncThemeChoice();
+    renderDiagnostics();
+    openDialog(els.settingsDialog);
   }
 
   // -------- Share --------
@@ -4494,6 +4486,13 @@
         meta: 'Create a blank note',
         keywords: 'create write',
         run: createNote,
+      },
+      {
+        id: 'open-settings',
+        label: 'Open settings',
+        meta: 'Theme, your data, linked folder',
+        keywords: 'settings preferences theme dark light backup storage folder erase',
+        run: openSettingsDialog,
       },
       {
         id: 'today-note',
@@ -5876,6 +5875,8 @@
     });
 
     els.openAbout.addEventListener('click', openAboutDialog);
+    els.openSettings.addEventListener('click', openSettingsDialog);
+    syncThemeChoice = window.ScratchpadSettings.bindThemeChoice(els.themeChoice);
     els.exportBtn.addEventListener('click', () => { exportAll(); });
     els.exportEncryptedBtn.addEventListener('click', openEncryptedExportDialog);
     els.exportMarkdownBtn.addEventListener('click', () => { exportMarkdownZip(); });

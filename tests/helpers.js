@@ -181,6 +181,11 @@ async function seedShareRow(page, noteId, shareId) {
 
 // Presses and holds a hold-to-confirm button past its 1,000 ms threshold, the
 // way a person would. A plain click on these buttons must not confirm.
+async function openSettings(page) {
+  await page.locator('#open-settings').click();
+  await expect(page.locator('#settings-dialog')).toHaveAttribute('open', '');
+}
+
 async function holdToConfirm(page, selector, ms = 1150) {
   await page.locator(selector).hover();
   await page.mouse.down();
@@ -205,4 +210,5 @@ module.exports = {
   stubRevoke,
   seedShareRow,
   holdToConfirm,
+  openSettings,
 };
