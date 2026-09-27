@@ -23,6 +23,7 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
+      id-token: write # the action trades a GitHub OIDC token for its App token
 
     steps:
       - name: Checkout repository

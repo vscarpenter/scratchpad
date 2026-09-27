@@ -29,6 +29,7 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
+      id-token: write # the action trades a GitHub OIDC token for its App token
       actions: read # Required for Claude to read CI results on PRs
     steps:
       # On pull_request_review / pull_request_review_comment events this checks
