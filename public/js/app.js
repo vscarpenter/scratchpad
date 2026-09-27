@@ -550,17 +550,6 @@
     return d.toLocaleDateString([], { month: 'short' }) + " '" + String(d.getFullYear()).slice(-2);
   }
 
-  function wordCount(text) {
-    if (!text) return 0;
-    return text.trim().split(/\s+/).filter(Boolean).length;
-  }
-
-  function formatReadTime(words) {
-    const seconds = Math.ceil((words / 200) * 60);
-    if (seconds < 60) return seconds + 's';
-    return Math.ceil(seconds / 60) + 'm';
-  }
-
   function lifecycleTime(note) {
     if (isTrashed(note)) return note.deletedAt;
     if (isArchived(note)) return note.archivedAt;
@@ -2120,9 +2109,10 @@
     els.titleInput.placeholder = deriveTitle({ ...note, title: '' }) || 'Untitled note';
 
     const showInput = state.editing && !trashed;
+    const enteringEdit = showInput && (!lastEditorMode || noteChanged);
     els.editorCard.classList.toggle('is-editing', showInput);
     els.formatToolbar.hidden = !showInput;
-    if (showInput && (!lastEditorMode || noteChanged)) {
+    if (enteringEdit) {
       els.editorCard.scrollTop = 0;
     }
     lastEditorMode = showInput;
@@ -2161,6 +2151,11 @@
       els.rendered.hidden = true;
       if (!preserveDraftInputs && document.activeElement !== els.editor) {
         els.editor.value = note.body || '';
+      }
+      if (enteringEdit) {
+        // Start where the reader was: the top, not where the caret landed.
+        els.editor.setSelectionRange(0, 0);
+        els.editor.scrollTop = 0;
       }
       els.editBtn.hidden = true;
       els.saveBtn.hidden = false;
@@ -2220,7 +2215,7 @@
     const trashed = isTrashed(note);
     const archived = isArchived(note);
     const pinned = note.pinned && !trashed && !archived;
-    const readTime = formatReadTime(wordCount(note.body || '')) + ' read';
+    const readTime = Markdown.formatReadTime(Markdown.wordCount(note.body || '')) + ' read';
     let label;
     if (trashed) label = 'Note · trashed · ' + readTime;
     else if (archived) label = folderDisplayName(noteFolderId(note)) + ' · archived · ' + readTime;
@@ -2231,7 +2226,7 @@
   }
 
   function renderByline(note) {
-    const words = wordCount(note.body || '');
+    const words = Markdown.wordCount(note.body || '');
     const created = formatBylineDate(note.createdAt);
     const updated = formatBylineDate(note.updatedAt);
     const wordLabel = words + ' word' + (words === 1 ? '' : 's');
@@ -2240,13 +2235,13 @@
         'Archived ' + formatBylineDate(note.archivedAt),
         'Last edited ' + updated,
         wordLabel,
-        formatReadTime(words) + ' read',
+        Markdown.formatReadTime(words) + ' read',
       ]
       : [
         'Created ' + created,
         'Updated ' + updated,
         wordLabel,
-        formatReadTime(words) + ' read',
+        Markdown.formatReadTime(words) + ' read',
       ];
     els.noteByline.textContent = parts.join(' · ');
   }
@@ -2678,6 +2673,15 @@
     renderAll();
     focusMobilePane();
     await maybePromptDraftForSelected();
+  }
+
+  function enterEditMode() {
+    const note = getNote(state.selectedId);
+    if (!note || isTrashed(note) || state.editing) return;
+    state.editing = true;
+    state.dirty = false;
+    renderEditor();
+    window.ScratchpadFind.editorFocus(els.editor);
   }
 
   async function saveCurrent() {
@@ -5757,14 +5761,7 @@
 
     els.pinToggle.addEventListener('click', togglePin);
 
-    els.editBtn.addEventListener('click', () => {
-      const note = getNote(state.selectedId);
-      if (!note || isTrashed(note)) return;
-      state.editing = true;
-      state.dirty = false;
-      renderEditor();
-      window.ScratchpadFind.editorFocus(els.editor);
-    });
+    els.editBtn.addEventListener('click', enterEditMode);
     els.saveBtn.addEventListener('click', saveCurrent);
     els.historyBtn.addEventListener('click', openHistoryDialog);
 
@@ -5988,6 +5985,13 @@
     if (meta && (e.key === 'n' || e.key === 'N')) {
       e.preventDefault();
       createNote();
+      return;
+    }
+
+    if (meta && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
+      if (document.querySelector('dialog[open]')) return;
+      e.preventDefault();
+      enterEditMode();
       return;
     }
 
