@@ -2423,7 +2423,7 @@
     els.chronicleMonth.textContent = today.toLocaleDateString([], { month: 'long' });
     els.chronicleListDate.textContent = contextDate.toLocaleDateString([], {
       weekday: 'long',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
     els.editorDateNumber.textContent = String(contextDate.getDate());
