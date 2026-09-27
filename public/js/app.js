@@ -281,6 +281,12 @@
     toastRegion: $('toast-region'),
   };
 
+  // Narrow-screen pane switching lives in public/js/mobile-view.js.
+  const MobileView = window.ScratchpadMobileView;
+  const isNarrow = () => MobileView.isNarrow();
+  const syncMobileView = () => MobileView.sync(els.shell, state);
+  const focusMobilePane = () => MobileView.focusPane(els, state);
+
   // mailto: URLs above ~2000 chars get truncated by many mail clients;
   // measure the encoded body since newlines and punctuation balloon when
   // percent-encoded.
@@ -2652,6 +2658,7 @@
     if (state.selectedId === id && !state.editing) {
       state.mobileView = 'editor';
       syncMobileView();
+      focusMobilePane();
       return;
     }
     if (state.editing && state.dirty) {
@@ -2664,6 +2671,7 @@
     state.dirty = false;
     state.mobileView = 'editor';
     renderAll();
+    focusMobilePane();
     await maybePromptDraftForSelected();
   }
 
@@ -5581,20 +5589,6 @@
     });
   }
 
-  // -------- Mobile view sync --------
-  function isNarrow() {
-    return window.matchMedia('(max-width: 767px)').matches;
-  }
-
-  function syncMobileView() {
-    if (!isNarrow()) {
-      els.shell.classList.remove('mobile-list', 'mobile-editor');
-      return;
-    }
-    els.shell.classList.toggle('mobile-editor', state.mobileView === 'editor' && !!state.selectedId);
-    els.shell.classList.toggle('mobile-list', state.mobileView === 'list' || !state.selectedId);
-  }
-
   // -------- PWA --------
   function showWaitingUpdate(worker) {
     state.waitingWorker = worker ||
@@ -5832,6 +5826,7 @@
       }
       state.mobileView = 'list';
       syncMobileView();
+      focusMobilePane();
     });
 
     els.tagBar.addEventListener('mousedown', (e) => {
