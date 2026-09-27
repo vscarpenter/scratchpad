@@ -489,7 +489,7 @@
       <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
     </div>
     <div class="dialog-body">
-      <p>This removes the note, its draft, and its revision history from this browser.</p>
+      <p id="permanent-delete-copy">This removes the note, its draft, and its revision history from this browser.</p>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
@@ -766,6 +766,18 @@
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
       <button id="confirm-erase-local-data" class="btn btn-danger" type="button" disabled>Erase everything</button>
+    </div>
+  </dialog>
+
+  <dialog id="erase-shares-dialog" class="dialog" aria-labelledby="erase-shares-title">
+    <div class="dialog-head">
+      <h2 id="erase-shares-title">Some share links stay live</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body"><p id="erase-shares-copy"></p></div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button id="confirm-erase-anyway" class="btn btn-danger" type="button" data-hold-confirm>Hold to erase anyway</button>
     </div>
   </dialog>
 

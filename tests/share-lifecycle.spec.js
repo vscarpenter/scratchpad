@@ -71,8 +71,8 @@ test('bulk delete forever revokes before the rows are destroyed', async ({ page 
   await page.locator('#trash-view').click();
   await enterBulkMode(page);
   await page.locator('[data-id="trashed-shared"] input[type="checkbox"]').check();
-  page.on('dialog', (dialog) => dialog.accept());
   await page.locator('#bulk-delete-forever').click();
+  await holdToConfirm(page, '#confirm-permanent-delete');
   await expect(page.locator('.note-row')).toHaveCount(0);
 
   expect(revokes).toHaveLength(1);

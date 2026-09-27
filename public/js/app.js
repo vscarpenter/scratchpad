@@ -185,6 +185,8 @@
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
     confirmPermanentDelete: $('confirm-permanent-delete'),
+    permanentDeleteTitle: $('permanent-delete-dialog-title'),
+    permanentDeleteCopy: $('permanent-delete-copy'),
     emptyTrashDialog: $('empty-trash-dialog'),
     confirmEmptyTrash: $('confirm-empty-trash'),
     discardDialog: $('discard-dialog'),
@@ -237,6 +239,9 @@
     eraseLocalDataDialog: $('erase-local-data-dialog'),
     eraseConfirmation: $('erase-confirmation'),
     confirmEraseLocalData: $('confirm-erase-local-data'),
+    eraseSharesDialog: $('erase-shares-dialog'),
+    eraseSharesCopy: $('erase-shares-copy'),
+    confirmEraseAnyway: $('confirm-erase-anyway'),
     pwaUpdateNotice: $('pwa-update-notice'),
     pwaUpdateLater: $('pwa-update-later'),
     pwaUpdateReload: $('pwa-update-reload'),
@@ -3082,8 +3087,7 @@
   async function bulkDeleteForever() {
     const selected = selectedBulkNotes().filter(isTrashed);
     if (!selected.length) return;
-    const ok = window.confirm('Permanently delete ' + selected.length + ' selected note' + (selected.length === 1 ? '' : 's') + '?');
-    if (!ok) return;
+    if (!(await confirmPermanentDelete(selected.length))) return;
     return withBusy('bulk-delete-forever', [], 'Permanent delete failed. Selected notes are still in Trash.', async () => {
       // Deleting forever destroys each share row and with it the only copy of
       // the revoke token, so the revoke must come first.
@@ -3938,13 +3942,13 @@
         }
       }
       if (stillLive) {
-        const what = stillLive === 1 ? 'One share link' : stillLive + ' share links';
-        const proceed = window.confirm(
+        const what = stillLive === 1 ? '1 share link' : stillLive + ' share links';
+        els.eraseSharesCopy.textContent =
           what + ' could not be revoked and will stay live until expiry. ' +
           'Erasing local data destroys the only copy of the revoke tokens, so ' +
-          'the links can never be taken down early. Erase anyway?'
-        );
-        if (!proceed) return;
+          'the links can never be taken down early.';
+        closeDialog(els.eraseLocalDataDialog);
+        if (!(await confirmWith(els.eraseSharesDialog, els.confirmEraseAnyway))) return;
       }
       await DB.clearAllStores();
       const appKeys = [];
@@ -3961,36 +3965,24 @@
     });
   }
 
+  function confirmWith(dialog, button) {
+    return window.ScratchpadDialogs.confirmDialog(dialog, button, openDialog, closeDialog);
+  }
+
   function confirmDiscard() {
-    return new Promise((resolve) => {
-      openDialog(els.discardDialog);
-      let settled = false;
-      const dismissButtons = Array.from(els.discardDialog.querySelectorAll('[data-dialog-close]'));
-      const cleanup = () => {
-        els.confirmDiscard.removeEventListener('click', onConfirm);
-        els.discardDialog.removeEventListener('cancel', onDismiss);
-        els.discardDialog.removeEventListener('close', onClose);
-        for (const button of dismissButtons) button.removeEventListener('click', onDismiss);
-      };
-      const finish = (discard, close) => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        if (close) closeDialog(els.discardDialog);
-        resolve(discard);
-      };
-      const onConfirm = () => finish(true, true);
-      const onDismiss = () => finish(false, false);
-      const onClose = () => {
-        // A native close event is queued. If the dialog has already reopened,
-        // this event belongs to the previous confirmation and must be ignored.
-        if (!els.discardDialog.open) finish(false, false);
-      };
-      els.confirmDiscard.addEventListener('click', onConfirm);
-      els.discardDialog.addEventListener('cancel', onDismiss);
-      els.discardDialog.addEventListener('close', onClose);
-      for (const button of dismissButtons) button.addEventListener('click', onDismiss);
-    });
+    return confirmWith(els.discardDialog, els.confirmDiscard);
+  }
+
+  // One dialog serves the single-note and bulk paths; the copy names the count.
+  function confirmPermanentDelete(count) {
+    const many = count !== 1;
+    els.permanentDeleteTitle.textContent = many
+      ? 'Permanently delete ' + count + ' notes?'
+      : 'Permanently delete this note?';
+    els.permanentDeleteCopy.textContent = many
+      ? 'This removes ' + count + ' notes, their drafts, and their revision history from this browser.'
+      : 'This removes the note, its draft, and its revision history from this browser.';
+    return confirmWith(els.permanentDeleteDialog, els.confirmPermanentDelete);
   }
 
   function readStoredTime(key) {
@@ -5806,10 +5798,8 @@
       await moveCurrentToTrash();
     });
     els.restoreBtn.addEventListener('click', restoreCurrentFromTrash);
-    els.permanentDeleteBtn.addEventListener('click', () => openDialog(els.permanentDeleteDialog));
-    els.confirmPermanentDelete.addEventListener('click', async () => {
-      closeDialog(els.permanentDeleteDialog);
-      await permanentlyDeleteCurrent();
+    els.permanentDeleteBtn.addEventListener('click', async () => {
+      if (await confirmPermanentDelete(1)) await permanentlyDeleteCurrent();
     });
     els.confirmEmptyTrash.addEventListener('click', async () => {
       closeDialog(els.emptyTrashDialog);
