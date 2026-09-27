@@ -61,16 +61,11 @@ body:not(.page-privacy) {
     padding-inline: 14px;
   }
   .status-chip { min-height: 44px; }
-  /* The floating format pill scrolls sideways instead of wrapping. */
   .fmt-chip {
     min-width: 44px;
     min-height: 44px;
   }
   .fmt-chip.fmt-text { padding: 0 12px; }
-  .editor-format {
-    max-width: 100%;
-    overflow-x: auto;
-  }
   .tag-pill {
     min-height: 44px;
     padding: 0 4px 0 12px;
@@ -1579,6 +1574,17 @@ body:not(.page-privacy) .theme-toggle {
   box-shadow: var(--shadow-pill-float);
 }
 .editor-format[hidden] { display: none; }
+/* On a phone the pill wraps to a second row and sits above the field, so
+   scrolled text can never slide under it. */
+@media (pointer: coarse), (max-width: 640px) {
+  .editor-format {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 8px;
+  }
+}
 .fmt-chip {
   display: inline-flex;
   align-items: center;
@@ -1882,6 +1888,12 @@ body:not(.page-privacy) .theme-toggle {
      measure and line breaks match the rendered view exactly. */
   max-width: calc(var(--measure-doc) + 46px);
   box-shadow: var(--textarea-inset-shadow);
+}
+@media (pointer: coarse), (max-width: 640px) {
+  /* No pill overlap on a phone, so no space reserved for it. */
+  .editor-card.is-editing .note-editor {
+    padding-top: 16px;
+  }
 }
 /* The inset surface keeps its shadow; focus adds the ring outside it. */
 .editor-card.is-editing .note-editor:focus-visible {
