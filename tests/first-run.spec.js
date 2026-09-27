@@ -20,7 +20,8 @@ test.describe('first run', () => {
       const notes = await window.ScratchpadDB.getAll();
       const folders = await window.ScratchpadDB.getAllFolders();
       const d = new Date();
-      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const key =
+        d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       const daily = notes.find((n) => n.dailyDate === key);
       return {
         count: notes.length,
@@ -84,17 +85,19 @@ test.describe('first run', () => {
     await expect(page.locator('#app-shell')).toBeVisible();
     await page.waitForFunction(() => !!window.ScratchpadDB);
     await page.evaluate(async () => {
-      await window.ScratchpadDB.bulkPut([{
-        id: 'existing',
-        title: 'Existing note',
-        body: 'Already here.',
-        tags: [],
-        pinned: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        deletedAt: null,
-        lastDraftAt: null,
-      }]);
+      await window.ScratchpadDB.bulkPut([
+        {
+          id: 'existing',
+          title: 'Existing note',
+          body: 'Already here.',
+          tags: [],
+          pinned: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          deletedAt: null,
+          lastDraftAt: null,
+        },
+      ]);
     });
 
     await page.reload();
@@ -105,7 +108,9 @@ test.describe('first run', () => {
   });
 
   test('does not seed a returning visitor who has zero notes', async ({ page }) => {
-    await page.addInitScript(() => { localStorage.setItem('scratchpad-visited', '1'); });
+    await page.addInitScript(() => {
+      localStorage.setItem('scratchpad-visited', '1');
+    });
     await page.goto('/');
     await expect(page.locator('#app-shell')).toBeVisible();
     await page.waitForFunction(() => !!window.ScratchpadDB);
@@ -113,5 +118,27 @@ test.describe('first run', () => {
     expect(count).toBe(0);
     // This visitor has used Scratchpad before; the empty state is theirs, not a newcomer's.
     await expect(page.locator('#empty-no-notes')).toBeVisible();
+  });
+
+  test('the welcome note names the shortcut that opens the command palette', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.ScratchpadDB);
+    await expect(page.locator('#note-title-display')).toHaveText('Welcome to Scratchpad');
+
+    const line = page.locator('#note-rendered li', { hasText: 'every command' });
+    await expect(line).toContainText('Cmd/Ctrl + Shift + P');
+
+    await page.keyboard.press('ControlOrMeta+Shift+P');
+    await expect(page.locator('#command-palette-dialog')).toHaveAttribute('open', '');
+  });
+
+  test('the welcome note says a phantom link creates the note on click', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.ScratchpadDB);
+    await expect(page.locator('#note-title-display')).toHaveText('Welcome to Scratchpad');
+
+    const rendered = page.locator('#note-rendered');
+    await expect(rendered).not.toContainText('offers to create it');
+    await expect(rendered).toContainText('creates it');
   });
 });
