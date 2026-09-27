@@ -945,6 +945,11 @@ body:not(.page-privacy) .theme-toggle {
 }
 .filter-x:hover { background: var(--accent-tint); }
 
+/* Three actions on a phone: let the footer wrap instead of clipping. */
+#folder-delete-dialog .dialog-foot {
+  flex-wrap: wrap;
+}
+
 /* ---------- Note list ---------- */
 .note-list {
   flex: 1;

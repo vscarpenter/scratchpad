@@ -1,3 +1,37 @@
+# High items from the 2026-09-26 usability review
+
+Tier: Non-trivial (six coordinated changes, a new dialog, a new module, and
+test rewrites). Spec: `tasks/spec.md`. Branch: `feat/high-review-items`,
+stacked on `fix/critical-review-items` (PR #14). Nothing pushed.
+
+## Plan
+
+- [ ] 1. Folder-delete dialog: wrap, primary keep, shorter labels. Red in
+      `tests/folder-delete-dialog.spec.js`.
+- [ ] 2. Formatting toolbar on phones: wrap above the field. Red in
+      `tests/format-toolbar-mobile.spec.js`.
+- [ ] 3. Edit mode: caret at top, ⌘E, shortcut lists. Red in
+      `tests/edit-mode-entry.spec.js`.
+- [ ] 4. Confirm boxes: `confirmDialog` helper in `dialogs.js`, bulk delete
+      through the permanent-delete dialog, erase-shares dialog. Red in
+      `bulk-actions.spec.js` and `data-erasure.spec.js`.
+- [ ] 5. Sidebar: one-line heading, Today row, tighter gap. Red in
+      `tests/sidebar-chrome.spec.js`.
+- [ ] 6. Settings dialog, `settings.js`, gear button, palette command, spec
+      migrations. Red in `tests/settings.spec.js` and `tests/theme.spec.js`.
+- [ ] 7. Gates: `bun run verify`, full three-browser suite, CSP hash check,
+      light and dark screenshots, app.js ceiling lowered to the final count.
+- [ ] 8. Push and PR against `fix/critical-review-items`.
+
+## Resuming From Here
+
+- Done: design approved, spec written.
+- Next: item 1, red first.
+- Blockers: none.
+- Assumptions: see the spec's Assumptions section.
+
+---
+
 # Critical fixes from the 2026-09-26 usability review
 
 Tier: Standard (three files, no new contract). Branch: `fix/critical-review-items`.

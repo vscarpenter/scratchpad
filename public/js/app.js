@@ -1082,7 +1082,7 @@
         '. Keep them in Notes, or move them to Trash (recoverable for 30 days)?'
       : '"' + folder.name + '" is empty. Delete it?';
     els.folderDeleteTrash.hidden = count === 0;
-    els.folderDeleteKeep.textContent = count ? 'Keep notes (move to Notes)' : 'Delete folder';
+    els.folderDeleteKeep.textContent = count ? 'Keep the notes' : 'Delete folder';
     openDialog(els.folderDeleteDialog);
   }
 
