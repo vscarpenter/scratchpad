@@ -6,29 +6,34 @@ stacked on `fix/critical-review-items` (PR #14). Nothing pushed.
 
 ## Plan
 
-- [ ] 1. Folder-delete dialog: wrap, primary keep, shorter labels. Red in
-      `tests/folder-delete-dialog.spec.js`.
-- [ ] 2. Formatting toolbar on phones: wrap above the field. Red in
-      `tests/format-toolbar-mobile.spec.js`.
-- [ ] 3. Edit mode: caret at top, ⌘E, shortcut lists. Red in
-      `tests/edit-mode-entry.spec.js`.
-- [ ] 4. Confirm boxes: `confirmDialog` helper in `dialogs.js`, bulk delete
-      through the permanent-delete dialog, erase-shares dialog. Red in
-      `bulk-actions.spec.js` and `data-erasure.spec.js`.
-- [ ] 5. Sidebar: one-line heading, Today row, tighter gap. Red in
-      `tests/sidebar-chrome.spec.js`.
-- [ ] 6. Settings dialog, `settings.js`, gear button, palette command, spec
-      migrations. Red in `tests/settings.spec.js` and `tests/theme.spec.js`.
-- [ ] 7. Gates: `bun run verify`, full three-browser suite, CSP hash check,
-      light and dark screenshots, app.js ceiling lowered to the final count.
+- [x] 1. Folder-delete dialog: wrap, primary keep, shorter labels (225cb12).
+- [x] 2. Formatting toolbar on phones: wraps above the field (2e691c1).
+- [x] 3. Confirm boxes: `confirmDialog` in `dialogs.js`, bulk delete through
+      the permanent-delete dialog, erase-shares dialog (a36426d). Ran before
+      item 4 because its extraction pays for the lines item 4 adds.
+- [x] 4. Edit mode: caret at top, ⌘E, shortcut lists; read-time helpers moved
+      to `markdown.js` (ba6ba70).
+- [x] 5. Sidebar: one-line heading, Today row, tighter gaps (974a05c); month
+      shortened so the heading fits (9a0bc99). First row 412 to 317px on
+      desktop, 427 to 350px on a phone.
+- [x] 6. Settings dialog, `settings.js`, gear button, palette command, spec
+      migrations (5ddd3f1). CSP hashes unchanged.
+- [x] 7. Gates: `bun run verify` green (coverage 39.54%, audit clean), full
+      suite 1369 passed, 28 skipped, 0 failed on three browsers; light and
+      dark screenshots checked; app.js ceiling lowered to 6163.
 - [ ] 8. Push and PR against `fix/critical-review-items`.
 
 ## Resuming From Here
 
-- Done: design approved, spec written.
-- Next: item 1, red first.
+- Done: all six high items, committed on `feat/high-review-items`, every gate
+  green.
+- Next: the PR. After it merges, the medium items from the review are open;
+  the folder action menu opening past a phone viewport is a new medium
+  finding from this run.
 - Blockers: none.
-- Assumptions: see the spec's Assumptions section.
+- Assumptions: see the spec's Assumptions section. The phone first-row target
+  landed at 350px, 3px short of the 80px goal, by design choice not to touch
+  the touch-target rows.
 
 ---
 
