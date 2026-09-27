@@ -1827,6 +1827,12 @@ body:not(.page-privacy) .theme-toggle {
   background: transparent;
   box-shadow: none;
 }
+/* Keyboard focus reads as an accent underline with the shared soft ring
+   beneath it, so the title matches the search box and the body field. */
+.note-doc-title-input:focus-visible {
+  border-bottom-color: var(--accent);
+  box-shadow: 0 3px 0 0 var(--accent-focus-ring);
+}
 
 .editor-doc-head .byline {
   margin: 0;
@@ -1854,6 +1860,7 @@ body:not(.page-privacy) .theme-toggle {
   color: var(--text-body);
 }
 .note-editor:focus { outline: 0; box-shadow: none; }
+.note-editor:focus-visible { box-shadow: 0 0 0 3px var(--accent-focus-ring); }
 
 /* Edit mode: the textarea gains the inset glass writing surface. */
 .editor-card.is-editing .note-editor {
@@ -1870,6 +1877,11 @@ body:not(.page-privacy) .theme-toggle {
      measure and line breaks match the rendered view exactly. */
   max-width: calc(var(--measure-doc) + 46px);
   box-shadow: var(--textarea-inset-shadow);
+}
+/* The inset surface keeps its shadow; focus adds the ring outside it. */
+.editor-card.is-editing .note-editor:focus-visible {
+  border-color: var(--accent);
+  box-shadow: var(--textarea-inset-shadow), 0 0 0 3px var(--accent-focus-ring);
 }
 
 /* ---------- Empty editor canvas (#7) ---------- */

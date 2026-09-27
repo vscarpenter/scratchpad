@@ -44,4 +44,31 @@ test.describe('accessibility — interactive semantics', () => {
     await expect(row.getByRole('button', { name: /tag archive/i })).toHaveCount(0);
     await expect(row.locator('.note-row-tag.is-static')).toHaveText('archive');
   });
+
+  test('the title input and body textarea show a visible focus indicator while editing', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'focus-alpha', title: 'Focus alpha', body: 'Focus body.' }]);
+
+    await page.locator('[data-id="focus-alpha"]').click();
+    await page.locator('#edit-btn').click();
+
+    const focusStyle = (el) => {
+      const s = getComputedStyle(el);
+      return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow].join('|');
+    };
+    const hasIndicator = (el) => {
+      const s = getComputedStyle(el);
+      const outlined = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
+      return outlined || s.boxShadow !== 'none';
+    };
+
+    for (const id of ['#note-editor', '#note-title-input']) {
+      const field = page.locator(id);
+      await field.blur();
+      const resting = await field.evaluate(focusStyle);
+      await field.focus();
+      await expect(field).toBeFocused();
+      expect(await field.evaluate(focusStyle), id + ' focus must change its appearance').not.toBe(resting);
+      expect(await field.evaluate(hasIndicator), id + ' needs an outline or ring').toBe(true);
+    }
+  });
 });

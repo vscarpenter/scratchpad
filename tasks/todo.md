@@ -1,3 +1,37 @@
+# Critical fixes from the 2026-09-26 usability review
+
+Tier: Standard (three files, no new contract). Branch: `fix/critical-review-items`.
+Source: the review in the 2026-09-26 session (welcome copy, mobile focus loss,
+invisible focus on the editing fields).
+
+## Plan
+
+- [x] 1. Red: five tests across `tests/first-run.spec.js`,
+      `tests/mobile-navigation.spec.js`, `tests/accessibility-semantics.spec.js`.
+- [x] 2. Green: welcome copy in `public/js/seed.js`; pane-switch focus handoff
+      extracted to `public/js/mobile-view.js` (wired in `index.html`, the
+      service worker precache, and `jsconfig.json`) plus `tabindex="-1"` on the
+      title heading; `:focus-visible` rules for the title input and body
+      textarea in `app.css`. The app.js ceiling drops from 6173 to 6168.
+- [x] 3. Gates: `bun run verify` green (coverage 39.35%, audit clean); full
+      suite 1334 passed, 28 skipped, 0 failed on three browsers.
+- [x] 4. Commits 1cde6ba (seed copy), 060e65b (mobile focus), 688d3cb (focus
+      rings) on `fix/critical-review-items`. Nothing pushed.
+
+## Resuming From Here
+
+- Done: all three critical items, committed on the branch, suite and verify
+  green.
+- Next: push and open a PR when Vinny says so. The high and medium items from
+  the 2026-09-26 review are still open; the sidebar height and the edit-mode
+  caret position are the next two by impact.
+- Blockers: none.
+- Assumptions: the palette shortcut stays ⌘⇧P and the copy changes to match,
+  rather than moving the palette to ⌘K. Focus moves on every narrow-screen
+  pane switch, not only when it would be lost.
+
+---
+
 # Interaction polish: four React Bits ports (2026-09-20)
 
 Tier: Non-trivial (three new modules, shared toast code, a new touch gesture).
