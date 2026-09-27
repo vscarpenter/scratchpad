@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote } = require('./helpers');
+const { gotoApp, createAndSaveNote, holdToConfirm, openSettings } = require('./helpers');
 
 // WebKit routes requests from a service-worker-controlled page around
 // page.route, so the stubbed DELETE /api/share/<id> in the revocation tests
@@ -16,7 +16,7 @@ test.describe('local data erasure', () => {
       localStorage.setItem('scratchpad:backupReminderSnoozedUntil', String(Date.now() + 1000));
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
@@ -43,7 +43,7 @@ test.describe('local data erasure', () => {
 
   test('the erase button unlocks only on an exact ERASE', async ({ page }) => {
     await gotoApp(page);
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     const eraseBtn = page.locator('#confirm-erase-local-data');
     // Disabled on open, and near-misses (case, whitespace) never enable it.
@@ -84,7 +84,7 @@ test.describe('local data erasure', () => {
       }
     });
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
@@ -112,22 +112,49 @@ test.describe('local data erasure', () => {
       });
     });
 
-    const dialogs = [];
-    page.on('dialog', (dialog) => {
-      dialogs.push(dialog.message());
-      dialog.dismiss();
-    });
-
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#erase-local-data-btn').click();
     await page.locator('#erase-confirmation').fill('ERASE');
     await page.locator('#confirm-erase-local-data').click();
 
-    // Declining the warning aborts the erase: no redirect, tokens intact.
-    await expect.poll(() => dialogs.length).toBe(1);
-    expect(dialogs[0]).toContain('could not be revoked');
+    // The warning is a dialog with a hold button. Cancel aborts the erase:
+    // no redirect, tokens intact.
+    const warning = page.locator('#erase-shares-dialog');
+    await expect(warning).toBeVisible();
+    await expect(warning).toContainText('1 share link');
+    await warning.locator('.dialog-foot [data-dialog-close]').click();
+    await expect(warning).toBeHidden();
     await expect(page).not.toHaveURL(/about\.html/);
     expect(await page.evaluate(() => window.ScratchpadDB.getAllShares())).toHaveLength(1);
+  });
+
+  test('a failed revoke still erases after a hold on "erase anyway"', async ({ page }) => {
+    await page.route('**/api/share/*', (routeCall) => {
+      if (routeCall.request().method() !== 'DELETE') return routeCall.continue();
+      routeCall.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+
+    await gotoApp(page);
+    await page.evaluate(async () => {
+      await window.ScratchpadDB.putShare({
+        id: 'ShareAaaaaa2',
+        noteId: 'note-2',
+        key: 'k'.repeat(43),
+        revokeToken: 'revoke-token-y',
+        sharedAt: Date.now(),
+        expiresAt: Date.now() + 7 * 86400000,
+        titleAtShare: 'Shared',
+      });
+    });
+
+    await openSettings(page);
+    await page.locator('#erase-local-data-btn').click();
+    await page.locator('#erase-confirmation').fill('ERASE');
+    await page.locator('#confirm-erase-local-data').click();
+
+    await expect(page.locator('#erase-shares-dialog')).toBeVisible();
+    await holdToConfirm(page, '#confirm-erase-anyway');
+    await expect(page).toHaveURL(/about\.html/);
   });
 
   test('visiting about.html normally does not erase local preferences', async ({ page }) => {

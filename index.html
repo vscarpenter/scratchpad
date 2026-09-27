@@ -75,11 +75,8 @@
               </p>
             </div>
             <div class="brand-actions">
-              <button id="theme-toggle" class="btn btn-ghost btn-sm theme-toggle" type="button" data-theme-icon="auto" aria-label="Toggle theme" title="Toggle theme">
-                <svg class="theme-icon theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"/></svg>
-                <svg class="theme-icon theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-                <svg class="theme-icon theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                <span id="theme-label" class="visually-hidden">auto</span>
+              <button id="open-settings" class="btn btn-ghost" type="button" aria-label="Settings" title="Settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
               </button>
               <button id="open-about" class="btn btn-ghost" type="button" aria-label="About Scratchpad" title="About Scratchpad">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
@@ -122,7 +119,7 @@
 
         <button id="today-note" class="chronicle-daily-card" type="button" aria-label="Open today's daily note">
           <span class="chronicle-daily-title">Today’s note</span>
-          <span class="chronicle-daily-copy">Morning thoughts, decisions, and loose ends in one local page.</span>
+          <svg class="chronicle-daily-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
         </button>
 
         <div class="sidebar-view-switch" aria-label="Note views">
@@ -464,8 +461,8 @@
     <div class="dialog-body"><p id="folder-delete-copy"></p></div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
-      <button id="folder-delete-keep" class="btn btn-secondary" type="button">Keep notes (move to Notes)</button>
-      <button id="folder-delete-trash" class="btn btn-danger" type="button">Move notes to Trash</button>
+      <button id="folder-delete-keep" class="btn btn-primary" type="button">Keep the notes</button>
+      <button id="folder-delete-trash" class="btn btn-danger" type="button">Move to Trash</button>
     </div>
   </dialog>
 
@@ -489,7 +486,7 @@
       <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
     </div>
     <div class="dialog-body">
-      <p>This removes the note, its draft, and its revision history from this browser.</p>
+      <p id="permanent-delete-copy">This removes the note, its draft, and its revision history from this browser.</p>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
@@ -525,32 +522,27 @@
     </div>
   </dialog>
 
-  <dialog id="about-dialog" class="dialog about-dialog" aria-labelledby="about-dialog-title">
+  <dialog id="settings-dialog" class="dialog settings-dialog" aria-labelledby="settings-dialog-title">
     <div class="dialog-head">
-      <h2 id="about-dialog-title">About Scratchpad</h2>
+      <h2 id="settings-dialog-title">Settings</h2>
       <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
     </div>
-    <div class="dialog-body about-body">
-      <p>
-        Scratchpad keeps everything you write in <strong>this browser only</strong>, using IndexedDB:
-        notes, folders, history, and any images you attach.
-        Nothing is uploaded, synced, or transmitted unless you deliberately create a share
-        link&mdash;and that copy is encrypted in this browser first. There are no accounts,
-        trackers, or analytics.
-      </p>
-      <p>
-        Clearing site data (or using private browsing) will erase your notes. Back up with
-        <em>Export</em> and restore with <em>Import</em>, both behind the backup chip at the
-        bottom of the sidebar.
-      </p>
-      <p>
-        Keep the sidebar calm as your library grows: <strong>Home</strong> shows pinned and
-        recently edited notes, while the <strong>Folders</strong> switcher opens one folder at a
-        time. Search opens a relevance-ranked result list across every folder in the current
-        Notes, Archive, or Trash view; narrow it with <code>tag:</code>, <code>title:</code>, or
-        <code>folder:</code>. Dragging a note opens the switcher so you can drop it into its new
-        home.
-      </p>
+    <div class="dialog-body settings-body">
+      <section class="settings-section" aria-labelledby="appearance-title">
+        <h3 id="appearance-title" class="about-subhead">Appearance</h3>
+        <div class="settings-row">
+          <span id="theme-choice-label" class="settings-term">Theme</span>
+          <div id="theme-choice" class="segmented theme-choice" role="group" aria-labelledby="theme-choice-label">
+            <button type="button" data-theme-choice="auto" aria-pressed="true">Auto</button>
+            <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+          </div>
+        </div>
+        <!-- The inline theme script at the end of this page is CSP-hashed and
+             binds to these two ids. It stays untouched; this hidden button
+             keeps it working. Remove both together. -->
+        <button id="theme-toggle" type="button" hidden tabindex="-1" data-theme-icon="auto" aria-label="Toggle theme"><span id="theme-label">auto</span></button>
+      </section>
 
       <section id="diagnostics-panel" class="diagnostics-panel" aria-labelledby="diagnostics-title">
         <h3 id="diagnostics-title" class="about-subhead">Your data</h3>
@@ -615,9 +607,43 @@
         <button id="erase-local-data-btn" class="btn btn-danger btn-sm" type="button">Erase local data</button>
       </section>
 
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="about-dialog" class="dialog about-dialog" aria-labelledby="about-dialog-title">
+    <div class="dialog-head">
+      <h2 id="about-dialog-title">About Scratchpad</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body about-body">
+      <p>
+        Scratchpad keeps everything you write in <strong>this browser only</strong>, using IndexedDB:
+        notes, folders, history, and any images you attach.
+        Nothing is uploaded, synced, or transmitted unless you deliberately create a share
+        link&mdash;and that copy is encrypted in this browser first. There are no accounts,
+        trackers, or analytics.
+      </p>
+      <p>
+        Clearing site data (or using private browsing) will erase your notes. Back up with
+        <em>Export</em> and restore with <em>Import</em>, both behind the backup chip at the
+        bottom of the sidebar.
+      </p>
+      <p>
+        Keep the sidebar calm as your library grows: <strong>Home</strong> shows pinned and
+        recently edited notes, while the <strong>Folders</strong> switcher opens one folder at a
+        time. Search opens a relevance-ranked result list across every folder in the current
+        Notes, Archive, or Trash view; narrow it with <code>tag:</code>, <code>title:</code>, or
+        <code>folder:</code>. Dragging a note opens the switcher so you can drop it into its new
+        home.
+      </p>
+
       <h3 class="about-subhead">Keyboard shortcuts</h3>
       <ul class="shortcut-list">
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">N</kbd> — New note</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">E</kbd> — Edit the open note</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">S</kbd> — Save (in edit mode)</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">D</kbd> — Open today’s note</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">K</kbd> or <kbd class="kbd">/</kbd> — Focus search</li>
@@ -766,6 +792,18 @@
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
       <button id="confirm-erase-local-data" class="btn btn-danger" type="button" disabled>Erase everything</button>
+    </div>
+  </dialog>
+
+  <dialog id="erase-shares-dialog" class="dialog" aria-labelledby="erase-shares-title">
+    <div class="dialog-head">
+      <h2 id="erase-shares-title">Some share links stay live</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body"><p id="erase-shares-copy"></p></div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button id="confirm-erase-anyway" class="btn btn-danger" type="button" data-hold-confirm>Hold to erase anyway</button>
     </div>
   </dialog>
 
@@ -998,6 +1036,7 @@
   <script src="/public/js/hold-confirm.js"></script>
   <script src="/public/js/swipe-row.js"></script>
   <script src="/public/js/mobile-view.js"></script>
+  <script src="/public/js/settings.js"></script>
   <script src="/public/js/app.js"></script>
 
   <script>

@@ -1,34 +1,34 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp } = require('./helpers');
+const { gotoApp, openSettings } = require('./helpers');
 
-test.describe('theme cycle', () => {
-  test('cycles auto → light → dark → auto and persists across reload', async ({ page }) => {
+test.describe('theme choice', () => {
+  test('Light and Dark set the attribute, Auto clears it, and the choice survives reload', async ({ page }) => {
     await gotoApp(page);
+    await openSettings(page);
 
     const root = page.locator('html');
-    const toggle = page.locator('#theme-toggle');
-    const label = page.locator('#theme-label');
+    const choice = (name) => page.locator('#theme-choice [data-theme-choice="' + name + '"]');
 
-    await expect(label).toHaveText('auto');
+    await expect(choice('auto')).toHaveAttribute('aria-pressed', 'true');
     await expect(root).not.toHaveAttribute('data-theme', /.+/);
 
-    await toggle.click();
-    await expect(label).toHaveText('light');
+    await choice('light').click();
     await expect(root).toHaveAttribute('data-theme', 'light');
+    await expect(choice('light')).toHaveAttribute('aria-pressed', 'true');
+    await expect(choice('auto')).toHaveAttribute('aria-pressed', 'false');
 
-    await toggle.click();
-    await expect(label).toHaveText('dark');
+    await choice('dark').click();
     await expect(root).toHaveAttribute('data-theme', 'dark');
 
-    await toggle.click();
-    await expect(label).toHaveText('auto');
-
-    // Set dark then reload — the inline <head> bootstrap must apply before paint.
-    await toggle.click(); // -> light
-    await toggle.click(); // -> dark
+    // The inline <head> bootstrap applies the stored choice before paint.
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await expect(page.locator('#theme-label')).toHaveText('dark');
+    await openSettings(page);
+    await expect(choice('dark')).toHaveAttribute('aria-pressed', 'true');
+
+    await choice('auto').click();
+    await expect(root).not.toHaveAttribute('data-theme', /.+/);
+    await expect(choice('auto')).toHaveAttribute('aria-pressed', 'true');
   });
 });

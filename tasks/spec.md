@@ -1,237 +1,253 @@
-# Spec: four interaction ports from React Bits (2026-09-20)
+# Spec: the six high items from the 2026-09-26 usability review
 
-Vinny approved the design in session on 2026-09-20, including three choices:
-Mail-style swipe actions, hold to confirm inside the existing dialogs, and a
-tick-only task animation. The standing design-approval correction authorizes
-one continuous pass from here.
+Vinny approved the design in session on 2026-09-26, as written, with three
+choices: a Settings dialog that takes over the theme control and the "Your
+data" rows, a gear in the sidebar header in place of the theme icon, and a
+compact Today row on every width. The standing design-approval correction
+authorizes one continuous pass from here.
 
-The source ideas come from the React Bits registry (SwipeToast, SpringCheck,
-HoldButton, SwipeRow; MIT plus Commons Clause). No React Bits code ships. Each
-item is a vanilla rewrite that fits the no-build, no-dependency profile.
+Branch: `feat/high-review-items`, stacked on `fix/critical-review-items`
+(PR #14). The PR targets that branch until #14 merges.
 
 ## Goal
 
-Four small interactions, built in this order, one commit each:
+Six usability fixes, one commit each, in this order:
 
-1. The Undo toast shows how much time is left, and any toast waits while the
-   pointer or focus is on it.
-2. A task checkbox draws its tick when the user checks it.
-3. "Delete forever" and "Empty Trash" need a one-second hold inside their
-   dialogs.
-4. On touch, a note row swipes left for Archive and Trash, and right for Pin.
+1. The folder-delete dialog fits a phone and steers toward the safe choice.
+2. The formatting toolbar fits a phone and stops covering the first lines.
+3. Edit mode starts at the top of the note, and ⌘/Ctrl+E opens it.
+4. Bulk "delete forever" and the erase-with-live-shares warning use
+   hold-to-confirm dialogs instead of `window.confirm`.
+5. The sidebar shows the first note at least 80px higher.
+6. Settings has a home: a dialog with a labeled theme choice and the data rows
+   that used to live in About.
 
 ## Shared constraints
 
 - Tokens only in `app.css`. No hex values, no new tokens, no `@font-face`, no
   blur or gradient in the shell, no emoji, no `innerHTML`.
-- No new network calls. `tests/network-isolation.spec.js` stays untouched and
-  green.
-- `public/js/app.js` sits at 6,200 lines against a 6,204 ceiling. Logic goes
-  into new modules that meet the v18 limits: 400 lines per file, 40 per
-  function, nesting depth 3. The `app.js` total must end at or below 6,200.
-- Each new module follows the `dialogs.js` pattern: `// @ts-check`, a block
-  scope, a frozen `window.ScratchpadX` export, JSDoc types. Each one joins
-  `jsconfig.json`, the `APP_SHELL` list in `public/service-worker.js`, and a
-  script tag in `index.html` ahead of `app.js`.
-- No inline script changes, so the CSP hashes stay the same. Confirm with
-  `bash cloudfront/recompute-csp-hashes.sh`.
-- Every animation has a `prefers-reduced-motion: reduce` branch.
+- No new network calls. `tests/network-isolation.spec.js` stays untouched.
+- `public/js/app.js` sits at 6,167 lines against a 6,168 ceiling. Every line
+  added there is paid for by moving code into a module that meets the v18
+  limits (400 lines per file, 40 per function, nesting depth 3). The ceiling in
+  `config/structure-baseline.json` ends at or below the final count.
+- New modules follow the `mobile-view.js` pattern: `// @ts-check`, a block
+  scope, a frozen `window.ScratchpadX` export, JSDoc types, and entries in
+  `jsconfig.json`, `APP_SHELL` in `public/service-worker.js`, and a script tag
+  in `index.html` ahead of `app.js`.
+- No inline script changes. The theme script at the bottom of `index.html`
+  keeps its CSP hash, so `#theme-toggle` and `#theme-label` stay in the DOM.
+  Confirm with `bash cloudfront/recompute-csp-hashes.sh`.
 - No dark-mode rules in `app.css`. Color pairs reuse pairs the token tests
-  already validate (`--on-accent` on `--accent`, the `.btn-danger` pair).
+  already validate.
+- Every touched spec file is biome-formatted in full (the format ratchet).
+- Vinny-voice for every string a user reads.
 
-## 1. Toast burn-down (`public/js/toast.js`, `window.ScratchpadToast`)
+## 1. Folder-delete dialog
 
-- `toast()` moves out of `app.js` into `ScratchpadToast.show(region, message,
-  opts)`. The options keep their names and defaults: `tone`, `persist`,
-  `duration` (2,600 ms), `actionLabel`, `action`. The returned node, the class
-  names (`toast`, `is-<tone>`, `is-visible`, `toast-dot`, `toast-dismiss`,
-  `toast-action`), and the 220 ms removal delay do not change.
-- `app.js` keeps a one-line `toast` wrapper, so its 100-plus call sites do not
-  change.
-- One pausable clock replaces `setTimeout(remove, duration)`. It pauses while
-  the pointer is over the toast or focus is inside it, and resumes when both
-  have left. Pausing sets `is-paused` on the toast node.
-- A toast that has an action and auto-dismisses gets one
-  `span.toast-burn[aria-hidden="true"]`. CSS draws a 2px `--accent` bar on the
-  bottom edge, clipped to the pill. The bar scales from full to zero over
-  `--toast-ms`, which the module sets from `duration`. `is-paused` pauses the
-  animation, so the bar and the clock cannot drift apart.
-- Toasts without an action get the pause and no bar. Persistent toasts get
-  neither.
-- Reduced motion hides the bar. The pause still works.
-- The failed-action path still raises the "Undo failed" error toast.
+Inputs: `#folder-delete-dialog` at `index.html:459`, its `.dialog-foot`, the
+vendored `.dialog-foot` rule in `inkwell-components.css:651` (not edited).
 
-## 2. Task tick (CSS plus one `app.js` statement)
+Outputs:
+- `app.css` rule `#folder-delete-dialog .dialog-foot { flex-wrap: wrap; }`.
+- `#folder-delete-keep` becomes `.btn-primary`; label "Keep the notes".
+- `#folder-delete-trash` label "Move to Trash". Cancel stays.
+- The copy in `#folder-delete-copy` still explains both outcomes.
 
-- A toggle calls `renderAll()`, which replaces the checkbox node. A CSS
-  transition can never run on a node that starts life checked. So
-  `toggleTaskAt` adds `is-just-toggled` to the checkbox at the same index
-  after the render.
-- `.task-checkbox.is-just-toggled` runs a box pop (about 300 ms,
-  `--ease-pop`). When checked, its `::after` tick draws with a `clip-path`
-  reveal: short leg first, then the long leg. Geometry and colors of the
-  resting state do not change.
-- Unchecking runs the box pop only.
-- Task text is untouched: no strike, no dimming.
-- Opening a note with checked tasks animates nothing, because no node carries
-  the class.
-- Reduced motion: no animation.
+Edge cases: a folder with zero notes keeps the same dialog (the copy already
+handles the count).
 
-## 3. Hold to confirm (`public/js/hold-confirm.js`, `window.ScratchpadHoldConfirm`)
+Acceptance:
+- At 375×812 the dialog's `scrollWidth` equals its `clientWidth`, and every
+  footer button's box is inside the dialog's box.
+- `#folder-delete-keep` has class `btn-primary`; `#folder-delete-trash` keeps
+  `btn-danger`.
+- `tests/folders.spec.js` still passes with the new labels.
 
-- `#confirm-permanent-delete` and `#confirm-empty-trash` gain
-  `data-hold-confirm`. Their labels become "Hold to delete forever" and "Hold
-  to empty Trash". The dialogs, their copy, and Cancel do not change.
-- The module attaches to every `[data-hold-confirm]` button at load. The
-  `app.js` click handlers stay as they are.
-- Holding the primary pointer, Space, or Enter for 1,000 ms confirms. The
-  module then calls `button.click()`, and its own capture-phase click gate
-  lets that one click through.
-- A click that follows a press the module saw is a short tap, and the gate
-  stops it. A press counts until 700 ms after its release, because a touch
-  click can trail its pointerup. An early release writes "Keep holding to
-  confirm." into a visually hidden `aria-live="polite"` hint next to the
-  button.
-- A click with no press before it comes from assistive technology (VoiceOver,
-  Voice Control, Switch Control). The gate lets it through, because those
-  users cannot hold and the dialog already asked them to confirm.
-- A hold cancels on early release, pointer leave, pointer cancel, window blur,
-  a hidden document, or a disabled button. Key repeat does not restart it.
-- Feedback: `is-holding` on the button drives a fill that scales across the
-  button over `--hold-ms`. Release snaps the fill back over `--t-fast`.
-- Deviation, 2026-09-20: the fill is a 28 percent wash of `--ink`, not
-  `--rust-d`. In dark mode `--rust-d` differs from `--rust` by 1.12 to 1, too
-  faint to read as progress. Ink flips with the theme, so the wash raises
-  label contrast in both (5.4 to 7.5 light, 5.8 to 7.9 dark).
-- Reduced motion keeps the fill, because it reports progress, and drops the
-  snap-back.
-- `tests/helpers.js` gains `holdToConfirm(page, selector)`. The three existing
-  call sites use it.
-- Deviation, 2026-09-20: `share-link.spec.js` sat one line under its ceiling
-  and unformatted, so it could not take the edit. Four revoke-on-delete tests
-  moved to `share-lifecycle.spec.js` first (26a2dde), and the oversize waiver
-  left the baseline.
+## 2. Formatting toolbar on phones
 
-## 4. Swipe row (`public/js/swipe-row.js`, `window.ScratchpadSwipeRow`)
+Inputs: `.editor-format` at `app.css:1559` (sticky pill, `margin: 0 auto
+-14px`), the narrow override at `app.css:70` (`overflow-x: auto`), the
+textarea's `padding: 26px 22px 20px` in edit mode at `app.css:1866`.
 
-- `ScratchpadSwipeRow.attach(list, { describe, onAction })` delegates from the
-  note list, because `renderAll()` replaces rows. `renderRow` does not change.
-  `describe(row)` returns the leading and trailing action lists, or null when
-  the row does not swipe.
-- Touch and pen pointers only. Mouse keeps the HTML5 drag to a folder.
-- Rows get `touch-action: pan-y`. A gesture locks horizontal once it moves
-  10px and is wider than it is tall. A vertical start abandons the gesture,
-  so the list scrolls as before.
-- Swipe left reveals a trailing rail with "Archive" then "Trash". Swipe right
-  reveals a leading rail with "Pin" or "Unpin". Buttons are text only, at
-  least 44px tall, in validated color pairs.
-- The module builds a rail when a swipe starts and removes it when the row
-  closes. A closed row has no extra DOM, so existing tests and AT see no
-  change. Both rails mount together, and the side that is not in play carries
-  `hidden`, so its buttons leave the tab order and the accessibility tree.
-- A rail is a sibling under the row, not a child. Row children inherit
-  `pointer-events: none`, and the active row clips its overflow.
-- On release, a pure `resolveRelease({ offset, velocity, railWidth,
-  rowWidth })` returns `closed`, `open`, or `commit`:
-  - `commit` when the offset passes the commit point (the larger of rail
-    width plus 64px and 55 percent of the row), or a flick faster than
-    0.5 px/ms lands past the rail width.
-  - `closed` when a flick faster than 0.11 px/ms moves back toward closed
-    (added during the build, so a row can be flicked shut from past halfway).
-  - `open` when the offset passes half the rail, or a flick faster than
-    0.11 px/ms moves in the opening direction.
-  - `closed` otherwise.
-- A full left swipe commits Archive. A full right swipe commits Pin. Past the
-  commit point the full-swipe button grows to fill the rail, so the target is
-  clear before release.
-- One row is open at a time. A tap on an open row, a tap elsewhere, a list
-  scroll, or a render closes it. The click that ends a swipe does not open the
-  note.
-- `describe(row)` returns null in Trash, in bulk mode, and in search results.
-- Actions in `app.js`:
-  - Archive and Trash reuse `bulkSetArchiveState(true)` and
-    `bulkMoveToTrash()` with the row id as the only selected id. Those paths
-    already stay in the current view, clear the selection when it was the
-    open note, revoke live shares before trashing, and raise the Undo toast
-    for Archive.
-  - Pin reuses `togglePin`, which gains an optional id.
-  - While an edit is dirty, a swipe action does nothing except raise the info
-    toast "Save or discard your edits first." The bulk trash path resets the
-    editing state, which would drop the draft.
-- In the Archive view the left rail offers "Unarchive" in place of "Archive",
-  and there is no right swipe (archived notes do not pin).
-- No new keyboard path. The document toolbar already pins, archives, and
-  trashes the open note, and bulk mode covers the list. That satisfies WCAG
-  2.5.1, which asks for an alternative to the gesture.
-- Snaps run over `--t-base` with `--ease-out`. Reduced motion snaps at once.
+Outputs, inside the existing `(pointer: coarse), (max-width: 640px)` block:
+- `.editor-format { flex-wrap: wrap; justify-content: center; width: 100%;
+  overflow: visible; margin: 0 0 8px; }` so the pill wraps to a second row
+  and sits above the field.
+- `.editor-card.is-editing .note-editor { padding-top: 16px; }` so the field
+  no longer reserves space for an overlap that no longer happens.
+
+Edge cases: landscape phones above 640px keep the desktop pill. Reduced
+transparency and no-blur fallbacks already cover the pill's background.
+
+Acceptance, at 375×812 in edit mode:
+- Every `.fmt-chip` box satisfies `x >= 0` and `x + width <= 375`.
+- The pill's bottom edge is at or above the textarea's top edge plus its
+  top padding.
+
+## 3. Edit mode entry
+
+Inputs: the Edit handler at `app.js:5768`, the render branch that resets
+`editorCard.scrollTop` at `app.js:2113`, `onGlobalKey` at `app.js:5990`,
+the shortcut lists in `index.html:618` and `guide.html:553`.
+
+Outputs:
+- When edit mode opens for a note (`showInput && (!lastEditorMode ||
+  noteChanged)`), the textarea gets `setSelectionRange(0, 0)` and
+  `scrollTop = 0` after its value is set.
+- ⌘/Ctrl+E in view mode with a selected, non-trashed note runs the same path
+  as the Edit button. While editing, or with a dialog open, or with no note,
+  it does nothing and does not prevent default.
+- About and the guide list "⌘/Ctrl + E: Edit the open note".
+
+Edge cases: ⌘E while typing in search is still "enter edit mode" (search is
+not a text field in the note); ⌘E in the palette input is swallowed by the
+open dialog rule.
+
+Acceptance:
+- After clicking Edit on a note whose body is longer than the textarea,
+  `selectionStart === 0` and `scrollTop === 0`.
+- ⌘E from view mode shows the textarea with focus inside it.
+- ⌘E with the command palette open leaves the palette open and the note in
+  view mode.
+- `guide.spec.js` and the About shortcut list include the new row.
+
+## 4. Two confirm boxes
+
+Inputs: `bulkDeleteForever` at `app.js:3082` (`window.confirm`), the erase
+flow at `app.js:3941` (`window.confirm` after revoke attempts),
+`#permanent-delete-dialog` at `index.html:490` with its `data-hold-confirm`
+button, `confirmDiscard` at `app.js:3962` (promise around a dialog),
+`tests/bulk-actions.spec.js`, `tests/data-erasure.spec.js:116`.
+
+Outputs:
+- A promise helper `confirmDialog(dialog, confirmButton)` replaces the
+  hand-rolled `confirmDiscard` and serves all three dialogs. It lives in
+  `public/js/dialogs.js` (already a module) to pay for the app.js lines.
+- Bulk delete forever opens `#permanent-delete-dialog` with its title set to
+  "Permanently delete N notes?" and copy "This removes N notes, their drafts,
+  and their revision history from this browser." The hold button is reused.
+  Single-note wording is restored when the dialog serves one note.
+- The erase flow opens a new `#erase-shares-dialog` when links stay live:
+  title "Some share links stay live", copy naming the count and the
+  consequence, Cancel, and a `data-hold-confirm` button "Hold to erase
+  anyway". Cancel keeps local data.
+- No `window.confirm` remains in `public/js`.
+
+Edge cases: the erase dialog opens on top of the erase dialog's closure, so
+the erase dialog closes first (native dialogs stack, but one modal at a time
+keeps focus return simple).
+
+Acceptance:
+- `grep -c "window.confirm" public/js/*.js` is 0.
+- Bulk delete forever of two trashed notes: the dialog title contains "2
+  notes"; a plain click does nothing; a 1.15s hold deletes both.
+- Erase with one stubbed share that fails to revoke: the second dialog
+  appears with "1 share link"; Cancel leaves the notes in place; a hold
+  erases and lands on about.html.
+
+## 5. Sidebar height
+
+Inputs: `.sidebar-head` gap 11px at `app.css:159`, the date heading at
+`app.css:4438` (23px serif, wraps to two lines), `.chronicle-daily-card` at
+`app.css:4445` (72px min-height, two-line card), the segmented view switch,
+the Home/Folders row.
+
+Outputs:
+- The heading becomes one line: `font: 600 19px/1.15 var(--serif)`,
+  `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`.
+- The Today card becomes a row: `min-height: 36px; padding: 8px 12px;
+  display: flex; align-items: center; justify-content: space-between`, the
+  title stays, the copy line is removed from the markup, and a small
+  chevron glyph (inline SVG stroke) marks it as a link.
+- `.sidebar-head` gap drops from 11px to 8px.
+- The `aria-label` "Open today's daily note" stays.
+
+Edge cases: the rail still highlights today and its Today button is
+untouched. On 375px the brand row is unchanged.
+
+Acceptance, with seeded notes:
+- At 1280×800 the first `.note-row` top is at most 335px (was 415).
+- At 375×812 the first `.note-row` top is at most 350px (was 430).
+- `#today-note` is visible at both sizes and opens today's note.
+- `daily-note.spec.js`, `porcelain-chronicle.spec.js`, `touch-targets.spec.js`
+  and `layout-scroll.spec.js` stay green (44px target keeps applying under
+  coarse pointer).
+
+## 6. Settings dialog
+
+Inputs: the About dialog at `index.html:528` (paragraphs, Your data, Erase,
+shortcuts, links), `openAboutDialog` and `renderDiagnostics` at
+`app.js:4136`, the theme toggle at `index.html:78` and its inline script at
+`index.html:1003`, the command list at `app.js:4492`, specs that reach the
+data rows through `#open-about`.
+
+Outputs:
+- New `#settings-dialog` with three sections: Appearance (a segmented
+  `role="group"` "Theme" with three `aria-pressed` buttons Auto, Light,
+  Dark), Your data (the existing `#diagnostics-panel` moved as-is), and
+  Erase local data (the existing `.danger-zone` moved as-is).
+- The sidebar header's theme icon is replaced by `#open-settings` (gear,
+  `aria-label="Settings"`). `#theme-toggle` and `#theme-label` move into the
+  settings dialog, hidden, so the inline script keeps working; a comment
+  names the CSP coupling.
+- `public/js/settings.js` owns the theme control: reads `theme-preview`,
+  applies `data-theme` on `<html>` the same way the inline script does,
+  writes the key, sets `aria-pressed`, and keeps the hidden label in step.
+- About keeps its paragraphs, the shortcut list, and the footer links. The
+  "Your data" and Erase sections leave it.
+- Palette command "Open settings" (keywords: theme, dark, light, backup,
+  storage, folder, erase).
+- `tests/helpers.js` gains `openSettings(page)`; the specs that used
+  `#open-about` to reach data rows switch to it.
+- `theme.spec.js` drives the new control: Light and Dark set the attribute,
+  Auto removes it, the choice persists across reload, and the pre-paint
+  script still applies it before first paint.
+- The guide's About mention of the theme is added to its Settings paragraph.
+
+Edge cases: a stored value outside auto/light/dark reads as auto. The
+content pages keep their own toggle. Erase still clears `theme-preview`.
+
+Acceptance:
+- `#open-settings` opens the dialog; Escape closes it and returns focus.
+- The three theme buttons reflect the stored value on open; clicking Dark
+  sets `data-theme="dark"` and `aria-pressed="true"`; reload keeps it.
+- `#theme-toggle` no longer appears in the sidebar header.
+- Diagnostics, storage protection, linked folder, PWA lifecycle, and erase
+  specs pass through `openSettings`.
+- The About dialog no longer contains `#diagnostics-panel`.
 
 ## Anti-goals
 
-- No React, no `motion`, no `gsap`, no vendored code, no icons from a package.
-- No liquid fill, no springs driven by script, no sound, no haptics.
-- No swipe on mouse, no swipe in Trash, no swipe to delete forever.
-- No change to what Archive, Trash, Pin, permanent delete, or Empty Trash do.
-- No countdown bar on plain toasts, and no strike or dim on done tasks.
-- No change to `renderRow`, to the dialogs' copy, or to the toast call sites.
+- No density, font-size, or default-view settings.
+- Archive and Trash stay in the segmented control.
+- The Today row is not hidden beside the rail.
+- No change to the inline theme script or any CSP hash.
+- No rework of the medium or low review items.
 
-## Edge cases
+## Test stubs
 
-- Toast: hover and focus at once, then one leaves (stay paused). The action
-  button clicked while paused. Two toasts stacked, each with its own clock.
-- Tick: a count mismatch marks checkboxes inert (existing rule), so no class
-  lands. A trashed note does not toggle.
-- Hold: release at 900 ms (no confirm). Pointer slides off mid-hold. Tab away
-  mid-hold. `withBusy` disables the button. Enter key repeat. Dialog closed
-  with Escape mid-hold.
-- Swipe: diagonal start, second finger down, `pointercancel` from a native
-  scroll, a render mid-swipe (the row leaves the DOM), a swipe on the active
-  row, a swipe that starts on a tag button, right-to-left over-pull past the
-  row width (clamped with resistance).
-
-## Acceptance criteria
-
-Each item goes red first, then green, on Chromium, Firefox, and WebKit.
-
-1. `tests/toast.spec.js`
-   - an Undo toast has one `.toast-burn`; a plain toast has none
-   - hovering a 600 ms test toast keeps it past 1,200 ms; leaving dismisses it
-   - focus inside the toast pauses it; blur resumes it
-   - the archive Undo action still restores the note
-2. `tests/task-lists.spec.js` (or a new spec if the ratchet says so)
-   - checking a box leaves exactly one `.is-just-toggled`, on that box
-   - reopening the note shows zero `.is-just-toggled`
-   - reduced motion reports `animation-name: none`
-3. `tests/hold-confirm.spec.js`
-   - a plain click leaves the dialog open, the note intact, and the hint set
-   - a 1,100 ms hold deletes the note
-   - release at 400 ms does not delete
-   - holding Enter confirms; a bare `element.click()` with no press confirms
-   - pointer leave cancels
-   - Empty Trash behaves the same way
-4. `tests/swipe-row.spec.js` (synthetic touch pointer events)
-   - `resolveRelease` table: closed, open, commit, flick open, flick commit
-   - a left drag past half the rail opens it and shows Archive and Trash
-   - tapping Trash moves the note to Trash; tapping Archive raises Undo
-   - a full left swipe archives and Undo restores
-   - a right swipe toggles Pin
-   - a vertical drag and a mouse drag do nothing
-   - no rail in Trash, bulk mode, or search
-   - the click after a swipe does not open the note
-   - a dirty edit blocks the action and raises the info toast
-5. The whole existing suite stays green. `npm run verify` passes, with
-   `app.js` at or below 6,200 lines and no new long or deep functions.
-6. `bash cloudfront/recompute-csp-hashes.sh` reports no new hash.
-7. Light and dark screenshots of all four surfaces land in `.verify/`.
-8. DESIGN.md gains a short note on the four interactions. The guide page
-   mentions the hold and the swipe where it covers Trash and the note list.
+- `tests/folder-delete-dialog.spec.js`: fits a phone; keep is primary.
+- `tests/format-toolbar-mobile.spec.js`: chips inside the viewport; pill
+  above the field.
+- `tests/edit-mode-entry.spec.js`: caret at top; ⌘E opens; ⌘E ignored with a
+  dialog open.
+- `tests/bulk-actions.spec.js`: delete forever needs a hold; the dialog names
+  the count.
+- `tests/data-erasure.spec.js`: live-share warning is a hold dialog; Cancel
+  keeps data.
+- `tests/sidebar-chrome.spec.js`: first row ceilings at both sizes; Today row
+  opens today.
+- `tests/settings.spec.js`: opens, theme control, sections present, About
+  slimmed.
+- `tests/theme.spec.js`: rewritten for the segmented control.
 
 ## Assumptions
 
-- Work happens on a `feat/interaction-polish` branch. Nothing is pushed.
-- The uncommitted `shadcn` devDependency, `bun.lock`, `skills-lock.json`, and
-  `.mcp.json` are Vinny's and stay out of every commit here.
-- 1,000 ms is the right hold length. It is one constant in the module.
-- Text-only rail buttons are enough. Icons would need new `<template>` SVGs.
-- Search results get no swipe, because a result row can be archived or
-  trashed already and the rail would need more states.
-- The version bump and the deploy are separate, user-invoked steps.
+- Stacking on `fix/critical-review-items` is acceptable; GitHub retargets
+  the PR to main once #14 merges.
+- The 80px sidebar target is met by the heading, the Today row, and the gap
+  change alone. If it falls short, the segmented control's height is the next
+  lever, not its removal.
+- Keeping a hidden legacy toggle is the price of an unchanged CSP hash. It is
+  removed the next time the inline script changes for another reason.

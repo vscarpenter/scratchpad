@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, enterBulkMode } = require('./helpers');
+const { seedRawNotes, enterBulkMode, holdToConfirm } = require('./helpers');
 
 test.describe('bulk actions', () => {
   test('moves selected notes to Trash and restores them', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('bulk actions', () => {
     expect(payload.notes.map((n) => n.id)).toEqual(['export-a']);
   });
 
-  test('permanently deletes selected trashed notes after confirming the native dialog', async ({ page }) => {
+  test('delete forever opens the hold-to-confirm dialog and names the count', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'delete-forever-a', title: 'Gone A', body: 'Body A.', deletedAt: Date.now() },
       { id: 'delete-forever-b', title: 'Gone B', body: 'Body B.', deletedAt: Date.now() },
@@ -97,26 +97,35 @@ test.describe('bulk actions', () => {
     await page.locator('#trash-view').click();
     await enterBulkMode(page);
     await page.locator('[data-id="delete-forever-a"] input[type="checkbox"]').check();
-
-    page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('[data-id="delete-forever-b"] input[type="checkbox"]').check();
     await page.locator('#bulk-delete-forever').click();
 
-    await expect(page.locator('.note-row')).toHaveCount(1);
+    const dialog = page.locator('#permanent-delete-dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('h2')).toContainText('2 notes');
+
+    // A plain click is not a hold, so nothing happens yet.
+    await page.locator('#confirm-permanent-delete').click();
+    await expect(page.locator('.note-row')).toHaveCount(2);
+
+    await holdToConfirm(page, '#confirm-permanent-delete');
+    await expect(page.locator('.note-row')).toHaveCount(0);
     const remaining = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).map((n) => n.id));
-    expect(remaining).toEqual(['delete-forever-b']);
+    expect(remaining).toEqual([]);
   });
 
-  test('cancelling the native confirm leaves selected trashed notes untouched', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'keep-forever-a', title: 'Stay A', body: 'Body A.', deletedAt: Date.now() },
-    ]);
+  test('cancelling the hold dialog leaves selected trashed notes untouched', async ({ page }) => {
+    await seedRawNotes(page, [{ id: 'keep-forever-a', title: 'Stay A', body: 'Body A.', deletedAt: Date.now() }]);
 
     await page.locator('#trash-view').click();
     await enterBulkMode(page);
     await page.locator('[data-id="keep-forever-a"] input[type="checkbox"]').check();
-
-    page.once('dialog', (dialog) => dialog.dismiss());
     await page.locator('#bulk-delete-forever').click();
+
+    const dialog = page.locator('#permanent-delete-dialog');
+    await expect(dialog).toBeVisible();
+    await dialog.locator('.dialog-foot [data-dialog-close]').click();
+    await expect(dialog).toBeHidden();
 
     await expect(page.locator('.note-row')).toHaveCount(1);
     const remaining = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).map((n) => n.id));

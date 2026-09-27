@@ -159,3 +159,12 @@
 - `grep -E` has no `\d`. A failure filter written with it matches nothing and
   reads as a clean run, and test titles that contain "failed" match a loose
   filter. Use `^ +[0-9]+\) ` plus the summary counts.
+- The coarse-pointer block at the top of `app.css` runs before the base rules
+  it means to override, so an override there with equal specificity loses to
+  the later base rule. Put a phone override in its own `@media` block right
+  after the rule it adjusts, and check the measured box, not the source.
+- A `devices['iPhone 13']` context is 390px wide. A layout that only breaks at
+  375px needs an explicit `viewport` on `test.use`, or the red test never fires.
+- The structure ratchet counts app.js on every commit, so a feature that adds
+  lines there is planned with the extraction that pays for them, in the same
+  commit, or the pre-commit hook rejects it mid-task.

@@ -293,8 +293,22 @@
     );
   }
 
+  // Reading metrics for the document eyebrow and byline.
+  function wordCount(text) {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function formatReadTime(words) {
+    const seconds = Math.ceil((words / 200) * 60);
+    if (seconds < 60) return seconds + 's';
+    return Math.ceil(seconds / 60) + 'm';
+  }
+
   window.ScratchpadMarkdown = {
     sanitizeConfig: SANITIZE_CONFIG,
+    wordCount,
+    formatReadTime,
     renderMarkdownInto,
     renderEmptyBody,
     findTaskMarkers,

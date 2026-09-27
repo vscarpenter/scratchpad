@@ -1,15 +1,18 @@
 const { test, expect } = require('@playwright/test');
-const { gotoApp } = require('./helpers');
+const { gotoApp, openSettings } = require('./helpers');
 
 async function stubStorage(page, { persisted, granted }) {
-  await page.addInitScript(({ initial, result }) => {
-    const storage = {
-      estimate: async () => ({ usage: 1024, quota: 1024 * 1024 }),
-      persisted: async () => initial,
-      persist: async () => result,
-    };
-    Object.defineProperty(navigator, 'storage', { configurable: true, value: storage });
-  }, { initial: persisted, result: granted });
+  await page.addInitScript(
+    ({ initial, result }) => {
+      const storage = {
+        estimate: async () => ({ usage: 1024, quota: 1024 * 1024 }),
+        persisted: async () => initial,
+        persist: async () => result,
+      };
+      Object.defineProperty(navigator, 'storage', { configurable: true, value: storage });
+    },
+    { initial: persisted, result: granted },
+  );
 }
 
 test.describe('persistent storage protection', () => {
@@ -17,7 +20,7 @@ test.describe('persistent storage protection', () => {
     await stubStorage(page, { persisted: false, granted: true });
     await gotoApp(page);
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await expect(page.locator('#diagnostic-storage-protection')).toHaveText('Best effort');
     await page.locator('#protect-storage-btn').click();
 
@@ -30,7 +33,7 @@ test.describe('persistent storage protection', () => {
     await stubStorage(page, { persisted: false, granted: false });
     await gotoApp(page);
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await page.locator('#protect-storage-btn').click();
 
     await expect(page.locator('#diagnostic-storage-protection')).toHaveText('Best effort');
@@ -44,7 +47,7 @@ test.describe('persistent storage protection', () => {
     });
     await gotoApp(page);
 
-    await page.locator('#open-about').click();
+    await openSettings(page);
     await expect(page.locator('#diagnostic-storage-protection')).toHaveText('Unavailable');
     await expect(page.locator('#protect-storage-btn')).toBeHidden();
   });

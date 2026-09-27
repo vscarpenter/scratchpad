@@ -185,6 +185,8 @@
     confirmDelete: $('confirm-delete'),
     permanentDeleteDialog: $('permanent-delete-dialog'),
     confirmPermanentDelete: $('confirm-permanent-delete'),
+    permanentDeleteTitle: $('permanent-delete-dialog-title'),
+    permanentDeleteCopy: $('permanent-delete-copy'),
     emptyTrashDialog: $('empty-trash-dialog'),
     confirmEmptyTrash: $('confirm-empty-trash'),
     discardDialog: $('discard-dialog'),
@@ -197,6 +199,9 @@
     historyList: $('history-list'),
     aboutDialog: $('about-dialog'),
     openAbout: $('open-about'),
+    openSettings: $('open-settings'),
+    settingsDialog: $('settings-dialog'),
+    themeChoice: $('theme-choice'),
     exportBtn: $('export-btn'),
     exportEncryptedBtn: $('export-encrypted-btn'),
     exportMarkdownBtn: $('export-markdown-btn'),
@@ -237,6 +242,9 @@
     eraseLocalDataDialog: $('erase-local-data-dialog'),
     eraseConfirmation: $('erase-confirmation'),
     confirmEraseLocalData: $('confirm-erase-local-data'),
+    eraseSharesDialog: $('erase-shares-dialog'),
+    eraseSharesCopy: $('erase-shares-copy'),
+    confirmEraseAnyway: $('confirm-erase-anyway'),
     pwaUpdateNotice: $('pwa-update-notice'),
     pwaUpdateLater: $('pwa-update-later'),
     pwaUpdateReload: $('pwa-update-reload'),
@@ -543,17 +551,6 @@
       return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
     return d.toLocaleDateString([], { month: 'short' }) + " '" + String(d.getFullYear()).slice(-2);
-  }
-
-  function wordCount(text) {
-    if (!text) return 0;
-    return text.trim().split(/\s+/).filter(Boolean).length;
-  }
-
-  function formatReadTime(words) {
-    const seconds = Math.ceil((words / 200) * 60);
-    if (seconds < 60) return seconds + 's';
-    return Math.ceil(seconds / 60) + 'm';
   }
 
   function lifecycleTime(note) {
@@ -1082,7 +1079,7 @@
         '. Keep them in Notes, or move them to Trash (recoverable for 30 days)?'
       : '"' + folder.name + '" is empty. Delete it?';
     els.folderDeleteTrash.hidden = count === 0;
-    els.folderDeleteKeep.textContent = count ? 'Keep notes (move to Notes)' : 'Delete folder';
+    els.folderDeleteKeep.textContent = count ? 'Keep the notes' : 'Delete folder';
     openDialog(els.folderDeleteDialog);
   }
 
@@ -2115,9 +2112,10 @@
     els.titleInput.placeholder = deriveTitle({ ...note, title: '' }) || 'Untitled note';
 
     const showInput = state.editing && !trashed;
+    const enteringEdit = showInput && (!lastEditorMode || noteChanged);
     els.editorCard.classList.toggle('is-editing', showInput);
     els.formatToolbar.hidden = !showInput;
-    if (showInput && (!lastEditorMode || noteChanged)) {
+    if (enteringEdit) {
       els.editorCard.scrollTop = 0;
     }
     lastEditorMode = showInput;
@@ -2156,6 +2154,11 @@
       els.rendered.hidden = true;
       if (!preserveDraftInputs && document.activeElement !== els.editor) {
         els.editor.value = note.body || '';
+      }
+      if (enteringEdit) {
+        // Start where the reader was: the top, not where the caret landed.
+        els.editor.setSelectionRange(0, 0);
+        els.editor.scrollTop = 0;
       }
       els.editBtn.hidden = true;
       els.saveBtn.hidden = false;
@@ -2215,7 +2218,7 @@
     const trashed = isTrashed(note);
     const archived = isArchived(note);
     const pinned = note.pinned && !trashed && !archived;
-    const readTime = formatReadTime(wordCount(note.body || '')) + ' read';
+    const readTime = Markdown.formatReadTime(Markdown.wordCount(note.body || '')) + ' read';
     let label;
     if (trashed) label = 'Note · trashed · ' + readTime;
     else if (archived) label = folderDisplayName(noteFolderId(note)) + ' · archived · ' + readTime;
@@ -2226,7 +2229,7 @@
   }
 
   function renderByline(note) {
-    const words = wordCount(note.body || '');
+    const words = Markdown.wordCount(note.body || '');
     const created = formatBylineDate(note.createdAt);
     const updated = formatBylineDate(note.updatedAt);
     const wordLabel = words + ' word' + (words === 1 ? '' : 's');
@@ -2235,13 +2238,13 @@
         'Archived ' + formatBylineDate(note.archivedAt),
         'Last edited ' + updated,
         wordLabel,
-        formatReadTime(words) + ' read',
+        Markdown.formatReadTime(words) + ' read',
       ]
       : [
         'Created ' + created,
         'Updated ' + updated,
         wordLabel,
-        formatReadTime(words) + ' read',
+        Markdown.formatReadTime(words) + ' read',
       ];
     els.noteByline.textContent = parts.join(' · ');
   }
@@ -2423,7 +2426,7 @@
     els.chronicleMonth.textContent = today.toLocaleDateString([], { month: 'long' });
     els.chronicleListDate.textContent = contextDate.toLocaleDateString([], {
       weekday: 'long',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
     els.editorDateNumber.textContent = String(contextDate.getDate());
@@ -2673,6 +2676,15 @@
     renderAll();
     focusMobilePane();
     await maybePromptDraftForSelected();
+  }
+
+  function enterEditMode() {
+    const note = getNote(state.selectedId);
+    if (!note || isTrashed(note) || state.editing) return;
+    state.editing = true;
+    state.dirty = false;
+    renderEditor();
+    window.ScratchpadFind.editorFocus(els.editor);
   }
 
   async function saveCurrent() {
@@ -3082,8 +3094,7 @@
   async function bulkDeleteForever() {
     const selected = selectedBulkNotes().filter(isTrashed);
     if (!selected.length) return;
-    const ok = window.confirm('Permanently delete ' + selected.length + ' selected note' + (selected.length === 1 ? '' : 's') + '?');
-    if (!ok) return;
+    if (!(await confirmPermanentDelete(selected.length))) return;
     return withBusy('bulk-delete-forever', [], 'Permanent delete failed. Selected notes are still in Trash.', async () => {
       // Deleting forever destroys each share row and with it the only copy of
       // the revoke token, so the revoke must come first.
@@ -3938,13 +3949,13 @@
         }
       }
       if (stillLive) {
-        const what = stillLive === 1 ? 'One share link' : stillLive + ' share links';
-        const proceed = window.confirm(
+        const what = stillLive === 1 ? '1 share link' : stillLive + ' share links';
+        els.eraseSharesCopy.textContent =
           what + ' could not be revoked and will stay live until expiry. ' +
           'Erasing local data destroys the only copy of the revoke tokens, so ' +
-          'the links can never be taken down early. Erase anyway?'
-        );
-        if (!proceed) return;
+          'the links can never be taken down early.';
+        closeDialog(els.eraseLocalDataDialog);
+        if (!(await confirmWith(els.eraseSharesDialog, els.confirmEraseAnyway))) return;
       }
       await DB.clearAllStores();
       const appKeys = [];
@@ -3961,36 +3972,24 @@
     });
   }
 
+  function confirmWith(dialog, button) {
+    return window.ScratchpadDialogs.confirmDialog(dialog, button, openDialog, closeDialog);
+  }
+
   function confirmDiscard() {
-    return new Promise((resolve) => {
-      openDialog(els.discardDialog);
-      let settled = false;
-      const dismissButtons = Array.from(els.discardDialog.querySelectorAll('[data-dialog-close]'));
-      const cleanup = () => {
-        els.confirmDiscard.removeEventListener('click', onConfirm);
-        els.discardDialog.removeEventListener('cancel', onDismiss);
-        els.discardDialog.removeEventListener('close', onClose);
-        for (const button of dismissButtons) button.removeEventListener('click', onDismiss);
-      };
-      const finish = (discard, close) => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        if (close) closeDialog(els.discardDialog);
-        resolve(discard);
-      };
-      const onConfirm = () => finish(true, true);
-      const onDismiss = () => finish(false, false);
-      const onClose = () => {
-        // A native close event is queued. If the dialog has already reopened,
-        // this event belongs to the previous confirmation and must be ignored.
-        if (!els.discardDialog.open) finish(false, false);
-      };
-      els.confirmDiscard.addEventListener('click', onConfirm);
-      els.discardDialog.addEventListener('cancel', onDismiss);
-      els.discardDialog.addEventListener('close', onClose);
-      for (const button of dismissButtons) button.addEventListener('click', onDismiss);
-    });
+    return confirmWith(els.discardDialog, els.confirmDiscard);
+  }
+
+  // One dialog serves the single-note and bulk paths; the copy names the count.
+  function confirmPermanentDelete(count) {
+    const many = count !== 1;
+    els.permanentDeleteTitle.textContent = many
+      ? 'Permanently delete ' + count + ' notes?'
+      : 'Permanently delete this note?';
+    els.permanentDeleteCopy.textContent = many
+      ? 'This removes ' + count + ' notes, their drafts, and their revision history from this browser.'
+      : 'This removes the note, its draft, and its revision history from this browser.';
+    return confirmWith(els.permanentDeleteDialog, els.confirmPermanentDelete);
   }
 
   function readStoredTime(key) {
@@ -4079,18 +4078,6 @@
     return value.toFixed(value >= 10 ? 0 : 1) + ' ' + unit;
   }
 
-  async function storageSummary() {
-    if (!navigator.storage || typeof navigator.storage.estimate !== 'function') return 'Unavailable';
-    try {
-      const estimate = await navigator.storage.estimate();
-      const usage = formatBytes(estimate.usage || 0);
-      const quota = Number.isFinite(estimate.quota) && estimate.quota > 0 ? formatBytes(estimate.quota) : null;
-      return quota ? usage + ' of ' + quota : usage;
-    } catch (e) {
-      return 'Unavailable';
-    }
-  }
-
   async function storageProtectionStatus() {
     if (!navigator.storage || typeof navigator.storage.persisted !== 'function') return 'Unavailable';
     try {
@@ -4127,12 +4114,6 @@
     });
   }
 
-  function offlineCacheStatus() {
-    if (!('serviceWorker' in navigator)) return 'Unavailable';
-    if (navigator.serviceWorker.controller) return 'Ready';
-    return 'Available after reload';
-  }
-
   async function renderDiagnostics() {
     if (!els.diagnosticActiveNotes) return;
     els.diagnosticActiveNotes.textContent = String(activeNotes().length);
@@ -4143,7 +4124,7 @@
       const [revisions, drafts, storage] = await Promise.all([
         DB.getAllRevisions(),
         DB.getAllDrafts(),
-        storageSummary(),
+        window.ScratchpadSettings.storageSummary(formatBytes),
       ]);
       els.diagnosticRevisions.textContent = String(revisions.length);
       els.diagnosticDrafts.textContent = String(drafts.length);
@@ -4155,7 +4136,7 @@
     }
     await renderStorageProtection();
     els.diagnosticLastBackup.textContent = formatBackupStatus(lastBackupAt());
-    els.diagnosticOfflineCache.textContent = offlineCacheStatus();
+    els.diagnosticOfflineCache.textContent = window.ScratchpadSettings.offlineCacheStatus();
     syncDataStatusRows();
   }
 
@@ -4167,8 +4148,15 @@
   }
 
   function openAboutDialog() {
-    renderDiagnostics();
     openDialog(els.aboutDialog);
+  }
+
+  let syncThemeChoice = () => {};
+
+  function openSettingsDialog() {
+    syncThemeChoice();
+    renderDiagnostics();
+    openDialog(els.settingsDialog);
   }
 
   // -------- Share --------
@@ -4498,6 +4486,13 @@
         meta: 'Create a blank note',
         keywords: 'create write',
         run: createNote,
+      },
+      {
+        id: 'open-settings',
+        label: 'Open settings',
+        meta: 'Theme, your data, linked folder',
+        keywords: 'settings preferences theme dark light backup storage folder erase',
+        run: openSettingsDialog,
       },
       {
         id: 'today-note',
@@ -5765,14 +5760,7 @@
 
     els.pinToggle.addEventListener('click', togglePin);
 
-    els.editBtn.addEventListener('click', () => {
-      const note = getNote(state.selectedId);
-      if (!note || isTrashed(note)) return;
-      state.editing = true;
-      state.dirty = false;
-      renderEditor();
-      window.ScratchpadFind.editorFocus(els.editor);
-    });
+    els.editBtn.addEventListener('click', enterEditMode);
     els.saveBtn.addEventListener('click', saveCurrent);
     els.historyBtn.addEventListener('click', openHistoryDialog);
 
@@ -5806,10 +5794,8 @@
       await moveCurrentToTrash();
     });
     els.restoreBtn.addEventListener('click', restoreCurrentFromTrash);
-    els.permanentDeleteBtn.addEventListener('click', () => openDialog(els.permanentDeleteDialog));
-    els.confirmPermanentDelete.addEventListener('click', async () => {
-      closeDialog(els.permanentDeleteDialog);
-      await permanentlyDeleteCurrent();
+    els.permanentDeleteBtn.addEventListener('click', async () => {
+      if (await confirmPermanentDelete(1)) await permanentlyDeleteCurrent();
     });
     els.confirmEmptyTrash.addEventListener('click', async () => {
       closeDialog(els.emptyTrashDialog);
@@ -5889,6 +5875,8 @@
     });
 
     els.openAbout.addEventListener('click', openAboutDialog);
+    els.openSettings.addEventListener('click', openSettingsDialog);
+    syncThemeChoice = window.ScratchpadSettings.bindThemeChoice(els.themeChoice);
     els.exportBtn.addEventListener('click', () => { exportAll(); });
     els.exportEncryptedBtn.addEventListener('click', openEncryptedExportDialog);
     els.exportMarkdownBtn.addEventListener('click', () => { exportMarkdownZip(); });
@@ -5998,6 +5986,13 @@
     if (meta && (e.key === 'n' || e.key === 'N')) {
       e.preventDefault();
       createNote();
+      return;
+    }
+
+    if (meta && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
+      if (document.querySelector('dialog[open]')) return;
+      e.preventDefault();
+      enterEditMode();
       return;
     }
 

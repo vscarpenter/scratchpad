@@ -61,9 +61,14 @@ test.describe('accessibility — interactive semantics', () => {
       return outlined || s.boxShadow !== 'none';
     };
 
+    // Edit hands the body focus on a timer; let it land before measuring, or
+    // the resting read can happen with focus already back in the field.
+    await expect(page.locator('#note-editor')).toBeFocused();
+
     for (const id of ['#note-editor', '#note-title-input']) {
       const field = page.locator(id);
       await field.blur();
+      await expect(field).not.toBeFocused();
       const resting = await field.evaluate(focusStyle);
       await field.focus();
       await expect(field).toBeFocused();

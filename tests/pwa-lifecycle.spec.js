@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { gotoApp } = require('./helpers');
+const { gotoApp, openSettings } = require('./helpers');
 
 test.describe('PWA update and recovery', () => {
   test('shows a waiting update and activates it only after confirmation', async ({ page }) => {
@@ -7,7 +7,9 @@ test.describe('PWA update and recovery', () => {
       window.__pwaMessages = [];
       const waiting = {
         state: 'installed',
-        postMessage(message) { window.__pwaMessages.push(message); },
+        postMessage(message) {
+          window.__pwaMessages.push(message);
+        },
         addEventListener() {},
       };
       const registration = {
@@ -15,7 +17,9 @@ test.describe('PWA update and recovery', () => {
         installing: null,
         active: waiting,
         addEventListener() {},
-        update: async () => { window.__pwaUpdated = true; },
+        update: async () => {
+          window.__pwaUpdated = true;
+        },
       };
       Object.defineProperty(navigator, 'serviceWorker', {
         configurable: true,
@@ -52,7 +56,9 @@ test.describe('PWA update and recovery', () => {
         installing: null,
         active,
         addEventListener() {},
-        update: async () => { window.__pwaUpdated = true; },
+        update: async () => {
+          window.__pwaUpdated = true;
+        },
       };
       Object.defineProperty(navigator, 'serviceWorker', {
         configurable: true,
@@ -65,7 +71,7 @@ test.describe('PWA update and recovery', () => {
       });
     });
     await gotoApp(page);
-    await page.locator('#open-about').click();
+    await openSettings(page);
 
     await page.locator('#check-updates-btn').click();
     expect(await page.evaluate(() => window.__pwaUpdated)).toBe(true);

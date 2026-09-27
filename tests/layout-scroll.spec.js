@@ -36,7 +36,7 @@ test.describe('sidebar layout — scroll containment', () => {
     // Every action control must end inside the sidebar's right edge —
     // regression guard for the Today button overflowing the actions row
     // and clipping the About icon.
-    for (const id of ['#new-note', '#today-note', '#command-palette-btn', '#open-about', '#theme-toggle']) {
+    for (const id of ['#new-note', '#today-note', '#command-palette-btn', '#open-about', '#open-settings']) {
       const box = await page.locator(id).boundingBox();
       if (!box) throw new Error(id + ' has no bounding box');
       expect(box.x + box.width, id + ' overflows sidebar').toBeLessThanOrEqual(sidebar.x + sidebar.width + 0.5);

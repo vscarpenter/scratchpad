@@ -61,16 +61,11 @@ body:not(.page-privacy) {
     padding-inline: 14px;
   }
   .status-chip { min-height: 44px; }
-  /* The floating format pill scrolls sideways instead of wrapping. */
   .fmt-chip {
     min-width: 44px;
     min-height: 44px;
   }
   .fmt-chip.fmt-text { padding: 0 12px; }
-  .editor-format {
-    max-width: 100%;
-    overflow-x: auto;
-  }
   .tag-pill {
     min-height: 44px;
     padding: 0 4px 0 12px;
@@ -157,10 +152,10 @@ body:not(.page-privacy) {
 
 /* ---------- Sidebar head ---------- */
 .sidebar-head {
-  padding: 16px 14px 10px;
+  padding: 8px 14px 8px;
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 6px;
 }
 
 .brand {
@@ -180,13 +175,6 @@ body:not(.page-privacy) {
   color: var(--ink);
 }
 
-body:not(.page-privacy) .theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .brand-actions {
   display: inline-flex;
   align-items: center;
@@ -204,26 +192,6 @@ body:not(.page-privacy) .theme-toggle {
 .brand-actions .btn:hover {
   background: var(--control-fill-hover);
   color: var(--ink);
-}
-/* The three theme glyphs stack in one grid cell and cross-fade on toggle;
-   entering small enough (0.35) that the swap reads as a new glyph arriving,
-   not the old one resizing. First paint applies styles without transitioning,
-   so nothing animates on page load. */
-body:not(.page-privacy) .theme-toggle {
-  display: inline-grid;
-  place-items: center;
-}
-.theme-toggle .theme-icon {
-  grid-area: 1 / 1;
-  opacity: 0;
-  transform: scale(0.35);
-  transition: opacity var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
-}
-.theme-toggle[data-theme-icon="auto"] .theme-icon-auto,
-.theme-toggle[data-theme-icon="light"] .theme-icon-light,
-.theme-toggle[data-theme-icon="dark"] .theme-icon-dark {
-  opacity: 1;
-  transform: none;
 }
 
 .sidebar-brand {
@@ -356,6 +324,13 @@ body:not(.page-privacy) .theme-toggle {
   padding: 3px;
   gap: 2px;
 }
+/* Touch targets stay 44px on a phone; the tracks around them lose spare
+   padding so the first note lands higher. */
+@media (pointer: coarse), (max-width: 640px) {
+  .sidebar-view-switch {
+    padding: 2px;
+  }
+}
 
 .sidebar-view-switch .btn {
   flex: 1;
@@ -394,6 +369,11 @@ body:not(.page-privacy) .theme-toggle {
   min-height: 26px;
   padding: 4px 10px 6px;
   border-bottom: 1px solid var(--hairline-color);
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .list-header {
+    padding: 2px 10px;
+  }
 }
 .list-header-groups {
   display: flex;
@@ -945,6 +925,11 @@ body:not(.page-privacy) .theme-toggle {
 }
 .filter-x:hover { background: var(--accent-tint); }
 
+/* Three actions on a phone: let the footer wrap instead of clipping. */
+#folder-delete-dialog .dialog-foot {
+  flex-wrap: wrap;
+}
+
 /* ---------- Note list ---------- */
 .note-list {
   flex: 1;
@@ -1072,7 +1057,7 @@ body:not(.page-privacy) .theme-toggle {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
 .note-section-head {
@@ -1081,7 +1066,7 @@ body:not(.page-privacy) .theme-toggle {
   text-transform: uppercase;
   color: var(--text-muted);
   gap: 5px;
-  padding: 6px 8px 2px;
+  padding: 4px 8px 2px;
 }
 /* Neutralize the .eyebrow accent dash for section labels. */
 .note-section-head::before { content: none; }
@@ -1574,6 +1559,17 @@ body:not(.page-privacy) .theme-toggle {
   box-shadow: var(--shadow-pill-float);
 }
 .editor-format[hidden] { display: none; }
+/* On a phone the pill wraps to a second row and sits above the field, so
+   scrolled text can never slide under it. */
+@media (pointer: coarse), (max-width: 640px) {
+  .editor-format {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 8px;
+  }
+}
 .fmt-chip {
   display: inline-flex;
   align-items: center;
@@ -1877,6 +1873,12 @@ body:not(.page-privacy) .theme-toggle {
      measure and line breaks match the rendered view exactly. */
   max-width: calc(var(--measure-doc) + 46px);
   box-shadow: var(--textarea-inset-shadow);
+}
+@media (pointer: coarse), (max-width: 640px) {
+  /* No pill overlap on a phone, so no space reserved for it. */
+  .editor-card.is-editing .note-editor {
+    padding-top: 16px;
+  }
 }
 /* The inset surface keeps its shadow; focus adds the ring outside it. */
 .editor-card.is-editing .note-editor:focus-visible {
@@ -2367,6 +2369,19 @@ body:not(.page-privacy) .theme-toggle {
 
 /* ---------- About dialog ---------- */
 .about-dialog { max-width: 560px; }
+.settings-dialog { max-width: 560px; }
+.settings-body { font-size: 14px; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.settings-term {
+  font: 600 13px/1.3 var(--sans);
+  color: var(--ink);
+}
 .about-body { font-size: 14px; }
 
 /* Links + version row in the About-dialog foot (replaces what the app-page
@@ -4438,16 +4453,22 @@ body:not(.page-privacy) .theme-toggle {
 .chronicle-sidebar-heading h2 {
   margin: 0;
   color: var(--ink);
-  font: 600 23px/1.1 var(--serif);
+  font: 600 19px/1.15 var(--serif);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* One row, not a card: the note itself carries the copy. */
 .chronicle-daily-card {
-  display: grid;
-  gap: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
-  min-height: 72px;
-  padding: 13px 14px;
+  min-height: 36px;
+  padding: 0 12px;
   color: var(--accent-d);
   background: var(--accent-soft);
   border: 1px solid var(--accent-strong-border);
@@ -4468,12 +4489,16 @@ body:not(.page-privacy) .theme-toggle {
 }
 
 .chronicle-daily-title {
-  font: 700 12.5px/1.2 var(--sans);
+  font: 600 13px/1.2 var(--sans);
 }
 
-.chronicle-daily-copy {
-  color: var(--text-secondary);
-  font: 400 10.5px/1.4 var(--sans);
+.chronicle-daily-arrow {
+  flex: none;
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .chronicle-daily-card {
+    min-height: 44px;
+  }
 }
 
 .editor-date-spine {
@@ -4486,8 +4511,8 @@ body:not(.page-privacy) .theme-toggle {
   }
 
   .sidebar-head {
-    gap: 8px;
-    padding: 22px 20px 11px;
+    gap: 6px;
+    padding: 16px 20px 8px;
   }
 
   .sidebar-head .brand {
@@ -4500,7 +4525,7 @@ body:not(.page-privacy) .theme-toggle {
 
   .chronicle-sidebar-heading {
     display: grid;
-    gap: 5px;
+    gap: 3px;
   }
 
   .sidebar-kicker {
@@ -4913,9 +4938,6 @@ body:not(.page-privacy) .theme-toggle {
     display: none;
   }
 
-  .chronicle-daily-card {
-    min-height: 76px;
-  }
 }
 
 /* ---------- Focus mode (distraction-free writing) ----------

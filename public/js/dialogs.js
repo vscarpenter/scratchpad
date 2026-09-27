@@ -110,6 +110,50 @@
     return 'ok';
   }
 
+  /**
+   * Opens a native dialog and resolves true when the confirm button fires,
+   * false when the dialog is dismissed (Cancel, the close button, Escape).
+   * The hold-to-confirm module raises the confirm click after its hold, so
+   * a held button resolves the same way as a plain one.
+   * @param {HTMLDialogElement} dialog
+   * @param {HTMLElement} confirmButton
+   * @param {(dialog: HTMLDialogElement) => void} open
+   * @param {(dialog: HTMLDialogElement) => void} close
+   * @returns {Promise<boolean>}
+   */
+  function confirmDialog(dialog, confirmButton, open, close) {
+    return new Promise((resolve) => {
+      open(dialog);
+      let settled = false;
+      const dismissButtons = Array.from(dialog.querySelectorAll('[data-dialog-close]'));
+      const cleanup = () => {
+        confirmButton.removeEventListener('click', onConfirm);
+        dialog.removeEventListener('cancel', onDismiss);
+        dialog.removeEventListener('close', onClose);
+        for (const button of dismissButtons) button.removeEventListener('click', onDismiss);
+      };
+      /** @param {boolean} confirmed @param {boolean} shouldClose */
+      const finish = (confirmed, shouldClose) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (shouldClose) close(dialog);
+        resolve(confirmed);
+      };
+      const onConfirm = () => finish(true, true);
+      const onDismiss = () => finish(false, false);
+      const onClose = () => {
+        // A native close event is queued. If the dialog has already reopened,
+        // this event belongs to the previous confirmation and must be ignored.
+        if (!dialog.open) finish(false, false);
+      };
+      confirmButton.addEventListener('click', onConfirm);
+      dialog.addEventListener('cancel', onDismiss);
+      dialog.addEventListener('close', onClose);
+      for (const button of dismissButtons) button.addEventListener('click', onDismiss);
+    });
+  }
+
   /** @type {Window & typeof globalThis & { ScratchpadDialogs?: object }} */
   const root = window;
   root.ScratchpadDialogs = Object.freeze({
@@ -120,5 +164,6 @@
     captureTimestamp,
     appendCaptureLine,
     capturePreview,
+    confirmDialog,
   });
 }
