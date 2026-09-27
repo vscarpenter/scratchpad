@@ -2115,9 +2115,7 @@
     const enteringEdit = showInput && (!lastEditorMode || noteChanged);
     els.editorCard.classList.toggle('is-editing', showInput);
     els.formatToolbar.hidden = !showInput;
-    if (enteringEdit) {
-      els.editorCard.scrollTop = 0;
-    }
+    if (enteringEdit) els.editorCard.scrollTop = 0;
     lastEditorMode = showInput;
 
     els.titleDisplay.hidden = showInput;
@@ -3214,7 +3212,9 @@
 
   // -------- Drafts --------
   async function persistDraftNow() {
-    if (!state.editing || !state.selectedId) return;
+    // A debounced write can fire mid-save; landing after the save's draft
+    // removal would resurface the saved text as "unsaved edits" later.
+    if (!state.editing || !state.selectedId || state.busy.has('save')) return;
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return;
     const updatedAt = now();
