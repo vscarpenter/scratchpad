@@ -178,3 +178,10 @@
   IndexedDB after a reload. To tell a browser bug from an app bug, reproduce
   it in a few lines with no app code, then run the same repro on the previous
   Playwright and on installed Chrome.
+- Layout tests that measure where a line breaks pass on macOS and fail on
+  the Linux CI runners, whose fallback fonts are wider. v4.3.0 shipped a test
+  that required three buttons on one line at 390px; Linux wraps there. Assert
+  what the design promises (order, alignment, the wrapped path at a width
+  narrow enough to wrap everywhere), and require a fit only where there is
+  wide slack. Linux WebKit also has no `StorageManager`, so guard any
+  prototype stub and accept the state the app reports without it.
