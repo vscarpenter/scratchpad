@@ -1,3 +1,101 @@
+# Settings fixes: update check, row hints, row layout
+
+Tier: Standard (three app files plus tests, no new public contract).
+Branch: `fix/settings-update-check-and-hints`. Nothing pushed.
+
+## Plan
+
+- [x] 1. Check for updates finds real releases: reads the deployed
+      `version.js` with `cache: 'no-store'`, registers the new worker URL when
+      it differs, and the worker passes no-store requests to the network
+      (3fa3d3d).
+- [x] 2. One-line hints under the Offline cache and Linked folder rows
+      (a3b032e).
+- [x] 3. Status-row layout: one grid per row, hint above the actions,
+      Unlink at the far end (4415a6a). Approved 2026-10-01.
+
+## Plan for #3: status-row layout
+
+Problem: each `.data-status-row` is one flex line holding the dot, term,
+value, up to three buttons, and the hint. `flex-wrap` breaks wherever the next
+item stops fitting, so the break point depends on label length and dialog
+width. At the 560px dialog the linked row strands Unlink alone on line two. At
+390px wide, "Protect local data" and "Check for updates" drop to the left
+edge, under the dot instead of the term. Evidence:
+`.verify/settings-hints-*.png`.
+
+Design: every row gets the same grid, so structure decides the break, not
+width.
+
+```
+o  Linked folder          Linked to "ScratchPad-Content"
+   Saves every note as a Markdown file in a folder you pick, ...
+   [Write now] [Read now]                              Unlink
+```
+
+1. Red: new `tests/settings-rows.spec.js` with top-level tests (ratchet-safe).
+   Link a folder through the OPFS picker stand-in from
+   `tests/linked-folder.spec.js`. At 1280 and 390 wide, assert for every
+   visible row: each button sits at or below the value line, each button's
+   left edge is at or past the term's, and Write now, Read now, and Unlink
+   share one line. At 320 wide, the dialog has no horizontal overflow.
+2. Markup in `index.html`: wrap each row's buttons in
+   `<div class="data-status-actions">` and move the hint above it, so reading
+   order is status, meaning, then actions. Button ids stay, so `app.js` and
+   `linked-folder.js` need no changes.
+3. CSS in `app.css`, tokens only: `.data-status-row` becomes a grid with
+   columns `7px auto minmax(0, 1fr)`. The value sits in the last column,
+   right-aligned and free to wrap, so a long folder name never squeezes the
+   term. The hint and actions span columns 2 to 3, and the hint drops its 15px
+   indent because the column now does that job. Actions are a wrapping flex
+   line with an 8px gap. `#linked-folder-unlink` gets `margin-left: auto`, so
+   the one destructive action sits apart at the far end. An actions line whose
+   buttons are all hidden collapses through `:has()`, so Storage protection
+   stays one line once it reads Persistent.
+4. Verify: settings, diagnostics, touch-targets, and linked-folder specs on
+   three browsers; light, dark, and phone screenshots; `bun run verify`.
+
+Rejected: an overflow menu for Unlink and Refresh offline copy (it hides rare
+actions in the one place people look for them, and adds menu wiring), and
+full-width stacked buttons on phones (heavier, and unnecessary once the break
+is structural).
+
+## Resuming From Here
+
+- Done: #1, #2, and #3, each committed with tests. `bun run verify` green,
+  coverage 39.50%, structure ratchet unchanged at 102 long and 11 deep.
+- Known limit: at 320px wide, Unlink wraps to its own line (still
+  right-aligned) and a long folder name wraps to three lines.
+- Release: `release/v4.3.0` combines the settings work with the dependency
+  updates (vendored DOMPurify 3.4.16 and marked 18.0.14; Biome 2.5.15,
+  commitlint 21.2.3, Node types 26.6.3; fast-uri 3.1.8 clears an audit
+  advisory) and bumps the version to 4.3.0.
+- Held: Playwright stays at 1.62.1. Its 1.63 release bundles Chromium
+  153.0.8010.12, which kills the page when it reads a stored directory handle
+  back out of IndexedDB after a reload. That fails `linked-folder.spec.js`
+  "linking writes every preserved note" every time. A five-line repro with no
+  app code crashes the same way, and installed Chrome 154 passes it. Retry
+  when Playwright ships a newer Chromium.
+- Deferred: TypeScript 7 (a major version with a new compiler), as its own
+  change.
+- Next: merge the PR, then deploy after a `./deploy.sh --dry-run`.
+- Follow-up: `folders.spec.js` "putFolder/getAllFolders/removeFolder
+  round-trip" races startup. `gotoApp` waits for `window.ScratchpadDB`, not
+  for `ensureDailyNotesFolder()`, so under full-suite load the test can read
+  folders before "Daily Notes" lands. It passes alone. Have it wait for the
+  Daily Notes folder first.
+- Full suite after #3: 1406 passed, 33 skipped, 1 failed. This time the
+  failure was `wikilinks.spec.js` "declining leaves phantom links intact" on
+  Chromium (the rename dialog did not open within 5s). It passed 20 of 20
+  alone, and each full run failed a different unrelated test, which fits the
+  suite-saturation flakiness in `tasks/lessons.md`. CI stays authoritative.
+- Blockers: none.
+- Assumptions: the update check's single `GET /public/js/version.js` is the
+  sanctioned carve-out recorded in `CLAUDE.md`, since it only runs on an
+  explicit click and replaces the request `registration.update()` already made.
+
+---
+
 # High items from the 2026-09-26 usability review
 
 Tier: Non-trivial (six coordinated changes, a new dialog, a new module, and

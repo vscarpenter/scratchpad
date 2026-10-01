@@ -154,6 +154,10 @@
     // Load-bearing: /api/share* is not in APP_SHELL_SET, so it falls through to
     // the network untouched. A cached share response would survive revocation.
     if (!APP_SHELL_SET.has(url.pathname)) return;
+    // no-store marks a freshness probe (Check for updates reads version.js).
+    // A cached answer would defeat it, and caching the newer reply would mix
+    // the next release's file into this release's offline copy.
+    if (req.cache === 'no-store') return;
     event.respondWith(
       caches
         .open(CACHE_NAME)

@@ -42,7 +42,7 @@ test.describe('PWA update and recovery', () => {
     expect(await page.evaluate(() => window.__pwaMessages)).toContainEqual({ type: 'SKIP_WAITING' });
   });
 
-  test('checks for updates and refreshes the offline app shell', async ({ page }) => {
+  test('refreshes the offline app shell', async ({ page }) => {
     await page.addInitScript(() => {
       window.__pwaMessages = [];
       const active = {
@@ -72,10 +72,6 @@ test.describe('PWA update and recovery', () => {
     });
     await gotoApp(page);
     await openSettings(page);
-
-    await page.locator('#check-updates-btn').click();
-    expect(await page.evaluate(() => window.__pwaUpdated)).toBe(true);
-    await expect(page.locator('#toast-region')).toContainText('Checked for updates.');
 
     await page.locator('#refresh-offline-copy-btn').click();
     expect(await page.evaluate(() => window.__pwaMessages)).toContainEqual({ type: 'REFRESH_CACHE' });
