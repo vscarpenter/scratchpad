@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { seedRawNotes, switchView } = require('./helpers');
 
 test.describe('accessibility — interactive semantics', () => {
   test('keeps note selection and tag filtering as sibling controls', async ({ page }) => {
@@ -38,7 +38,7 @@ test.describe('accessibility — interactive semantics', () => {
       },
     ]);
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     const row = page.locator('.note-row[data-id="row-trashed"]');
     await expect(row.getByRole('button', { name: 'Open Trashed note' })).toHaveCount(1);
     await expect(row.getByRole('button', { name: /tag archive/i })).toHaveCount(0);

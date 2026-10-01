@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, seedFolders } = require('./helpers');
+const { seedRawNotes, seedFolders, switchView } = require('./helpers');
 
 async function seedOperatorNotes(page) {
   await seedRawNotes(page, [
@@ -66,7 +66,7 @@ test('operators compose with the tag chip', async ({ page }) => {
 
 test('operators stay inside the archive view', async ({ page }) => {
   await seedOperatorNotes(page);
-  await page.locator('#archive-view').click();
+  await switchView(page, 'archive');
   await page.locator('#search').fill('tag:work');
   await expect(page.locator('#search-results-count')).toHaveText('1 result');
   await expectRows(page, ['old-work']);

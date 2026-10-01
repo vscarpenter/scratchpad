@@ -39,6 +39,7 @@
     '/public/js/seed.js',
     '/public/js/search.js',
     '/public/js/search-view.js',
+    '/public/js/command-bar.js',
     '/public/js/dialogs.js',
     '/public/js/editor-format.js',
     '/public/js/find-replace.js',

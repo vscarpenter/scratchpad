@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, seedFolders } = require('./helpers');
+const { seedRawNotes, seedFolders, openCommandPalette } = require('./helpers');
 
 async function seedTemplates(page, withFolder) {
   await seedRawNotes(page, [
@@ -20,7 +20,7 @@ async function openFolder(page, id) {
 }
 
 async function runPalette(page, query) {
-  await page.locator('#command-palette-btn').click();
+  await openCommandPalette(page);
   await page.locator('#command-palette-input').fill(query);
   await expect(page.locator('#command-palette-list [role="option"]').first()).toContainText(/template/i);
   await page.keyboard.press('Enter');
@@ -30,7 +30,7 @@ async function runPalette(page, query) {
 test('templates are listed by title and create a filed note with body and tags', async ({ page }) => {
   await seedTemplates(page, true);
   await openFolder(page, 'f-work');
-  await page.locator('#command-palette-btn').click();
+  await openCommandPalette(page);
   await page.locator('#command-palette-input').fill('template');
   const options = page.locator('#command-palette-list [role="option"]');
   await expect(options).toContainText([/Meeting/, /Weekly/]);

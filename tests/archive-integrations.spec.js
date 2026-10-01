@@ -8,13 +8,13 @@ const {
   openListMenu,
   openOverflowMenu,
   openTagManagerViaMenu,
+  openCommandPalette,
+  switchView,
 } = require('./helpers');
 
 function todayKey() {
   const d = new Date();
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 test.describe('Archive integrations', () => {
@@ -45,14 +45,14 @@ test.describe('Archive integrations', () => {
       { id: 'bulk-unarchive-b', title: 'Unarchive B', body: 'B', archivedAt: Date.now() - 1 },
     ]);
 
-    await page.locator('#archive-view').click();
+    await switchView(page, 'archive');
     await enterBulkMode(page);
     await page.locator('#bulk-select-all').click();
     await page.locator('#bulk-unarchive').click();
 
     await expect(page.locator('#archive-view')).toHaveClass(/is-active/);
     await expect(page.locator('.note-row')).toHaveCount(0);
-    await page.locator('#active-notes-view').click();
+    await switchView(page, 'active');
     await expect(page.locator('.note-row')).toHaveCount(2);
   });
 
@@ -71,10 +71,14 @@ test.describe('Archive integrations', () => {
       { id: 'folder-empty', name: 'Empty folder' },
     ]);
 
-    await page.locator('#archive-view').click();
+    await switchView(page, 'archive');
     await page.locator('#folder-switcher-btn').click();
-    await expect(page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="folder-used"]')).toBeVisible();
-    await expect(page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="folder-empty"]')).toBeVisible();
+    await expect(
+      page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="folder-used"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="folder-empty"]'),
+    ).toBeVisible();
     await expect(page.locator('.folder-menu-btn')).toHaveCount(0);
     await expect(page.locator('#folder-switcher-new')).toBeHidden();
     await openListMenu(page);
@@ -87,19 +91,19 @@ test.describe('Archive integrations', () => {
       { id: 'palette-archive', title: 'Palette archived', body: 'Reference', archivedAt: Date.now() },
     ]);
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('view archive');
     await expect(page.locator('.command-palette-item').first()).toContainText('View Archive');
     await page.keyboard.press('Enter');
     await expect(page.locator('#archive-view')).toHaveClass(/is-active/);
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('palette archived');
     await expect(page.locator('.command-palette-item').first()).toContainText('Open note in Archive');
     await page.keyboard.press('Enter');
     await expect(page.locator('#note-title-display')).toHaveText('Palette archived');
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('unarchive note');
     await expect(page.locator('.command-palette-item').first()).toContainText('Unarchive note');
   });
@@ -119,13 +123,15 @@ test.describe('Archive integrations', () => {
     await seedFolders(page, [{ id: 'mixed-folder', name: 'Mixed folder' }]);
 
     await page.locator('#folder-switcher-btn').click();
-    await page.locator('#folder-switcher-list .folder-switcher-row[data-folder-id="mixed-folder"] .folder-switcher-menu-btn').click();
+    await page
+      .locator('#folder-switcher-list .folder-switcher-row[data-folder-id="mixed-folder"] .folder-switcher-menu-btn')
+      .click();
     await page.locator('#folder-menu [data-action="delete"]').click();
     await expect(page.locator('#folder-delete-copy')).toContainText('1 active and 1 archived');
     await page.locator('#folder-delete-keep').click();
 
     const records = await page.evaluate(async () =>
-      Object.fromEntries((await window.ScratchpadDB.getAll()).map((note) => [note.id, note]))
+      Object.fromEntries((await window.ScratchpadDB.getAll()).map((note) => [note.id, note])),
     );
     expect(records['folder-active'].folderId).toBeNull();
     expect(records['folder-archive'].folderId).toBeNull();
@@ -152,9 +158,17 @@ test.describe('Archive integrations', () => {
     await roadmap.locator('input').fill('plan');
     await roadmap.getByRole('button', { name: 'Rename' }).click();
 
-    await expect.poll(() => page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).map((note) => note.tags).flat().filter((tag) => tag === 'plan').length
-    )).toBe(2);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          async () =>
+            (await window.ScratchpadDB.getAll())
+              .map((note) => note.tags)
+              .flat()
+              .filter((tag) => tag === 'plan').length,
+        ),
+      )
+      .toBe(2);
 
     const reference = page.locator('.tag-manager-row', {
       has: page.locator('input[value="reference"]'),
@@ -164,7 +178,9 @@ test.describe('Archive integrations', () => {
     await expect(page.locator('.note-row[data-id="tag-archive"]')).toBeVisible();
   });
 
-  test('today and quick capture reuse an archived Daily Note while archived templates stay dormant', async ({ page }) => {
+  test('today and quick capture reuse an archived Daily Note while archived templates stay dormant', async ({
+    page,
+  }) => {
     const key = todayKey();
     await seedRawNotes(page, [
       {
@@ -182,16 +198,16 @@ test.describe('Archive integrations', () => {
       },
     ]);
 
-    await page.locator('#today-note').click();
+    await page.locator('#chronicle-days .chronicle-day.is-today').click();
     await expect(page.locator('#archive-view')).toHaveClass(/is-active/);
     await expect(page.locator('#note-title-display')).toHaveText('Archived today');
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('quick capture');
     await page.keyboard.press('Enter');
     await page.locator('#quick-capture-input').fill('captured while archived');
     await page.locator('#quick-capture-submit').click();
-    await expect(page.locator('.toast', { hasText: "Captured to today’s note." }).last()).toBeVisible();
+    await expect(page.locator('.toast', { hasText: 'Captured to today’s note.' }).last()).toBeVisible();
 
     const daily = await page.evaluate(async (dailyKey) => {
       const all = await window.ScratchpadDB.getAll();
@@ -220,10 +236,11 @@ test.describe('Archive integrations', () => {
     await expect(page.locator('#wikilink-suggest')).toContainText('Archived');
   });
 
-  test('a lifecycle-only cross-tab update preserves a dirty editor and saves into Archive', async ({ context, page }) => {
-    await seedRawNotes(page, [
-      { id: 'archive-shared', title: 'Archive shared', body: 'Original body' },
-    ]);
+  test('a lifecycle-only cross-tab update preserves a dirty editor and saves into Archive', async ({
+    context,
+    page,
+  }) => {
+    await seedRawNotes(page, [{ id: 'archive-shared', title: 'Archive shared', body: 'Original body' }]);
     const other = await context.newPage();
     await gotoApp(other);
 
@@ -241,9 +258,13 @@ test.describe('Archive integrations', () => {
     await page.locator('#save-btn').click();
     await expect(page.locator('#save-conflict-dialog')).toBeHidden();
 
-    await expect.poll(() => page.evaluate(async () => {
-      const note = await window.ScratchpadDB.get('archive-shared');
-      return { body: note.body, archived: Number.isFinite(note.archivedAt) };
-    })).toEqual({ body: 'Unsaved body survives', archived: true });
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const note = await window.ScratchpadDB.get('archive-shared');
+          return { body: note.body, archived: Number.isFinite(note.archivedAt) };
+        }),
+      )
+      .toEqual({ body: 'Unsaved body survives', archived: true });
   });
 });

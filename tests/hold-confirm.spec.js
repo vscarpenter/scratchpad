@@ -1,13 +1,13 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, openOverflowMenu, holdToConfirm } = require('./helpers');
+const { seedRawNotes, openOverflowMenu, holdToConfirm, switchView } = require('./helpers');
 
 const CONFIRM = '#confirm-permanent-delete';
 
 /** @param {import('@playwright/test').Page} page */
 async function openPermanentDelete(page) {
   await seedRawNotes(page, [{ id: 'hold-1', title: 'Doomed', body: 'x', deletedAt: Date.now() }]);
-  await page.locator('#trash-view').click();
+  await switchView(page, 'trash');
   await page.locator('.note-row[data-id="hold-1"]').click();
   await openOverflowMenu(page);
   await page.locator('#permanent-delete-btn').click();
@@ -121,7 +121,7 @@ test.describe('hold to confirm feedback and Empty Trash', () => {
 
   test('Empty Trash needs the same hold', async ({ page }) => {
     await seedRawNotes(page, [{ id: 'hold-1', title: 'Doomed', body: 'x', deletedAt: Date.now() }]);
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await page.locator('.trash-tools button').click();
     await expect(page.locator('#confirm-empty-trash')).toHaveText('Hold to empty Trash');
 

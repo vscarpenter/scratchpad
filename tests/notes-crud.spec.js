@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, createAndSaveNote, openOverflowMenu, holdToConfirm } = require('./helpers');
+const { gotoApp, createAndSaveNote, openOverflowMenu, holdToConfirm, switchView } = require('./helpers');
 
 async function selectEditorText(page, text) {
   await page.locator('#note-editor').evaluate((editor, selectedText) => {
@@ -99,7 +99,7 @@ test.describe('notes — create, edit, persist', () => {
 
     await expect(page.locator('#note-count')).toHaveText('0');
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await expect(page.locator('.note-row')).toHaveCount(1);
 
     await page.locator('.note-row').first().click();

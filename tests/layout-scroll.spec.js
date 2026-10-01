@@ -33,26 +33,24 @@ test.describe('sidebar layout — scroll containment', () => {
     await seedNotes(page, 3);
     const sidebar = await page.locator('#sidebar').boundingBox();
     if (!sidebar) throw new Error('sidebar has no bounding box');
-    // Every action control must end inside the sidebar's right edge —
-    // regression guard for the Today button overflowing the actions row
-    // and clipping the About icon.
-    for (const id of ['#new-note', '#today-note', '#command-palette-btn', '#open-about', '#open-settings']) {
+    // Every header control must end inside the sidebar's right edge —
+    // regression guard for the header actions clipping the About icon.
+    for (const id of ['#view-menu-btn', '#open-settings', '#open-about', '#new-note']) {
       const box = await page.locator(id).boundingBox();
       if (!box) throw new Error(id + ' has no bounding box');
       expect(box.x + box.width, id + ' overflows sidebar').toBeLessThanOrEqual(sidebar.x + sidebar.width + 0.5);
     }
-    // And the primary button must have room for one-line text.
-    const newNote = await page.locator('#new-note').boundingBox();
-    expect(newNote.width).toBeGreaterThanOrEqual(110);
+    // The compose button is icon-only but keeps an accessible name.
+    await expect(page.locator('#new-note')).toHaveAccessibleName('New note');
   });
 
-  test('Chronicle sidebar header stays within its 330px budget', async ({ page }) => {
+  test('Chronicle sidebar header stays within its 150px budget', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await seedNotes(page, 5);
 
     const head = await page.locator('.sidebar-head').boundingBox();
     if (!head) throw new Error('sidebar head has no bounding box');
-    expect(head.height).toBeLessThanOrEqual(330);
+    expect(head.height).toBeLessThanOrEqual(150);
 
     // The Chronicle date heading carries the live note count and local-storage promise.
     await expect(page.locator('.sidebar-kicker')).toBeVisible();
@@ -83,7 +81,7 @@ test.describe('sidebar layout — scroll containment', () => {
     expect(scroll.left).toBe(0);
     expect(scroll.scrollWidth).toBe(scroll.width);
 
-    for (const selector of ['.sidebar-head', '#new-note', '#today-note', '#list-header']) {
+    for (const selector of ['.sidebar-head', '#new-note', '#search', '#list-header']) {
       const box = await page.locator(selector).boundingBox();
       if (!box) throw new Error(selector + ' has no bounding box');
       expect(box.x, selector + ' is clipped beneath the Chronicle rail').toBeGreaterThanOrEqual(sidebarBox.x - 0.5);

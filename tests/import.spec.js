@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, importJson, seedRawNotes, openBackupMenu } = require('./helpers');
+const { gotoApp, importJson, seedRawNotes, openBackupMenu, switchView } = require('./helpers');
 const { stat } = require('node:fs/promises');
 
 const validNote = {
@@ -113,7 +113,7 @@ test.describe('import — validation and conflicts', () => {
     await expect(page.locator('#import-preview-dialog')).toBeHidden();
 
     await expect(page.locator('.note-row')).toHaveCount(1);
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('#note-title-display')).toHaveText('Previously trashed');
   });

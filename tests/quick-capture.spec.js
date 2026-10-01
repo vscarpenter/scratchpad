@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes } = require('./helpers');
+const { gotoApp, seedRawNotes, openCommandPalette } = require('./helpers');
 
 const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
 
@@ -36,7 +36,7 @@ test.describe('quick capture spotlight', () => {
 
 test('captures into today note, creating it when needed', async ({ page }) => {
   await gotoApp(page);
-  await page.locator('#command-palette-btn').click();
+  await openCommandPalette(page);
   await page.locator('#command-palette-input').fill('capture');
   await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
   await page.locator('#quick-capture-input').fill('remember the milk');
@@ -50,7 +50,7 @@ test('captures into today note, creating it when needed', async ({ page }) => {
   expect(note.folderId).toBe(DAILY_NOTES_FOLDER_ID);
   expect(note.body).toMatch(/- \*\*\d{2}:\d{2}\*\* remember the milk\n$/);
   // Second capture appends to the same note.
-  await page.locator('#command-palette-btn').click();
+  await openCommandPalette(page);
   await page.locator('#command-palette-input').fill('capture');
   await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
   await page.locator('#quick-capture-input').fill('second thought');
@@ -70,7 +70,7 @@ test('capture while editing today note appends to the buffer, not the DB', async
   await page.locator('.note-row').first().click();
   await page.locator('#edit-btn').click();
   await page.locator('#note-editor').fill('unsaved edits');
-  await page.locator('#command-palette-btn').click();
+  await openCommandPalette(page);
   await page.locator('#command-palette-input').fill('capture');
   await page.locator('.command-palette-item', { hasText: 'Quick capture' }).click();
   await page.locator('#quick-capture-input').fill('buffered thought');

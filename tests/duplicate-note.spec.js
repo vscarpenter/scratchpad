@@ -1,11 +1,17 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, seedFolders } = require('./helpers');
+const { seedRawNotes, seedFolders, openCommandPalette, switchView } = require('./helpers');
 
 test.describe('duplicate note', () => {
   test('duplicates a note via the overflow menu', async ({ page }) => {
     await seedRawNotes(page, [
-      { id: 'overflow-source', title: 'Meeting notes', body: 'Agenda items.', tags: ['work', 'planning'], folderId: 'f-work' },
+      {
+        id: 'overflow-source',
+        title: 'Meeting notes',
+        body: 'Agenda items.',
+        tags: ['work', 'planning'],
+        folderId: 'f-work',
+      },
     ]);
     await seedFolders(page, [{ id: 'f-work', name: 'Work' }]);
 
@@ -28,12 +34,10 @@ test.describe('duplicate note', () => {
   });
 
   test('duplicates a note via the command palette', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'palette-source', title: 'Palette source', body: 'Body text.', tags: ['alpha'] },
-    ]);
+    await seedRawNotes(page, [{ id: 'palette-source', title: 'Palette source', body: 'Body text.', tags: ['alpha'] }]);
     await page.locator('.note-row[data-id="palette-source"]').click();
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('duplicate note');
     await page.keyboard.press('Enter');
 
@@ -65,9 +69,7 @@ test.describe('duplicate note', () => {
   });
 
   test('duplicating a pinned note yields an unpinned copy', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'pinned-source', title: 'Pinned original', body: 'Pinned body.', pinned: true },
-    ]);
+    await seedRawNotes(page, [{ id: 'pinned-source', title: 'Pinned original', body: 'Pinned body.', pinned: true }]);
     await page.locator('.note-row[data-id="pinned-source"]').click();
     await expect(page.locator('#pin-toggle')).toHaveAttribute('aria-checked', 'true');
 
@@ -83,10 +85,8 @@ test.describe('duplicate note', () => {
   });
 
   test('hides the duplicate action for trashed notes', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'trashed-source', title: 'Trashed note', body: 'Gone.', deletedAt: Date.now() },
-    ]);
-    await page.locator('#trash-view').click();
+    await seedRawNotes(page, [{ id: 'trashed-source', title: 'Trashed note', body: 'Gone.', deletedAt: Date.now() }]);
+    await switchView(page, 'trash');
     await page.locator('.note-row[data-id="trashed-source"]').click();
 
     // The overflow menu stays available in Trash (it hosts Restore and
@@ -96,10 +96,8 @@ test.describe('duplicate note', () => {
     await expect(page.locator('#duplicate-overflow-btn')).toBeHidden();
     await page.keyboard.press('Escape');
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('duplicate note');
-    await expect(
-      page.locator('#command-palette-list [role="option"]', { hasText: 'Duplicate note' })
-    ).toHaveCount(0);
+    await expect(page.locator('#command-palette-list [role="option"]', { hasText: 'Duplicate note' })).toHaveCount(0);
   });
 });

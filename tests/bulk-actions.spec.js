@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, enterBulkMode, holdToConfirm } = require('./helpers');
+const { seedRawNotes, enterBulkMode, holdToConfirm, switchView } = require('./helpers');
 
 test.describe('bulk actions', () => {
   test('moves selected notes to Trash and restores them', async ({ page }) => {
@@ -19,14 +19,14 @@ test.describe('bulk actions', () => {
     await expect(page.locator('.note-row')).toHaveCount(1);
     await expect(page.locator('#note-count')).toHaveText('1');
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await enterBulkMode(page);
     await page.locator('#bulk-select-all').click();
     await expect(page.locator('#bulk-selected-count')).toHaveText('2 selected');
     await page.locator('#bulk-restore').click();
 
     await expect(page.locator('#note-count')).toHaveText('3');
-    await page.locator('#active-notes-view').click();
+    await switchView(page, 'active');
     await expect(page.locator('.note-row')).toHaveCount(3);
   });
 
@@ -94,7 +94,7 @@ test.describe('bulk actions', () => {
       { id: 'delete-forever-b', title: 'Gone B', body: 'Body B.', deletedAt: Date.now() },
     ]);
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await enterBulkMode(page);
     await page.locator('[data-id="delete-forever-a"] input[type="checkbox"]').check();
     await page.locator('[data-id="delete-forever-b"] input[type="checkbox"]').check();
@@ -117,7 +117,7 @@ test.describe('bulk actions', () => {
   test('cancelling the hold dialog leaves selected trashed notes untouched', async ({ page }) => {
     await seedRawNotes(page, [{ id: 'keep-forever-a', title: 'Stay A', body: 'Body A.', deletedAt: Date.now() }]);
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await enterBulkMode(page);
     await page.locator('[data-id="keep-forever-a"] input[type="checkbox"]').check();
     await page.locator('#bulk-delete-forever').click();

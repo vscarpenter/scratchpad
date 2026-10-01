@@ -111,15 +111,26 @@ daily note; ordinary notes fall back to their creation date.
 
 ### Chronology rail
 
-The rail carries the brand mark, abbreviated month, five vertically stacked
-dates, and a Today shortcut. The selected date uses solid Indigo with white
-text. Non-selected dates remain quiet and use a tinted hover state.
+The rail carries the brand mark, abbreviated month, and five vertically stacked
+dates. Today's tile reads "Today" and carries a restrained Indigo tint; it is the
+desktop entry to today's note, so the rail has no separate Today button. The
+selected date uses solid Indigo with white text. Non-selected dates remain quiet
+and use a tinted hover state.
+
+### Command-bar header
+
+The note index header has two rows. The first holds the view menu ("Notes ▾",
+switching Notes, Archive, and Trash), the note count kicker, the Settings and
+About icons, and an icon-only Indigo compose button for New note. The second is
+the search field, which doubles as the command bar: an empty focused field
+suggests everyday commands, a leading ">" searches commands instead of notes,
+and the panel footer opens the full command palette.
 
 ### Daily-note card
 
-The daily-note callout appears in the note index, using a restrained Indigo
-tint and border. It explains the daily-writing behavior without competing with
-the primary New note action.
+The daily-note row appears in the note index only where the chronology rail is
+hidden (below 900px), using a restrained Indigo tint and border. On desktop the
+rail's Today tile replaces it.
 
 ### Document date spine
 

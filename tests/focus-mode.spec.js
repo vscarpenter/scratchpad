@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { seedRawNotes, openCommandPalette } = require('./helpers');
 
 test.describe('focus mode — distraction-free writing', () => {
   test('palette toggle hides sidebar and editor chrome, and shows the exit button', async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe('focus mode — distraction-free writing', () => {
     await expect(page.locator('#backlinks-section')).toBeVisible();
     await expect(page.locator('#focus-exit-btn')).toBeHidden();
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('focus mode');
     await expect(page.locator('#command-palette-list [role="option"]').first()).toContainText('Enter focus mode');
     await page.keyboard.press('Enter');
@@ -44,7 +44,7 @@ test.describe('focus mode — distraction-free writing', () => {
     await seedRawNotes(page, [{ id: 'focus-toggle-back', title: 'Toggle back', body: 'body text' }]);
     await page.locator('.note-row[data-id="focus-toggle-back"]').click();
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('focus mode');
     await page.keyboard.press('Enter');
     await expect(page.locator('#sidebar')).toBeHidden();
@@ -83,7 +83,7 @@ test.describe('focus mode — distraction-free writing', () => {
     await seedRawNotes(page, [{ id: 'focus-exit-button', title: 'Exit via button', body: 'body text' }]);
     await page.locator('.note-row[data-id="focus-exit-button"]').click();
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('focus mode');
     await page.keyboard.press('Enter');
     await expect(page.locator('#sidebar')).toBeHidden();

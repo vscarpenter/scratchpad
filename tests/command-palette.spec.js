@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes } = require('./helpers');
+const { seedRawNotes, openCommandPalette } = require('./helpers');
 
 test.describe('command palette', () => {
   test('opens from the keyboard and switches to a matching note', async ({ page }) => {
@@ -21,11 +21,9 @@ test.describe('command palette', () => {
   });
 
   test('runs a filtered command', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'palette-existing', title: 'Existing note', body: 'Body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'palette-existing', title: 'Existing note', body: 'Body.' }]);
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('new note');
     await page.keyboard.press('Enter');
 
@@ -41,7 +39,7 @@ test.describe('command palette', () => {
       { id: 'nav-gamma', title: 'Zqx gamma', body: 'Body.' },
     ]);
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     const input = page.locator('#command-palette-input');
     await input.fill('zqx');
     await expect(input).toHaveAttribute('role', 'combobox');
@@ -76,11 +74,9 @@ test.describe('command palette', () => {
   });
 
   test('shows an empty state when no command or note matches the query', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'palette-only', title: 'Only note', body: 'Body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'palette-only', title: 'Only note', body: 'Body.' }]);
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('zzz-no-such-thing-zzz');
 
     await expect(page.locator('#command-palette-empty')).toBeVisible();
@@ -90,13 +86,11 @@ test.describe('command palette', () => {
   });
 
   test('Escape closes only the palette while a note has unsaved edits', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'palette-dirty', title: 'Dirty note', body: 'Saved body.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'palette-dirty', title: 'Dirty note', body: 'Saved body.' }]);
     await page.locator('#edit-btn').click();
     await page.locator('#note-editor').fill('Unsaved body.');
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     const input = page.locator('#command-palette-input');
     await expect(input).toHaveAttribute('aria-expanded', 'true');
     await input.press('Escape');
