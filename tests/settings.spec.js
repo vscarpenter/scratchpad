@@ -42,3 +42,25 @@ test.describe('settings dialog', () => {
     await expect(page.locator('#settings-dialog')).toHaveAttribute('open', '');
   });
 });
+
+// The two rows people mix up: one holds the app, the other holds the notes.
+test('the Offline cache row says it holds the app, not your notes', async ({ page }) => {
+  await gotoApp(page);
+  await openSettings(page);
+  const hint = page.locator('#offline-cache-hint');
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText(
+    'A copy of the app itself, so Scratchpad opens with no connection. Your notes are not in it; they stay in this browser.',
+  );
+});
+
+test('the Linked folder row says it mirrors notes as files both ways', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Only Chromium has the File System Access API that shows this row.');
+  await gotoApp(page);
+  await openSettings(page);
+  const hint = page.locator('#linked-folder-hint');
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText(
+    'Saves every note as a Markdown file in a folder you pick, and reads your edits back when you return to this tab.',
+  );
+});

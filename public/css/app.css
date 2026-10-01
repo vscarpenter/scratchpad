@@ -5340,6 +5340,16 @@ body:not(.page-privacy) {
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+/* Takes its own line under the row's controls, indented past the status dot
+   (7px dot plus the 8px row gap) so it lines up with the term. */
+.data-status-hint {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 15px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
 
 /* Quick capture — Phase 2 spotlight: no title bar; the foot previews the
    exact line that will be appended. */
