@@ -66,7 +66,19 @@ is structural).
   coverage 39.50%, structure ratchet unchanged at 102 long and 11 deep.
 - Known limit: at 320px wide, Unlink wraps to its own line (still
   right-aligned) and a long folder name wraps to three lines.
-- Next: push and PR, when Vinny says go.
+- Release: `release/v4.3.0` combines the settings work with the dependency
+  updates (vendored DOMPurify 3.4.16 and marked 18.0.14; Biome 2.5.15,
+  commitlint 21.2.3, Node types 26.6.3; fast-uri 3.1.8 clears an audit
+  advisory) and bumps the version to 4.3.0.
+- Held: Playwright stays at 1.62.1. Its 1.63 release bundles Chromium
+  153.0.8010.12, which kills the page when it reads a stored directory handle
+  back out of IndexedDB after a reload. That fails `linked-folder.spec.js`
+  "linking writes every preserved note" every time. A five-line repro with no
+  app code crashes the same way, and installed Chrome 154 passes it. Retry
+  when Playwright ships a newer Chromium.
+- Deferred: TypeScript 7 (a major version with a new compiler), as its own
+  change.
+- Next: merge the PR, then deploy after a `./deploy.sh --dry-run`.
 - Follow-up: `folders.spec.js` "putFolder/getAllFolders/removeFolder
   round-trip" races startup. `gotoApp` waits for `window.ScratchpadDB`, not
   for `ensureDailyNotesFolder()`, so under full-suite load the test can read
