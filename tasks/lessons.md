@@ -168,3 +168,13 @@
 - The structure ratchet counts app.js on every commit, so a feature that adds
   lines there is planned with the extraction that pays for them, in the same
   commit, or the pre-commit hook rejects it mid-task.
+
+- Commitlint here enforces an all-lowercase subject, so UI names such as
+  "Check for updates" or "Linked folder" must be lowercased in the subject
+  line. Keep the proper casing for the body.
+- Run the full three-browser suite before accepting a Playwright bump. The
+  bundled browsers change with it, and Playwright 1.63's Chromium
+  153.0.8010.12 crashed on reading a stored FileSystemDirectoryHandle from
+  IndexedDB after a reload. To tell a browser bug from an app bug, reproduce
+  it in a few lines with no app code, then run the same repro on the previous
+  Playwright and on installed Chrome.

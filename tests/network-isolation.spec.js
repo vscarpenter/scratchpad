@@ -6,6 +6,7 @@ const {
   importJson,
   openBackupMenu,
   openOverflowMenu,
+  openSettings,
   makeShare,
   stubShare,
 } = require('./helpers');
@@ -123,6 +124,20 @@ test.describe('network isolation', () => {
     await page.locator('#share-copy').click();
 
     expect(requests, `unexpected requests: ${describeRequests(requests)}`).toEqual([]);
+  });
+
+  // The update check is the one other request the app may make, and only on
+  // that explicit click: a bodiless GET for the deployed version marker.
+  test('checking for updates makes exactly one same-origin GET, for version.js', async ({ page, baseURL }) => {
+    await gotoApp(page);
+    const requests = await recordRequestsAfterLoad(page);
+
+    await openSettings(page);
+    await page.locator('#check-updates-btn').click();
+    await expect(page.locator('#toast-region')).toContainText('is the latest version.');
+
+    expect(describeRequests(requests)).toBe(`GET ${baseURL}/public/js/version.js`);
+    expect(requests[0].body).toBeFalsy();
   });
 
   // These stub /api/share. WebKit routes requests from a

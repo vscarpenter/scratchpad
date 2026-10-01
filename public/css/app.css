@@ -5400,17 +5400,19 @@ body:not(.page-privacy) {
 .data-status {
   margin: 0;
 }
+/* One grid for every row: dot, label, and value on the first line, then the
+   hint, then the actions, both spanning the label and value columns. A
+   wrapping flex line broke wherever the next item stopped fitting. */
 .data-status-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 7px auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  column-gap: 8px;
   padding: 9px 0;
   border-top: var(--border-hair);
   font-size: 13px;
 }
 .data-status-row .status-dot {
-  flex: none;
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -5425,11 +5427,39 @@ body:not(.page-privacy) {
 .data-status-term {
   color: var(--text-secondary);
 }
+/* The value takes the flexible column and wraps there, so a long folder
+   name never squeezes the label. */
 .data-status-value {
-  margin-left: auto;
+  justify-self: end;
+  text-align: right;
   font-weight: 600;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+.data-status-hint,
+.data-status-actions {
+  grid-column: 2 / -1;
+}
+.data-status-hint {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.data-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+/* Storage protection hides its only button once it reads Persistent, and an
+   empty actions line would still add its margin. */
+.data-status-actions:not(:has(> :not([hidden]))) {
+  display: none;
+}
+/* Unlink is the one destructive action, so it sits apart at the far end. */
+.data-status-actions .btn-ghost {
+  margin-left: auto;
 }
 
 /* Quick capture — Phase 2 spotlight: no title bar; the foot previews the

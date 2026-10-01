@@ -17,10 +17,16 @@ guarantee, not an implementation detail.
 - **No third-party scripts, fonts, trackers, or analytics.** Everything is
   same-origin. If a change would add a CDN reference, a Google Font, a script
   tag pointing off-site, or an `<img>` from a third-party host, stop and check.
-- **`POST/GET/DELETE /api/share` is the ONLY sanctioned network call.** The
+- **`POST/GET/DELETE /api/share` is the ONLY sanctioned network call**, apart
+  from the update check below. The
   product is "your notes stay in this browser unless you deliberately share
   one." Don't add any other fetch/XHR. No sync, no autosave-to-server, no
   telemetry, no error reporting.
+- **The update check is the one carve-out.** Settings > Check for updates
+  sends a single bodiless `GET /public/js/version.js` with `cache: 'no-store'`,
+  and only on that click. The service worker passes no-store requests straight
+  to the network, so the probe never reads or writes the offline copy.
+  `tests/network-isolation.spec.js` pins the click to exactly that request.
 - **Note content is encrypted client-side before any upload.** A share is
   AES-GCM ciphertext plus an IV; the key is generated in the browser, lives in
   the URL fragment, and must never appear in a request path, query string,
@@ -213,6 +219,12 @@ Single source of truth: `public/js/version.js`. Edit the two constants
 `share.html`) pick up the new
 values via the `#app-version` and `#app-build-date` placeholders in their
 footers.
+
+The deployed `version.js` is also the release marker for Settings > Check for
+updates, which reads it with a regex on `SCRATCHPAD_VERSION = '<version>'`.
+Keep that assignment a plain string literal on one line. The check exists
+because `registration.update()` re-fetches the worker at its current `?v=`
+URL, and that file rarely changes between releases.
 
 ### Deploying
 Run `./deploy.sh` (or `bash deploy.sh`); `./deploy.sh --dry-run` previews

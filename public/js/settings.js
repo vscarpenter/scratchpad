@@ -69,6 +69,19 @@
     return 'Available after reload';
   }
 
+  /* version.js changes every release, so it is the release marker.
+     registration.update() re-fetches the worker at its current ?v= URL, and
+     that file rarely changes, so it misses most releases. no-store skips the
+     HTTP cache and, by the worker's rule, the offline cache too. */
+  /** @param {string} current @returns {Promise<string | null>} the deployed version when it differs */
+  async function newerVersion(current) {
+    const response = await fetch('/public/js/version.js', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Version check failed with HTTP ' + response.status);
+    const match = /SCRATCHPAD_VERSION = ['"]([^'"]+)['"]/.exec(await response.text());
+    if (!match) throw new Error('The deployed version.js names no version');
+    return match[1] === current ? null : match[1];
+  }
+
   /** @param {(bytes: number) => string} formatBytes */
   async function storageSummary(formatBytes) {
     if (!navigator.storage || typeof navigator.storage.estimate !== 'function') return 'Unavailable';
@@ -85,5 +98,12 @@
 
   /** @type {Window & typeof globalThis & { ScratchpadSettings?: object }} */
   const root = window;
-  root.ScratchpadSettings = Object.freeze({ readTheme, setTheme, bindThemeChoice, offlineCacheStatus, storageSummary });
+  root.ScratchpadSettings = Object.freeze({
+    readTheme,
+    setTheme,
+    bindThemeChoice,
+    offlineCacheStatus,
+    newerVersion,
+    storageSummary,
+  });
 }
