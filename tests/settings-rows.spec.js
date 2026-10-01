@@ -48,26 +48,51 @@ for (const width of [1280, 390]) {
       expect(row, String(row.term)).toEqual({ ...row, belowStatus: true, underLabel: true, belowHint: true });
     }
   });
+}
 
-  test(`at ${width}px a linked folder keeps its actions on one line with Unlink at the end`, async ({ page }) => {
-    await openSettingsWithPicker(page, width);
-    await page.locator('#linked-folder-link').click();
-    const write = page.locator('#linked-folder-write');
-    const linked = await write.waitFor({ timeout: 4000 }).then(
+// Links a folder at this width and returns the boxes of its actions and status value.
+async function linkedActionBoxes(page, width) {
+  await openSettingsWithPicker(page, width);
+  await page.locator('#linked-folder-link').click();
+  const linked = await page
+    .locator('#linked-folder-write')
+    .waitFor({ timeout: 4000 })
+    .then(
       () => true,
       () => false,
     );
-    test.skip(!linked, 'this browser cannot link a directory here');
-    const [writeBox, read, unlink, value] = await Promise.all(
-      ['#linked-folder-write', '#linked-folder-read', '#linked-folder-unlink', '#linked-folder-status'].map((id) =>
-        page.locator(id).evaluate((el) => el.getBoundingClientRect().toJSON()),
-      ),
-    );
-    expect(Math.abs(read.top - writeBox.top)).toBeLessThanOrEqual(2);
-    expect(Math.abs(unlink.top - writeBox.top)).toBeLessThanOrEqual(2);
+  test.skip(!linked, 'this browser cannot link a directory here');
+  const [write, read, unlink, value] = await Promise.all(
+    ['#linked-folder-write', '#linked-folder-read', '#linked-folder-unlink', '#linked-folder-status'].map((id) =>
+      page.locator(id).evaluate((el) => el.getBoundingClientRect().toJSON()),
+    ),
+  );
+  return { write, read, unlink, value };
+}
+
+/* Unlink may wrap below Write now and Read now on a narrow screen; how narrow
+   depends on the platform's fonts (Linux wraps at 390px, macOS does not). It
+   must still sit at the far end, never stranded under the label. */
+for (const width of [1280, 390]) {
+  test(`at ${width}px a linked folder keeps Write now and Read now together, with Unlink at the far end`, async ({
+    page,
+  }) => {
+    const { write, read, unlink, value } = await linkedActionBoxes(page, width);
+    expect(Math.abs(read.top - write.top)).toBeLessThanOrEqual(2);
     expect(Math.abs(unlink.right - value.right)).toBeLessThanOrEqual(2);
   });
 }
+
+test('at 320px Unlink wraps to its own line and still sits at the far end', async ({ page }) => {
+  const { write, unlink, value } = await linkedActionBoxes(page, 320);
+  expect(unlink.top).toBeGreaterThan(write.top + 2);
+  expect(Math.abs(unlink.right - value.right)).toBeLessThanOrEqual(2);
+});
+
+test('at 1280px a linked folder fits all its actions on one line', async ({ page }) => {
+  const { write, unlink } = await linkedActionBoxes(page, 1280);
+  expect(Math.abs(unlink.top - write.top)).toBeLessThanOrEqual(2);
+});
 
 test('the Settings dialog never scrolls sideways at 320px', async ({ page }) => {
   await openSettingsWithPicker(page, 320);
@@ -75,14 +100,18 @@ test('the Settings dialog never scrolls sideways at 320px', async ({ page }) => 
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('Storage protection stays one line once it reads Persistent', async ({ page }) => {
+// Persistent and Unavailable both hide Protect local data, so its actions line is empty.
+test('Storage protection stays one line when it has no action to offer', async ({ page }) => {
   await page.addInitScript(() => {
     // On the prototype: WebKit ignores an own property set on navigator.storage.
+    // Linux WebKit has no StorageManager at all, and the row reads Unavailable.
+    if (typeof StorageManager === 'undefined') return;
     Object.defineProperty(StorageManager.prototype, 'persisted', { configurable: true, value: async () => true });
   });
   await gotoApp(page);
   await openSettings(page);
-  await expect(page.locator('#diagnostic-storage-protection')).toHaveText('Persistent');
+  await expect(page.locator('#diagnostic-storage-protection')).toHaveText(/^(Persistent|Unavailable)$/);
+  await expect(page.locator('#protect-storage-btn')).toBeHidden();
   const [protection, backup] = await Promise.all(
     ['#diagnostic-storage-protection', '#diagnostic-last-backup'].map((id) =>
       page.locator(id).evaluate((el) => el.closest('.data-status-row')?.getBoundingClientRect().height),
