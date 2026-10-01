@@ -1,3 +1,82 @@
+# Settings fixes: update check, row hints, row layout
+
+Tier: Standard (three app files plus tests, no new public contract).
+Branch: `fix/settings-update-check-and-hints`. Nothing pushed.
+
+## Plan
+
+- [x] 1. Check for updates finds real releases: reads the deployed
+      `version.js` with `cache: 'no-store'`, registers the new worker URL when
+      it differs, and the worker passes no-store requests to the network
+      (3fa3d3d).
+- [x] 2. One-line hints under the Offline cache and Linked folder rows
+      (a3b032e).
+- [ ] 3. Status-row layout. Plan below, waiting on approval.
+
+## Plan for #3: status-row layout
+
+Problem: each `.data-status-row` is one flex line holding the dot, term,
+value, up to three buttons, and the hint. `flex-wrap` breaks wherever the next
+item stops fitting, so the break point depends on label length and dialog
+width. At the 560px dialog the linked row strands Unlink alone on line two. At
+390px wide, "Protect local data" and "Check for updates" drop to the left
+edge, under the dot instead of the term. Evidence:
+`.verify/settings-hints-*.png`.
+
+Design: every row gets the same grid, so structure decides the break, not
+width.
+
+```
+o  Linked folder          Linked to "ScratchPad-Content"
+   Saves every note as a Markdown file in a folder you pick, ...
+   [Write now] [Read now]                              Unlink
+```
+
+1. Red: new `tests/settings-rows.spec.js` with top-level tests (ratchet-safe).
+   Link a folder through the OPFS picker stand-in from
+   `tests/linked-folder.spec.js`. At 1280 and 390 wide, assert for every
+   visible row: each button sits at or below the value line, each button's
+   left edge is at or past the term's, and Write now, Read now, and Unlink
+   share one line. At 320 wide, the dialog has no horizontal overflow.
+2. Markup in `index.html`: wrap each row's buttons in
+   `<div class="data-status-actions">` and move the hint above it, so reading
+   order is status, meaning, then actions. Button ids stay, so `app.js` and
+   `linked-folder.js` need no changes.
+3. CSS in `app.css`, tokens only: `.data-status-row` becomes a grid with
+   columns `7px auto minmax(0, 1fr)`. The value sits in the last column,
+   right-aligned and free to wrap, so a long folder name never squeezes the
+   term. The hint and actions span columns 2 to 3, and the hint drops its 15px
+   indent because the column now does that job. Actions are a wrapping flex
+   line with an 8px gap. `#linked-folder-unlink` gets `margin-left: auto`, so
+   the one destructive action sits apart at the far end. An actions line whose
+   buttons are all hidden collapses through `:has()`, so Storage protection
+   stays one line once it reads Persistent.
+4. Verify: settings, diagnostics, touch-targets, and linked-folder specs on
+   three browsers; light, dark, and phone screenshots; `bun run verify`.
+
+Rejected: an overflow menu for Unlink and Refresh offline copy (it hides rare
+actions in the one place people look for them, and adds menu wiring), and
+full-width stacked buttons on phones (heavier, and unnecessary once the break
+is structural).
+
+## Resuming From Here
+
+- Done: #1 and #2, committed with tests. `bun run verify` green, coverage
+  39.50%.
+- Next: approval of the #3 plan above, then build it test-first.
+- Full suite: 1390 passed, 31 skipped, 1 failed. The failure is
+  `folders.spec.js` "putFolder/getAllFolders/removeFolder round-trip" on
+  Chromium, a pre-existing race: `gotoApp` waits for `window.ScratchpadDB`,
+  not for startup's `ensureDailyNotesFolder()`, so under suite load the test
+  can read folders before "Daily Notes" lands. It passed 20 of 20 alone.
+  Follow-up: have that test wait for the Daily Notes folder first.
+- Blockers: none. Push and PR wait for Vinny.
+- Assumptions: the update check's single `GET /public/js/version.js` is the
+  sanctioned carve-out recorded in `CLAUDE.md`, since it only runs on an
+  explicit click and replaces the request `registration.update()` already made.
+
+---
+
 # High items from the 2026-09-26 usability review
 
 Tier: Non-trivial (six coordinated changes, a new dialog, a new module, and

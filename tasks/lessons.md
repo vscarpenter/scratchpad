@@ -168,3 +168,7 @@
 - The structure ratchet counts app.js on every commit, so a feature that adds
   lines there is planned with the extraction that pays for them, in the same
   commit, or the pre-commit hook rejects it mid-task.
+
+- Commitlint here enforces an all-lowercase subject, so UI names such as
+  "Check for updates" or "Linked folder" must be lowercased in the subject
+  line. Keep the proper casing for the body.
