@@ -5627,15 +5627,15 @@
   }
 
   async function checkForUpdates() {
-    const registration = state.serviceWorkerRegistration ||
-      (navigator.serviceWorker.getRegistration && await navigator.serviceWorker.getRegistration());
-    if (!registration || typeof registration.update !== 'function') {
-      toast('Update checks are unavailable in this browser.', { tone: 'info' });
-      return;
-    }
-    await registration.update();
-    if (registration.waiting) showWaitingUpdate(registration.waiting);
-    toast('Checked for updates.', { tone: 'info' });
+    // The updatefound listener that shows the reload notice lives on this registration.
+    if (!state.serviceWorkerRegistration) return toast('Update checks are unavailable in this browser.', { tone: 'info' });
+    const current = window.SCRATCHPAD_VERSION || 'dev';
+    const latest = await window.ScratchpadSettings.newerVersion(current);
+    // A new script URL makes the browser install that release's worker.
+    if (latest) await navigator.serviceWorker.register('/service-worker.js?v=' + encodeURIComponent(latest));
+    showWaitingUpdate();
+    const message = latest ? 'Scratchpad ' + latest + ' is downloading.' : 'Scratchpad ' + current + ' is the latest version.';
+    toast(message, { tone: 'info' });
   }
 
   function messageServiceWorker(worker, message) {
