@@ -11,7 +11,8 @@ Branch: `fix/settings-update-check-and-hints`. Nothing pushed.
       (3fa3d3d).
 - [x] 2. One-line hints under the Offline cache and Linked folder rows
       (a3b032e).
-- [ ] 3. Status-row layout. Plan below, waiting on approval.
+- [x] 3. Status-row layout: one grid per row, hint above the actions,
+      Unlink at the far end (4415a6a). Approved 2026-10-01.
 
 ## Plan for #3: status-row layout
 
@@ -61,16 +62,22 @@ is structural).
 
 ## Resuming From Here
 
-- Done: #1 and #2, committed with tests. `bun run verify` green, coverage
-  39.50%.
-- Next: approval of the #3 plan above, then build it test-first.
-- Full suite: 1390 passed, 31 skipped, 1 failed. The failure is
-  `folders.spec.js` "putFolder/getAllFolders/removeFolder round-trip" on
-  Chromium, a pre-existing race: `gotoApp` waits for `window.ScratchpadDB`,
-  not for startup's `ensureDailyNotesFolder()`, so under suite load the test
-  can read folders before "Daily Notes" lands. It passed 20 of 20 alone.
-  Follow-up: have that test wait for the Daily Notes folder first.
-- Blockers: none. Push and PR wait for Vinny.
+- Done: #1, #2, and #3, each committed with tests. `bun run verify` green,
+  coverage 39.50%, structure ratchet unchanged at 102 long and 11 deep.
+- Known limit: at 320px wide, Unlink wraps to its own line (still
+  right-aligned) and a long folder name wraps to three lines.
+- Next: push and PR, when Vinny says go.
+- Follow-up: `folders.spec.js` "putFolder/getAllFolders/removeFolder
+  round-trip" races startup. `gotoApp` waits for `window.ScratchpadDB`, not
+  for `ensureDailyNotesFolder()`, so under full-suite load the test can read
+  folders before "Daily Notes" lands. It passes alone. Have it wait for the
+  Daily Notes folder first.
+- Full suite after #3: 1406 passed, 33 skipped, 1 failed. This time the
+  failure was `wikilinks.spec.js` "declining leaves phantom links intact" on
+  Chromium (the rename dialog did not open within 5s). It passed 20 of 20
+  alone, and each full run failed a different unrelated test, which fits the
+  suite-saturation flakiness in `tasks/lessons.md`. CI stays authoritative.
+- Blockers: none.
 - Assumptions: the update check's single `GET /public/js/version.js` is the
   sanctioned carve-out recorded in `CLAUDE.md`, since it only runs on an
   explicit click and replaces the request `registration.update()` already made.
