@@ -1,9 +1,8 @@
 // @ts-check
 /* Save a shared note: the share viewer stashes the decrypted note for one same-tab
    navigation, and the app turns that stash into an ordinary note tagged "shared". */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ v: 1, title: string, body: string, tags: string[] }} Stash */
   /** @typedef {{ id: string, title: string, body: string }} CopyNote */
   /** @typedef {{ title: number, body: number, tag: number, tags: number }} Limits */

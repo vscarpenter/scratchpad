@@ -5487,6 +5487,13 @@ body:not(.page-privacy) {
 .data-status-actions .btn-ghost {
   margin-left: auto;
 }
+/* Phone widths keep the 44px tap height but trim the side padding, so a
+   linked folder's Write now, Read now, and Unlink still share one line. */
+@media (pointer: coarse), (max-width: 640px) {
+  .data-status-actions .btn {
+    padding-inline: 10px;
+  }
+}
 
 /* Quick capture — Phase 2 spotlight: no title bar; the foot previews the
    exact line that will be appended. */

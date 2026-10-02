@@ -1,8 +1,7 @@
 // @ts-check
 /* Paste as Markdown: converts text/html clipboard payloads before they enter the note editor. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ convert(html: string): string }} Converter */
 
   /** @type {Window & typeof globalThis & { ScratchpadHtmlToMarkdown?: Converter, ScratchpadAttachments?: { attachFiles(editor: HTMLTextAreaElement, files: File[]): Promise<void> }, ScratchpadPaste?: { bind(editor: HTMLTextAreaElement): void, insert(editor: HTMLTextAreaElement, text: string): void } }} */

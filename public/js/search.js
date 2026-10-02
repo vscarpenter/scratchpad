@@ -1,8 +1,7 @@
 // @ts-check
 /* Pure local note-search ranking and excerpt generation. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ id: string, title?: string, body?: string, tags?: string[], updatedAt?: number, archivedAt?: number, deletedAt?: number }} SearchNote */
   /** @typedef {{ note: SearchNote, kind: 'direct' | 'close', score: number, highlightTerms: string[], excerpt: string }} SearchResult */
   /** @typedef {{ raw: string, phrase: string, terms: string[] }} QueryInfo */

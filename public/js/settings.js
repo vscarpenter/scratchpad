@@ -4,9 +4,8 @@
    handles theme; it is CSP-hashed, so it stays as it is and keeps a hidden
    legacy button. This module writes the same storage key and <html>
    attribute, so the two never disagree. */
+'use strict';
 {
-  ('use strict');
-
   const KEY = 'theme-preview';
   const CHOICES = ['auto', 'light', 'dark'];
 

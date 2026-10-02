@@ -6,9 +6,8 @@
    dismiss button. Everything else dismisses on a clock that waits while the
    pointer or focus is on the toast. Callers may add one explicit action, such
    as Undo for a lifecycle transition; that toast draws its remaining time. */
+'use strict';
 {
-  ('use strict');
-
   const DEFAULT_MS = 2600;
   // Matches the exit transition in app.css, so removal follows the fade.
   const EXIT_MS = 220;

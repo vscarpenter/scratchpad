@@ -4,9 +4,8 @@
    keyboard focus. sync() sets the shell classes from state. focusPane() then
    moves focus into the pane that appeared: the note title on the way in, the
    note's own row (or New note) on the way back. */
+'use strict';
 {
-  ('use strict');
-
   const NARROW = '(max-width: 767px)';
 
   function isNarrow() {

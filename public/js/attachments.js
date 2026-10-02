@@ -1,8 +1,7 @@
 // @ts-check
 /* Image attachments: blob store access, object-URL cache, ingest, and backup encoding. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ id: string, noteId: string, name: string, type: string, size: number, bytes: ArrayBuffer, createdAt: number }} AttachmentRecord */
   /** @typedef {{ tx(store: string, mode: IDBTransactionMode): Promise<IDBObjectStore>, reqToPromise(request: IDBRequest): Promise<any>, transactionDone(t: IDBTransaction): Promise<void> }} DbApi */
 

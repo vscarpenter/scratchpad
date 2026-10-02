@@ -101,21 +101,30 @@ test('the Settings dialog never scrolls sideways at 320px', async ({ page }) => 
 });
 
 // Persistent and Unavailable both hide Protect local data, so its actions line is empty.
-test('Storage protection stays one line when it has no action to offer', async ({ page }) => {
-  await page.addInitScript(() => {
-    // On the prototype: WebKit ignores an own property set on navigator.storage.
-    // Linux WebKit has no StorageManager at all, and the row reads Unavailable.
-    if (typeof StorageManager === 'undefined') return;
-    Object.defineProperty(StorageManager.prototype, 'persisted', { configurable: true, value: async () => true });
+for (const state of ['Persistent', 'Unavailable']) {
+  test(`Storage protection stays one line when it reads ${state}`, async ({ page }) => {
+    await page.addInitScript((protectionState) => {
+      // Replace navigator.storage whole, as storage-protection.spec.js does: patching
+      // StorageManager.prototype left WebKit reporting Unavailable.
+      const storage =
+        protectionState === 'Persistent'
+          ? {
+              estimate: async () => ({ usage: 1024, quota: 1024 * 1024 }),
+              persisted: async () => true,
+              persist: async () => true,
+            }
+          : undefined;
+      Object.defineProperty(navigator, 'storage', { configurable: true, value: storage });
+    }, state);
+    await gotoApp(page);
+    await openSettings(page);
+    await expect(page.locator('#diagnostic-storage-protection')).toHaveText(state);
+    await expect(page.locator('#protect-storage-btn')).toBeHidden();
+    const [protection, backup] = await Promise.all(
+      ['#diagnostic-storage-protection', '#diagnostic-last-backup'].map((id) =>
+        page.locator(id).evaluate((el) => el.closest('.data-status-row')?.getBoundingClientRect().height),
+      ),
+    );
+    expect(Math.abs(Number(protection) - Number(backup))).toBeLessThanOrEqual(1);
   });
-  await gotoApp(page);
-  await openSettings(page);
-  await expect(page.locator('#diagnostic-storage-protection')).toHaveText(/^(Persistent|Unavailable)$/);
-  await expect(page.locator('#protect-storage-btn')).toBeHidden();
-  const [protection, backup] = await Promise.all(
-    ['#diagnostic-storage-protection', '#diagnostic-last-backup'].map((id) =>
-      page.locator(id).evaluate((el) => el.closest('.data-status-row')?.getBoundingClientRect().height),
-    ),
-  );
-  expect(Math.abs(Number(protection) - Number(backup))).toBeLessThanOrEqual(1);
-});
+}

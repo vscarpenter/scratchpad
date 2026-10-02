@@ -1,8 +1,7 @@
 // @ts-check
 /* Unlinked mentions: plain-text occurrences of the open note's title in other notes. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ id: string, title?: string, body?: string, updatedAt?: number, archivedAt?: number | null, deletedAt?: number | null }} MentionNote */
   /** @typedef {{ note: MentionNote, excerpt: string, original: string }} Mention */
   /** @typedef {{ line: string, offset: number, index: number, original: string }} Hit */

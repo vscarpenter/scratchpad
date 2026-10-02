@@ -67,22 +67,17 @@ test.describe('user guide page', () => {
     await expect(page.locator('a[href="guide.html"]', { hasText: /user guide/i }).first()).toBeVisible();
   });
 
-  // window.open from a controlled page is load-sensitive inside the harness:
-  // after heavy predecessor tests churn the shared browser process, the new
-  // page's attach/event delivery fails stickily (fresh contexts and retries
-  // do not escape it). CI retries every test twice; locally this test gets the
-  // same budget plus a pristine browser process of its own.
+  // This test failed in every browser for weeks, and the failure was blamed on
+  // popup attach under machine load. The real cause was app code: feature modules
+  // lacked a script-level 'use strict', so find-replace.js's own open() replaced
+  // window.open and the palette command never reached the browser.
+  // tests/script-scope.spec.js now guards that directly.
   test.describe('guide popup (pristine process)', () => {
     test.describe.configure({ retries: 2 });
-    // New-page target attach is ambient-load-sensitive: on a busy local
-    // machine Playwright starves attaching this popup even solo, in a
-    // pristine process, with long timeouts, and across retries (see
-    // tasks/lessons.md). CI runs serialized on controlled hardware, where
-    // the assertion is deterministic — so the test runs there.
-    test.skip(!process.env.CI, 'guide popup attach needs an unsaturated machine; CI runs it serialized');
-    test('command palette opens the guide in a new tab', async ({ browser }) => {
+    test('command palette opens the guide in a new tab', async ({ browser, baseURL }) => {
       const fresh = await browser.browserType().launch();
-      const context = await fresh.newContext({ baseURL: 'http://127.0.0.1:8080' });
+      // The configured baseURL follows SCRATCHPAD_TEST_PORT, unlike a hard-coded port.
+      const context = await fresh.newContext({ baseURL });
       const page = await context.newPage();
       try {
         await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
