@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="Scratchpad is a privacy-first notes app that runs in your browser. No accounts, no telemetry — just markdown and a fast editor." />
+  <meta name="description" content="Write private Markdown notes in your browser, work offline, and share an encrypted copy when you choose." />
   <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#5661B3" />
   <title>About — Scratchpad</title>
@@ -12,7 +12,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Scratchpad" />
   <meta property="og:title" content="About — Scratchpad" />
-  <meta property="og:description" content="A notes app that runs in your browser. No accounts, no telemetry." />
+  <meta property="og:description" content="Write private Markdown notes in your browser, work offline, and share an encrypted copy when you choose." />
   <meta property="og:url" content="https://notes.vinny.dev/about.html" />
   <meta property="og:image" content="https://notes.vinny.dev/public/og-image.png" />
   <meta property="og:image:type" content="image/png" />
@@ -21,7 +21,7 @@
   <meta property="og:image:alt" content="Scratchpad: private notes that stay in your browser." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="About — Scratchpad" />
-  <meta name="twitter:description" content="A notes app that runs in your browser. No accounts, no telemetry." />
+  <meta name="twitter:description" content="Write private Markdown notes in your browser, work offline, and share an encrypted copy when you choose." />
   <meta name="twitter:image" content="https://notes.vinny.dev/public/og-image.png" />
 
   <script>
@@ -71,11 +71,9 @@
           <em class="accent">Your business.</em>
         </h1>
         <p class="about-lede">
-          Scratchpad is a notes app that runs inside the tab you're
-          reading this in. No accounts. No telemetry. Just markdown and
-          a fast editor that respects the fact that most of what you
-          write is nobody else's business — and, when some of it is,
-          lets you share one note through an encrypted link that expires.
+          Write and organize Markdown notes in your browser. Daily notes,
+          quick capture, and search keep your writing easy to find.
+          Share a note through an encrypted, expiring link when you choose.
         </p>
         <div class="about-cta-row">
           <a class="btn btn-primary btn-lg" href="index.html">
@@ -86,9 +84,9 @@
           <a class="btn btn-ghost btn-lg" href="privacy.html">Privacy policy</a>
         </div>
         <ul class="about-pills" aria-label="At a glance">
-          <li class="about-pill"><span class="dot dot-accent" aria-hidden="true"></span>Local-only</li>
+          <li class="about-pill"><span class="dot dot-accent" aria-hidden="true"></span>Stored locally</li>
           <li class="about-pill"><span class="dot dot-olive" aria-hidden="true"></span>Works offline</li>
-          <li class="about-pill"><span class="dot dot-warning" aria-hidden="true"></span>Zero accounts</li>
+          <li class="about-pill"><span class="dot dot-warning" aria-hidden="true"></span>No account needed</li>
         </ul>
       </div>
 
@@ -222,41 +220,38 @@
     <!-- ============ HOW IT WORKS ============ -->
     <section class="about-section about-section-steps" aria-labelledby="how-title">
       <header class="about-section-head">
-        <h2 id="how-title" class="about-h">Three things happen. None of them involve a server.</h2>
+        <h2 id="how-title" class="about-h">Write, save, and keep a local copy.</h2>
         <p class="about-section-lede">
-          Most apps describe themselves by listing features. Scratchpad is
-          easier to describe by what it doesn't do.
+          Start with a note, save your changes locally, and keep a backup
+          you can take with you.
         </p>
       </header>
 
       <ol class="about-steps">
         <li class="about-step">
           <span class="about-step-num">01</span>
-          <h3 class="about-step-title">You open the page.</h3>
+          <h3 class="about-step-title">Open Scratchpad</h3>
           <p class="about-step-body">
-            The browser downloads a static HTML file, a stylesheet, and
-            about 60 KB of JavaScript. After that, the network is done
-            doing work for the day.
+            Your browser loads the app's files. Once cached, Scratchpad
+            can open offline, so you can keep writing without a connection.
           </p>
         </li>
         <li class="about-step">
           <span class="about-step-num">02</span>
-          <h3 class="about-step-title">You write in markdown.</h3>
+          <h3 class="about-step-title">Write in Markdown</h3>
           <p class="about-step-body">
-            Headings, lists, code blocks, links, tables — the usual
-            grammar. Every keystroke is saved to IndexedDB in this
-            browser, on this device, under this origin.
+            Use headings, lists, links, tables, and code blocks.
+            Scratchpad keeps a local draft as you type; Save commits
+            your changes to the note.
           </p>
         </li>
         <li class="about-step">
           <span class="about-step-num">03</span>
-          <h3 class="about-step-title">Your notes stay put.</h3>
+          <h3 class="about-step-title">Keep a local copy</h3>
           <p class="about-step-body">
-            There is nowhere for them to go. No fetch, no XHR, no
-            beacon, no sync. Link a folder and they also become plain-text
-            files in a directory you chose on this device, and that is as
-            far as they travel. Close the tab and reopen it next week —
-            everything is exactly where you left it.
+            Notes are stored in this browser. In supported browsers,
+            you can also link a folder to keep Markdown files on your device.
+            Export regular backups in case browser storage is cleared.
           </p>
         </li>
       </ol>
@@ -265,10 +260,11 @@
     <!-- ============ FEATURES ============ -->
     <section class="about-section about-section-features" aria-labelledby="features-title">
       <header class="about-section-head">
-        <h2 id="features-title" class="about-h">Thoughtful where local apps usually cut corners.</h2>
+        <h2 id="features-title" class="about-h">Tools for everyday writing.</h2>
         <p class="about-section-lede">
-          Writing is the easy part. Scratchpad also protects the local copy,
-          handles browser edge cases, and gives you a clean way out.
+          Capture thoughts, connect related notes, and find them again.
+          Backups, revision history, and storage controls help you look
+          after your local copy.
         </p>
       </header>
 
@@ -278,13 +274,13 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
           </span>
           <h3 class="about-feature-title">Markdown editing</h3>
-          <p class="about-feature-body">Headings, lists, tables, pull-quotes, <code>[!NOTE]</code> callouts, and syntax-highlighted code. Paste from a web page or a document and it arrives as Markdown. Render preview with one click; edit on the next.</p>
+          <p class="about-feature-body">Write headings, lists, tables, callouts such as <code>[!NOTE]</code>, and syntax-highlighted code. Rich-text pastes become Markdown. Switch between editing and the rendered note.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/></svg>
           </span>
-          <h3 class="about-feature-title">Task lists that work</h3>
+          <h3 class="about-feature-title">Task lists</h3>
           <p class="about-feature-body">Tick checkboxes right in the rendered note. Toggles write back to your Markdown and respect revision history.</p>
         </li>
         <li class="about-feature">
@@ -299,7 +295,7 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </span>
           <h3 class="about-feature-title">Linked notes</h3>
-          <p class="about-feature-body">Connect notes with [[Title]] links, autocompleted as you type. Every note shows what links to it and which notes mention it without a link, one click from becoming one. Renames offer to update references.</p>
+          <p class="about-feature-body">Connect notes with <code>[[Title]]</code> links, with suggestions as you type. See backlinks and unlinked mentions on each note, and choose whether to update references when you rename it.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
@@ -320,7 +316,7 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>
           </span>
           <h3 class="about-feature-title">A folder you own</h3>
-          <p class="about-feature-body">In browsers with the File System Access API, link a directory and every note is written there as a Markdown file with frontmatter. Edit the files anywhere and Scratchpad reads them back. A plain-text copy on your device, not a service.</p>
+          <p class="about-feature-body">In supported browsers, link a local folder to keep Markdown copies of your notes. Edit those files in another editor and Scratchpad can read the changes back.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
@@ -333,8 +329,8 @@
           <span class="about-feature-icon" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3 1.1 0 2.1-.1 3-.3"/><path d="M17 16v5M14.5 18.5h5"/></svg>
           </span>
-          <h3 class="about-feature-title">Protected local storage</h3>
-          <p class="about-feature-body">Ask supported browsers to reduce automatic cleanup risk, with honest status when protection is unavailable.</p>
+          <h3 class="about-feature-title">Storage protection</h3>
+          <p class="about-feature-body">Ask your browser to keep notes out of automatic storage cleanup. Availability varies, and backups still matter.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
@@ -348,7 +344,7 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4z"/><path d="M3 4h18v4H3z"/><path d="M9 12h6"/></svg>
           </span>
           <h3 class="about-feature-title">Archive without losing context</h3>
-          <p class="about-feature-body">Move finished notes out of the working list while keeping them editable, linked, organized, and available indefinitely. Switch to Archive from the Notes menu at the top of the sidebar.</p>
+          <p class="about-feature-body">Archive finished notes to clear the working list while keeping them editable and searchable. Open Archive from the Notes menu.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
@@ -376,14 +372,14 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h5"/><path d="M15 16a3 3 0 1 0 2.8 4"/><path d="M18 15v3h-3"/></svg>
           </span>
           <h3 class="about-feature-title">Offline updates on your terms</h3>
-          <p class="about-feature-body">Keep writing from the cached app shell. Check, refresh, and choose when a ready update reloads Scratchpad.</p>
+          <p class="about-feature-body">Use the cached app offline. In Settings, check for updates and choose when to reload a ready version.</p>
         </li>
         <li class="about-feature">
           <span class="about-feature-icon" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
           </span>
           <h3 class="about-feature-title">Keyboard-first</h3>
-          <p class="about-feature-body">⌘N for a new note, ⌘S to save, ⌘K to search. Type <kbd class="kbd">&gt;</kbd> in the search box to run any command. The mouse is optional once you settle in.</p>
+          <p class="about-feature-body">⌘N for a new note, ⌘S to save, ⌘K to search. Type <kbd class="kbd">&gt;</kbd> in the search box to find and run commands.</p>
         </li>
       </ul>
     </section>
@@ -392,12 +388,12 @@
     <section class="about-section about-section-promises" aria-labelledby="promises-title">
       <header class="about-section-head">
         <h2 id="promises-title" class="about-h">
-          The things Scratchpad <em class="accent">doesn't</em> do are the point.
+          How Scratchpad handles <em class="accent">your notes.</em>
         </h2>
         <p class="about-section-lede">
-          The server that hosts this page has never seen a single word
-          you've written. It can't have. There is no code path that
-          would send it.
+          Writing and saving stay on this device. Creating or explicitly
+          updating a share link uploads an encrypted copy. The host stores
+          ciphertext; the decryption key stays in the link's fragment.
         </p>
       </header>
 
@@ -407,8 +403,8 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </span>
           <div>
-            <h3 class="about-promise-title">No silent uploads</h3>
-            <p class="about-promise-body">Notes are stored in IndexedDB in this browser. Nothing is sent anywhere unless you create or explicitly update a share link. That copy is encrypted before it leaves.</p>
+            <h3 class="about-promise-title">No automatic uploads</h3>
+            <p class="about-promise-body">You choose which note to share and when to update its public copy. Ordinary edits and saves stay local.</p>
           </div>
         </li>
         <li class="about-promise">
@@ -417,7 +413,7 @@
           </span>
           <div>
             <h3 class="about-promise-title">No accounts</h3>
-            <p class="about-promise-body">Nothing to sign up for. No email, no password, no identity to leak.</p>
+            <p class="about-promise-body">Scratchpad works without registration, passwords, or an email address.</p>
           </div>
         </li>
         <li class="about-promise">
@@ -426,7 +422,7 @@
           </span>
           <div>
             <h3 class="about-promise-title">No trackers</h3>
-            <p class="about-promise-body">No analytics, no session replay, no advertising IDs, no anonymous usage pings.</p>
+            <p class="about-promise-body">Scratchpad doesn't collect analytics, advertising IDs, session recordings, or usage reports.</p>
           </div>
         </li>
         <li class="about-promise">
@@ -434,8 +430,8 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </span>
           <div>
-            <h3 class="about-promise-title">No third-party anything</h3>
-            <p class="about-promise-body">No CDN fonts, no remote scripts, no embedded widgets. Every byte is served from the same origin as the app.</p>
+            <h3 class="about-promise-title">No external assets</h3>
+            <p class="about-promise-body">The app's scripts, styles, and icons are served from its own origin. Fonts come from your device.</p>
           </div>
         </li>
       </ul>
@@ -446,20 +442,17 @@
       <div class="about-why-grid">
         <div class="about-why-text">
           <h2 id="why-title" class="about-h about-h-tight">
-            Most notes don't deserve a server.
+            A place for personal writing.
           </h2>
           <p>
-            A grocery list. A draft of a difficult message. The half-formed
-            outline of next quarter's strategy. The reading queue you keep
-            meaning to actually start. None of these are interesting enough
-            to warrant a database somebody else owns, but all of them are
-            interesting enough that you'd rather they stayed yours.
+            A grocery list, a difficult message, or an outline for next
+            quarter can all start in the same place. Scratchpad keeps
+            them on your device, ready to organize and revisit.
           </p>
           <p>
-            Local-first design isn't a privacy gimmick. It's a recognition
-            that the default for personal writing should be the same as the
-            default for paper: it stays where you put it, until you decide
-            to move it.
+            Choose how to keep a copy: export a backup, save Markdown files,
+            or link a local folder in a supported browser. Sharing is a
+            separate action you take for an individual note.
           </p>
         </div>
         <aside class="about-why-quote">
@@ -474,7 +467,7 @@
     <!-- ============ KEYBOARD ============ -->
     <section class="about-section about-section-kbd" aria-labelledby="kbd-title">
       <header class="about-section-head">
-        <h2 id="kbd-title" class="about-h">Four shortcuts cover most of the day.</h2>
+        <h2 id="kbd-title" class="about-h">Shortcuts for everyday writing.</h2>
       </header>
 
       <ul class="about-kbd-list">
@@ -501,11 +494,11 @@
     <section class="about-final" aria-labelledby="final-title">
       <div class="about-final-card">
         <h2 id="final-title" class="about-final-title">
-          Start writing. Stop thinking about where it goes.
+          Open Scratchpad and start a note.
         </h2>
         <p class="about-final-lede">
-          No sign-up, no onboarding, no welcome email. Click the button,
-          start a note, close the tab when you're done.
+          Write in your browser, then come back when you need your notes.
+          Export a backup to keep a copy outside browser storage.
         </p>
         <div class="about-cta-row about-cta-row-center">
           <a class="btn btn-primary btn-lg" href="index.html">
