@@ -100,7 +100,8 @@ test.describe('Porcelain Chronicle shell', () => {
     await expect(page.locator('#editor-date-spine')).toBeVisible();
     await expect(page.locator('#editor-date-number')).toHaveText('29');
     await expect(page.locator('#editor-date-day')).toHaveText('Wed');
-    await expect(page.locator('#chronicle-list-date')).toContainText('Jul 29');
+    // The sidebar heading names the view now; the date lives on the spine.
+    await expect(page.locator('#view-menu-label')).toHaveText('Notes');
   });
 
   test('keeps all three desktop regions inside the viewport', async ({ page }) => {

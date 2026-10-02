@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes } = require('./helpers');
+const { gotoApp, seedRawNotes, openCommandPalette, switchView } = require('./helpers');
 
 const DAILY_NOTES_FOLDER_ID = 'scratchpad-daily-notes';
 
@@ -62,7 +62,7 @@ test.describe('dailyDate field', () => {
 test.describe('daily note', () => {
   test('palette command creates today note with defaults, reuses on repeat', async ({ page }) => {
     await gotoApp(page);
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('today');
     await page.locator('.command-palette-item', { hasText: 'Open today’s note' }).click();
     await expect(page.locator('#note-rendered')).toBeVisible();
@@ -83,7 +83,7 @@ test.describe('daily note', () => {
     expect(first.note.tags).toContain('daily');
     expect(first.note.body).toBe('## Tasks\n\n## Notes\n');
     // Second invocation reuses the same note.
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('today');
     await page.locator('.command-palette-item', { hasText: 'Open today’s note' }).click();
     const count = await page.evaluate(async () => {
@@ -102,13 +102,13 @@ test.describe('daily note', () => {
       { id: 'day-old', title: 'Renamed by hand', body: 'existing', dailyDate: key },
     ]);
     // Existing daily note wins even though its title was renamed.
-    await page.locator('#today-note').click();
+    await page.locator('#chronicle-days .chronicle-day.is-today').click();
     await expect(page.locator('#note-title-display')).toHaveText('Renamed by hand');
     // Erase it, then creation should use the template body.
     await page.evaluate(() => window.ScratchpadDB.remove('day-old'));
     await page.reload();
     await expect(page.locator('#app-shell')).toBeVisible();
-    await page.locator('#today-note').click();
+    await page.locator('#chronicle-days .chronicle-day.is-today').click();
     const created = await page.evaluate(async () => {
       const all = await window.ScratchpadDB.getAll();
       return all.find((n) => n.dailyDate);
@@ -214,7 +214,7 @@ test.describe('monthly review', () => {
 
     await page.locator('#search').fill('July third');
     await page.locator('.note-row[data-id="july-third"]').click();
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('monthly review');
     const command = page.locator('.command-palette-item', { hasText: 'Create July 2026 monthly review' });
     await expect(command).toBeVisible();
@@ -244,7 +244,7 @@ test.describe('monthly review', () => {
     await page.locator('#note-title-input').fill('July retrospective');
     await page.locator('#save-btn').click();
     await expect(page.locator('#save-btn')).toBeHidden();
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('monthly review');
     await page.locator('.command-palette-item', { hasText: 'Open July 2026 monthly review' }).click();
     await expect(page.locator('#note-title-display')).toHaveText('July retrospective');
@@ -262,7 +262,7 @@ test.describe('monthly review', () => {
     previous.setMonth(previous.getMonth() - 1);
     const label = previous.toLocaleDateString([], { month: 'long', year: 'numeric' });
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('monthly review');
     await expect(page.locator('.command-palette-item', { hasText: `Create ${label} monthly review` })).toBeVisible();
   });
@@ -278,9 +278,9 @@ test.describe('monthly review', () => {
         archivedAt,
       },
     ]);
-    await page.locator('#archive-view').click();
+    await switchView(page, 'archive');
     await page.locator('.note-row[data-id="archived-review"]').click();
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('monthly review');
     await page.locator('.command-palette-item', { hasText: 'Open June 2026 monthly review' }).click();
 
@@ -303,7 +303,7 @@ test.describe('monthly review', () => {
     ]);
     await page.locator('#search').fill('June day');
     await page.locator('.note-row[data-id="june-day"]').click();
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('monthly review');
     await page.locator('.command-palette-item', { hasText: 'Create June 2026 monthly review' }).click();
     await page.locator('#save-btn').click();
@@ -325,7 +325,7 @@ test.describe('monthly review', () => {
     await page.locator('#edit-btn').click();
     await page.locator('#note-editor').fill('Unsaved');
 
-    await page.locator('#command-palette-btn').click();
+    await openCommandPalette(page);
     await page.locator('#command-palette-input').fill('monthly review');
     await page
       .locator('.command-palette-item', { hasText: /monthly review/ })

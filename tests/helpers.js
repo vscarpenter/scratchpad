@@ -193,6 +193,20 @@ async function holdToConfirm(page, selector, ms = 1150) {
   await page.mouse.up();
 }
 
+// The Notes / Archive / Trash views live in the "Notes" heading menu.
+const VIEW_ITEMS = { active: '#active-notes-view', archive: '#archive-view', trash: '#trash-view' };
+
+async function switchView(page, view) {
+  await page.locator('#view-menu-btn').click();
+  await page.locator(VIEW_ITEMS[view]).click();
+}
+
+// The palette has no standalone button; the shortcut is its primary entry.
+async function openCommandPalette(page) {
+  await page.keyboard.press('ControlOrMeta+Shift+P');
+  await page.locator('#command-palette-input').waitFor();
+}
+
 module.exports = {
   gotoApp,
   seedNotes,
@@ -211,4 +225,6 @@ module.exports = {
   seedShareRow,
   holdToConfirm,
   openSettings,
+  switchView,
+  openCommandPalette,
 };

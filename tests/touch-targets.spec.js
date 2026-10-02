@@ -54,9 +54,7 @@ test.describe('accessibility — touch targets', () => {
     const listControls = [
       ['new note', page.locator('#new-note')],
       ['today note', page.locator('#today-note')],
-      ['command palette', page.locator('#command-palette-btn')],
-      ['active view', page.locator('#active-notes-view')],
-      ['trash view', page.locator('#trash-view')],
+      ['view menu', page.locator('#view-menu-btn')],
       ['list menu trigger', page.locator('#list-menu-btn')],
       ['about button', page.locator('#open-about')],
       ['settings button', page.locator('#open-settings')],

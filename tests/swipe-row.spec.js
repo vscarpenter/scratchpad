@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, enterBulkMode } = require('./helpers');
+const { seedRawNotes, enterBulkMode, switchView } = require('./helpers');
 
 // A phone-sized viewport puts the list full width, where a swipe belongs.
 test.use({ viewport: { width: 390, height: 844 } });
@@ -166,7 +166,7 @@ test.describe('swipe guards', () => {
 
   test('Trash rows do not swipe', async ({ page }) => {
     await seedRawNotes(page, [{ id: 'swipe-t', title: 'Gone', body: 'x', deletedAt: Date.now() }]);
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await drag(page, 'swipe-t', { dx: -120 });
     await expect(page.locator('.swipe-rail')).toHaveCount(0);
   });
@@ -205,7 +205,7 @@ test.describe('swipe and taps', () => {
 test.describe('swipe in the Archive view', () => {
   test('offers Unarchive and Trash, and no Pin', async ({ page }) => {
     await seedRawNotes(page, [{ id: 'swipe-z', title: 'Old', body: 'x', archivedAt: Date.now() }]);
-    await page.locator('#archive-view').click();
+    await switchView(page, 'archive');
     await drag(page, 'swipe-z', { dx: 120 });
     await expect(page.locator('.swipe-rail')).toHaveCount(0);
 

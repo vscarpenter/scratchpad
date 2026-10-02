@@ -24,6 +24,7 @@
     "public/js/search.js",
     "public/js/templates.js",
     "public/js/search-view.js",
+    "public/js/command-bar.js",
     "public/js/shared-copy.js",
     "public/js/toast.js",
     "public/js/hold-confirm.js",

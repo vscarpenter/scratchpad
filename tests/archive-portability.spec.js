@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs');
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, importJson, openBackupMenu } = require('./helpers');
+const { gotoApp, seedRawNotes, importJson, openBackupMenu, switchView } = require('./helpers');
 
 async function downloadBuffer(download) {
   return fs.readFileSync(await download.path());
@@ -67,7 +67,7 @@ test.describe('Archive portability', () => {
       (await window.ScratchpadDB.getAll()).find((item) => item.title === 'Imported archive'),
     );
     expect(note.archivedAt).toBe(Date.parse('2026-07-01T12:00:00.000Z'));
-    await page.locator('#archive-view').click();
+    await switchView(page, 'archive');
     await expect(page.locator('.note-row', { hasText: 'Imported archive' })).toBeVisible();
   });
 

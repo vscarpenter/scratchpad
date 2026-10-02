@@ -83,8 +83,8 @@
     chronicleRail: $('chronicle-rail'),
     chronicleMonth: $('chronicle-month'),
     chronicleDays: $('chronicle-days'),
-    chronicleToday: $('chronicle-today'),
-    chronicleListDate: $('chronicle-list-date'),
+    viewMenuBtn: $('view-menu-btn'),
+    viewMenu: $('view-menu'),
     sidebar: $('sidebar'),
     main: $('main'),
     focusExitBtn: $('focus-exit-btn'),
@@ -97,6 +97,7 @@
     activeNotesView: $('active-notes-view'),
     archiveView: $('archive-view'),
     trashView: $('trash-view'),
+    viewMenuLabel: $('view-menu-label'),
     folderNavigation: $('folder-navigation'),
     homeView: $('home-view'),
     folderSwitcherBtn: $('folder-switcher-btn'),
@@ -952,7 +953,7 @@
 
   // -------- Shared action-menu controller --------
   function menuItems(menu) {
-    return Array.from(menu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]'))
+    return Array.from(menu.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]'))
       .filter((item) => !item.hidden && item.offsetParent !== null);
   }
 
@@ -1304,9 +1305,11 @@
   }
 
   function renderViewSwitch() {
-    els.activeNotesView.classList.toggle('is-active', state.view === 'active');
-    els.archiveView.classList.toggle('is-active', state.view === 'archive');
-    els.trashView.classList.toggle('is-active', state.view === 'trash');
+    for (const [view, item] of [['active', els.activeNotesView], ['archive', els.archiveView], ['trash', els.trashView]]) {
+      item.classList.toggle('is-active', state.view === view);
+      item.setAttribute('aria-checked', state.view === view ? 'true' : 'false');
+    }
+    els.viewMenuLabel.textContent = { active: 'Notes', archive: 'Archive', trash: 'Trash' }[state.view];
     if (!els.folderNavigation) return;
     const showNavigation = state.view !== 'trash';
     els.folderNavigation.hidden = !showNavigation;
@@ -2422,11 +2425,6 @@
     const dayButtons = [];
 
     els.chronicleMonth.textContent = today.toLocaleDateString([], { month: 'long' });
-    els.chronicleListDate.textContent = contextDate.toLocaleDateString([], {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    });
     els.editorDateNumber.textContent = String(contextDate.getDate());
     els.editorDateDay.textContent = contextDate.toLocaleDateString([], { weekday: 'short' });
     els.editorDateSpine.title = contextDate.toLocaleDateString([], {
@@ -2440,7 +2438,7 @@
       const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset, 12);
       const key = localDateKey(date);
       dayButtons.push(el('button', {
-        class: 'chronicle-day' + (key === activeKey ? ' is-active' : ''),
+        class: 'chronicle-day' + (key === activeKey ? ' is-active' : '') + (key === todayKey() ? ' is-today' : ''),
         attrs: {
           type: 'button',
           'data-date': key,
@@ -2453,7 +2451,7 @@
         },
         children: [
           el('b', { text: String(date.getDate()) }),
-          el('small', { text: date.toLocaleDateString([], { weekday: 'short' }) }),
+          el('small', { text: key === todayKey() ? 'Today' : date.toLocaleDateString([], { weekday: 'short' }) }),
         ],
         on: { click: (event) => openDailyNote(key, event.currentTarget) },
       }));
@@ -2484,10 +2482,8 @@
   // -------- List overflow menu --------
   // Same APG pattern as the editor overflow menu, for the sidebar's
   // Manage tags / New folder / Select notes actions.
-  const listMenuController = createMenuController({
-    menu: els.listMenu,
-    trigger: els.listMenuBtn,
-  });
+  const listMenuController = createMenuController({ menu: els.listMenu, trigger: els.listMenuBtn });
+  const viewMenuController = createMenuController({ menu: els.viewMenu, trigger: els.viewMenuBtn });
 
   function openListMenu() {
     listMenuController.open();
@@ -3800,7 +3796,7 @@
       await discardCurrentDraft();
     }
     const controls = [trigger];
-    if (key === todayKey()) controls.push(els.todayNote, els.chronicleToday);
+    if (key === todayKey()) controls.push(els.todayNote);
     return withBusy('open-daily-' + key, controls.filter(Boolean), 'Could not open that daily note.', async () => {
       const note = await createDailyNote(key);
       state.view = 'active';
@@ -5668,7 +5664,9 @@
   // -------- Event wiring --------
   function bindEvents() {
     const onSearch = debounce(() => {
-      state.search = els.search.value;
+      const query = window.ScratchpadCommandBar.noteQuery(els.search.value);
+      if (state.search === query) return; // Arrow/Enter already rendered it; re-rendering drops row focus.
+      state.search = query;
       renderAll();
     }, 150);
     els.search.addEventListener('input', onSearch);
@@ -5679,8 +5677,8 @@
       isSearching: () => !!state.search.trim(),
       hasActiveFilters: () => !!(state.search || state.tagFilter),
       sync: () => {
-        if (state.search === els.search.value) return;
-        state.search = els.search.value;
+        if (state.search === window.ScratchpadCommandBar.noteQuery(els.search.value)) return;
+        state.search = window.ScratchpadCommandBar.noteQuery(els.search.value);
         renderAll();
       },
       clear: clearSearchResults,
@@ -5691,6 +5689,8 @@
     els.activeNotesView.addEventListener('click', () => setView('active'));
     els.archiveView.addEventListener('click', () => setView('archive'));
     els.trashView.addEventListener('click', () => setView('trash'));
+    els.viewMenuBtn.addEventListener('click', () => viewMenuController.toggle());
+    els.viewMenu.addEventListener('click', () => viewMenuController.close());
     els.homeView.addEventListener('click', () => setFolderView(null));
     els.folderSwitcherBtn.addEventListener('click', toggleFolderSwitcher);
     els.folderSwitcherSearch.addEventListener('input', () => {
@@ -5723,11 +5723,11 @@
 
     els.newNote.addEventListener('click', createNote);
     els.todayNote.addEventListener('click', openTodayNote);
-    els.chronicleToday.addEventListener('click', openTodayNote);
     els.bulkToggle.addEventListener('click', toggleBulkMode);
     els.focusExitBtn.addEventListener('click', toggleFocusMode);
     els.focusModeBtn.addEventListener('click', toggleFocusMode);
     els.commandPaletteBtn.addEventListener('click', openCommandPalette);
+    window.ScratchpadCommandBar.attach({ input: els.search, commands: commandDefinitions, matches: Search.matchesLoose });
     els.emptyNewNote.addEventListener('click', createNote);
     els.emptyImportNotes.addEventListener('click', () => els.importFile.click());
     els.emptyViewArchive.addEventListener('click', () => setView('archive'));

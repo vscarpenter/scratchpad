@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { gotoApp, seedRawNotes, openOverflowMenu, holdToConfirm } = require('./helpers');
+const { gotoApp, seedRawNotes, openOverflowMenu, holdToConfirm, switchView } = require('./helpers');
 
 test.describe('note organization and empty states', () => {
   test('adds, normalizes, filters, removes, and persists inline tags', async ({ page }) => {
@@ -93,14 +93,14 @@ test.describe('note organization and empty states', () => {
       { id: 'trash-delete', title: 'Delete me', body: 'Remove.', deletedAt: deletedAt + 1 },
     ]);
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await page.locator('.note-row[data-id="trash-keep"]').getByRole('button', { name: 'Open Restore me' }).click();
     await openOverflowMenu(page);
     await page.locator('#restore-btn').click();
     await expect(page.locator('#active-notes-view')).toHaveClass(/is-active/);
     await expect(page.locator('#note-title-display')).toHaveText('Restore me');
 
-    await page.locator('#trash-view').click();
+    await switchView(page, 'trash');
     await page.getByRole('button', { name: 'Empty Trash' }).click();
     await expect(page.locator('#empty-trash-dialog')).toBeVisible();
     await page.locator('#empty-trash-dialog').getByRole('button', { name: 'Cancel' }).click();

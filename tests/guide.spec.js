@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { openCommandPalette } = require('./helpers');
 
 const SECTION_IDS = [
   'first-five-minutes',
@@ -86,7 +87,7 @@ test.describe('user guide page', () => {
       try {
         await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
         await page.goto('/');
-        await page.locator('#command-palette-btn').click();
+        await openCommandPalette(page);
         await page.locator('#command-palette-input').fill('guide');
         const popupPromise = context.waitForEvent('page');
         await page.locator('.command-palette-item', { hasText: 'Open user guide' }).click();

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { seedRawNotes, enterBulkMode, seedShareRow, stubRevoke, holdToConfirm } = require('./helpers');
+const { seedRawNotes, enterBulkMode, seedShareRow, stubRevoke, holdToConfirm, switchView } = require('./helpers');
 
 /**
  * Trashing or destroying a shared note revokes its public links first. These
@@ -53,7 +53,7 @@ test('Empty Trash revokes lingering links before destroying their tokens', async
   await seedRawNotes(page, [{ id: 'trashed-shared', title: 'Trashed shared', body: 'T.', deletedAt: Date.now() }]);
   await seedShareRow(page, 'trashed-shared', SHARE_ID);
 
-  await page.locator('#trash-view').click();
+  await switchView(page, 'trash');
   await page.locator('.trash-tools button').click();
   await holdToConfirm(page, '#confirm-empty-trash');
   await expect(page.locator('.note-row')).toHaveCount(0);
@@ -68,7 +68,7 @@ test('bulk delete forever revokes before the rows are destroyed', async ({ page 
   await seedRawNotes(page, [{ id: 'trashed-shared', title: 'Trashed shared', body: 'T.', deletedAt: Date.now() }]);
   await seedShareRow(page, 'trashed-shared', SHARE_ID);
 
-  await page.locator('#trash-view').click();
+  await switchView(page, 'trash');
   await enterBulkMode(page);
   await page.locator('[data-id="trashed-shared"] input[type="checkbox"]').check();
   await page.locator('#bulk-delete-forever').click();
