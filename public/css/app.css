@@ -3952,17 +3952,23 @@ body:not(.page-privacy) {
 .mock-url    { font: 400 10px/1 var(--mono); fill: var(--gray-500); }
 
 .mock-sidebar             { fill: var(--paper); stroke: none; }
-.mock-sidebar-top-accent  { stroke: var(--accent); stroke-width: 2; }
 .mock-brand-square        { fill: var(--accent); }
 .mock-brand-lines         { stroke: var(--glyph-ink); stroke-width: 1.5; stroke-linecap: round; fill: none; }
-.mock-brand-text          { font: 700 13px/1 var(--sans); fill: var(--slate); }
 .mock-meta                { font: 400 10px/1 var(--mono); fill: var(--gray-500); }
+.mock-rail                { fill: var(--surface-rail); stroke: none; }
+.mock-heading             { font: 700 15px/1 var(--sans); fill: var(--slate); letter-spacing: -0.01em; }
+.mock-kbd                 { font: 500 9px/1 var(--mono); fill: var(--gray-500); }
+.mock-search-glyph        { stroke: var(--gray-500); stroke-width: 1.4; stroke-linecap: round; fill: none; }
+.mock-compose-glyph       { stroke: var(--on-accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.mock-day-num             { font: 600 12px/1 var(--sans); fill: var(--gray-700); }
+.mock-day-label           { font: 500 7.5px/1 var(--mono); fill: var(--gray-500); letter-spacing: 0.04em; }
+.mock-day-today           { fill: var(--accent-tint); stroke: var(--accent-strong-border); stroke-width: 1; }
+.mock-day-num-today       { font: 700 12px/1 var(--sans); fill: var(--accent-text); }
+.mock-day-label-today     { font: 700 7.5px/1 var(--mono); fill: var(--accent-text); letter-spacing: 0.04em; }
 
 .mock-input         { fill: var(--ivory); stroke: var(--gray-300); stroke-width: 1.5; }
 .mock-input-label   { font: 400 11px/1 var(--sans); fill: var(--gray-500); }
 .mock-primary       { fill: var(--accent); }
-.mock-primary-label { font: 500 12px/1 var(--sans); fill: var(--paper); }
-.mock-icon-btn      { fill: var(--paper); stroke: var(--gray-300); stroke-width: 1.5; }
 .mock-icon-dot      { fill: none; stroke: var(--gray-700); stroke-width: 1.2; }
 .mock-icon-line     { stroke: var(--gray-700); stroke-width: 1.2; stroke-linecap: round; fill: none; }
 
@@ -3973,7 +3979,6 @@ body:not(.page-privacy) {
 
 .mock-note-row         { fill: transparent; stroke: none; }
 .mock-note-row-active  { fill: var(--paper); stroke: var(--gray-200); stroke-width: 1; }
-.mock-note-accent      { stroke: var(--accent); stroke-width: 2.5; }
 .mock-note-title       { font: 600 12.5px/1 var(--sans); fill: var(--slate); }
 .mock-note-title-dim   { font: 600 12.5px/1 var(--sans); fill: var(--gray-700); }
 .mock-note-time        { font: 400 9.5px/1 var(--mono); fill: var(--gray-500); }
