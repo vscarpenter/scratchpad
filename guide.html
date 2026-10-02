@@ -494,17 +494,26 @@
           <strong>Stop sharing</strong> kills a link immediately, before it expires.
         </li>
         <li>
-          <strong>The shared copy is frozen.</strong> Editing the note afterwards doesn't change
-          what a recipient sees. To share the newer version, create a second link — the dialog
-          lists every live link for the note, so you can retire the old one.
+          <strong>Edits stay private until you publish them.</strong> Save locally, then choose
+          <strong>Update shared link</strong> beside the URL to replace its title, text, and tags
+          for everyone with that link. Its URL and original expiry stay the same. Each link
+          updates independently. To keep an older version available, create a new link instead.
         </li>
         <li>
-          <strong>Deleting the note revokes its links.</strong> So does erasing all your data.
+          <strong>Deleting the note attempts to revoke its links.</strong> So does erasing all
+          your data. If the network request fails, a link may remain live until it expires.
         </li>
       </ul>
       <p>
+        The dialog shows which saved changes have not been shared. Save unfinished drafts before
+        updating. Recipients see a new version when they reopen or reload the link; their saved
+        copies stay independent. If another tab updates the link first, review its shared version
+        before publishing again. An unconfirmed update can be retried safely using the original
+        attempt; that retry does not publish any newer edits you have made since.
+      </p>
+      <p>
         One caveat worth knowing: the link is the only copy of the key, and the record of it lives
-        in this browser. If you clear your site data, you can no longer revoke a link you created
+        in this browser. If you clear your site data, you can no longer update or revoke a link you created
         — you'd have to wait out the expiry you chose.
       </p>
       <p>

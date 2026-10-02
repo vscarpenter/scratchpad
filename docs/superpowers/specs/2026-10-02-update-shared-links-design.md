@@ -1,7 +1,7 @@
 # Manual updates to shared links
 
 Date: 2026-10-02
-Status: approved for implementation
+Status: implemented and locally verified; deployment pending
 
 The sender may replace the published title, text, and tags at an existing URL
 by clicking **Update shared link** after saving locally. Ordinary editing,

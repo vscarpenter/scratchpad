@@ -139,7 +139,7 @@ CSP that hashes the inline theme scripts rather than allowing `unsafe-inline`.
 - **No accounts or identity, ever.** No sign-in, user record, or email capture,
   not even as an option. Any personalization that requires knowing who someone
   is is permanently out of bounds.
-- **Sharing is the ceiling on network surface.** `POST/GET/DELETE /api/share`
+- **Sharing is the ceiling on network surface.** `POST/GET/DELETE /api/share` and owner-authenticated `PUT /api/share/{id}`
   is the only sanctioned network call. No sync, collaboration, multi-device
   continuity, or server-side note storage. The linked folder does not breach
   this ceiling, because it writes to local disk through the browser's own
@@ -265,3 +265,11 @@ text holds WCAG AA contrast (the Inkwell tokens already document their ratios);
 do not flood reports with AA-but-not-AAA contrast nitpicks. Reduced-motion is
 respected. Standard keyboard and screen-reader support for all interactive
 controls is expected, since the audience is keyboard-first.
+
+### Manual shared-link updates
+
+Save locally, then explicitly Update shared link to replace its published title,
+text, and tags. Keep the URL/key and original expiry. Ordinary saves never
+upload. Recipients reload to see updates; saved copies remain independent.
+Conflicts require review and uncertain outcomes retain an encrypted safe retry.
+An operator-only hourly cleanup job enforces original expiry after overwrites.

@@ -16,6 +16,8 @@
     tags: document.getElementById('share-tags'),
     body: document.getElementById('share-body'),
     expiry: document.getElementById('share-expiry'),
+    published: document.getElementById('share-published'),
+    updateHint: document.getElementById('share-update-hint'),
     expired: document.getElementById('share-expired'),
     missing: document.getElementById('share-missing'),
     badkey: document.getElementById('share-badkey'),
@@ -170,6 +172,11 @@
     // other notes, so every [[target]] renders as inert phantom text.
     ScratchpadMarkdown.renderMarkdownInto(els.body, typeof note.body === 'string' ? note.body : '');
     renderExpiry(envelope.expiresAt);
+    if (Number.isFinite(envelope.publishedAt)) {
+      els.published.textContent = 'Last shared ' + new Date(envelope.publishedAt).toLocaleString();
+      els.published.hidden = false;
+    }
+    els.updateHint.hidden = false;
     bindSave(note);
     show('doc');
   }

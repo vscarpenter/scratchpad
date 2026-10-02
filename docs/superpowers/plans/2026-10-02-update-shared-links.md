@@ -1,7 +1,7 @@
 # Update an existing shared link: proposal and implementation plan
 
 Date: 2026-10-02
-Status: design approved for implementation; deployment requires separate authorization
+Status: implemented and locally verified; deployment requires separate authorization
 
 Confirmed preference: the sender clicks **Update shared link** after editing.
 Local editing and saving must never publish automatically.
@@ -37,7 +37,7 @@ The main product costs are:
 Automatic publishing would expose unfinished edits and introduce network
 traffic into ordinary note saves. It is outside this proposal.
 
-## Current implementation evidence
+## Pre-implementation evidence
 
 - `public/js/app.js`: `createPublicShare()` encrypts a saved note, uploads it,
   and stores `{ id, noteId, key, revokeToken, sharedAt, expiresAt,
@@ -250,3 +250,42 @@ This proposal delivers deliberate publication to a stable URL. Automatic
 publishing, recipient polling, collaboration, accounts, attachment uploads,
 server revision history, indefinite links, expiry extensions, and management
 credential recovery are separate work.
+
+## Implementation and local verification
+
+Implemented on `codex/update-shared-links` on 2026-10-02. Sender operations,
+atomic local share metadata, and per-link controls are extracted into annotated
+modules. The recipient viewer shows publication time and reload guidance.
+Backend PUT uses owner authentication, fixed expiry, conditional storage writes,
+and exact encrypted retries. Cleanup provisioning is gated on an unversioned
+bucket, successful schedule registration, and a successful cleanup invocation.
+No public deployment or AWS mutation was performed.
+
+Verification:
+
+- Full Chromium and WebKit suite: **1,000 passed, 22 existing skips**.
+- Focused update flows in both browsers: **36 passed**. Coverage includes
+  recipient copies, fresh IVs, multiple links, unsaved drafts, lost responses,
+  local persistence failure, legacy records, cross-tab publication, and explicit
+  conflict review. Editing an already shared note remains offline with the
+  service worker active.
+- Backend tests: **71 passed**, including storage-adapter headers and offline
+  provisioning gates. These use injected storage and a fake CLI; actual AWS
+  conditional behavior and scheduling still require the rollout smoke test.
+- `npm run verify`: passed formatting, lint, strict annotated-module types,
+  structural ratchets, shell registration, seed checks, backend tests, browser
+  coverage (38.93%), and dependency audit (84 packages, no reported vulnerabilities).
+- CSP recomputation: all existing hashes remain valid; inline scripts unchanged.
+- Cleanup provisioning syntax and offline dry-run passed. Site deployment
+  dry-run passed; its upload allowlist excludes operator files and test artifacts.
+- Desktop, mobile, and dark-mode previews inspected in `.verify/`.
+
+Firefox could not launch: Playwright reported a macOS sandbox-extension failure
+for its installed plugin container. Both headless and headed launch checks
+failed before application tests began. No application result is claimed for
+Firefox; rerun its suite in a working browser environment before release.
+
+Release remains pending: prepare a new `version.js` release, verify the live
+routing and owner-header forwarding, deploy cleanup and the API before the site,
+and execute the synthetic public-share smoke checks above with explicit
+deployment authorization.
