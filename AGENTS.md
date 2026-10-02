@@ -29,7 +29,7 @@ size thresholds until the ratchets actually reach them.
 - **No third-party scripts, fonts, trackers, or analytics.** Everything is
   same-origin. `marked` and `DOMPurify` are vendored in `public/js/vendor/`, not
   loaded from a CDN. No sync, no autosave-to-server, no telemetry.
-- **`POST/GET/DELETE /api/share` is the ONLY sanctioned network call.** A share
+- **`POST/GET/DELETE /api/share` and owner-authenticated `PUT /api/share/{id}` is the ONLY sanctioned network call.** A share
   is client-side AES-GCM ciphertext plus an IV; the key lives in the URL
   **fragment** and must never touch a request path, query, header, or body.
   `tests/network-isolation.spec.js` and `tests/storage-protection.spec.js` are

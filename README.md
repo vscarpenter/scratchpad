@@ -8,6 +8,8 @@ a public share link. The note is encrypted in your browser first, and the
 decryption key travels in the URL fragment, which browsers never send to a
 server — so the host stores ciphertext it cannot read. Share links stop working
 after the duration the sender picks — 7 to 30 days — and can be revoked sooner.
+Editing and saving stay local. **Update shared link** explicitly replaces a published copy
+at the same URL and original expiry; other links and recipient copies stay independent.
 Nothing else is ever uploaded.
 
 ## Features

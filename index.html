@@ -984,10 +984,11 @@
             <li>The key that decrypts it stays in the link itself and is never sent to the server, so Scratchpad can’t read a shared note.</li>
             <li><strong>Anyone with the link can read and forward it.</strong> There is no password.</li>
             <li>The link stops working after the time you pick — 7 to 30 days. You can stop sharing sooner.</li>
-            <li>None of your other notes are uploaded, and the shared copy won’t change if you edit this note later.</li>
+            <li>None of your other notes are uploaded, and editing stays private until you explicitly update a shared link.</li>
           </ul>
         </div>
 
+        <p class="share-update-explainer">Update shared link replaces that copy for everyone with the link. Its URL and expiry stay the same. Create a new link to keep the older copy available.</p>
         <ul id="share-link-list" class="share-link-list"></ul>
 
         <div class="share-expiry-picker">
@@ -1057,6 +1058,9 @@
   <script src="/public/js/swipe-row.js"></script>
   <script src="/public/js/mobile-view.js"></script>
   <script src="/public/js/settings.js"></script>
+  <script src="/public/js/share-store.js"></script>
+  <script src="/public/js/share-manager.js"></script>
+  <script src="/public/js/share-controls.js"></script>
   <script src="/public/js/app.js"></script>
 
   <script>

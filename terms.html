@@ -82,9 +82,9 @@
       <h2>What Scratchpad is</h2>
       <ul>
         <li>A static web page that runs in your browser.</li>
-        <li>Notes are stored in your browser's IndexedDB. Nothing is uploaded unless you create a share link.</li>
+        <li>Notes are stored in your browser's IndexedDB. Nothing is uploaded unless you explicitly create or update a share link.</li>
         <li>There is no account system, no telemetry, and no advertising.</li>
-        <li>The only server-side component is the one that stores encrypted shared notes for up to 30 days.</li>
+        <li>Server-side sharing stores encrypted copies. Links expire within 30 days of creation, followed by asynchronous ciphertext cleanup.</li>
         <li>The full <a href="privacy.html">privacy policy</a> describes the data posture in detail.</li>
       </ul>
 
@@ -117,9 +117,11 @@
       <p>
         Scratchpad also lets you create a <strong>public share link</strong> for a single note.
         This uploads an encrypted copy of that note to our storage. The decryption key stays in
-        the link and is never sent to us, so we cannot read what you share. The copy is deleted
-        automatically at the expiry you choose when creating the link — 7, 14, 21, or 30 days —
-        and you can stop sharing sooner.
+        the link and is never sent to us, so we cannot read what you share. The link stops working
+        at the expiry you choose when creating it — 7, 14, 21, or 30 days — and ciphertext is
+        automatically cleaned up afterwards. You can stop sharing sooner. Explicitly updating a
+        shared link replaces its published content for everyone holding that URL, without changing
+        its expiry. Copies recipients have already saved are independent.
       </p>
       <p>
         A share link is public. Anyone who has it can read the note and pass it on. There is no

@@ -4,7 +4,7 @@
   'use strict';
 
   window.SCRATCHPAD_VERSION = '4.3.0';
-  window.SCRATCHPAD_BUILD_DATE = '2026-10-01';
+  window.SCRATCHPAD_BUILD_DATE = '2026-10-02';
 
   function apply() {
     const slots = [

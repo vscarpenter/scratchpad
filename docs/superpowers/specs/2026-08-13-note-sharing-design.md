@@ -181,6 +181,11 @@ link for a note so this never becomes invisible.
 This is the behavior a recipient expects from a link someone sent them, and it
 means the app never re-uploads on save — typing does not leave the browser.
 
+This snapshot-only contract is superseded by the approved
+[manual update design](2026-10-02-update-shared-links-design.md). Editing and
+saving still never upload; an explicit owner action can replace the published
+copy at the same URL without extending expiry.
+
 ## Local state
 
 `public/js/db.js` goes to `DB_VERSION 4` and gains a `shares` store, keyed by

@@ -4248,145 +4248,29 @@
   // which browsers do not transmit.
 
   const SHARE_EXPLAINER_KEY = 'scratchpad:shareExplainerSeenAt';
-  const SHARE_API = '/api/share';
-  const SHARE_EXPIRY_OPTIONS = [7, 14, 21, 30];
-
-  function buildShareUrl(id, key) {
-    return location.origin + '/s/' + id + '#k=' + key;
-  }
-
-  // Only these four fields are uploaded. Everything else on a note -- its id,
-  // folderId, timestamps, daily-note and archive state -- stays local. The
-  // viewer does not need them, and each omitted field is one less thing to leak.
-  function buildSharePayload(note) {
-    return {
-      v: 1,
-      title: note.title || '',
-      body: note.body || '',
-      tags: Array.isArray(note.tags) ? note.tags.slice() : [],
-      updatedAt: note.updatedAt,
-    };
-  }
 
   function showShareLinkError(message) {
     els.shareLinkError.textContent = message;
     els.shareLinkError.hidden = false;
   }
 
-  function formatShareExpiry(expiresAt) {
-    return new Date(expiresAt).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  }
-
-  function shareLinkRow(share) {
-    const url = buildShareUrl(share.id, share.key);
-
-    const field = document.createElement('input');
-    field.className = 'share-link-url';
-    field.type = 'text';
-    field.readOnly = true;
-    field.value = url;
-    field.setAttribute('aria-label', 'Public link for ' + (share.titleAtShare || 'this note'));
-    field.addEventListener('focus', () => field.select());
-
-    const expiry = document.createElement('span');
-    expiry.className = 'share-link-expiry';
-    expiry.textContent = 'Expires ' + formatShareExpiry(share.expiresAt);
-
-    const copy = document.createElement('button');
-    copy.className = 'btn btn-secondary btn-sm share-link-copy';
-    copy.type = 'button';
-    copy.textContent = 'Copy';
-    copy.addEventListener('click', () => copyShareLink(url, copy));
-
-    const revoke = document.createElement('button');
-    revoke.className = 'btn btn-ghost btn-sm share-link-revoke';
-    revoke.type = 'button';
-    revoke.textContent = 'Stop sharing';
-    revoke.addEventListener('click', () => stopSharing(share, revoke));
-
-    const actions = document.createElement('div');
-    actions.className = 'share-link-actions';
-    actions.append(expiry, copy, revoke);
-
-    const row = document.createElement('li');
-    row.className = 'share-link-row';
-    row.append(field, actions);
-    return row;
-  }
-
-  async function refreshShareLinks(noteId) {
-    const shares = await DB.getSharesForNote(noteId);
-    const live = shares
-      .filter((share) => share.expiresAt > now())
-      .sort((a, b) => b.sharedAt - a.sharedAt);
-    els.shareLinkList.replaceChildren(...live.map(shareLinkRow));
-  }
-
-  async function copyShareLink(url, trigger) {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast('Link copied.');
-      if (trigger) trigger.textContent = 'Copied';
-      setTimeout(() => { if (trigger) trigger.textContent = 'Copy'; }, 1600);
-    } catch {
-      showShareLinkError('Could not copy. Select the link and copy it manually.');
-    }
+  function refreshShareLinks(noteId) {
+    return window.ScratchpadShareControls.refresh(noteId);
   }
 
   async function createPublicShare() {
     const note = getNote(state.selectedId);
     if (!note || isTrashed(note)) return undefined;
-
+    if (state.dirty) { showShareLinkError('Save your changes before creating a public link.'); return undefined; }
     els.shareLinkError.hidden = true;
     return withBusy('create-share', [els.createShareLink], 'Sharing failed. Reopen the share dialog to check whether a link was created.', async () => {
-      const key = await ScratchpadCrypto.generateShareKey();
-      const envelope = await ScratchpadCrypto.encryptShare(buildSharePayload(note), key);
-      const chosen = Number(els.shareExpiryDays.value);
-      // A tampered DOM can only shorten the sender's own link back to the default.
-      const expiresDays = SHARE_EXPIRY_OPTIONS.includes(chosen) ? chosen : 7;
-
-      let response;
       try {
-        response = await fetch(SHARE_API, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          cache: 'no-store',
-          credentials: 'omit',
-          referrerPolicy: 'no-referrer',
-          body: JSON.stringify({ v: envelope.v, ciphertext: envelope.ciphertext, iv: envelope.iv, expiresDays }),
-        });
-      } catch {
-        showShareLinkError('Could not reach the network. Your note was not uploaded.');
+        await window.ScratchpadShareManager.create(note, Number(els.shareExpiryDays.value));
+      } catch (error) {
+        showShareLinkError(error.message || 'Sharing failed. Reopen the dialog to check the link.');
         return;
       }
-
-      if (response.status === 413) {
-        showShareLinkError('This note is too large to share as a link.');
-        return;
-      }
-      if (!response.ok) {
-        showShareLinkError('Sharing failed. Your note was not uploaded.');
-        return;
-      }
-
-      const created = await response.json();
-      await DB.putShare({
-        id: created.id,
-        noteId: note.id,
-        key: await ScratchpadCrypto.exportShareKey(key),
-        revokeToken: created.revokeToken,
-        sharedAt: now(),
-        expiresAt: created.expiresAt,
-        titleAtShare: note.title || '',
-      });
-
-      try {
-        localStorage.setItem(SHARE_EXPLAINER_KEY, String(now()));
-      } catch (e) { /* private mode / quota; the link itself is already saved */ }
+      try { localStorage.setItem(SHARE_EXPLAINER_KEY, String(now())); } catch (e) { /* optional preference */ }
       els.shareExplainer.hidden = true;
       state.sharedNoteIds.add(note.id);
       await refreshShareLinks(note.id);
@@ -4394,37 +4278,8 @@
     });
   }
 
-  // Returns true when the share is gone from the server. A 404 counts: the
-  // object is already absent, which is the outcome the user asked for.
-  async function revokeShare(share) {
-    let response;
-    try {
-      response = await fetch(SHARE_API + '/' + encodeURIComponent(share.id), {
-        method: 'DELETE',
-        headers: { 'x-revoke-token': share.revokeToken },
-        cache: 'no-store',
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
-      });
-    } catch {
-      return false;
-    }
-    return response.ok || response.status === 404;
-  }
-
-  async function stopSharing(share, trigger) {
-    els.shareLinkError.hidden = true;
-    return withBusy('revoke-share', [trigger], 'Could not finish stopping this share. Reopen the dialog and try again.', async () => {
-      if (!(await revokeShare(share))) {
-        showShareLinkError('Could not stop sharing. This link is still live.');
-        return;
-      }
-      await DB.removeShare(share.id);
-      await syncSharedNoteIds();
-      await refreshShareLinks(share.noteId);
-      renderAll();
-      toast('Link stopped working.');
-    });
+  function revokeShare(share) {
+    return window.ScratchpadShareManager.revoke(share);
   }
 
   // Best effort: a note leaving the active set should not leave a public link
@@ -6140,6 +5995,10 @@
       notes: () => state.notes, folders: () => state.folders, noteToMarkdown, parseMarkdownNote, storeRevision, putNoteRecord,
       deriveTitle, slugify, noteFolderId, folderDisplayName, isArchived, isTrashed, uuid, now, toast, reload: loadAll,
     });
+    window.ScratchpadShareManager.init({ db: DB, crypto: ScratchpadCrypto });
+    window.ScratchpadShareControls.init({ manager: window.ScratchpadShareManager, db: DB,
+      note: () => { const note = getNote(state.selectedId); return note && !isTrashed(note) ? note : null; }, dirty: () => state.dirty,
+      getNote: (id) => DB.get(id).then((note) => note && !isTrashed(note) ? note : undefined), refreshShared: syncSharedNoteIds, render: renderAll, toast, busy: withBusy, renderMarkdown: Markdown.renderMarkdownInto });
     bindEvents();
     try {
       await purgeExpiredTrash();

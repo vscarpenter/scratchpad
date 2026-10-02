@@ -29,3 +29,10 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 Operational AWS deployment behavior, CloudFront configuration, browser install
 chrome, and the external email client itself are outside the browser E2E
 boundary. Their in-app triggers and generated handoffs are covered.
+
+- `share-update.spec.js`: explicit republishing, stable URLs and expiry, local-only
+  edits, recipient reloads, independent links, drafts, retries, conflicts, rejected
+  writes, and races with local erasure or another tab's saved changes.
+- `share-infra/lambda/update.test.mjs`, `cleanup.test.mjs`, `s3-store.test.mjs`, and `provision.test.mjs`:
+  owner authentication, conditional storage writes, expiry, replay handling,
+  original-expiry cleanup, signed storage preconditions, and offline rollout gates.

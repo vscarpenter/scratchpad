@@ -31,7 +31,11 @@
     "public/js/swipe-row.js",
     "public/js/mobile-view.js",
     "public/js/settings.js",
-    "scripts/quality/**/*.mjs"
+    "scripts/quality/**/*.mjs",
+    "public/js/share-store.js",
+    "public/js/share-manager.js",
+    "public/js/share-controls.js",
+    "types/sharing.d.ts"
   ],
   "exclude": ["node_modules", "public/js/vendor"]
 }

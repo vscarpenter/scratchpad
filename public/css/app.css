@@ -3584,11 +3584,32 @@ body:not(.page-privacy) {
   flex-wrap: wrap;
 }
 
-.share-link-expiry {
-  flex: 1 1 auto;
-  font: 500 11px/1 var(--sans);
+.share-link-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   color: var(--text-muted);
+  font: 500 11px/1.5 var(--sans);
 }
+
+.share-link-status, .share-update-explainer, .share-review-hint {
+  color: var(--text-secondary);
+  font: 400 12px/1.6 var(--sans);
+}
+
+.share-update-explainer { margin: 0 0 16px; }
+.share-link-actions .btn { min-height: 36px; }
+.share-review {
+  border-top: var(--border-hair);
+  padding-top: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.share-review h4 { margin: 0 0 8px; font: 600 14px/1.5 var(--sans); }
+.share-review-hint { display: block; margin: 8px 0; }
+@media (pointer: coarse) { .share-link-actions .btn { min-height: 44px; } }
+
 
 .share-link-error {
   margin: 10px 0 0;

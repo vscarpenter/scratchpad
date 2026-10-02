@@ -43,6 +43,33 @@ function describeRequests(requests) {
 }
 
 test.describe('network isolation', () => {
+  test('editing an already shared note and opening Share stays local with the service worker active', async ({
+    page,
+  }) => {
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Already shared', 'Original private note');
+    await page.evaluate(async () => {
+      const note = (await window.ScratchpadDB.getAll()).find((row) => row.title === 'Already shared');
+      await window.ScratchpadDB.putShare({
+        id: 'AbCdEf123456',
+        noteId: note.id,
+        key: 'k'.repeat(43),
+        revokeToken: 'o'.repeat(43),
+        expiresAt: Date.now() + 86400000,
+        sharedAt: Date.now(),
+        titleAtShare: note.title,
+      });
+    });
+    const requests = await recordRequestsAfterLoad(page);
+    await page.locator('#edit-btn').click();
+    await page.locator('#note-editor').fill('These edits must stay private');
+    await page.locator('#save-btn').click();
+    await openOverflowMenu(page);
+    await page.locator('#share-btn').click();
+    await expect(page.locator('.share-link-update')).toBeVisible();
+    expect(requests).toEqual([]);
+  });
+
   test('normal note use makes zero network requests', async ({ page }) => {
     await gotoApp(page);
     const requests = await recordRequestsAfterLoad(page);
