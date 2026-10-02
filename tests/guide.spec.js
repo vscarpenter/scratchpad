@@ -74,9 +74,10 @@ test.describe('user guide page', () => {
   // tests/script-scope.spec.js now guards that directly.
   test.describe('guide popup (pristine process)', () => {
     test.describe.configure({ retries: 2 });
-    test('command palette opens the guide in a new tab', async ({ browser }) => {
+    test('command palette opens the guide in a new tab', async ({ browser, baseURL }) => {
       const fresh = await browser.browserType().launch();
-      const context = await fresh.newContext({ baseURL: 'http://127.0.0.1:8080' });
+      // The configured baseURL follows SCRATCHPAD_TEST_PORT, unlike a hard-coded port.
+      const context = await fresh.newContext({ baseURL });
       const page = await context.newPage();
       try {
         await page.addInitScript(() => localStorage.setItem('scratchpad-visited', '1'));
