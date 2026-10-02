@@ -13,7 +13,7 @@ plus the explicit HTML shell list, and `CLAUDE.md` lists this directory under
 | Lifecycle rules | `expire-shares-ttl-{7,14,21,30}` + `expire-shares-backstop-30-days` | Delete each share at its chosen duration, routed by the `ttl-days` object tag. Untagged objects fall to the 30-day backstop; earliest-expiration-wins keeps the backstop harmless for tagged objects. |
 | IAM role | `scratchpad-share-lambda-role` | Lambda execution role. |
 | Inline policy | `scratchpad-share-s3-access` | `PutObject`/`PutObjectTagging`/`GetObject`/`DeleteObject` on `shares/*` only. |
-| Lambda | `scratchpad-share-api` | The three-route API. Node 20, 256 MB, 10s timeout. |
+| Lambda | `scratchpad-share-api` | The four-route API. Node 22, 256 MB, 10s timeout. |
 | HTTP API | `scratchpad-share-api` | API Gateway v2, Lambda proxy. The CloudFront origin. |
 | CloudFront behavior | `/api/share*` | Routes to the HTTP API origin on the existing distribution. |
 | WAF override | `SizeRestrictions_BODY` | Set to Count so uploads over 8 KB are not blocked. |
@@ -297,3 +297,53 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST \
 
 Rotate whenever someone with `cloudfront:GetDistributionConfig` or
 `lambda:GetFunctionConfiguration` in this account should no longer have it.
+
+## Manual updates and original-expiry cleanup
+
+`PUT /api/share/{id}` replaces ciphertext only after authenticating the
+`x-share-owner-token` header against the stored owner-token hash. It accepts
+`{ v, ciphertext, iv, expectedRevision, operationId }`, rejects extra fields,
+and returns `{ revision, publishedAt, expiresAt }`. The original expiry and
+owner credential are immutable. GET never exposes management credentials,
+operation IDs, or request digests. Existing GET/POST/DELETE clients remain valid.
+
+Revision defaults to 1 for legacy objects. A stale revision or S3 ETag returns
+409; a missing/revoked share returns 404 and an expired share returns 410.
+The exact encrypted operation can be retried after a lost response without
+publishing twice. PUT is disabled (503) unless `SHARE_UPDATES_ENABLED=true`.
+
+Overwriting S3 objects resets age-based lifecycle cleanup. Before enabling PUT,
+provision the separate hourly cleanup Lambda and its restricted role. It reads
+original expiry and conditionally deletes expired objects. The public API role
+still cannot list the bucket. Cleanup failures and missing invocations have
+CloudWatch alarms pointing at an existing operator-supplied SNS topic. Lifecycle
+rules remain a safety backstop. Cleanup never logs ciphertext or credentials.
+
+Rollout, requiring explicit deployment authorization:
+
+1. Confirm the operator identity and the `/api/share*` behavior's PUT allowance,
+   disabled caching, and forwarding of the owner header.
+2. Deploy the API with `SHARE_UPDATES_ENABLED` absent/false on initial rollout
+   using `provision.sh`; its archive now includes `s3-store.mjs` and `update.mjs`.
+3. Set `CLEANUP_ALARM_TOPIC_ARN` to an existing monitored SNS topic.
+   `bash share-infra/provision-updates.sh --dry-run` is entirely offline.
+4. Run `bash share-infra/provision-updates.sh` only with authorization. It refuses
+   a bucket with enabled or suspended versioning, provisions cleanup, scheduling,
+   and alarms, invokes cleanup successfully, then enables PUT while preserving
+   the API's existing environment. The script respects the caller's AWS_PROFILE.
+5. Prepare a release version in `public/js/version.js` so installed offline
+   shells receive the new modules, then deploy the app after the backend.
+   Use synthetic content to verify the same
+   public URL before/after a manual update, unchanged expiry, failed read-key-only
+   writes, and final revocation. Check alarm actions and the next scheduled run.
+
+A shares bucket that has ever had versioning enabled needs a separate history
+cleanup design; do not disable versioning and pretend previous ciphertext has
+been deleted. Failed cleanup invocations retry on the next hourly run and signal
+an alarm. Large workloads that cannot finish within the five-minute execution
+budget require a checkpointed cleanup design before growing the sharing service.
+
+Rollback removes or sets `SHARE_UPDATES_ENABLED=false` while preserving the
+rest of the API environment. Leave cleanup, GET/POST/DELETE, and lifecycle
+rules running: disabling updates must not prevent cleanup of earlier overwrites.
+The latest published ciphertext remains readable until original expiry.

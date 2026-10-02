@@ -19,10 +19,10 @@ export function isMissingObjectError(error) {
   return error.name === 'NoSuchKey' || error.name === 'AccessDenied' || status === 404 || status === 403;
 }
 
-async function read(id, options = {}) {
-  const { client, sdk } = await getS3();
+async function read(api, id, options = {}) {
+  const { client, sdk } = await api.connect();
   try {
-    const result = await client.send(new sdk.GetObjectCommand({ Bucket: BUCKET, Key: PREFIX + id + '.json' }));
+    const result = await client.send(new sdk.GetObjectCommand({ Bucket: api.bucket, Key: PREFIX + id + '.json' }));
     return { value: JSON.parse(await result.Body.transformToString()), etag: result.ETag };
   } catch (error) {
     // The API role deliberately cannot list keys, so missing reads may be 403.
@@ -45,10 +45,10 @@ function conditional(command, name, value) {
   return command;
 }
 
-async function put(id, value, options = {}) {
-  const { client, sdk } = await getS3();
+async function put(api, id, value, options = {}) {
+  const { client, sdk } = await api.connect();
   const command = new sdk.PutObjectCommand({
-    Bucket: BUCKET,
+    Bucket: api.bucket,
     Key: PREFIX + id + '.json',
     ContentType: 'application/json',
     Body: JSON.stringify(value),
@@ -58,19 +58,19 @@ async function put(id, value, options = {}) {
   return client.send(conditional(command, options.ifMatch ? 'if-match' : 'if-none-match', options.ifMatch || '*'));
 }
 
-async function remove(id, etag) {
-  const { client, sdk } = await getS3();
+async function remove(api, id, etag) {
+  const { client, sdk } = await api.connect();
   const command = new sdk.DeleteObjectCommand({
-    Bucket: BUCKET,
+    Bucket: api.bucket,
     Key: PREFIX + id + '.json',
     ...(etag ? { IfMatch: etag } : {}),
   });
   return client.send(etag ? conditional(command, 'if-match', etag) : command);
 }
 
-async function* list() {
-  const { client, sdk } = await getS3();
-  for await (const page of sdk.paginateListObjectsV2({ client }, { Bucket: BUCKET, Prefix: PREFIX })) {
+async function* list(api) {
+  const { client, sdk } = await api.connect();
+  for await (const page of sdk.paginateListObjectsV2({ client }, { Bucket: api.bucket, Prefix: PREFIX })) {
     for (const object of page.Contents || []) {
       const match = /^shares\/([A-Za-z0-9_-]{12})\.json$/.exec(object.Key || '');
       if (match) yield match[1];
@@ -78,4 +78,14 @@ async function* list() {
   }
 }
 
-export const shareStore = Object.freeze({ read, put, remove, list });
+export function createS3Store(connect, bucket) {
+  const api = { connect, bucket };
+  return Object.freeze({
+    read: (id, options) => read(api, id, options),
+    put: (id, value, options) => put(api, id, value, options),
+    remove: (id, etag) => remove(api, id, etag),
+    list: () => list(api),
+  });
+}
+
+export const shareStore = createS3Store(getS3, BUCKET);

@@ -54,6 +54,13 @@ test('malformed expiry is an operational failure, never guessed or deleted', asy
   assert.equal(store.records.has(ID), true);
 });
 
+test('cleanup cannot delete an expired object without a storage precondition', async () => {
+  const store = setup();
+  delete store.records.get(ID).etag;
+  await assert.rejects(cleanupShares({ store, now: () => NOW }), /1 cleanup failure/);
+  assert.equal(store.records.has(ID), true);
+});
+
 test('low remaining execution time fails visibly instead of skipping the tail silently', async () => {
   const store = setup();
   await assert.rejects(cleanupShares({ store, now: () => NOW, remaining: () => 1000 }), /Cleanup deadline/);

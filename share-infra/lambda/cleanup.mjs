@@ -7,6 +7,7 @@ async function cleanOne(api, id) {
   if (!record) return false;
   if (!Number.isFinite(record.value.expiresAt)) throw new Error('Invalid expiry');
   if (api.now() < record.value.expiresAt) return false;
+  if (!record.etag) throw new Error('Missing storage precondition');
   try {
     await api.store.remove(id, record.etag);
     return true;

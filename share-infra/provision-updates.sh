@@ -78,7 +78,13 @@ if [ "$DRY_RUN" -eq 1 ] || ! aws lambda get-policy --region "$REGION" --function
   run aws lambda add-permission --region "$REGION" --function-name "$FUNCTION_NAME" --statement-id HourlyCleanup \
     --action lambda:InvokeFunction --principal events.amazonaws.com --source-arn "$RULE_ARN"
 fi
-run aws events put-targets --region "$REGION" --rule "$RULE_NAME" --targets "Id=cleanup,Arn=$FUNCTION_ARN"
+if [ "$DRY_RUN" -eq 1 ]; then
+  run aws events put-targets --region "$REGION" --rule "$RULE_NAME" --targets "Id=cleanup,Arn=$FUNCTION_ARN"
+else
+  FAILED_TARGETS="$(aws events put-targets --region "$REGION" --rule "$RULE_NAME" \
+    --targets "Id=cleanup,Arn=$FUNCTION_ARN" --query FailedEntryCount --output text)"
+  [ "$FAILED_TARGETS" = 0 ] || { echo 'Cleanup schedule registration failed; refusing to enable PUT.' >&2; exit 1; }
+fi
 for METRIC in Errors Invocations; do
   OPERATOR=GreaterThanOrEqualToThreshold; THRESHOLD=1; PERIOD=3600; MISSING=notBreaching
   if [ "$METRIC" = Invocations ]; then OPERATOR=LessThanThreshold; PERIOD=7200; MISSING=breaching; fi
