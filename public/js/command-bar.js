@@ -4,9 +4,8 @@
    filters every command instead of notes. Plain text still searches notes
    exactly as before, and the full palette (Cmd/Ctrl+Shift+P) stays one
    click away from the panel's footer. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ id: string, label: string, meta?: string, keywords?: string, run: () => unknown }} Command */
   /** @typedef {{ input: HTMLInputElement, commands: () => Command[], matches: (haystack: string, query: string) => boolean }} AttachOptions */
   /** @typedef {{ input: HTMLInputElement, panel: HTMLElement, heading: HTMLElement, list: HTMLElement, commands: () => Command[], matches: (haystack: string, query: string) => boolean, items: Command[], index: number, pressedElsewhereAt: number }} Bar */

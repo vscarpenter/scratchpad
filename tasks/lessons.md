@@ -49,6 +49,15 @@
   a busy machine keeps the test out of the saturated run: full suite minus the
   popup test, then the popup test solo (`scripts/release-gate.mjs`). CI
   (workers: 1, retries: 2) stays authoritative for PRs.
+- Correction (2026-10): the guide popup failure WAS app behavior. Feature
+  modules wrapped code in a bare block with `('use strict');`, which is an
+  expression, not a directive. In sloppy mode, block-level function
+  declarations also land on `window` (Annex B), so find-replace.js's `open()`
+  replaced `window.open` and the palette's "Open user guide" never opened a
+  tab. Modules now start with a real script-level `'use strict';`, and
+  tests/script-scope.spec.js asserts the built-ins stay native. When a test
+  fails the same way in every browser on every retry, suspect the code before
+  the machine.
 - Assert on state that only exists after the change. A `toHaveCount(n)` that
   the pre-search list already satisfies passes before the 150ms search
   debounce fires and then reads stale rows; poll the row ids with

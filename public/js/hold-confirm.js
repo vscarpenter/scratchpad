@@ -8,9 +8,8 @@
    Assistive technology sends a click with no press before it (VoiceOver, Voice
    Control, Switch Control). Those users cannot hold, and the dialog already
    asked them to confirm, so that click passes straight through. */
+'use strict';
 {
-  ('use strict');
-
   const HOLD_MS = 1000;
   // A touch click can trail its pointerup. A click this soon after a release
   // still belongs to that press.

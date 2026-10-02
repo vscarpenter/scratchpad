@@ -8,9 +8,8 @@
    so a closed row carries no extra DOM. The document toolbar and bulk mode
    already reach the same actions, which is the alternative WCAG 2.5.1 asks a
    gesture to have. */
+'use strict';
 {
-  ('use strict');
-
   const LOCK_PX = 10;
   const ACTION_PX = 76;
   const COMMIT_PAD_PX = 64;

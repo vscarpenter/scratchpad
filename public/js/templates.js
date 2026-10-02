@@ -1,8 +1,7 @@
 // @ts-check
 /* Templates folder: notes in a folder named "Templates" seed new notes from the command palette. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ id: string, title?: string, body?: string, tags?: string[], folderId?: string | null, archivedAt?: number | null, deletedAt?: number | null }} TemplateNote */
   /** @typedef {{ id: string, name: string }} TemplateFolder */
   /** @typedef {{ notes(): TemplateNote[], folders(): TemplateFolder[], filingFolderId(): string | null, isDailyNotesFolder(id: string): boolean, folderById(id: string): TemplateFolder | null | undefined, uuid(): string, now(): number, normalizeNote(note: object): TemplateNote, putNoteRecord(note: TemplateNote): Promise<unknown>, addNote(note: TemplateNote): void, openNote(id: string): void, deriveTitle(note: TemplateNote): string, toast(message: string): void }} Deps */

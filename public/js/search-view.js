@@ -1,8 +1,7 @@
 // @ts-check
 /* Focused search-result DOM, highlighting, announcements, and keyboard flow. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {'direct' | 'close'} SearchKind */
   /** @typedef {{ tags: string[], titles: string[], folders: string[] }} QueryFilters */
   /** @typedef {{ kind: SearchKind, count: number, view: string, query: string, hasTagFilter: boolean, filters?: QueryFilters, onClear: () => void }} ChromeOptions */

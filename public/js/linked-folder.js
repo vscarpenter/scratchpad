@@ -1,8 +1,7 @@
 // @ts-check
 /* Linked folder: mirrors notes as Markdown files in a user-chosen directory and reads edits back. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ id: string, title?: string, body?: string, tags?: string[], folderId?: string | null, archivedAt?: number | null, deletedAt?: number | null, updatedAt?: number, createdAt?: number }} Note */
   /** @typedef {{ handle: FileSystemDirectoryHandle, name: string, linkedAt: number, paths: Record<string, string>, written: Record<string, number> }} LinkRecord */
   /** @typedef {{ notes(): Note[], folders(): Array<{ id: string, name: string }>, noteToMarkdown(note: Note): string, parseMarkdownNote(text: string): Note, storeRevision(note: Note): Promise<unknown>, putNoteRecord(note: Note): Promise<unknown>, deriveTitle(note: Note): string, slugify(text: string): string, noteFolderId(note: Note): string | null, folderDisplayName(id: string | null): string, isArchived(note: Note): boolean, isTrashed(note: Note): boolean, uuid(): string, now(): number, toast(message: string, options?: object): void, reload(): Promise<unknown> }} Deps */

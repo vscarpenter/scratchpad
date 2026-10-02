@@ -2,9 +2,8 @@
 /* Chronicle dialog helpers: pure builders for dialog content that app.js
    renders. No state and no network — everything works on the values and the
    document passed in through the DOM globals. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ newCount: number, conflicts: number, invalid: number, invalidFolders: number, invalidRevisions: number, revisions: unknown[], folders: unknown[] }} ImportPreview */
 
   /**

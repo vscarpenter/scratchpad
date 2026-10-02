@@ -1,8 +1,7 @@
 // @ts-check
 /* HTML clipboard to Markdown. Walks an inert DOMParser document and never touches the page. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ bold: boolean, italic: boolean, strike: boolean }} Marks */
 
   const DROPPED = new Set(
