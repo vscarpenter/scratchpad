@@ -24,6 +24,20 @@ function digest(parsed) {
     .digest('hex');
 }
 
+async function removeLateWrite(api, id, written) {
+  if (!written?.ETag) throw new Error('Missing written storage precondition');
+  try {
+    await api.store.remove(id, written.ETag);
+  } catch (error) {
+    if (
+      ['PreconditionFailed', 'NoSuchKey'].includes(error.name) ||
+      [404, 412].includes(error.$metadata?.httpStatusCode)
+    )
+      return;
+    throw error;
+  }
+}
+
 async function replace(api, id, record, parsed) {
   const current = record.value;
   const next = {
@@ -38,7 +52,11 @@ async function replace(api, id, record, parsed) {
   if (api.now() >= current.expiresAt) return { status: 410, body: { error: 'Expired' } };
   if (!record.etag) throw new Error('Missing storage precondition');
   try {
-    await api.store.put(id, next, { ifMatch: record.etag });
+    const written = await api.store.put(id, next, { ifMatch: record.etag });
+    if (api.now() >= current.expiresAt) {
+      await removeLateWrite(api, id, written);
+      return { status: 410, body: { error: 'Expired' } };
+    }
     return { status: 200, body: publication(next) };
   } catch (error) {
     if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404)

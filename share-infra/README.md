@@ -329,8 +329,20 @@ Rollout, requiring explicit deployment authorization:
    `bash share-infra/provision-updates.sh --dry-run` is entirely offline.
 4. Run `bash share-infra/provision-updates.sh` only with authorization. It refuses
    a bucket with enabled or suspended versioning, provisions cleanup, scheduling,
-   and alarms, invokes cleanup successfully, then enables PUT while preserving
-   the API's existing environment. The script respects the caller's AWS_PROFILE.
+   and alarms, and verifies the complete EventBridge invocation permission.
+   It disables PUT during verification, including on reruns, while preserving
+   the API's existing environment. A failed check leaves PUT disabled.
+   It creates an already-expired opaque canary, confirms it exists, temporarily
+   changes the same hourly rule to one minute, and requires the scheduled job
+   to delete it within four minutes. It restores and verifies the hourly rule
+   before enabling PUT. Failure or interruption also attempts to restore the
+   hourly rate. The canary contains no note or encryption key; its seven-day
+   lifecycle tag is a fallback if scheduled cleanup fails. The operator needs
+   S3 PutObject/PutObjectTagging/GetObject access for this canary, plus effective
+   bucket-level ListBucket permission so HeadObject can distinguish absence
+   (404) from access denied (403). A 403 never counts as successful deletion.
+   Use a current AWS CLI supporting conditional writes. The script respects
+   the caller's AWS_PROFILE.
 5. Prepare a release version in `public/js/version.js` so installed offline
    shells receive the new modules, then deploy the app after the backend.
    Use synthetic content to verify the same

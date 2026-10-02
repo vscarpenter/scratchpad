@@ -10,7 +10,8 @@
   let api;
   const API = '/api/share';
   const TTL_DAYS = [7, 14, 21, 30];
-  const active = new Set();
+  /** @type {Map<string, Promise<void>>} */
+  const active = new Map();
 
   /** @param {ShareNote} note @returns {SharePayload} */
   function payload(note) {
@@ -38,12 +39,18 @@
   /** @param {string} id @param {() => Promise<any>} task */
   async function locked(id, task) {
     if (navigator.locks) return navigator.locks.request('scratchpad:share:' + id, task);
-    if (active.has(id)) throw new Error('This link is already being managed. Try again shortly.');
-    active.add(id);
+    const operation = (active.get(id) || Promise.resolve()).then(task);
+    // The queue always settles successfully; each caller still receives its
+    // own result or error, and a failed publication cannot block revocation.
+    const completed = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    active.set(id, completed);
     try {
-      return await task();
+      return await operation;
     } finally {
-      active.delete(id);
+      if (active.get(id) === completed) active.delete(id);
     }
   }
 

@@ -29,6 +29,7 @@ export function memoryStore(value = stored()) {
     }
     records.set(id, { value: structuredClone(next), etag: String(Number(prior?.etag || 0) + 1) });
     writes.push({ id, value: next, options });
+    return { ETag: records.get(id).etag };
   };
   api.remove = async (id, etag) => {
     if (api.beforeDelete) await api.beforeDelete();

@@ -66,6 +66,44 @@ test('expiry is checked again before storage commits', async () => {
   assert.equal(store.writes.length, 0);
 });
 
+test('a write crossing expiry is rejected and its ciphertext is conditionally removed', async () => {
+  let tick = NOW;
+  const { store, run } = setup(stored({ expiresAt: NOW + 1 }), { now: () => tick });
+  store.beforePut = () => {
+    tick = NOW + 1;
+  };
+  assert.equal((await run(event())).statusCode, 410);
+  assert.equal(store.records.has(ID), false);
+  assert.deepEqual(store.deletes, [ID]);
+});
+
+test('late-write cleanup cannot delete a replacement with a different ETag', async () => {
+  let tick = NOW;
+  const { store, run } = setup(stored({ expiresAt: NOW + 1 }), { now: () => tick });
+  store.beforePut = () => {
+    tick = NOW + 1;
+  };
+  store.beforeDelete = () => {
+    store.records.get(ID).etag = 'newer';
+  };
+  assert.equal((await run(event())).statusCode, 410);
+  assert.equal(store.records.get(ID).etag, 'newer');
+  assert.deepEqual(store.deletes, []);
+});
+
+test('late-write cleanup failures are visible instead of claiming successful publication', async () => {
+  let tick = NOW;
+  const { store, run } = setup(stored({ expiresAt: NOW + 1 }), { now: () => tick });
+  store.beforePut = () => {
+    tick = NOW + 1;
+  };
+  store.beforeDelete = () => {
+    throw Object.assign(new Error(), { name: 'AccessDenied' });
+  };
+  assert.equal((await run(event())).statusCode, 500);
+  assert.equal(store.records.has(ID), true);
+});
+
 test('stale publication revisions conflict without an overwrite', async () => {
   const { store, run } = setup(stored({ revision: 2 }));
   assert.equal((await run(event())).statusCode, 409);
