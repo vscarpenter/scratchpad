@@ -122,8 +122,8 @@ echo
 echo "== Function =="
 ZIP_DIR="$(mktemp -d)"
 ZIP="$ZIP_DIR/share-api.zip"
-(cd "$HERE/lambda" && zip -q -r "$ZIP" handler.mjs validate.mjs)
-echo "Packaged handler.mjs + validate.mjs -> $ZIP"
+(cd "$HERE/lambda" && zip -q "$ZIP" handler.mjs validate.mjs s3-store.mjs update.mjs)
+echo "Packaged API modules -> $ZIP"
 
 # Reuse the existing origin secret -- and every other environment variable the
 # function already carries -- so a re-run can neither invalidate the header

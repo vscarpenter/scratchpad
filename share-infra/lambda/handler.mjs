@@ -1,39 +1,25 @@
-// Share API. Three routes over a private bucket:
+// Share API. Four routes over a private bucket:
 //   POST   /api/share          create
 //   GET    /api/share/{id}     read
 //   DELETE /api/share/{id}     revoke
+//   PUT    /api/share/{id}     explicitly republish (owner only)
 //
 // The bucket has Block Public Access fully on, so this handler is the only way
 // to reach share data. Every read therefore checks expiry itself even though S3
 // lifecycle also deletes the object -- lifecycle runs on a daily cadence and can
 // lag a nominal expiry by up to 48 hours.
 //
-// There is deliberately no route that mutates an existing share. Snapshot
-// semantics are enforced here, by absence, rather than by client discipline.
+// Local edits never publish. PUT is authenticated and remains disabled until
+// original-expiry cleanup is provisioned on an unversioned shares bucket.
 
 import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { parseShareBody, isValidShareId } from './validate.mjs';
+import { shareStore } from './s3-store.mjs';
+import { updateShare, publication } from './update.mjs';
+export { isMissingObjectError } from './s3-store.mjs';
 
-const BUCKET = process.env.SHARES_BUCKET;
-const ORIGIN_SECRET = process.env.SHARE_ORIGIN_SECRET;
-const PREFIX = 'shares/';
 const READ_PATH = /^\/api\/share\/([^/]+)$/;
 const ORIGIN_SECRET_HEADER = 'x-share-origin-secret';
-
-// The AWS SDK is provided by the Lambda runtime, not by this repo. Loading it
-// lazily keeps the pure exports below importable in a plain `node --test` run
-// where the SDK is not installed. The module is cached after the first call, so
-// only the first invocation of a cold container pays for it.
-let s3Promise = null;
-function getS3() {
-  if (!s3Promise) {
-    s3Promise = import('@aws-sdk/client-s3').then((sdk) => ({
-      client: new sdk.S3Client({}),
-      sdk,
-    }));
-  }
-  return s3Promise;
-}
 
 export function newShareId() {
   return randomBytes(9).toString('base64url'); // 9 bytes -> exactly 12 chars
@@ -55,7 +41,8 @@ export function timingSafeEqualHex(a, b) {
 export function hasValidOriginSecret(headers, expected) {
   if (!expected) return true;
   if (!headers) return false;
-  const supplied = headers[ORIGIN_SECRET_HEADER] ??
+  const supplied =
+    headers[ORIGIN_SECRET_HEADER] ??
     headers[Object.keys(headers).find((k) => k.toLowerCase() === ORIGIN_SECRET_HEADER) ?? ''];
   if (typeof supplied !== 'string') return false;
   // Compare byte lengths, not string lengths: a multibyte character makes the
@@ -73,6 +60,7 @@ export function route(method, path) {
   if (!id || !isValidShareId(id)) return { action: 'unknown', id: null };
   if (method === 'GET') return { action: 'read', id };
   if (method === 'DELETE') return { action: 'revoke', id };
+  if (method === 'PUT') return { action: 'update', id };
   return { action: 'unknown', id: null };
 }
 
@@ -99,116 +87,78 @@ export function noContent() {
   return { statusCode: 204, headers: { ...SECURITY_HEADERS }, body: '' };
 }
 
-function keyFor(id) {
-  return PREFIX + id + '.json';
+function header(headers, name) {
+  return headers[Object.keys(headers).find((key) => key.toLowerCase() === name)] || '';
 }
 
-// The IAM policy grants GetObject on shares/* but deliberately NOT ListBucket,
-// so a compromised handler cannot enumerate shares. S3's documented behavior in
-// that case is to answer AccessDenied rather than NoSuchKey for a key that does
-// not exist, because revealing the difference would itself leak existence.
-//
-// Every key this handler requests is inside the granted prefix, so AccessDenied
-// there can only mean the object is absent. Treating it as "missing" is what
-// makes a revoked link render as "nothing here" instead of a server error.
-export function isMissingObjectError(error) {
-  if (!error) return false;
-  const status = error.$metadata?.httpStatusCode;
-  return error.name === 'NoSuchKey' || error.name === 'AccessDenied' || status === 404 || status === 403;
-}
-
-async function readObject(id) {
-  const { client, sdk } = await getS3();
-  try {
-    const res = await client.send(new sdk.GetObjectCommand({ Bucket: BUCKET, Key: keyFor(id) }));
-    return JSON.parse(await res.Body.transformToString());
-  } catch (error) {
-    if (isMissingObjectError(error)) return null;
-    throw error;
-  }
-}
-
-async function create(rawBody) {
+async function create(api, rawBody) {
   const parsed = parseShareBody(rawBody);
   if (!parsed.ok) return json(parsed.status, { error: parsed.error });
-
-  const { client, sdk } = await getS3();
   const id = newShareId();
   const revokeToken = randomBytes(32).toString('base64url');
-  const expiresAt = Date.now() + parsed.ttlDays * 24 * 60 * 60 * 1000;
-
-  await client.send(new sdk.PutObjectCommand({
-    Bucket: BUCKET,
-    Key: keyFor(id),
-    ContentType: 'application/json',
-    Body: JSON.stringify({ ...parsed.value, expiresAt, revokeHash: hashToken(revokeToken) }),
-    // The tag routes the object to its matching lifecycle rule; untagged
-    // objects fall to the 30-day backstop. See share-infra/lifecycle.json.
-    Tagging: 'ttl-days=' + parsed.ttlDays,
-  }));
-
-  return json(201, { id, revokeToken, expiresAt });
+  const publishedAt = api.now();
+  const expiresAt = publishedAt + parsed.ttlDays * 86400000;
+  const stored = {
+    ...parsed.value,
+    expiresAt,
+    revokeHash: hashToken(revokeToken),
+    ttlDays: parsed.ttlDays,
+    revision: 1,
+    publishedAt,
+  };
+  await api.store.put(id, stored);
+  return json(201, { id, revokeToken, ...publication(stored) });
 }
 
-async function read(id) {
-  const stored = await readObject(id);
-  if (!stored) return json(404, { error: 'Not found' });
-  if (Date.now() > stored.expiresAt) return json(410, { error: 'Expired' });
-  // revokeHash is deliberately not echoed back.
-  return json(200, {
-    v: stored.v,
-    ciphertext: stored.ciphertext,
-    iv: stored.iv,
-    expiresAt: stored.expiresAt,
-  });
+async function read(api, id) {
+  const record = await api.store.read(id);
+  if (!record) return json(404, { error: 'Not found' });
+  const stored = record.value;
+  if (!Number.isFinite(stored.expiresAt) || api.now() >= stored.expiresAt) return json(410, { error: 'Expired' });
+  return json(200, { v: stored.v, ciphertext: stored.ciphertext, iv: stored.iv, ...publication(stored) });
 }
 
-async function revoke(id, token) {
-  const stored = await readObject(id);
-  if (!stored) return json(404, { error: 'Not found' });
-  if (typeof token !== 'string' || !timingSafeEqualHex(stored.revokeHash, hashToken(token))) {
+async function revoke(api, id, token) {
+  const record = await api.store.read(id);
+  if (!record) return json(404, { error: 'Not found' });
+  if (typeof token !== 'string' || !timingSafeEqualHex(record.value.revokeHash, hashToken(token)))
     return json(403, { error: 'Forbidden' });
-  }
-  const { client, sdk } = await getS3();
-  await client.send(new sdk.DeleteObjectCommand({ Bucket: BUCKET, Key: keyFor(id) }));
+  await api.store.remove(id);
   return noContent();
 }
 
-export async function handler(event) {
+async function dispatch(api, event) {
   const headers = event?.headers || {};
-  // A throw inside the gate must degrade to the same 404 the gate returns,
-  // never a bare API Gateway 5xx: the error path would otherwise both break
-  // the indistinguishability below and ship without SECURITY_HEADERS.
-  let originOk = false;
-  try {
-    originOk = hasValidOriginSecret(headers, ORIGIN_SECRET);
-  } catch {
-    originOk = false;
-  }
-  if (!originOk) {
-    // Deliberately indistinguishable from an unknown path: someone probing the
-    // API Gateway endpoint directly learns nothing about what lives here.
-    return json(404, { error: 'Not found' });
-  }
-
+  if (!hasValidOriginSecret(headers, api.originSecret)) return json(404, { error: 'Not found' });
   const method = event?.requestContext?.http?.method || '';
-  const path = event?.rawPath || '';
-  const { action, id } = route(method, path);
-
-  const rawBody = event?.isBase64Encoded && event.body
-    ? Buffer.from(event.body, 'base64').toString('utf8')
-    : event?.body;
-
-  try {
-    if (action === 'create') return await create(rawBody);
-    if (action === 'read') return await read(id);
-    if (action === 'revoke') {
-      return await revoke(id, headers['x-revoke-token'] || headers['X-Revoke-Token']);
-    }
-    return json(404, { error: 'Not found' });
-  } catch (error) {
-    // Never echo the error: it can carry bucket names and key paths.
-    console.error('share handler failure', action, error?.name);
-    return json(500, { error: 'Server error' });
+  const { action, id } = route(method, event?.rawPath || '');
+  const rawBody =
+    event?.isBase64Encoded && event.body ? Buffer.from(event.body, 'base64').toString('utf8') : event?.body;
+  if (action === 'create') return create(api, rawBody);
+  if (action === 'read') return read(api, id);
+  if (action === 'revoke') return revoke(api, id, header(headers, 'x-revoke-token'));
+  if (action === 'update') {
+    const result = await updateShare(api, id, rawBody, header(headers, 'x-share-owner-token'));
+    return json(result.status, result.body);
   }
+  return json(404, { error: 'Not found' });
 }
+
+export function createShareHandler(api) {
+  return async (event) => {
+    try {
+      return await dispatch(api, event);
+    } catch (error) {
+      // Never log request contents, secrets, or storage paths.
+      console.error('share handler failure', error?.name);
+      return json(500, { error: 'Server error' });
+    }
+  };
+}
+
+export const handler = createShareHandler({
+  store: shareStore,
+  now: Date.now,
+  originSecret: process.env.SHARE_ORIGIN_SECRET,
+  updatesEnabled: process.env.SHARE_UPDATES_ENABLED === 'true',
+});

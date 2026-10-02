@@ -17,7 +17,7 @@ guarantee, not an implementation detail.
 - **No third-party scripts, fonts, trackers, or analytics.** Everything is
   same-origin. If a change would add a CDN reference, a Google Font, a script
   tag pointing off-site, or an `<img>` from a third-party host, stop and check.
-- **`POST/GET/DELETE /api/share` is the ONLY sanctioned network call**, apart
+- **`POST/GET/DELETE /api/share` and owner-authenticated `PUT /api/share/{id}` is the ONLY sanctioned network call**, apart
   from the update check below. The
   product is "your notes stay in this browser unless you deliberately share
   one." Don't add any other fetch/XHR. No sync, no autosave-to-server, no
@@ -34,6 +34,11 @@ guarantee, not an implementation detail.
   normal use, exactly one POST when a link is created, and that no request
   carries the note plaintext. Treat those assertions as the executable form of
   the product promise — tighten them, never relax them.
+- **Shared links change only on an explicit Update shared link action.** PUT
+  preserves the URL/key and original server expiry, requires the local owner
+  token, and uses conditional writes. Never publish on save, poll, or revive
+  expired/revoked links. Hourly original-expiry cleanup must be provisioned
+  before enabling `SHARE_UPDATES_ENABLED`.
 - **`marked` and `DOMPurify` are vendored**, not loaded from a CDN. They live
   in `public/js/vendor/`. Don't replace with CDN URLs.
 
@@ -131,7 +136,7 @@ public/
       marked.min.js
       purify.min.js
 share-infra/             share API Lambda + AWS provisioning (do NOT deploy)
-  lambda/handler.mjs     three-route share API over the private shares bucket
+  lambda/handler.mjs     four-route share API over the private shares bucket
   lambda/validate.mjs    pure request validation; unit-tested, no AWS imports
   iam-policy.json        least privilege: shares/* on scratchpad-shares only
   lifecycle.json         expire shares/ after 7 days

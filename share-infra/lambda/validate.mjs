@@ -42,6 +42,23 @@ export function isValidShareId(id) {
   return typeof id === 'string' && SHARE_ID_PATTERN.test(id);
 }
 
+export function parseUpdateBody(rawBody) {
+  const envelope = parseShareBody(rawBody);
+  if (!envelope.ok) return envelope;
+  const body = JSON.parse(rawBody);
+  const allowed = ['v', 'ciphertext', 'iv', 'expectedRevision', 'operationId'];
+  if (Object.keys(body).some((key) => !allowed.includes(key))) return fail(400, 'Unexpected update field');
+  if (
+    !Number.isSafeInteger(body.expectedRevision) ||
+    body.expectedRevision < 1 ||
+    body.expectedRevision >= Number.MAX_SAFE_INTEGER
+  )
+    return fail(400, 'Invalid revision');
+  if (typeof body.operationId !== 'string' || !/^[A-Za-z0-9_-]{22}$/.test(body.operationId))
+    return fail(400, 'Invalid operationId');
+  return { ok: true, value: envelope.value, expectedRevision: body.expectedRevision, operationId: body.operationId };
+}
+
 export function parseShareBody(rawBody) {
   if (typeof rawBody !== 'string' || rawBody.length === 0) return fail(400, 'Missing body');
   if (Buffer.byteLength(rawBody, 'utf8') > MAX_BODY_BYTES) return fail(413, 'Body too large');
