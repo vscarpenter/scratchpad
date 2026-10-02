@@ -77,8 +77,14 @@ test('the Settings dialog never scrolls sideways at 320px', async ({ page }) => 
 
 test('Storage protection stays one line once it reads Persistent', async ({ page }) => {
   await page.addInitScript(() => {
-    // On the prototype: WebKit ignores an own property set on navigator.storage.
-    Object.defineProperty(StorageManager.prototype, 'persisted', { configurable: true, value: async () => true });
+    // Replace navigator.storage whole, as storage-protection.spec.js does: patching
+    // StorageManager.prototype left WebKit reporting Unavailable.
+    const storage = {
+      estimate: async () => ({ usage: 1024, quota: 1024 * 1024 }),
+      persisted: async () => true,
+      persist: async () => true,
+    };
+    Object.defineProperty(navigator, 'storage', { configurable: true, value: storage });
   });
   await gotoApp(page);
   await openSettings(page);

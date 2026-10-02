@@ -5,9 +5,8 @@
    before the global shortcut handler — and hides itself whenever the editor
    textarea hides, mirroring every edit-mode exit without app.js hooks.
    Bar state (open, case, regex, query) is runtime-only and never persisted. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ start: number, end: number }} MatchRange */
   /** @typedef {{ bar: HTMLElement, input: HTMLInputElement, count: HTMLElement, caseToggle: HTMLButtonElement, regexToggle: HTMLButtonElement, close: HTMLButtonElement, notice: HTMLElement, live: HTMLElement, replaceInput: HTMLInputElement, replaceBtn: HTMLButtonElement, replaceAllBtn: HTMLButtonElement }} FindEls */
   /** @typedef {{ editor: HTMLTextAreaElement, onToast?: (message: string) => void }} FindDeps */

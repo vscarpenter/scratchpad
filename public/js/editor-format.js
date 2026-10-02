@@ -5,9 +5,8 @@
    caret where the inserted markup expects it, and dispatches the same input
    event a typed keystroke would — so drafts, autosave, and the dirty flow in
    app.js treat chip edits exactly like keyboard edits. */
+'use strict';
 {
-  ('use strict');
-
   /** @typedef {{ apply(editor: HTMLTextAreaElement, format: string): void }} FormatApi */
 
   /**
