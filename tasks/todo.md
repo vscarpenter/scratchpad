@@ -20,8 +20,14 @@ CSS, tests). Branch: `claude/busy-keller-sj34zq`, restarted from main after
       which clones the About list; the palette has a Keyboard shortcuts
       command; About gains three missing rows (8fd3ed2).
 - [x] 6. Docs and ratchets: guide, README, tests README; app.js ceiling
-      tightens to 5,985; deepFunctions to 10.
-- [ ] 7. Verify: `npm run verify` gates, full Chromium suite, CSP hashes.
+      tightens to 5,985; deepFunctions to 10 (a6e43b4).
+- [x] 7. Screenshots showed the pill's `text-transform: capitalize` also
+      reached the title ("Platform Roadmap, Q4"), which predates this work.
+      Titles and folder buttons now show as written, and the spec pins the
+      rendered title (6f661be).
+- [x] 8. Verify: `npm run verify` gates green (browser coverage 41.73%);
+      CSP hashes unchanged; Chromium suite 550 passed with only the 8
+      environment-only iPhone failures; screenshots in `.verify/nav-*`.
 
 ## Decisions made without a stop (Vinny asked for the follow-up PR)
 
