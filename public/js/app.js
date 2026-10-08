@@ -4809,7 +4809,7 @@
     });
   }
 
-  // With a note (the note menu), exports only it: a .md, or a ZIP with its images. Listeners pass an event instead.
+  // Given a note (the note menu), exports just that note: a .md, or a ZIP with its images. Called bare, every note.
   async function exportMarkdownZip(only) {
     const one = only && only.id ? only : null;
     return withBusy('export-markdown', [els.exportMarkdownBtn, els.exportOverflowBtn], 'Markdown export failed.', async () => {
