@@ -2781,6 +2781,7 @@ body:not(.page-privacy) {
 /* ---------- About dialog ---------- */
 .about-dialog { max-width: 560px; }
 .settings-dialog { max-width: 560px; }
+.shortcuts-dialog { max-width: 480px; }
 .settings-body { font-size: 14px; }
 .settings-row {
   display: flex;

@@ -770,13 +770,16 @@
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">N</kbd> — New note</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">E</kbd> — Edit the open note</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">S</kbd> — Save (in edit mode)</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">F</kbd> — Find and replace (in edit mode)</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">D</kbd> — Open today’s note</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">Space</kbd> — Quick capture</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">K</kbd> or <kbd class="kbd">/</kbd> — Focus search</li>
         <li><kbd class="kbd">↑</kbd> / <kbd class="kbd">↓</kbd> — Move through search results</li>
         <li><kbd class="kbd">Enter</kbd> — Open the focused search result</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">P</kbd> — Command palette</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">F</kbd> — Toggle focus mode</li>
         <li><kbd class="kbd">Esc</kbd> — Clear search, or exit edit mode</li>
+        <li><kbd class="kbd">?</kbd> — Show these shortcuts</li>
       </ul>
     </div>
     <div class="dialog-foot about-dialog-foot">
@@ -791,6 +794,19 @@
         <span class="sep" aria-hidden="true">·</span>
         <span>built <span id="app-build-date">—</span></span>
       </div>
+      <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="shortcuts-dialog" class="dialog shortcuts-dialog" aria-labelledby="shortcuts-dialog-title">
+    <div class="dialog-head">
+      <h2 id="shortcuts-dialog-title">Keyboard shortcuts</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <ul id="shortcuts-list" class="shortcut-list"></ul>
+    </div>
+    <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
     </div>
   </dialog>
@@ -1175,6 +1191,7 @@
   <script src="/public/js/home-desk-view.js"></script>
   <script src="/public/js/home-desk.js"></script>
   <script src="/public/js/note-breadcrumb.js"></script>
+  <script src="/public/js/shortcuts-sheet.js"></script>
   <script src="/public/js/share-store.js"></script>
   <script src="/public/js/share-manager.js"></script>
   <script src="/public/js/share-controls.js"></script>

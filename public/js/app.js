@@ -4450,7 +4450,7 @@
     }
 
     if (window.ScratchpadTemplates) commands.push(...window.ScratchpadTemplates.commands());
-    commands.push(...HomeDesk.commands());
+    commands.push(...HomeDesk.commands(), ...window.ScratchpadShortcuts.commands());
     const notes = sortNotes(state.notes)
       .slice(0, 8)
       .map((note) => ({

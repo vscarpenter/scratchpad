@@ -34,6 +34,7 @@
     "public/js/home-desk-view.js",
     "public/js/home-desk.js",
     "public/js/note-breadcrumb.js",
+    "public/js/shortcuts-sheet.js",
     "scripts/quality/**/*.mjs",
     "public/js/share-store.js",
     "public/js/share-manager.js",
