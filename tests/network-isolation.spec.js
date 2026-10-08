@@ -267,3 +267,27 @@ test.describe('network isolation', () => {
     });
   });
 });
+
+// Home reads notes already in memory. Opening it and using every control
+// sends nothing, including a quick capture written from it.
+test('opening Home and using its controls sends nothing', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('scratchpad:openTo', 'home'));
+  await gotoApp(page);
+  await createAndSaveNote(page, 'Home canary', 'A private body that never leaves.');
+  const requests = await recordRequestsAfterLoad(page);
+
+  await page.locator('#home-view').click();
+  await expect(page.locator('#home-desk')).toBeVisible();
+  await page.locator('#home-desk-layout [data-desk-layout="grid"]').click();
+  await page.locator('#home-desk-layout [data-desk-layout="list"]').click();
+  await page.locator('#home-desk-capture').click();
+  await page.locator('#quick-capture-input').fill('a private thought');
+  await page.locator('#quick-capture-submit').click();
+  await expect(page.locator('#home-desk-today-meta')).toHaveText(/words so far/);
+  await page.locator('#home-desk-today').click();
+  await page.locator('#home-view').click();
+  await page.locator('#home-desk-recent .home-desk-row').first().click();
+  await expect(page.locator('#editor-view')).toBeVisible();
+
+  expect(requests, describeRequests(requests)).toEqual([]);
+});

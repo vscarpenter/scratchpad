@@ -2306,6 +2306,401 @@ body:not(.page-privacy) {
   margin-top: 22px;
 }
 
+/* ---------- Home ---------- */
+/* Home stands in for the document when no note is open on a wide screen.
+   Phones keep the list as their home. Home sits on the stage, but nothing on
+   it is raised: tiles and cards are flat paper with hairlines, so the open
+   document stays the only lifted surface (DESIGN.md, "Surfaces and depth").
+   Informative text on the stage uses --text-secondary, the muted tone that
+   clears AA on the canvas. */
+.home-desk {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  container: home-desk / inline-size;
+}
+
+.home-desk-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 40px 32px 48px;
+}
+
+.home-desk-hello {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+.home-desk-hello-text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.home-desk-date {
+  margin: 0 0 10px;
+  font: 500 11px/1.4 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.home-desk-greeting {
+  margin: 0;
+  font: 600 36px/1.1 var(--serif);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.home-desk-greeting:focus:not(:focus-visible) { outline: none; }
+.home-desk-sub {
+  margin: 10px 0 0;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+.home-desk-new {
+  flex: none;
+  gap: 8px;
+}
+
+/* Tiles, cards, and grid rows run three across, then drop to one column as
+   the stage narrows, so a row of three never strands one item on its own. */
+.home-desk-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.home-desk-tile,
+.home-desk-card {
+  min-width: 0;
+  border: var(--border-hair);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.home-desk-tile:hover,
+.home-desk-card:hover {
+  border-color: var(--accent-strong-border);
+}
+.home-desk-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 14px;
+}
+.home-desk-tile-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: var(--control-fill);
+  color: var(--text-secondary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.home-desk-tile:hover .home-desk-tile-icon,
+.home-desk-tile:focus-visible .home-desk-tile-icon {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.home-desk-tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.home-desk-tile-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.home-desk-tile-title {
+  font: 600 14px/1.3 var(--sans);
+}
+.home-desk-tile-meta {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+.home-desk-kbd {
+  flex: none;
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.home-desk-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.home-desk-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+}
+.home-desk-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 600 15px/1.3 var(--sans);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+.home-desk-section-title svg { color: var(--text-secondary); }
+.home-desk-link {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  font: 500 13px/1 var(--sans);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+.home-desk-link:hover { background: var(--control-fill); }
+
+.home-desk-cards,
+.home-desk-recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.home-desk-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.home-desk-item {
+  display: flex;
+  min-width: 0;
+}
+.home-desk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 16px 18px 14px;
+}
+.home-desk-card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font: 600 18px/1.25 var(--serif);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+/* The clamped preview keeps its natural height; a stretched box would show
+   the lines past the clamp. The meta line takes the slack instead. */
+.home-desk-card-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+
+.home-desk-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 4px;
+  font: 500 12px/1.3 var(--sans);
+  color: var(--text-secondary);
+}
+.home-desk-meta > span:not(.folder-dot) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-desk-meta-sep { color: var(--text-muted); }
+.home-desk-when {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-desk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 1px solid var(--hairline-color);
+}
+.home-desk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin-bottom: -1px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: 500 13px/1 var(--sans);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.home-desk-chip:hover { color: var(--ink); }
+.home-desk-chip[aria-pressed="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+}
+
+.home-desk-recent {
+  display: flex;
+  flex-direction: column;
+}
+.home-desk-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline-color);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.home-desk-row:hover { background: var(--row-hover); }
+.home-desk-recent .home-desk-item:last-child .home-desk-row { border-bottom: 0; }
+.home-desk-row-icon { color: var(--text-secondary); }
+.home-desk-row-title {
+  overflow: hidden;
+  font: 500 14px/1.35 var(--sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-desk-row-excerpt { display: none; }
+.home-desk-row .home-desk-meta {
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+/* Grid: the same rows as flat paper tiles with a two-line excerpt. */
+.home-desk-recent.is-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.home-desk-recent.is-grid .home-desk-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 14px 16px;
+  border: var(--border-hair);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+  transition: border-color 0.15s ease;
+}
+.home-desk-recent.is-grid .home-desk-row:hover { border-color: var(--accent-strong-border); }
+.home-desk-recent.is-grid .home-desk-row-icon { display: none; }
+.home-desk-recent.is-grid .home-desk-row-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font: 600 16px/1.3 var(--serif);
+  white-space: normal;
+}
+.home-desk-recent.is-grid .home-desk-row-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+.home-desk-recent.is-grid .home-desk-meta {
+  justify-content: flex-start;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.home-desk-card .home-desk-meta {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.home-desk-empty {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--hairline-color-2);
+  border-radius: var(--r-lg);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.home-desk-privacy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline-color);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.home-desk-privacy svg { flex: none; }
+
+@media (min-width: 1200px) {
+  .home-desk-greeting { font-size: 42px; }
+}
+@container home-desk (max-width: 699px) {
+  .home-desk-kbd { display: none; }
+  .home-desk-recent.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container home-desk (max-width: 519px) {
+  .home-desk-tiles,
+  .home-desk-cards,
+  .home-desk-recent.is-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 1099px) {
+  .home-desk-inner {
+    gap: 26px;
+    padding: 28px 22px 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-desk-tile,
+  .home-desk-tile-icon,
+  .home-desk-card,
+  .home-desk-recent.is-grid .home-desk-row {
+    transition: none;
+  }
+}
+
 /* ---------- About dialog ---------- */
 .about-dialog { max-width: 560px; }
 .settings-dialog { max-width: 560px; }
@@ -2321,6 +2716,14 @@ body:not(.page-privacy) {
   font: 600 13px/1.3 var(--sans);
   color: var(--ink);
 }
+.settings-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.settings-row + .settings-row { margin-top: 12px; }
 .about-body { font-size: 14px; }
 
 /* Links + version row in the About-dialog foot (replaces what the app-page

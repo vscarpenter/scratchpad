@@ -1,9 +1,12 @@
 // @ts-check
 const { expect } = require('@playwright/test');
 
+// Specs written before Home expect a launch to open the top note, so the
+// helper picks Open to = Top note unless a spec already chose Home.
 async function gotoApp(page) {
   await page.addInitScript(() => {
     localStorage.setItem('scratchpad-visited', '1');
+    if (localStorage.getItem('scratchpad:openTo') === null) localStorage.setItem('scratchpad:openTo', 'note');
   });
   await page.goto('/');
   await expect(page.locator('#app-shell')).toBeVisible();

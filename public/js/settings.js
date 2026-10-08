@@ -1,13 +1,15 @@
 // @ts-check
-/* Settings dialog behavior: the theme choice plus two status readers the
-   "Your data" rows show. The inline script at the bottom of index.html also
-   handles theme; it is CSP-hashed, so it stays as it is and keeps a hidden
-   legacy button. This module writes the same storage key and <html>
-   attribute, so the two never disagree. */
+/* Settings dialog behavior: the theme and Open to choices plus two status
+   readers the "Your data" rows show. The inline script at the bottom of
+   index.html also handles theme; it is CSP-hashed, so it stays as it is and
+   keeps a hidden legacy button. This module writes the same storage key and
+   <html> attribute, so the two never disagree. */
 'use strict';
 {
   const KEY = 'theme-preview';
   const CHOICES = ['auto', 'light', 'dark'];
+  const OPEN_TO_KEY = 'scratchpad:openTo';
+  const OPEN_TO_CHOICES = ['home', 'note'];
 
   function readTheme() {
     try {
@@ -39,27 +41,67 @@
     applyTheme(choice);
   }
 
+  /** Where a launch on a wide screen lands: Home, or the note at the top of the list. */
+  function readOpenTo() {
+    try {
+      const stored = localStorage.getItem(OPEN_TO_KEY) || 'home';
+      return OPEN_TO_CHOICES.includes(stored) ? stored : 'home';
+    } catch {
+      return 'home';
+    }
+  }
+
+  /** @param {string} choice */
+  function setOpenTo(choice) {
+    try {
+      localStorage.setItem(OPEN_TO_KEY, choice);
+    } catch {
+      /* Private mode: nothing persists, so the next launch opens to Home. */
+    }
+  }
+
   /**
-   * Wires a group of [data-theme-choice] buttons. Returns a sync function
-   * that re-reads storage, for the moment the dialog opens.
+   * Wires one group of segmented choice buttons to a stored setting. Returns
+   * a sync function that re-reads storage, for the moment the dialog opens.
    * @param {HTMLElement} group
+   * @param {string} attribute
+   * @param {() => string} read
+   * @param {(choice: string) => void} write
    */
-  function bindThemeChoice(group) {
-    const buttons = Array.from(group.querySelectorAll('[data-theme-choice]'));
+  function bindChoice(group, attribute, read, write) {
+    const buttons = Array.from(group.querySelectorAll('[' + attribute + ']'));
     const sync = () => {
-      const current = readTheme();
+      const current = read();
       for (const button of buttons) {
-        button.setAttribute('aria-pressed', String(button.getAttribute('data-theme-choice') === current));
+        button.setAttribute('aria-pressed', String(button.getAttribute(attribute) === current));
       }
     };
     for (const button of buttons) {
       button.addEventListener('click', () => {
-        setTheme(button.getAttribute('data-theme-choice') || 'auto');
+        const choice = button.getAttribute(attribute);
+        if (choice) write(choice);
         sync();
       });
     }
     sync();
     return sync;
+  }
+
+  /**
+   * Binds the theme and Open to groups inside the settings dialog. Returns one
+   * sync function for both.
+   * @param {HTMLElement} dialog
+   */
+  function bindChoices(dialog) {
+    /** @type {Array<() => void>} */
+    const syncs = [];
+    const theme = dialog.querySelector('#theme-choice');
+    if (theme instanceof HTMLElement) syncs.push(bindChoice(theme, 'data-theme-choice', readTheme, setTheme));
+    const openTo = dialog.querySelector('#open-to-choice');
+    if (openTo instanceof HTMLElement) syncs.push(bindChoice(openTo, 'data-open-to-choice', readOpenTo, setOpenTo));
+    return () => {
+      for (const sync of syncs) sync();
+    };
   }
 
   function offlineCacheStatus() {
@@ -100,7 +142,8 @@
   root.ScratchpadSettings = Object.freeze({
     readTheme,
     setTheme,
-    bindThemeChoice,
+    readOpenTo,
+    bindChoices,
     offlineCacheStatus,
     newerVersion,
     storageSummary,

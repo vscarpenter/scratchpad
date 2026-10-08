@@ -368,12 +368,97 @@
         <p><button id="clear-search-btn" class="btn btn-secondary" type="button">Clear search & filters</button></p>
       </section>
 
-      <section id="empty-pick-one" class="empty-state center-state" hidden>
-        <div class="empty-state-icon" aria-hidden="true">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+      <!-- Home: the stage when no note is open on a wide screen. home-desk.js
+           fills the date, greeting, counts, cards, and rows from notes already
+           in memory. -->
+      <section id="home-desk" class="home-desk" aria-labelledby="home-desk-greeting" hidden>
+        <div class="home-desk-inner">
+          <header class="home-desk-hello">
+            <div class="home-desk-hello-text">
+              <p id="home-desk-date" class="home-desk-date"></p>
+              <h2 id="home-desk-greeting" class="home-desk-greeting" tabindex="-1">Welcome back.</h2>
+              <p id="home-desk-sub" class="home-desk-sub"></p>
+            </div>
+            <button id="home-desk-new" class="btn btn-primary home-desk-new" type="button" title="New note (⌘N)" aria-keyshortcuts="Meta+N Control+N">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>New note</span>
+            </button>
+          </header>
+
+          <div class="home-desk-tiles" role="group" aria-label="Quick starts">
+            <button id="home-desk-today" class="home-desk-tile" type="button" aria-keyshortcuts="Meta+Shift+D Control+Shift+D">
+              <span class="home-desk-tile-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+              </span>
+              <span class="home-desk-tile-text">
+                <span class="home-desk-tile-head">
+                  <span class="home-desk-tile-title">Today’s note</span>
+                  <kbd class="home-desk-kbd" aria-hidden="true">⌘⇧D</kbd>
+                </span>
+                <span id="home-desk-today-meta" class="home-desk-tile-meta">Not started yet</span>
+              </span>
+            </button>
+            <button id="home-desk-capture" class="home-desk-tile" type="button" aria-keyshortcuts="Meta+Shift+Space Control+Shift+Space">
+              <span class="home-desk-tile-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg>
+              </span>
+              <span class="home-desk-tile-text">
+                <span class="home-desk-tile-head">
+                  <span class="home-desk-tile-title">Quick capture</span>
+                  <kbd class="home-desk-kbd" aria-hidden="true">⌘⇧Space</kbd>
+                </span>
+                <span class="home-desk-tile-meta">Add a line to today’s note</span>
+              </span>
+            </button>
+            <button id="home-desk-template" class="home-desk-tile" type="button">
+              <span class="home-desk-tile-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 9v11"/></svg>
+              </span>
+              <span class="home-desk-tile-text">
+                <span class="home-desk-tile-head">
+                  <span class="home-desk-tile-title">From a template</span>
+                </span>
+                <span id="home-desk-template-meta" class="home-desk-tile-meta">Uses a folder named Templates</span>
+              </span>
+            </button>
+          </div>
+
+          <section class="home-desk-section" aria-labelledby="home-desk-pinned-title">
+            <div class="home-desk-section-head">
+              <h3 id="home-desk-pinned-title" class="home-desk-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 4h6l-1 6 3 3H7l3-3-1-6z"/></svg>
+                Pinned
+              </h3>
+              <button id="home-desk-pins-more" class="home-desk-link" type="button" aria-expanded="false" aria-controls="home-desk-pins" hidden>Show all</button>
+            </div>
+            <ul id="home-desk-pins" class="home-desk-cards"></ul>
+            <p id="home-desk-pins-empty" class="home-desk-empty" hidden>Nothing pinned yet. Choose Pin note from a note’s More actions menu to keep it here.</p>
+          </section>
+
+          <section class="home-desk-section" aria-labelledby="home-desk-recent-title">
+            <div class="home-desk-section-head">
+              <h3 id="home-desk-recent-title" class="home-desk-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+                Recently edited
+              </h3>
+              <div id="home-desk-layout" class="segmented home-desk-layout" role="group" aria-label="Recent notes layout">
+                <button type="button" data-desk-layout="list" aria-pressed="true" aria-label="List" title="List">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>
+                </button>
+                <button type="button" data-desk-layout="grid" aria-pressed="false" aria-label="Grid" title="Grid">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="home-desk-chips" class="home-desk-chips" role="group" aria-label="Show recent notes from" hidden></div>
+            <ul id="home-desk-recent" class="home-desk-recent"></ul>
+          </section>
+
+          <p class="home-desk-privacy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            Everything on Home comes from this browser. Nothing here is sent anywhere.
+          </p>
         </div>
-        <h3>Select a note</h3>
-        <p>Pick a note from the sidebar, or create a new one.</p>
       </section>
 
       <section id="empty-trash" class="empty-state center-state" hidden>
@@ -548,6 +633,14 @@
             <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
             <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
           </div>
+        </div>
+        <div class="settings-row">
+          <span id="open-to-label" class="settings-term">Open to</span>
+          <div id="open-to-choice" class="segmented open-to-choice" role="group" aria-labelledby="open-to-label" aria-describedby="open-to-hint">
+            <button type="button" data-open-to-choice="home" aria-pressed="true">Home</button>
+            <button type="button" data-open-to-choice="note" aria-pressed="false">Top note</button>
+          </div>
+          <p id="open-to-hint" class="settings-hint">Home shows pinned and recent notes. Top note opens the first note in your list. Phones always open to the list.</p>
         </div>
         <!-- The inline theme script at the end of this page is CSP-hashed and
              binds to these two ids. It stays untouched; this hidden button
@@ -1031,6 +1124,10 @@
     <svg class="note-share-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
   </template>
 
+  <template id="tpl-desk-note-icon">
+    <svg class="home-desk-row-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+  </template>
+
   <script src="/public/js/vendor/marked.min.js"></script>
   <script src="/public/js/vendor/purify.min.js"></script>
   <script src="/public/js/vendor/prism.min.js" data-manual></script>
@@ -1058,6 +1155,8 @@
   <script src="/public/js/swipe-row.js"></script>
   <script src="/public/js/mobile-view.js"></script>
   <script src="/public/js/settings.js"></script>
+  <script src="/public/js/home-desk-view.js"></script>
+  <script src="/public/js/home-desk.js"></script>
   <script src="/public/js/share-store.js"></script>
   <script src="/public/js/share-manager.js"></script>
   <script src="/public/js/share-controls.js"></script>
