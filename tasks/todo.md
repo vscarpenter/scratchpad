@@ -33,10 +33,15 @@ Design approved in chat on 2026-10-08; no spec file.
 
 ## Resuming From Here
 
-- Done: everything above, one commit on `feat/starter-templates`. Nothing
-  pushed.
-- Next, Vinny's call: push and open the PR, then `/release-prep` for the
-  version bump and a dry-run deploy.
+- Done: SHIPPED as v4.6.0 on 2026-10-08. Feature PR #33 squash-merged as
+  846821a; release bump 85a51c3 on `release/v4.6.0` as PR #34; deployed with
+  `./deploy.sh` (invalidation I9PTPM4UGBI52V57Q0GYUFYYTM) and verified live:
+  version.js serves 4.6.0, templates.js carries the action, and CSP, HSTS,
+  and X-Frame-Options are intact. The build date did not change, so
+  version.js stayed clean after the deploy.
+- Next: merge PR #34 and pull main. Then remove the stray comparison
+  worktree listed by `git worktree list` under the session scratchpad path,
+  and the two local branches marked gone.
 - Pre-existing local failures, not this branch: 16 Chromium-only tests about
   dirty editors, drafts, and revision history fail with the editor reading
   "Unsaved body remainsSaved body" (typed text plus the saved body). The
