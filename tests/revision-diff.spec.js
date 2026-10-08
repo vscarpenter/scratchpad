@@ -39,9 +39,13 @@ async function openCompare(page, rowIndex = 0) {
   return row;
 }
 
-/** @param {import('@playwright/test').Locator} row @param {string} kind */
-function lineTexts(row, kind) {
-  return row.locator('.history-diff-line.' + kind + ' .history-diff-text').allTextContents();
+/**
+ * The comparison builds on the details' toggle event, which fires after the
+ * click returns, so every read of its lines goes through a retrying assertion.
+ * @param {import('@playwright/test').Locator} row @param {string} kind
+ */
+function diffText(row, kind) {
+  return row.locator('.history-diff-line.' + kind + ' .history-diff-text');
 }
 
 test('Compare with current shows removed, added, and context lines', async ({ page }) => {
@@ -50,9 +54,9 @@ test('Compare with current shows removed, added, and context lines', async ({ pa
   ]);
   const row = await openCompare(page);
   await expect(row.locator('.history-diff')).toBeVisible();
-  expect(await lineTexts(row, 'is-removed')).toEqual(['line 2', 'line three']);
-  expect(await lineTexts(row, 'is-added')).toEqual(['line two']);
-  expect(await lineTexts(row, 'is-same')).toEqual(['Alpha', '', 'line one']);
+  await expect(diffText(row, 'is-removed')).toHaveText(['line 2', 'line three']);
+  await expect(diffText(row, 'is-added')).toHaveText(['line two']);
+  await expect(diffText(row, 'is-same')).toHaveText(['Alpha', '', 'line one']);
   await expect(row.locator('del.history-diff-line')).toHaveCount(2);
   await expect(row.locator('ins.history-diff-line')).toHaveCount(1);
   await expect(row.locator('.history-diff-glyph[aria-hidden="true"]')).toHaveCount(6);
@@ -61,8 +65,8 @@ test('Compare with current shows removed, added, and context lines', async ({ pa
 test('a title change marks only the changed word on the first line', async ({ page }) => {
   await seedHistory(page, { title: 'Beta plan', body: 'Body text.' }, [{ title: 'Alpha plan', body: 'Body text.' }]);
   const row = await openCompare(page);
-  expect(await lineTexts(row, 'is-removed')).toEqual(['Beta plan']);
-  expect(await lineTexts(row, 'is-added')).toEqual(['Alpha plan']);
+  await expect(diffText(row, 'is-removed')).toHaveText(['Beta plan']);
+  await expect(diffText(row, 'is-added')).toHaveText(['Alpha plan']);
   await expect(row.locator('.is-removed .history-diff-word')).toHaveText(['Beta']);
   await expect(row.locator('.is-added .history-diff-word')).toHaveText(['Alpha']);
 });
@@ -74,7 +78,7 @@ test('a one-word paragraph edit marks the word, not the line', async ({ page }) 
   const row = await openCompare(page);
   await expect(row.locator('.is-removed .history-diff-word')).toHaveText(['brown']);
   await expect(row.locator('.is-added .history-diff-word')).toHaveText(['red']);
-  expect(await lineTexts(row, 'is-added')).toEqual(['The quick red fox jumps over the lazy dog.']);
+  await expect(diffText(row, 'is-added')).toHaveText(['The quick red fox jumps over the lazy dog.']);
 });
 
 test('long unchanged runs collapse to a counted gap', async ({ page }) => {
@@ -84,9 +88,9 @@ test('long unchanged runs collapse to a counted gap', async ({ page }) => {
   await seedHistory(page, { title: '', body: current }, [{ title: '', body: revised }]);
   const row = await openCompare(page);
   await expect(row.locator('.history-diff-gap')).toHaveText(['12 unchanged lines', '13 unchanged lines']);
-  expect(await lineTexts(row, 'is-same')).toEqual(['line 13', 'line 14', 'line 16', 'line 17']);
-  expect(await lineTexts(row, 'is-removed')).toEqual(['line 15']);
-  expect(await lineTexts(row, 'is-added')).toEqual(['line fifteen']);
+  await expect(diffText(row, 'is-same')).toHaveText(['line 13', 'line 14', 'line 16', 'line 17']);
+  await expect(diffText(row, 'is-removed')).toHaveText(['line 15']);
+  await expect(diffText(row, 'is-added')).toHaveText(['line fifteen']);
 });
 
 test('a revision equal to the current note says so', async ({ page }) => {
@@ -114,8 +118,8 @@ test('the comparison uses the saved note, not the dirty editor', async ({ page }
   await page.locator('#note-editor').fill('Unsaved body.');
   const row = await openCompare(page);
   await expect(row.locator('.history-diff-meta')).toHaveText(['Compared with the last saved version.']);
-  expect(await lineTexts(row, 'is-removed')).toEqual(['Saved body.']);
-  expect(await lineTexts(row, 'is-added')).toEqual(['Older body.']);
+  await expect(diffText(row, 'is-removed')).toHaveText(['Saved body.']);
+  await expect(diffText(row, 'is-added')).toHaveText(['Older body.']);
 });
 
 test('an oversized comparison falls back to coarse blocks and says so', async ({ page }) => {
