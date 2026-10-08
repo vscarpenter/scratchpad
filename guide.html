@@ -74,6 +74,7 @@
 
       <nav class="guide-toc" aria-label="Guide sections">
         <a href="#first-five-minutes">First five minutes</a>
+        <a href="#home">Home</a>
         <a href="#markdown">Markdown</a>
         <a href="#task-lists">Task lists</a>
         <a href="#images">Images</a>
@@ -105,11 +106,33 @@
         see the <a href="privacy.html">privacy policy</a> for exactly what that means.
       </p>
 
+      <h2 id="home">Home</h2>
+      <p>
+        On a laptop or desktop, Scratchpad opens to <strong>Home</strong>. It greets you and
+        offers three quick starts: today's note, quick capture, and a new note from a template.
+        Your pinned notes sit below as cards, and <strong>Recently edited</strong> lists your six
+        latest notes. Switch that list to a grid, or narrow it to one folder with the chips above
+        it.
+      </p>
+      <p>
+        Open any card or row to read the note. To come back, click <strong>Home</strong> above the
+        note list or run <em>Go to Home</em> from the command palette. If you have unsaved edits,
+        Scratchpad asks before it leaves them. Picking a note, searching, filtering by a tag, or
+        switching to Archive all leave Home.
+      </p>
+      <p>
+        Prefer to land straight in a note? In <strong>Settings</strong>, set
+        <strong>Open to</strong> to <strong>Top note</strong>, and Scratchpad opens the first note
+        in your list instead. Your first visit always opens the Welcome note, and phones always
+        open to the note list. Home only reads what's already in this browser.
+      </p>
+
       <h2 id="markdown">Writing in Markdown</h2>
       <p>Notes are plain Markdown. The basics:</p>
       <ul>
         <li><code># Heading</code>, <code>## Subheading</code> — up to six levels.</li>
         <li><code>**bold**</code>, <code>*italic*</code>, <code>`inline code`</code>.</li>
+        <li><code>==highlight==</code> marks a phrase with a soft tint. Spaces just inside the equals signs (<code>a == b</code>) don't count, and code stays as written.</li>
         <li><code>- item</code> or <code>1. item</code> for lists; indent two spaces to nest.</li>
         <li><code>&gt; quote</code> for blockquotes — short ones render as pull-quotes.</li>
         <li><code>&gt; [!NOTE]</code>, <code>&gt; [!TIP]</code>, <code>&gt; [!IMPORTANT]</code>, <code>&gt; [!WARNING]</code>, or <code>&gt; [!CAUTION]</code> on the first line of a quote makes a callout; add a title after the marker if you like.</li>
@@ -119,8 +142,8 @@
         <li>Tables, in GitHub style: <code>| col | col |</code> with a <code>|---|---|</code> divider row.</li>
       </ul>
       <p>
-        While editing, the toolbar buttons (<strong>B</strong>, <strong>I</strong>, code, link)
-        wrap the selected text for you. Images from the web are not loaded — that's part of the
+        While editing, the toolbar buttons (<strong>B</strong>, <strong>I</strong>, highlight, code,
+        link) wrap the selected text for you. Images from the web are not loaded. That's part of the
         privacy promise, not a bug.
       </p>
 

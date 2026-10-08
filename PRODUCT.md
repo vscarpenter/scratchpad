@@ -83,7 +83,8 @@ wording is now inaccurate.
   into palette commands that seed new notes.
 - **Writing and reading.** Markdown with formatting shortcuts, autosaved
   drafts, and the last 10 saved revisions per note. GitHub-style `[!NOTE]`
-  callouts and syntax highlighting for common languages render in view mode.
+  callouts, `==highlights==`, and syntax highlighting for common languages
+  render in view mode.
   Task-list checkboxes are clickable there and write back to the Markdown
   source. Rich-text pastes convert to Markdown on the way in. Images attach by
   paste, drop, or the note menu, stay in this browser, and are never uploaded
@@ -92,7 +93,9 @@ wording is now inaccurate.
   tagging. Search is focused and relevance-ranked across titles, bodies, and
   tags, narrowed with `tag:`, `title:`, and `folder:` operators. Labeled typo
   matches catch the near misses. Find and replace works inside a note. Archive
-  clears finished work without starting Trash's 30-day deletion clock.
+  clears finished work without starting Trash's 30-day deletion clock. On wide
+  screens the app opens to Home: quick starts, pinned notes as cards, and
+  recently edited notes. Settings > Open to restores landing on the top note.
 - **Connecting.** `[[Title]]` wikilinks autocomplete as you type. Each note
   shows its backlinks and the notes that mention its title without linking,
   with one-click linking. Renaming a linked note offers to update references.

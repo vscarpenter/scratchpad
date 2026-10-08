@@ -194,6 +194,11 @@ If you see the sidebar growing past the viewport with many notes, or the
 privacy page failing to scroll naturally, these three rules are where to
 look.
 
+The document stage shows exactly one section at a time: the editor, Home, or
+one of the four empty states. `show()` in `public/js/home-desk.js` owns that
+switch, so a new stage section joins its `STAGES` list rather than toggling
+`hidden` from app.js.
+
 ## Theme system
 
 Inkwell's tokens auto-flip for dark mode via the `data-theme="dark"`

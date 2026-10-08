@@ -132,6 +132,18 @@ The daily-note row appears in the note index only where the chronology rail is
 hidden (below 900px), using a restrained Indigo tint and border. On desktop the
 rail's Today tile replaces it.
 
+### Home
+
+When no note is open on a wide screen, the stage shows Home instead of a
+document: a mono date eyebrow, a serif time-of-day greeting, three quick-start
+tiles, pinned notes as cards, and recently edited notes as rows or tiles. Home
+stands on the stage like the document, but nothing on it is raised. Tiles and
+cards are flat `--paper` with hairlines; hover strengthens the hairline to
+`--accent-strong-border` instead of adding a shadow, so the open document stays
+the only lifted surface. Informative text on the stage uses
+`--text-secondary`, because `--text-muted` falls below AA on the canvas. Phones
+keep the list as their home.
+
 ### Document date spine
 
 At desktop widths the open document has a left-hand date marker and a thin

@@ -4,6 +4,7 @@ const { openCommandPalette } = require('./helpers');
 
 const SECTION_IDS = [
   'first-five-minutes',
+  'home',
   'markdown',
   'task-lists',
   'images',

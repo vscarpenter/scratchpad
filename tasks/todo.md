@@ -1,3 +1,53 @@
+# Home desk and highlights (2026-10-08)
+
+Tier: Standard (one new module, two touched modules, markup, CSS, tests).
+Branch: `claude/busy-keller-sj34zq`. Spec: `tasks/spec.md`; design record:
+`docs/superpowers/specs/2026-10-08-home-desk-design.md`.
+
+## Plan
+
+- [x] 1. Spec and design record (fe55e49).
+- [x] 2. Home: `home-desk.js` (controller, stage switching) and
+      `home-desk-view.js` (text and DOM), Open to in Settings; app.js nets
+      -17 lines and its ceiling tightens to 6,005 (a6e273a).
+- [x] 3. Highlights: marked extension, mark styling, search hits inside a
+      highlight, toolbar chip (2e5d8ed).
+- [x] 4. Tests: `tests/home-desk.spec.js` (18), `tests/highlights.spec.js`
+      (7), one network-isolation test; helpers pin Open to = Top note for
+      older specs; the coverage workflow visits Home.
+- [x] 5. Docs: guide Home section and highlight syntax, README, tests
+      README, DESIGN.md Home element, PRODUCT.md, CLAUDE.md stage note.
+- [x] 6. Verify: `npm run verify` gates green; Chromium suite 535 passed
+      with only the 8 environment-only iPhone failures; screenshots at 1440
+      (light, dark, grid), 1024, and 800 in `.verify/`.
+
+## Decisions made without a stop (Vinny said build, no approvals)
+
+- Open to defaults to Home; Top note restores the old landing. The first
+  visit still opens Welcome, and phones keep the list.
+- Home ends on anything that selects a note today (open, create, search,
+  tag filter, Archive or Trash), so behavior after Home is unchanged.
+  Switching folders keeps Home.
+- Three quick starts instead of the mockup's four: the hero New note button
+  already covers "Write a note".
+- Folder chips read "All" rather than "All notes", because the unfiled
+  folder is also called Notes.
+- Highlights use the one accent's soft tint; multi-color highlights would
+  break the one-accent rule.
+
+## Follow-ups worth considering
+
+- Restore the open note on reload within a tab session.
+- Convert pasted `<mark>` to `==` in `html-to-markdown.js`.
+
+## Environment notes
+
+- The container's Chromium is 141; Playwright 1.62.1 expects 151. Local runs
+  use `executablePath: /opt/pw-browsers/chromium`. Desktop specs pass
+  (510 of 519 at baseline). The 8 iPhone-emulation tests fail at browser
+  launch here on untouched code too, and Firefox and WebKit are not
+  installed. CI covers both gaps.
+
 # Settings fixes: update check, row hints, row layout
 
 Tier: Standard (three app files plus tests, no new public contract).

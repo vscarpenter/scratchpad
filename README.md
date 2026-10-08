@@ -29,10 +29,14 @@ Nothing else is ever uploaded.
 
 ### Notes workflow
 
+- Start from Home on a wide screen. It offers today's note, quick capture, and
+  templates as quick starts. Pinned notes appear as cards, and recently edited
+  notes as a list or a grid. Settings > Open to switches the launch back to the
+  top note, and phones still open to the note list.
 - Write and preview Markdown with formatting shortcuts, autosaved drafts, the
-  last 10 saved revisions per note, GitHub-style `[!NOTE]` callouts, syntax
-  highlighting for common languages, and rich-text pastes converted to
-  Markdown on the way in.
+  last 10 saved revisions per note, GitHub-style `[!NOTE]` callouts,
+  `==highlights==`, syntax highlighting for common languages, and rich-text
+  pastes converted to Markdown on the way in.
 - Tick task-list checkboxes right in the rendered note — `- [ ]` items are
   clickable in view mode and write back to the Markdown source.
 - Attach images by paste, drop, or the note menu; they stay in this browser,
