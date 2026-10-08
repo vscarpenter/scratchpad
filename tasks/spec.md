@@ -1,144 +1,117 @@
-# Spec: Home desk and highlights
+# Spec: note navigation follow-ups
 
-Vinny approved the clickable mockup on 2026-10-08 and asked for the spec and
-the build without another approval stop. The design record is
-`docs/superpowers/specs/2026-10-08-home-desk-design.md`; this file is the
-working contract.
+Vinny approved these four follow-ups on 2026-10-08 after Home shipped in #27.
+The design record is `docs/superpowers/specs/2026-10-08-note-navigation-design.md`.
 
-Branch: `claude/busy-keller-sj34zq`. One draft PR.
+Branch: `claude/busy-keller-sj34zq`, restarted on `main` at 792c643. One
+draft PR.
 
 ## Goal
 
-1. When no note is open on a wide screen, the stage shows Home: greeting,
-   quick starts, pinned cards, and recently edited notes. Scratchpad opens to
-   Home by default, and Settings > Open to restores the old landing.
-2. `==text==` renders as a highlight, and the toolbar can insert one.
+1. The note's ⋯ menu downloads only that note as Markdown and offers print.
+2. The note header breadcrumb navigates: Home › folder › title.
+3. Home shows the most used tags as chips that apply the tag filter.
+4. `?` opens a keyboard shortcuts sheet.
 
 ## Inputs
 
-- Stage switching: `showEmpty`, `hideAllEmpties`, and the `renderAll`
-  decision tree in `public/js/app.js`; `#empty-pick-one` in `index.html`.
-- Selection: `ensureSelectionForView`, `selectNote`, `openNoteFromCommand`,
-  `createNote`, `openTodayNote`, `openQuickCapture`, `openCommandPalette`.
-- Home button: `els.homeView` click handler (`setFolderView(null)`).
-- Boot: `init`, `maybeSeedFirstRun`, `handleActionParam`.
-- Settings: `#settings-dialog` Appearance section, `public/js/settings.js`
-  `bindThemeChoice`.
-- Highlights: `public/js/markdown.js` marked setup,
-  `public/js/search-view.js` `highlightElement`, `public/js/editor-format.js`,
-  `#editor-format` chips, `.note-rendered` and `.share-body` prose rules.
+- `exportMarkdownZip()` and the `#export-overflow-btn` listener in app.js;
+  `#overflow-menu` in index.html; `ScratchpadAttachments.forZip`.
+- `renderBreadcrumb()` in app.js; `.note-breadcrumb` rules in app.css;
+  `HomeDesk.goHome`; `setFolderView`; `VIRTUAL_FOLDER_KEY`.
+- `public/js/home-desk-view.js` and `home-desk.js`; `setTagFilter` and
+  `openTagManager` in app.js.
+- The About dialog's `.shortcut-list`; `commandDefinitions()`.
 
 ## Outputs
 
-- `public/js/home-desk.js`, `window.ScratchpadHomeDesk` with
-  `init(deps)`, `holds()`, `show(which)`, `goHome()`, and `commands()`.
-- `#home-desk` section in `index.html` replacing `#empty-pick-one`, plus
-  `#open-to-choice` in Settings and a Highlight chip.
-- `.home-desk*` rules and a `mark` rule in `public/css/app.css`.
-- `scratchpad:openTo` (`home` | `note`) and `scratchpad:deskLayout`
-  (`list` | `grid`) in localStorage.
+- `#export-overflow-btn` reads "Download as Markdown"; new
+  `#print-overflow-btn` "Print or save as PDF…".
+- `public/js/note-breadcrumb.js` (`window.ScratchpadBreadcrumb`) and
+  `<template id="tpl-home-icon">`.
+- `#home-desk-tags` section with `#home-desk-tag-list` and
+  `#home-desk-manage-tags`.
+- `public/js/shortcuts-sheet.js` (`window.ScratchpadShortcuts`) and
+  `#shortcuts-dialog`.
 
 ## Constraints
 
-- No network calls, no third-party assets, no `innerHTML`, no emoji, no hex in
-  `app.css`, no new tokens, no dark-mode rules, no inline-script edits (CSP
-  hashes stay valid).
-- app.js is at 6,021 lines against a 6,022 ceiling. The hookup must net
-  negative, and the ceiling tightens to the final count.
-- New module: `// @ts-check`, `'use strict'` at script level, a block scope, a
-  frozen export, JSDoc types, under 400 lines, functions under 40 lines,
-  nesting at most 3. Biome-formatted.
-- Every new or touched spec file is Biome-formatted in full; tests stay
-  top-level or in small describes so no function passes 40 lines.
-- Commit subjects are lower case and at most 72 characters.
+- No network calls, no `innerHTML`, tokens only, no new tokens, no dark-mode
+  rules, no inline-script edits, no emoji.
+- app.js is at 6,004 lines against a 6,005 ceiling; the change nets negative
+  and the ceiling tightens.
+- New modules: `// @ts-check`, script-level `'use strict'`, block scope,
+  frozen export, JSDoc types, v18 limits; listed in `jsconfig.json`,
+  `APP_SHELL`, and the script order ahead of app.js.
+- Test files stay under 400 lines, with no function over 40 lines.
 
 ## Edge cases
 
-- No active notes: the no-notes empty state wins over Home.
-- Only archived notes: same, with the View Archive button.
-- First visit: Welcome opens, not Home.
-- Narrow viewport at launch or on Home click: the list-first model, no Home.
-- Unsaved edits when Home is clicked: the discard dialog decides; Cancel stays
-  in the note.
-- Tag filter active when Home is clicked: cleared.
-- Home clicked in Archive: folder scope reset only, as today.
-- Search typed on Home: the first result opens, as today.
-- Folder switched on Home: Home stays; New note files into that folder.
-- Pinned note archived or trashed: it leaves Home on the next render.
-- More than three pinned: Show all N, then Show fewer.
-- Recent notes all in one folder: no chips.
-- A chosen chip's folder disappears: the filter resets to All notes.
-- Today's note missing: "Not started yet"; present: its word count.
-- No Templates folder: the tile says how to make one, and the palette shows
-  the guidance command.
-- Storage blocked: Open to falls back to Home, layout to list; nothing
-  throws.
-- Cross-tab changes while Home is open: Home re-renders with fresh data.
-- Highlights: `a == b`, `` `==code==` ``, fenced code, `====`, a highlight
-  spanning emphasis (`==**bold**==`), and raw `<mark>` HTML.
+- A note whose title slugs to nothing downloads as `untitled-note.md`.
+- A note with images in a folder: the ZIP keeps the `.md` at its root so
+  `attachments/...` links resolve.
+- Trash: both note-menu export items hide.
+- A daily note's folder crumb opens Daily Notes; an unfiled note's opens the
+  Notes folder; a note in a deleted folder heals to Notes.
+- Archived and trashed notes: plain labels, no buttons.
+- Phones: no Home crumb.
+- A tag on archived or trashed notes only does not count on Home.
+- More than 12 tags: the 12 most used show; Manage tags reaches the rest.
+- `?` inside the search box, the editor, the title input, or any dialog
+  does nothing new; Shift is allowed, other modifiers are not.
 
 ## Anti-goals
 
-- No desk on phones, no restore-on-reload, no new keyboard shortcut, no
-  multi-color highlights, no change to how notes are selected once Home ends.
+- No change to the backup menu's ZIP, to the palette's export command, or to
+  how a tag filter behaves once applied.
 
 ## Acceptance criteria
 
-1. A returning visitor with notes, default settings, at 1280×800, lands on
-   `#home-desk` visible and `#editor-view` hidden.
-2. The first visit lands on the Welcome note.
-3. With Open to = Top note, launch opens the first pinned note, as before.
-4. At 390px wide, launch shows the note list and `#home-desk` stays hidden.
-5. Clicking Home from an open note shows Home; with unsaved edits it asks
-   first, and Cancel keeps the note open.
-6. Opening a pinned card, a recent row, Today's note, or New note leaves Home
-   and focuses the note title or editor.
-7. A search, a tag filter, or the Archive view ends Home and selects a note as
-   before.
-8. Pinned shows at most three cards until Show all; with none pinned it shows
-   the pin hint.
-9. Recently edited shows six notes, newest first; the grid toggle persists
-   across reloads; a chip narrows the list to its folder.
-10. Quick capture from Home appends to today's note and Home updates the word
-    count.
-11. From a template opens the palette with "template" filled in.
-12. "Go to Home" appears in the palette and opens Home.
-13. Opening Home and using every control makes zero network requests.
-14. `==text==` renders as `<mark>`; code spans and `a == b` do not; the
-    toolbar chip wraps a selection; a search hit inside a highlight still
-    marks; the share viewer renders the highlight.
-15. Both themes pass the token contract, including the new highlight pair.
-16. `npm run verify` passes, and the Chromium suite passes apart from the
-    iPhone-emulation specs this container cannot launch.
+1. Download as Markdown from a note's menu saves one `.md` with that note's
+   frontmatter and body and nothing from other notes.
+2. With an image, it saves a `.zip` holding the `.md` and the image, and the
+   body links to `attachments/...`.
+3. A single-note download leaves the backup reminder unchanged; the backup
+   menu ZIP still records a backup.
+4. Print or save as PDF calls the browser's print.
+5. Neither item shows for a note in Trash.
+6. For a note in a folder, clicking the folder crumb shows that folder in
+   the list; clicking Home shows Home.
+7. Daily and unfiled notes route to Daily Notes and Notes.
+8. At 390px wide the Home crumb is hidden.
+9. Home lists tags with counts, most used first; clicking one opens the
+   first tagged note with the filter applied; Manage tags opens the manager.
+10. `?` opens the shortcuts sheet with every About entry plus `?`; typing `?`
+    in search or the editor does not; Escape closes it.
+11. The palette's Keyboard shortcuts command opens the sheet.
+12. `npm run verify` passes; the Chromium suite passes apart from the
+    iPhone-emulation tests this container cannot launch.
 
 ## Test stubs
 
 ```js
+// tests/note-menu.spec.js
+test('Download as Markdown saves only the open note');
+test('a note with an image downloads as a ZIP with its attachment');
+test('a single-note download is not a backup');
+test('Print or save as PDF calls the browser print');
+test('a note in Trash shows neither item');
+// tests/breadcrumb.spec.js
+test('the folder crumb opens that folder and Home opens Home');
+test('daily and unfiled notes route to their folders');
+test('archived notes keep a plain label');
+test('phones hide the Home crumb');
 // tests/home-desk.spec.js
-test('a returning visitor opens to Home');
-test('the first visit still opens the Welcome note');
-test('Open to Top note restores the old landing');
-test('a phone-width launch stays on the note list');
-test('Home asks before discarding unsaved edits');
-test('opening a pinned card leaves Home and focuses the title');
-test('search, tag filters, and Archive end Home');
-test('pinned cards cap at three until Show all');
-test('recent notes switch to a grid that survives a reload');
-test('folder chips narrow recent notes');
-test('quick capture from Home updates the today tile');
-test('the template tile opens the palette filtered to templates');
-test('Go to Home runs from the palette');
-// tests/highlights.spec.js
-test('==text== renders as a highlight');
-test('code and spaced equals never highlight');
-test('the toolbar chip wraps the selection');
-test('search hits still mark inside a highlight');
-test('the share viewer renders highlights');
+test('Home lists tags by use and a tag opens its filter');
+test('Manage tags opens the tag manager');
+// tests/shortcuts-sheet.spec.js
+test('? opens the shortcuts sheet with the About list');
+test('typing ? in a field does not open the sheet');
+test('the palette opens the shortcuts sheet');
 ```
 
 ## Assumptions
 
-- "Love this" covers both items shown in the mockup: Home and highlights.
-- Feature PRs do not bump the version; the release commit does.
-- The iPhone-emulation specs fail to launch here because the container's
-  Chromium is older than Playwright expects; CI runs the pinned browsers.
+- "Print or save as PDF" relies on the existing print stylesheet; no new
+  print rules.
+- Feature PRs do not bump the version.
