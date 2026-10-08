@@ -521,7 +521,8 @@ serving another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
 
 ## Release train after v3.19 (approved order)
 
-Per-feature groundwork lives in `tasks/roadmap.md` (2026-09-01): what each
+Per-feature groundwork lived in `tasks/roadmap.md` (2026-09-01, retired to
+`docs/archive/2026-09-01-release-train-roadmap.md` once every item shipped): what each
 feature touches today, the proposed shape, the decisions its design gate
 must settle, and the cross-cutting ratchet, CSP, sanitizer, and precache
 constraints. Two discrepancies found while writing it:
