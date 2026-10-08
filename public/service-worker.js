@@ -63,6 +63,8 @@
     '/public/js/home-desk.js',
     '/public/js/note-breadcrumb.js',
     '/public/js/shortcuts-sheet.js',
+    '/public/js/outline.js',
+    '/public/js/reading-place.js',
     '/public/js/revision-diff.js',
     '/public/js/app.js',
   ];
