@@ -220,6 +220,34 @@
     });
   }
 
+  // Highlights: ==text==, the Obsidian and iA Writer convention. Both inner
+  // ends must be a non-space, non-= character, so "a == b" never matches.
+  // Code spans and fences tokenize first, so == inside code stays literal.
+  // DOMPurify's HTML profile already allows <mark>.
+  const HIGHLIGHT_TOKEN = /^==(?=[^\s=])([\s\S]*?[^\s=])==(?!=)/;
+
+  if (window.marked && typeof window.marked.use === 'function') {
+    window.marked.use({
+      extensions: [
+        {
+          name: 'highlight',
+          level: 'inline',
+          start(src) {
+            return src.indexOf('==');
+          },
+          tokenizer(src) {
+            const match = HIGHLIGHT_TOKEN.exec(src);
+            if (!match) return undefined;
+            return { type: 'highlight', raw: match[0], tokens: this.lexer.inlineTokens(match[1]) };
+          },
+          renderer(token) {
+            return '<mark>' + this.parser.parseInline(token.tokens) + '</mark>';
+          },
+        },
+      ],
+    });
+  }
+
   // Raw wikilink targets in document order, ignoring fenced code blocks.
   // Used for backlink indexing and rename rewriting.
   function extractWikilinkTargets(src) {

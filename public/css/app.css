@@ -1541,6 +1541,14 @@ body:not(.page-privacy) {
 .fmt-chip.fmt-italic { font: italic 600 12px/1 var(--serif); }
 .fmt-chip.fmt-code { font: 600 11px/1 var(--mono); }
 .fmt-chip.fmt-link svg { width: 13px; height: 13px; }
+/* The Highlight chip shows the treatment it applies: "ab" on the soft tint. */
+.fmt-chip.fmt-mark span {
+  padding: 1px 3px;
+  border-radius: var(--r-xs);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font: 600 11px/1 var(--sans);
+}
 .fmt-chip:hover,
 .fmt-chip:focus-visible {
   background: var(--paper);
@@ -1939,6 +1947,18 @@ body:not(.page-privacy) {
 }
 .note-rendered blockquote p,
 .share-body blockquote p { margin: 0; }
+/* Highlights (==text==): the soft indigo tint under the prose color. Search
+   hits keep the stronger tint, the underline, and bold, so the two never
+   read as the same thing; a hit inside a highlight shows as a hit. */
+.note-rendered mark:not(.search-hit),
+.share-body mark {
+  padding: 0 2px;
+  border-radius: var(--r-xs);
+  background: var(--accent-soft);
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 .note-rendered code,
 .share-body code {
   font-family: var(--mono);

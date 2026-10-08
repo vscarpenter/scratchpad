@@ -41,6 +41,8 @@
         return wrapRange(start, start, selected, 'bold text', '**', '**');
       case 'italic':
         return wrapRange(start, start, selected, 'italic text', '*', '*');
+      case 'highlight':
+        return wrapRange(start, start, selected, 'highlighted text', '==', '==');
       case 'code':
         return wrapRange(start, start, selected, 'code', '`', '`');
       case 'link': {
