@@ -4598,26 +4598,23 @@
       openDialog(els.historyDialog);
       return;
     }
-    const rows = revisions.map((rev) => renderRevisionRow(rev));
+    const rows = revisions.map((rev) => renderRevisionRow(rev, note));
     els.historyList.replaceChildren(...rows);
     openDialog(els.historyDialog);
   }
 
-  function renderRevisionRow(rev) {
+  function renderRevisionRow(rev, note) {
     const title = el('div', { class: 'history-title', text: deriveTitle(rev) });
     const meta = el('div', { class: 'history-meta', text: 'Saved ' + formatFullTimestamp(rev.savedAt) });
-    const preview = el('pre', { class: 'history-preview', text: buildShareText(rev) || '(empty note)' });
-    const details = el('details', {
-      class: 'history-details',
-      children: [el('summary', { text: 'Preview revision' }), preview],
-    });
+    const unsaved = state.editing && state.dirty;
+    const details = window.ScratchpadRevisionDiff.renderDetails(rev, note, { unsaved });
     const restore = el('button', {
       class: 'btn btn-secondary btn-sm',
       text: 'Restore',
       attrs: { type: 'button' },
       on: { click: () => restoreRevision(rev) },
     });
-    return el('div', { class: 'history-row', children: [title, meta, details, restore] });
+    return el('div', { class: 'history-row', children: [title, meta, ...details, restore] });
   }
 
   async function restoreRevision(rev) {

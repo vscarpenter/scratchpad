@@ -37,6 +37,7 @@
     "public/js/shortcuts-sheet.js",
     "public/js/outline.js",
     "public/js/reading-place.js",
+    "public/js/revision-diff.js",
     "scripts/quality/**/*.mjs",
     "public/js/share-store.js",
     "public/js/share-manager.js",

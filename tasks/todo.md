@@ -1,3 +1,51 @@
+# Revision diff (2026-10-08)
+
+Tier: Standard (one new module, touched app.js, CSS, docs, tests). Branch:
+`claude/zealous-pascal-aunm2y`, from main at 8212aa0 (v4.5.0). Spec:
+`tasks/spec.md`; design record:
+`docs/superpowers/specs/2026-10-08-revision-diff-design.md`.
+
+## Plan
+
+- [x] 1. Prune `backlog.md`, retire the roadmap to `docs/archive/`, and write
+      the spec (c5904a4).
+- [x] 2. Red: `tests/revision-diff.spec.js`, nine tests, all failing on the
+      missing Compare with current summary and API.
+- [x] 3. Green: `public/js/revision-diff.js` (pure line and word diff plus
+      the two details elements), app.js hands it the revision, the note,
+      and the dirty flag; app.js nets -3 and its ceiling tightens to 5,982
+      (b28f8fb).
+- [x] 4. Refactor and verify: `renderHunks` flattened to pass the nesting
+      ratchet; glyphs and changed words moved to the line's ink after the
+      solid state colors measured 3.3:1 to 4.3:1 on the tints, decorations
+      now carry the color; every pair clears 4.5:1 in both themes;
+      screenshots in `.verify/revision-diff-{light,dark}.png`; CSP hashes
+      unchanged.
+- [x] 5. Full Chromium suite: 559 passed, 1 CI-only skip, and only the 8
+      environment-only iPhone failures; coverage gate 43.42%; CI's first run
+      caught a strict-mode locator in the coverage workflow (two rows, two
+      comparison boxes), fixed in 37a2cfd. Pushed to the open draft PR #30.
+
+## Decisions made without a stop (Vinny said build it)
+
+- The comparison runs against the current saved note, not the previous
+  revision, because Restore is the row's only action.
+- `diffLines` and `diffWords` return `{ coarse, hunks | tokens }` rather
+  than a bare array, so the renderer can say when the middle was too large
+  to align.
+- The two state tints are used as line backgrounds. If that reads as too
+  much color in the shell, the fallback named in the spec is a left border.
+
+## Lessons
+
+- A 12px bold word is not large text for WCAG, so a solid state color on
+  its own tint rarely clears 4.5:1 (dark rust on rust tint: 3.3:1). Keep
+  text in the surface's ink and put the state color on the decoration.
+- This container's Playwright pins a newer Chromium than the preinstalled
+  one. A local config in the scratchpad dir that sets `executablePath`
+  runs the suite without downloading browsers; nothing in the repo
+  changes.
+
 # Note navigation follow-ups (2026-10-08)
 
 Tier: Standard (two new modules, touched app.js and the Home desk, markup,
@@ -521,7 +569,8 @@ serving another project, so tests run with `SCRATCHPAD_TEST_PORT=8091`.
 
 ## Release train after v3.19 (approved order)
 
-Per-feature groundwork lives in `tasks/roadmap.md` (2026-09-01): what each
+Per-feature groundwork lived in `tasks/roadmap.md` (2026-09-01, retired to
+`docs/archive/2026-09-01-release-train-roadmap.md` once every item shipped): what each
 feature touches today, the proposed shape, the decisions its design gate
 must settle, and the cross-cutting ratchet, CSP, sanitizer, and precache
 constraints. Two discrepancies found while writing it:

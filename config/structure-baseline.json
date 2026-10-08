@@ -9,7 +9,7 @@
     "deepFunctions": 10
   },
   "oversizeFiles": {
-    "public/js/app.js": 5985,
+    "public/js/app.js": 5982,
     "public/js/db.js": 418,
     "tests/daily-note.spec.js": 405
   }

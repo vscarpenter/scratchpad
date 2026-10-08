@@ -50,6 +50,14 @@ async function exerciseCoreWorkflow(page) {
   await page.locator('#list-menu-btn').click();
   await page.keyboard.press('Escape');
   await page.locator('#edit-btn').click();
+  await page.locator('#note-editor').fill('# Coverage body\n\nworkflow search marker, revised');
+  await page.locator('#save-btn').click();
+  await page.locator('#overflow-btn').click();
+  await page.locator('#history-btn').click();
+  await page.locator('#history-list summary', { hasText: 'Compare with current' }).first().click();
+  await page.locator('#history-list .history-diff').first().waitFor();
+  await page.keyboard.press('Escape');
+  await page.locator('#edit-btn').click();
   await page.locator('#overflow-btn').click();
   await page.keyboard.press('Escape');
 }

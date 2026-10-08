@@ -1,8 +1,13 @@
 # Release train after v3.19 — implementation roadmap
 
 Date: 2026-09-01
-Status: draft for review (grounds each feature in today's code so its
-brainstorm starts from facts; each feature still gets its own spec + plan)
+Status: **retired 2026-10-08**. Every feature below shipped (search
+operators, paste as Markdown, unlinked mentions, callouts, syntax
+highlighting, the Templates folder, image attachments, and the linked
+folder), and the line counts, ceilings, and constraints it quotes describe
+the September codebase, not today's. It stays here as a record of how the
+train was planned. For current limits read `config/structure-baseline.json`;
+for open ideas read `backlog.md`.
 
 ## Cross-cutting constraints (every feature pays these)
 
