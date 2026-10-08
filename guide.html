@@ -112,11 +112,14 @@
         offers three quick starts: today's note, quick capture, and a new note from a template.
         Your pinned notes sit below as cards, and <strong>Recently edited</strong> lists your six
         latest notes. Switch that list to a grid, or narrow it to one folder with the chips above
-        it.
+        it. <strong>Tags</strong> shows your most used tags with their counts; pick one to filter
+        your notes by it, or choose <strong>Manage tags</strong> to rename or delete them.
       </p>
       <p>
         Open any card or row to read the note. To come back, click <strong>Home</strong> above the
-        note list or run <em>Go to Home</em> from the command palette. If you have unsaved edits,
+        note list, the house at the start of the path above the note, or run <em>Go to Home</em>
+        from the command palette. The folder name in that path shows the folder's notes in the
+        list while the note stays open. If you have unsaved edits,
         Scratchpad asks before it leaves them. Picking a note, searching, filtering by a tag, or
         switching to Archive all leave Home.
       </p>
@@ -436,27 +439,31 @@
       </p>
       <ul>
         <li>
-          <strong>Export backup (JSON)</strong> — the full-fidelity schema-v4 format: Notes,
+          <strong>Export backup (JSON)</strong>: the full-fidelity schema-v5 format, with Notes,
           Archive, Trash provenance, folders, and revision history. Use this one for restores.
         </li>
         <li>
-          <strong>Export encrypted backup</strong> — the same data, protected by a passphrase.
+          <strong>Export encrypted backup</strong>: the same data, protected by a passphrase.
           Encryption happens in the browser; a forgotten passphrase cannot be recovered.
         </li>
         <li>
-          <strong>Export Markdown ZIP</strong> — readable <code>.md</code> copies of active and
+          <strong>Export Markdown ZIP</strong>: readable <code>.md</code> copies of active and
           archived notes. Archived files live under <code>archive/</code> and include
           <code>archivedAt</code> frontmatter.
         </li>
         <li>
-          <strong>Import</strong> — accepts a JSON backup, an encrypted backup, or one or more
+          <strong>Import</strong>: accepts a JSON backup, an encrypted backup, or one or more
           Markdown files. Every import shows a preview first, and you choose how conflicts are
           handled: keep both, replace, or skip.
         </li>
         <li>
-          <strong>Print or save as PDF</strong> — <kbd class="kbd">⌘/Ctrl</kbd>
-          <kbd class="kbd">P</kbd> prints just the open note: no sidebar, no buttons,
-          print-sized type.
+          <strong>Download as Markdown</strong>: in an open note's ⋯ menu, this saves just that
+          note as a <code>.md</code> file, or as a ZIP with its images when it has any.
+        </li>
+        <li>
+          <strong>Print or save as PDF</strong>: choose it from the note's ⋯ menu, or press
+          <kbd class="kbd">⌘/Ctrl</kbd> <kbd class="kbd">P</kbd>. It prints just the open note: no
+          sidebar, no buttons, print-sized type.
         </li>
       </ul>
       <p>
@@ -607,6 +614,7 @@
           <tr><td><kbd class="kbd">Esc</kbd></td><td>Clear search, close panels, or exit edit mode</td></tr>
           <tr><td><kbd class="kbd">Enter</kbd> / <kbd class="kbd">Tab</kbd></td><td>Accept a <code>[[</code> link suggestion</td></tr>
           <tr><td><kbd class="kbd">Space</kbd></td><td>Toggle a focused task checkbox</td></tr>
+          <tr><td><kbd class="kbd">?</kbd></td><td>Show every shortcut on one sheet</td></tr>
         </tbody>
       </table>
     </article>
