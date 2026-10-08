@@ -112,9 +112,9 @@ test.describe('sharing and portable exports', () => {
       { id: 'zip-trash', title: 'Do not export', body: 'Trash body', deletedAt: now },
     ]);
 
-    await page.locator('#overflow-btn').click();
+    await openBackupMenu(page);
     const downloadPromise = page.waitForEvent('download');
-    await page.locator('#export-overflow-btn').click();
+    await page.locator('#export-markdown-btn').click();
     const download = await downloadPromise;
     const zip = await downloadBuffer(download);
     const storedText = zip.toString('utf8');

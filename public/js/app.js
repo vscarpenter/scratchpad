@@ -143,6 +143,7 @@
     overflowBtn: $('overflow-btn'),
     overflowMenu: $('overflow-menu'),
     exportOverflowBtn: $('export-overflow-btn'),
+    printOverflowBtn: $('print-overflow-btn'),
     discardOverflowBtn: $('discard-overflow-btn'),
     dirtyIndicator: $('dirty-indicator'),
     tagBar: $('tag-bar'),
@@ -2118,7 +2119,7 @@
     els.moveNoteOverflow.hidden = trashed || isDailyNote(note);
     els.duplicateOverflowBtn.hidden = trashed;
     els.historyBtn.hidden = trashed;
-    els.exportOverflowBtn.hidden = trashed;
+    els.exportOverflowBtn.hidden = els.printOverflowBtn.hidden = trashed;
     els.discardOverflowBtn.hidden = !(state.editing && state.dirty);
 
     const bodyEmpty = !(note.body || '').trim();
@@ -4808,9 +4809,11 @@
     });
   }
 
-  async function exportMarkdownZip() {
+  // With a note (the note menu), exports only it: a .md, or a ZIP with its images. Listeners pass an event instead.
+  async function exportMarkdownZip(only) {
+    const one = only && only.id ? only : null;
     return withBusy('export-markdown', [els.exportMarkdownBtn, els.exportOverflowBtn], 'Markdown export failed.', async () => {
-      const notes = preservedNotes();
+      const notes = one ? [one] : preservedNotes();
       if (!notes.length) {
         toast('No notes to export.', { tone: 'info' });
         return;
@@ -4825,7 +4828,7 @@
         const folderId = noteFolderId(note);
         const archiveDir = isArchived(note) ? 'archive/' : '';
         const folderDir = folderId ? slugify(folderDisplayName(folderId)) + '/' : '';
-        const dir = archiveDir + folderDir;
+        const dir = one ? '' : archiveDir + folderDir;
         const base = dir + (slugify(deriveTitle(note)) || 'untitled-note');
         let name = `${base}.md`;
         for (let n = 2; taken.has(name); n += 1) name = `${base}-${n}.md`;
@@ -4833,10 +4836,11 @@
         return { name, content: bundle.rewrite(noteToMarkdown(note)) };
       });
       files.push(...bundle.files);
-      const blob = new Blob([Zip.createZip(files)], { type: 'application/zip' });
-      downloadBlob(blob, `scratchpad-markdown-${exportStamp()}.zip`);
-      recordBackupDownload();
-      toast('Markdown ZIP downloaded.');
+      const plain = !!one && files.length === 1;
+      const name = (one ? files[0].name.slice(0, -3) : `scratchpad-markdown-${exportStamp()}`) + (plain ? '.md' : '.zip');
+      downloadBlob(plain ? new Blob([files[0].content], { type: 'text/markdown' }) : new Blob([Zip.createZip(files)], { type: 'application/zip' }), name);
+      if (!one) recordBackupDownload();
+      toast(one ? 'Downloaded ' + name + '.' : 'Markdown ZIP downloaded.');
     });
   }
 
@@ -5656,7 +5660,11 @@
     });
     els.exportOverflowBtn.addEventListener('click', () => {
       closeOverflowMenu();
-      exportMarkdownZip();
+      exportMarkdownZip(getNote(state.selectedId));
+    });
+    els.printOverflowBtn.addEventListener('click', () => {
+      closeOverflowMenu();
+      window.print();
     });
     els.moveNoteOverflow.addEventListener('click', () => {
       closeOverflowMenu();
