@@ -2102,7 +2102,7 @@
     els.titleInput.hidden = !showInput;
     els.titleDisplay.replaceChildren(...highlightedChildren(deriveTitle(note)));
 
-    renderBreadcrumb(note);
+    window.ScratchpadBreadcrumb.render(els.breadcrumb, note);
     renderEyebrow(note);
     renderByline(note);
     renderPinButton(note);
@@ -2161,35 +2161,6 @@
     renderBacklinks(note);
     if (window.ScratchpadMentions) window.ScratchpadMentions.render(note);
     if (window.ScratchpadAttachments) window.ScratchpadAttachments.warm(note ? note.id : null);
-  }
-
-  function renderBreadcrumb(note) {
-    const trashed = isTrashed(note);
-    const archived = isArchived(note);
-    const pinned = note.pinned && !trashed && !archived;
-    let primary;
-    let secondary;
-    if (trashed) {
-      primary = 'trash';
-      secondary = truncate(deriveTitle(note), 32);
-    } else if (archived) {
-      primary = 'archive';
-      secondary = folderDisplayName(noteFolderId(note));
-    } else if (isDailyNote(note)) {
-      primary = 'daily notes';
-      secondary = truncate(deriveTitle(note), 32);
-    } else if (pinned) {
-      primary = 'notes';
-      secondary = 'pinned';
-    } else {
-      primary = folderDisplayName(noteFolderId(note)).toLowerCase();
-      secondary = truncate(deriveTitle(note), 32);
-    }
-    els.breadcrumb.replaceChildren(
-      document.createTextNode(primary),
-      el('span', { class: 'crumb-sep', attrs: { 'aria-hidden': 'true' } }),
-      el('span', { class: 'crumb-current', text: secondary }),
-    );
   }
 
   function renderEyebrow(note) {
@@ -5965,6 +5936,7 @@
     if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({ notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
       isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
       openNote: openNoteFromCommand, deriveTitle, toast });
+    window.ScratchpadBreadcrumb.init({ isTrashed, isArchived, deriveTitle, noteFolderId, folderDisplayName, goHome: HomeDesk.goHome, openFolder: (id) => setFolderView(id || VIRTUAL_FOLDER_KEY) });
     HomeDesk.init({ state, seeded, now, deriveTitle, isArchived, isTrashed, noteFolderId, folderById, folderDisplayName, todayNote: () => findDailyNote(todayKey()),
       createNote, openNote: selectNote, openToday: openTodayNote, openCapture: openQuickCapture, openPalette: openCommandPalette, setFolderView,
       clearFilters: clearAllFilters, confirmDiscard, discardDraft: discardCurrentDraft });

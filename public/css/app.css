@@ -1310,6 +1310,37 @@ body:not(.page-privacy) {
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 .note-breadcrumb .crumb-current { color: var(--ink); font-weight: 600; }
+/* Home and the folder are buttons inside the pill; the title stays text. */
+.note-breadcrumb .crumb-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-breadcrumb .crumb-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.note-breadcrumb .crumb-link:hover {
+  background: var(--control-fill-hover);
+  color: var(--ink);
+}
+.note-breadcrumb .crumb-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+@media (max-width: 767px) {
+  .note-breadcrumb .crumb-home { display: none; }
+}
 
 .editor-actions {
   display: flex;

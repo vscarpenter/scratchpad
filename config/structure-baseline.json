@@ -6,7 +6,7 @@
   },
   "legacyTotals": {
     "longFunctions": 101,
-    "deepFunctions": 11
+    "deepFunctions": 10
   },
   "oversizeFiles": {
     "public/js/app.js": 6005,
