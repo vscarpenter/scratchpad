@@ -256,10 +256,18 @@
     return body;
   }
 
-  /** @param {string} label @param {HTMLElement} content */
-  function detailsElement(label, content) {
-    const details = element('details', 'history-details');
-    details.append(element('summary', '', label), content);
+  /**
+   * A collapsed section whose body is built on first expand, so opening
+   * History with ten large revisions costs nothing until a row is opened.
+   * @param {string} label @param {() => HTMLElement} build
+   */
+  function lazyDetails(label, build) {
+    const details = document.createElement('details');
+    details.className = 'history-details';
+    details.append(element('summary', '', label));
+    details.addEventListener('toggle', () => {
+      if (details.open && details.childElementCount === 1) details.append(build());
+    });
     return details;
   }
 
@@ -269,10 +277,9 @@
    * @param {Snapshot} rev @param {Snapshot} current @param {RenderOptions} [options]
    */
   function renderDetails(rev, current, options) {
-    const preview = element('pre', 'history-preview', snapshotText(rev) || '(empty note)');
     return [
-      detailsElement('Preview revision', preview),
-      detailsElement('Compare with current', renderComparison(rev, current, options)),
+      lazyDetails('Preview revision', () => element('pre', 'history-preview', snapshotText(rev) || '(empty note)')),
+      lazyDetails('Compare with current', () => renderComparison(rev, current, options)),
     ];
   }
 
