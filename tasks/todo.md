@@ -21,8 +21,10 @@ Tier: Standard (one new module, touched app.js, CSS, docs, tests). Branch:
       now carry the color; every pair clears 4.5:1 in both themes;
       screenshots in `.verify/revision-diff-{light,dark}.png`; CSP hashes
       unchanged.
-- [ ] 5. Full Chromium suite and the coverage gate, then push and open the
-      draft PR.
+- [x] 5. Full Chromium suite: 559 passed, 1 CI-only skip, and only the 8
+      environment-only iPhone failures; coverage gate 43.42%; CI's first run
+      caught a strict-mode locator in the coverage workflow (two rows, two
+      comparison boxes), fixed in 37a2cfd. Pushed to the open draft PR #30.
 
 ## Decisions made without a stop (Vinny said build it)
 
