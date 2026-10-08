@@ -33,6 +33,10 @@ async function exerciseCoreWorkflow(page) {
   await page.locator('#note-title-input').fill('Coverage note');
   await page.locator('#note-editor').fill('# Coverage body\n\nworkflow search marker');
   await page.locator('#save-btn').click();
+  await page.locator('#home-view').click();
+  await page.locator('#home-desk').waitFor();
+  await page.locator('#home-desk-layout [data-desk-layout="grid"]').click();
+  await page.locator('#home-desk-recent .home-desk-row').first().click();
   await page.locator('#search').fill('marker');
   await page.locator('#search-results-summary').waitFor();
   await page.locator('#search').press('ArrowDown');

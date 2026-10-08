@@ -60,7 +60,9 @@ test.describe('first run', () => {
     await expect(firstBox).toHaveAttribute('aria-checked', 'true');
 
     // Survives a reload: the tick wrote back to the note body in IndexedDB.
+    // A reload is a return visit, so it opens to Home, where Welcome is pinned.
     await page.reload();
+    await page.locator('#home-desk-pins .home-desk-card', { hasText: 'Welcome to Scratchpad' }).click();
     await expect(page.locator('#note-title-display')).toHaveText('Welcome to Scratchpad');
     await expect(page.locator('#note-rendered .task-checkbox').first()).toHaveAttribute('aria-checked', 'true');
   });

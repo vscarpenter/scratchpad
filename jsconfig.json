@@ -31,11 +31,14 @@
     "public/js/swipe-row.js",
     "public/js/mobile-view.js",
     "public/js/settings.js",
+    "public/js/home-desk-view.js",
+    "public/js/home-desk.js",
     "scripts/quality/**/*.mjs",
     "public/js/share-store.js",
     "public/js/share-manager.js",
     "public/js/share-controls.js",
-    "types/sharing.d.ts"
+    "types/sharing.d.ts",
+    "types/home-desk.d.ts"
   ],
   "exclude": ["node_modules", "public/js/vendor"]
 }

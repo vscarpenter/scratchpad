@@ -57,7 +57,8 @@
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         const parent = node.parentElement;
-        if (!parent || parent.closest('script, style, textarea, mark')) return NodeFilter.FILTER_REJECT;
+        // Skip existing search hits only; a ==highlight== is a plain <mark> and still gets its hits.
+        if (!parent || parent.closest('script, style, textarea, mark.search-hit')) return NodeFilter.FILTER_REJECT;
         const lower = String(node.nodeValue || '').toLocaleLowerCase();
         return terms.some((term) => lower.includes(term.toLocaleLowerCase()))
           ? NodeFilter.FILTER_ACCEPT

@@ -7,6 +7,7 @@
   const Search = window.ScratchpadSearch;
   const SearchView = window.ScratchpadSearchView;
   const Zip = window.ScratchpadZip;
+  const HomeDesk = window.ScratchpadHomeDesk;
   const REVISION_LIMIT = 10;
   const DRAFT_DEBOUNCE_MS = 350;
   const IMPORT_MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -158,14 +159,9 @@
     formatToolbar: $('editor-format'),
     editorEmptyState: $('editor-empty-state'),
     editorView: $('editor-view'),
-    emptyNoNotes: $('empty-no-notes'),
     emptyNoNotesTitle: $('empty-no-notes-title'),
     emptyNoNotesCopy: $('empty-no-notes-copy'),
     emptyViewArchive: $('empty-view-archive'),
-    emptyNoResults: $('empty-no-results'),
-    emptyPickOne: $('empty-pick-one'),
-    emptyArchive: $('empty-archive'),
-    emptyTrash: $('empty-trash'),
     clearSearchBtn: $('clear-search-btn'),
     emptyImportNotes: $('empty-import-notes'),
     folderMenu: $('folder-menu'),
@@ -202,7 +198,6 @@
     openAbout: $('open-about'),
     openSettings: $('open-settings'),
     settingsDialog: $('settings-dialog'),
-    themeChoice: $('theme-choice'),
     exportBtn: $('export-btn'),
     exportEncryptedBtn: $('export-encrypted-btn'),
     exportMarkdownBtn: $('export-markdown-btn'),
@@ -2048,23 +2043,6 @@
   }
 
   // -------- Editor rendering --------
-  function showEmpty(which) {
-    els.editorView.hidden = true;
-    els.emptyNoNotes.hidden = which !== 'no-notes';
-    els.emptyNoResults.hidden = which !== 'no-results';
-    els.emptyPickOne.hidden = which !== 'pick-one';
-    els.emptyArchive.hidden = which !== 'archive';
-    els.emptyTrash.hidden = which !== 'trash';
-  }
-
-  function hideAllEmpties() {
-    els.emptyNoNotes.hidden = true;
-    els.emptyNoResults.hidden = true;
-    els.emptyPickOne.hidden = true;
-    els.emptyArchive.hidden = true;
-    els.emptyTrash.hidden = true;
-  }
-
   // Since first-run seeding landed, a newcomer never reaches this state — they
   // arrive with starter notes. Whoever sees it has used Scratchpad before and
   // has nothing here now: they cleared it, or the browser evicted the database.
@@ -2095,8 +2073,7 @@
     const trashed = isTrashed(note);
     const archived = isArchived(note);
     if (trashed) state.editing = false;
-    hideAllEmpties();
-    els.editorView.hidden = false;
+    HomeDesk.show('editor');
     els.titleInput.disabled = trashed;
     els.tagBar.classList.toggle('is-readonly', trashed);
 
@@ -2373,6 +2350,7 @@
   }
 
   function ensureSelectionForView() {
+    if (HomeDesk.holds()) return;
     const visible = filteredNotes();
     const hasFilter = !!(state.search || state.tagFilter);
     if (state.editing && state.dirty && selectedNoteIsInView()) return;
@@ -2528,19 +2506,19 @@
 
     const base = currentBaseNotes();
     if (state.view === 'trash' && base.length === 0) {
-      showEmpty('trash');
+      HomeDesk.show('trash');
     } else if (state.view === 'archive' && base.length === 0) {
-      showEmpty('archive');
+      HomeDesk.show('archive');
     } else if (state.view === 'active' && activeNotes().length === 0) {
-      showEmpty('no-notes');
+      HomeDesk.show('no-notes');
     } else if (state.search.trim() && state.selectedId && selectedNoteIsInView()) {
       renderEditor();
     } else if (filteredNotes().length === 0) {
-      showEmpty('no-results');
+      HomeDesk.show('no-results');
     } else if (state.selectedId && getNote(state.selectedId)) {
       renderEditor();
     } else {
-      showEmpty('pick-one');
+      HomeDesk.show('desk');
     }
     syncMobileView();
   }
@@ -4147,10 +4125,10 @@
     openDialog(els.aboutDialog);
   }
 
-  let syncThemeChoice = () => {};
+  let syncSettingsChoices = () => {};
 
   function openSettingsDialog() {
-    syncThemeChoice();
+    syncSettingsChoices();
     renderDiagnostics();
     openDialog(els.settingsDialog);
   }
@@ -4500,6 +4478,7 @@
     }
 
     if (window.ScratchpadTemplates) commands.push(...window.ScratchpadTemplates.commands());
+    commands.push(...HomeDesk.commands());
     const notes = sortNotes(state.notes)
       .slice(0, 8)
       .map((note) => ({
@@ -4604,9 +4583,9 @@
     syncCommandPaletteSelection(scroll);
   }
 
-  function openCommandPalette() {
+  function openCommandPalette(query) {
     state.commandIndex = 0;
-    els.commandPaletteInput.value = '';
+    els.commandPaletteInput.value = typeof query === 'string' ? query : '';
     els.commandPaletteInput.setAttribute('aria-expanded', 'true');
     renderCommandPaletteList();
     openDialog(els.commandPaletteDialog);
@@ -5546,7 +5525,7 @@
     els.trashView.addEventListener('click', () => setView('trash'));
     els.viewMenuBtn.addEventListener('click', () => viewMenuController.toggle());
     els.viewMenu.addEventListener('click', () => viewMenuController.close());
-    els.homeView.addEventListener('click', () => setFolderView(null));
+    els.homeView.addEventListener('click', HomeDesk.goHome);
     els.folderSwitcherBtn.addEventListener('click', toggleFolderSwitcher);
     els.folderSwitcherSearch.addEventListener('input', () => {
       state.folderSwitcherQuery = els.folderSwitcherSearch.value;
@@ -5731,7 +5710,7 @@
 
     els.openAbout.addEventListener('click', openAboutDialog);
     els.openSettings.addEventListener('click', openSettingsDialog);
-    syncThemeChoice = window.ScratchpadSettings.bindThemeChoice(els.themeChoice);
+    syncSettingsChoices = window.ScratchpadSettings.bindChoices(els.settingsDialog);
     els.exportBtn.addEventListener('click', () => { exportAll(); });
     els.exportEncryptedBtn.addEventListener('click', openEncryptedExportDialog);
     els.exportMarkdownBtn.addEventListener('click', () => { exportMarkdownZip(); });
@@ -5921,9 +5900,9 @@
   // -------- Boot --------
   // First run: seed a few starter notes so a brand-new visitor lands in a working
   // app instead of a blank one — only when they've never visited (no flag) AND
-  // have no notes yet. Welcome is pinned, so ensureSelectionForView() opens it
-  // first and there is something to read and tick straight away; no redirect and
-  // no interstitial stands between arriving and writing. Existing users who
+  // have no notes yet. Welcome is pinned, and returning true keeps Home closed, so
+  // Welcome opens first with something to read and tick straight away; nothing,
+  // Home included, stands between arriving and writing. Existing users who
   // predate the flag keep their place (they have notes); a returning user who
   // cleared all their notes stays empty (their flag survives), so seeding never
   // recurs. Clearing site data wipes both flag and notes, so it reads as a fresh
@@ -5956,6 +5935,7 @@
     } catch (e) {
       console.error('First-run seeding failed', e); // fail open — boot continues
     }
+    return true;
   }
 
   // PWA shortcuts and the share viewer's save button land on /?action=<name>. Handle once at boot, then clean
@@ -5970,7 +5950,7 @@
   }
 
   async function init() {
-    await maybeSeedFirstRun();
+    const seeded = await maybeSeedFirstRun();
     Markdown.setWikilinkResolver((target) => {
       const wanted = (target || '').trim().toLowerCase();
       if (!wanted) return null;
@@ -5985,6 +5965,9 @@
     if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({ notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
       isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
       openNote: openNoteFromCommand, deriveTitle, toast });
+    HomeDesk.init({ state, seeded, now, deriveTitle, isArchived, isTrashed, noteFolderId, folderById, folderDisplayName, todayNote: () => findDailyNote(todayKey()),
+      createNote, openNote: selectNote, openToday: openTodayNote, openCapture: openQuickCapture, openPalette: openCommandPalette, setFolderView,
+      clearFilters: clearAllFilters, confirmDiscard, discardDraft: discardCurrentDraft });
     if (window.ScratchpadSharedCopy) window.ScratchpadSharedCopy.init({ notes: () => state.notes, isTrashed, normalizeNote, normalizeTag, putNoteRecord, uuid, now, toast,
       addNote: (note) => state.notes.push(note), openNote: (id) => { if (state.folderViewId) setFolderView(null, false); return openNoteFromCommand(id); }, limits: { title: NOTE_TITLE_MAX, body: NOTE_BODY_MAX, tag: NOTE_TAG_MAX, tags: NOTE_TAGS_MAX } });
     if (window.ScratchpadAttachments) {

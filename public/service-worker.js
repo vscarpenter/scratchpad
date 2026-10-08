@@ -59,6 +59,8 @@
     '/public/js/swipe-row.js',
     '/public/js/mobile-view.js',
     '/public/js/settings.js',
+    '/public/js/home-desk-view.js',
+    '/public/js/home-desk.js',
     '/public/js/app.js',
   ];
   const OPTIONAL_SHELL = ['/public/og-image.png', '/public/og-image.svg'];
