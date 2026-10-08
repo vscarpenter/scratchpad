@@ -422,8 +422,13 @@
         <li>
           <strong>Revision history</strong> — every save stores a snapshot, and Scratchpad
           keeps the last 10 per note. Open <strong>History</strong> from the note's ⋯ menu
-          to browse them, and <strong>Restore</strong> to bring one back. Restoring saves
-          your current version as a revision first, so a restore is always reversible.
+          to browse them. Each revision offers <strong>Preview revision</strong> for its
+          full text and <strong>Compare with current</strong> for what Restore would change:
+          lines marked <code>−</code> are what your note loses, lines marked <code>+</code>
+          are what comes back, and a single edited line shows just the changed words. Tag
+          and pin differences are listed too, since Restore reapplies them.
+          <strong>Restore</strong> brings a revision back and saves your current version as
+          a revision first, so a restore is always reversible.
         </li>
         <li>
           <strong>Draft recovery</strong> — while you edit, changes autosave as a draft.

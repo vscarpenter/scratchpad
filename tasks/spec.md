@@ -1,9 +1,8 @@
 # Spec: revision diff in the History dialog
 
 Vinny picked this on 2026-10-08 from `backlog.md` after the roadmap
-retired. Status: draft, awaiting approval. The design record
-`docs/superpowers/specs/2026-10-08-revision-diff-design.md` is written with
-the first implementation commit.
+retired and approved it the same day ("build it"). The design record is
+`docs/superpowers/specs/2026-10-08-revision-diff-design.md`.
 
 Branch: `claude/zealous-pascal-aunm2y`, on `main` at 8212aa0 (v4.5.0). One
 draft PR.
@@ -32,11 +31,11 @@ of reading two full texts side by side.
 
 - `public/js/revision-diff.js` exporting the frozen
   `window.ScratchpadRevisionDiff` with:
-  - `diffLines(before, after)`: pure. Returns hunks of
-    `{ kind: 'same' | 'added' | 'removed', lines: string[] }` in order.
-  - `diffWords(before, after)`: pure. Returns tokens of
-    `{ kind, text }` for one line pair, splitting on whitespace runs and
-    keeping the whitespace so the line reassembles exactly.
+  - `diffLines(before, after)`: pure. Returns `{ coarse, hunks }` with hunks
+    of `{ kind: 'same' | 'added' | 'removed', lines: string[] }` in order.
+  - `diffWords(before, after)`: pure. Returns `{ coarse, tokens }` with
+    tokens of `{ kind, text }` for one line pair, splitting on whitespace
+    runs and keeping the whitespace so the line reassembles exactly.
   - `snapshotText(rev)`: `title + '\n\n' + body` when a title exists, else
     `body`. This is what both the preview and the comparison use, so a
     title change shows as a changed first line.

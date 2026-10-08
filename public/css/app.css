@@ -3031,6 +3031,78 @@ body:not(.page-privacy) {
   padding: 10px;
 }
 
+/* Compare with current: a line diff against the saved note. <del> and <ins>
+   carry the semantics; the glyph and tint are the visible signals. */
+.history-diff {
+  margin: 8px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  font: 400 12px/1.5 var(--mono);
+  color: var(--slate);
+  background: var(--gray-100);
+  border-radius: var(--r-sm);
+  padding: 6px 0;
+}
+
+.history-diff-line {
+  display: flex;
+  gap: 8px;
+  padding: 0 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.history-diff-line.is-removed {
+  background: var(--rust-tint);
+}
+
+.history-diff-line.is-added {
+  background: var(--success-tint);
+}
+
+/* Glyphs and changed words keep the line's ink for AA on the tints; the
+   state color rides the decoration, which carries no contrast requirement. */
+.history-diff-glyph {
+  flex: 0 0 1ch;
+  user-select: none;
+  font-weight: 700;
+}
+
+.history-diff-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.history-diff-word {
+  font-weight: 700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.is-removed .history-diff-word {
+  text-decoration: line-through;
+  text-decoration-color: var(--rust);
+}
+
+.is-added .history-diff-word {
+  text-decoration: underline;
+  text-decoration-color: var(--success);
+}
+
+.history-diff-gap {
+  padding: 2px 10px;
+  color: var(--gray-700);
+  font: 400 11px/1.5 var(--sans);
+}
+
+.history-diff-meta,
+.history-diff-same {
+  margin: 8px 0 0;
+  color: var(--gray-700);
+  font-size: 13px;
+}
+
 .history-row .btn {
   margin-top: 8px;
 }

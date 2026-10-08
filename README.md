@@ -36,7 +36,8 @@ Nothing else is ever uploaded.
   still open to the note list. The path above an open note links back to Home
   and to the note's folder.
 - Write and preview Markdown with formatting shortcuts, autosaved drafts, the
-  last 10 saved revisions per note, GitHub-style `[!NOTE]` callouts,
+  last 10 saved revisions per note with a line-by-line comparison before you
+  restore one, GitHub-style `[!NOTE]` callouts,
   `==highlights==`, syntax highlighting for common languages, and rich-text
   pastes converted to Markdown on the way in.
 - Tick task-list checkboxes right in the rendered note — `- [ ]` items are
