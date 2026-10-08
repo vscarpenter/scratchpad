@@ -2068,6 +2068,7 @@
       els.backlinksSection.hidden = true;
       lastRenderedNoteId = null;
       lastEditorMode = false;
+      if (window.ScratchpadOutline) window.ScratchpadOutline.sync();
       return;
     }
 
@@ -2085,7 +2086,6 @@
       closeOverflowMenu();
     }
     lastRenderedNoteId = note.id;
-
     const preserveDraftInputs = state.editing && state.dirty && !trashed;
     if (!preserveDraftInputs && document.activeElement !== els.titleInput) {
       els.titleInput.value = note.title || '';
@@ -2135,7 +2135,6 @@
         els.editor.value = note.body || '';
       }
       if (enteringEdit) {
-        // Start where the reader was: the top, not where the caret landed.
         els.editor.setSelectionRange(0, 0);
         els.editor.scrollTop = 0;
       }
@@ -2162,6 +2161,7 @@
     renderBacklinks(note);
     if (window.ScratchpadMentions) window.ScratchpadMentions.render(note);
     if (window.ScratchpadAttachments) window.ScratchpadAttachments.warm(note ? note.id : null);
+    if (window.ScratchpadOutline) window.ScratchpadOutline.sync();
   }
 
   function renderEyebrow(note) {
