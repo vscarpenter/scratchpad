@@ -194,3 +194,11 @@
   narrow enough to wrap everywhere), and require a fit only where there is
   wide slack. Linux WebKit also has no `StorageManager`, so guard any
   prototype stub and accept the state the app reports without it.
+- Deferring DOM that other tests read by text breaks them silently: the
+  History preview went lazy for a performance finding, and a cross-tab test
+  that looks for a revision's body in the dialog lost it. Defer the
+  expensive part only, and run `npm test`, not just the touched specs,
+  before pushing a change to shared markup.
+- A `<details>` toggle event fires after the click that opened it returns,
+  so a test that reads lazily built content must use a retrying assertion
+  (`toHaveText`), never a one-shot `allTextContents()`.
