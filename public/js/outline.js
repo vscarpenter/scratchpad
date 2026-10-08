@@ -5,6 +5,11 @@
 'use strict';
 {
   const HEADING = /^( {0,3}(?:>\s*)*)(#{1,6})[ \t]+(.*)$/;
+  // A Setext underline (=== or ---) directly under a paragraph; the same
+  // forms marked renders as h1 and h2, so Edit keeps the reading outline.
+  const SETEXT = /^ {0,3}(=+|-+)[ \t]*$/;
+  // Lines that start a block of their own and so cannot be a paragraph line.
+  const BLOCK_START = /^\s*(?:#{1,6}[ \t]|>|[-*+][ \t]|\d+[.)][ \t]|```|~~~|\|)/;
   const MIN_HEADINGS = 2;
   const DOCK_QUERY = '(min-width: 1400px)';
 
@@ -48,18 +53,40 @@
     return text.replace(/\s+/g, ' ').trim();
   }
 
+  /** @typedef {{ offset: number, text: string }} Paragraph */
+
+  /** A paragraph line that a Setext underline may turn into a heading. @param {string} line @param {number} offset @param {Paragraph | null} open */
+  function extendParagraph(line, offset, open) {
+    if (!line.trim() || BLOCK_START.test(line)) return null;
+    const text = line.trim();
+    if (open) return { offset: open.offset, text: open.text + ' ' + text };
+    return { offset: offset + (line.length - line.trimStart().length), text };
+  }
+
   /** @param {string} src @returns {Heading[]} */
   function extractHeadings(src) {
     /** @type {Heading[]} */
     const found = [];
     const scan = root.ScratchpadMarkdown && root.ScratchpadMarkdown.scanOutsideFences;
     if (!scan) return found;
+    /** @type {Paragraph | null} */
+    let open = null;
     scan(src || '', (line, offset) => {
       const match = HEADING.exec(line);
-      if (!match) return;
-      const label = plainHeading(match[3]);
-      if (!label) return;
-      found.push({ level: match[2].length, label, offset: offset + match[1].length });
+      if (match) {
+        open = null;
+        const label = plainHeading(match[3]);
+        if (label) found.push({ level: match[2].length, label, offset: offset + match[1].length });
+        return;
+      }
+      const underline = open ? SETEXT.exec(line) : null;
+      if (underline && open) {
+        const label = plainHeading(open.text);
+        if (label) found.push({ level: underline[1][0] === '=' ? 1 : 2, label, offset: open.offset });
+        open = null;
+        return;
+      }
+      open = extendParagraph(line, offset, open);
     });
     return found;
   }
@@ -285,5 +312,5 @@
   }
 
   boot();
-  root.ScratchpadOutline = { sync, extractHeadings };
+  root.ScratchpadOutline = Object.freeze({ sync, extractHeadings });
 }

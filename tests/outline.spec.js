@@ -85,3 +85,39 @@ test('editing jumps the caret to the heading', async ({ page }) => {
   await expect.poll(() => editor.evaluate((el) => /** @type {HTMLTextAreaElement} */ (el).selectionStart)).toBe(offset);
   await expect.poll(() => editor.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 });
+
+const SETEXT = [
+  'Top title',
+  '=========',
+  '',
+  'Some text under the title.',
+  '',
+  'A section',
+  '---------',
+  '',
+  'More text.',
+  '',
+].join('\n');
+
+test('Setext headings stay in the outline while editing', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await seedRawNotes(page, [{ id: 'setext', title: 'Setext', body: SETEXT }]);
+  const nav = page.locator('#note-outline');
+  await expect(nav.getByRole('button')).toHaveText(['Top title', 'A section']);
+  await page.locator('#edit-btn').click();
+  await expect(nav.getByRole('button')).toHaveText(['Top title', 'A section']);
+  await expect(nav.getByRole('button', { name: 'A section', exact: true })).toHaveClass(/is-h2/);
+  await nav.getByRole('button', { name: 'A section', exact: true }).click();
+  const editor = page.locator('#note-editor');
+  await expect
+    .poll(() => editor.evaluate((el) => /** @type {HTMLTextAreaElement} */ (el).selectionStart))
+    .toBe(SETEXT.indexOf('A section'));
+});
+
+test('a rule after a blank line is not a heading', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  const body = ['# One', '', 'Text.', '', '---', '', '# Two', ''].join('\n');
+  await seedRawNotes(page, [{ id: 'rule', title: 'Rule', body }]);
+  await page.locator('#edit-btn').click();
+  await expect(page.locator('#note-outline').getByRole('button')).toHaveText(['One', 'Two']);
+});
