@@ -12,7 +12,8 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 | Product area | End-to-end specs |
 | --- | --- |
 | First visit and starter notes | `first-run.spec.js` |
-| Home: launch rules, Open to, quick starts, pinned cards, recent notes, folder chips, and focus handoff | `home-desk.spec.js`, `network-isolation.spec.js` |
+| Home: launch rules, Open to, quick starts, pinned cards, recent notes, folder chips, tags, and focus handoff | `home-desk.spec.js`, `network-isolation.spec.js` |
+| Note header and menu: the clickable breadcrumb, single-note Markdown download, and print | `breadcrumb.spec.js`, `note-menu.spec.js` |
 | Create, edit, save, format, paste as Markdown, pin, delete, restore, and empty states | `notes-crud.spec.js`, `note-organization.spec.js`, `paste-as-markdown.spec.js` |
 | In-note find and replace | `find-replace.spec.js` |
 | Archive lifecycle, organization integrations, cross-tab routing, and portability | `archive.spec.js`, `archive-integrations.spec.js`, `archive-portability.spec.js` |
@@ -24,7 +25,7 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 | Diagnostics, persistent storage, data erasure, and update recovery | `diagnostics.spec.js`, `storage-protection.spec.js`, `data-erasure.spec.js`, `pwa-lifecycle.spec.js` |
 | Offline shell, same-origin privacy, and static pages | `pwa.spec.js`, `network-isolation.spec.js`, `guide.spec.js`, `static-pages.spec.js` |
 | Theme, accessibility semantics, touch targets, and responsive layout | `theme.spec.js`, `static-pages.spec.js`, `accessibility-semantics.spec.js`, `touch-targets.spec.js`, `layout-scroll.spec.js` |
-| Command palette and every documented navigation surface | `command-palette.spec.js`, `guide.spec.js`, `static-pages.spec.js` |
+| Command palette, the `?` shortcuts sheet, and every documented navigation surface | `command-palette.spec.js`, `shortcuts-sheet.spec.js`, `guide.spec.js`, `static-pages.spec.js` |
 | Interaction feedback: the toast clock, its Undo burn-down bar, the task tick, hold to confirm on permanent deletes, and touch swipe actions on note rows | `toast.spec.js`, `task-tick.spec.js`, `hold-confirm.spec.js`, `swipe-row.spec.js` |
 
 Operational AWS deployment behavior, CloudFront configuration, browser install

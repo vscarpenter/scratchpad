@@ -1,3 +1,51 @@
+# Note navigation follow-ups (2026-10-08)
+
+Tier: Standard (two new modules, touched app.js and the Home desk, markup,
+CSS, tests). Branch: `claude/busy-keller-sj34zq`, restarted from main after
+#27 merged. Spec: `tasks/spec.md`; design record:
+`docs/superpowers/specs/2026-10-08-note-navigation-design.md`.
+
+## Plan
+
+- [x] 1. Spec and design record (176d9ae).
+- [x] 2. Breadcrumb: `note-breadcrumb.js` renders Home > Folder > Title with
+      the first two as buttons; Archive and Trash keep the plain path. app.js
+      drops its renderer (-28 lines) (21a348b).
+- [x] 3. Note menu: Download as Markdown exports only the open note (a `.md`,
+      or a ZIP when it has images) and records no backup; Print or save as
+      PDF calls the browser print dialog (df3e51c).
+- [x] 4. Home tags: up to 12 most used tags with counts; a chip sets the tag
+      filter, Manage tags opens the tag manager (d1ad6bd).
+- [x] 5. Shortcuts sheet: `?` outside a field opens `shortcuts-sheet.js`,
+      which clones the About list; the palette has a Keyboard shortcuts
+      command; About gains three missing rows (8fd3ed2).
+- [x] 6. Docs and ratchets: guide, README, tests README; app.js ceiling
+      tightens to 5,985; deepFunctions to 10 (a6e43b4).
+- [x] 7. Screenshots showed the pill's `text-transform: capitalize` also
+      reached the title ("Platform Roadmap, Q4"), which predates this work.
+      Titles and folder buttons now show as written, and the spec pins the
+      rendered title (6f661be).
+- [x] 8. Verify: `npm run verify` gates green (browser coverage 41.73%);
+      CSP hashes unchanged; Chromium suite 550 passed with only the 8
+      environment-only iPhone failures; screenshots in `.verify/nav-*`.
+
+## Decisions made without a stop (Vinny asked for the follow-up PR)
+
+- The note menu export was a bug, not a missing feature: it exported every
+  note and recorded a backup. It now exports the open note only, and the
+  Backup menu keeps the whole-library ZIP.
+- A single note with no images downloads as a plain `.md`; with images it is
+  a ZIP with the note at the root so `attachments/` links resolve.
+- The Home crumb hides under 768px, where the list is the phone's home.
+- The sheet clones the About list instead of keeping a second copy, so the
+  two cannot drift.
+- Tag chips hover with an inset accent ring rather than `--accent-soft-2`,
+  which would put indigo text near 4.2:1.
+
+## Follow-ups worth considering
+
+- Inline capture on Home, and a recently opened list, if Home earns daily use.
+
 # Home desk and highlights (2026-10-08)
 
 Tier: Standard (one new module, two touched modules, markup, CSS, tests).

@@ -199,6 +199,9 @@
       layout: part('layout'),
       chips: part('chips'),
       recent: part('recent'),
+      tags: part('tags'),
+      tagList: part('tag-list'),
+      manageTags: part('manage-tags'),
       noteIcon,
     };
   }
@@ -225,6 +228,11 @@
     };
     target.pins.addEventListener('click', openNote);
     target.recent.addEventListener('click', openNote);
+    target.tagList.addEventListener('click', (event) => {
+      const button = closestButton(event, '[data-tag]');
+      if (button) runThenFocus(() => api.setTagFilter(button.dataset.tag || ''));
+    });
+    target.manageTags.addEventListener('click', () => api.openTagManager());
     target.chips.addEventListener('click', (event) => {
       const button = closestButton(event, '[data-folder-key]');
       if (!button) return;

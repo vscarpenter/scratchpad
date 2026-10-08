@@ -215,7 +215,8 @@
                 <button id="duplicate-overflow-btn" role="menuitem" type="button" data-action="duplicate">Duplicate</button>
                 <button id="attach-image-btn" role="menuitem" type="button" hidden>Attach image…</button>
                 <button id="history-btn" role="menuitem" type="button" data-action="history">History</button>
-                <button id="export-overflow-btn" role="menuitem" type="button" data-action="export">Export Markdown ZIP</button>
+                <button id="export-overflow-btn" role="menuitem" type="button" data-action="export">Download as Markdown</button>
+                <button id="print-overflow-btn" role="menuitem" type="button" data-action="print">Print or save as PDF…</button>
                 <hr class="menu-divider"/>
                 <button id="archive-note-btn" role="menuitem" type="button">Archive note</button>
                 <button id="unarchive-note-btn" role="menuitem" type="button" hidden>Unarchive note</button>
@@ -453,6 +454,17 @@
             </div>
             <div id="home-desk-chips" class="home-desk-chips" role="group" aria-label="Show recent notes from" hidden></div>
             <ul id="home-desk-recent" class="home-desk-recent"></ul>
+          </section>
+
+          <section id="home-desk-tags" class="home-desk-section" aria-labelledby="home-desk-tags-title" hidden>
+            <div class="home-desk-section-head">
+              <h3 id="home-desk-tags-title" class="home-desk-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14M5 15h14M10 3 8 21M16 3l-2 18"/></svg>
+                Tags
+              </h3>
+              <button id="home-desk-manage-tags" class="home-desk-link" type="button">Manage tags</button>
+            </div>
+            <div id="home-desk-tag-list" class="home-desk-tag-list" role="group" aria-label="Most used tags"></div>
           </section>
 
           <p class="home-desk-privacy">
@@ -758,13 +770,16 @@
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">N</kbd> — New note</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">E</kbd> — Edit the open note</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">S</kbd> — Save (in edit mode)</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">F</kbd> — Find and replace (in edit mode)</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">D</kbd> — Open today’s note</li>
+        <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">Space</kbd> — Quick capture</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">K</kbd> or <kbd class="kbd">/</kbd> — Focus search</li>
         <li><kbd class="kbd">↑</kbd> / <kbd class="kbd">↓</kbd> — Move through search results</li>
         <li><kbd class="kbd">Enter</kbd> — Open the focused search result</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">P</kbd> — Command palette</li>
         <li><kbd class="kbd">⌘/Ctrl</kbd> + <kbd class="kbd">Shift</kbd> + <kbd class="kbd">F</kbd> — Toggle focus mode</li>
         <li><kbd class="kbd">Esc</kbd> — Clear search, or exit edit mode</li>
+        <li><kbd class="kbd">?</kbd> — Show these shortcuts</li>
       </ul>
     </div>
     <div class="dialog-foot about-dialog-foot">
@@ -779,6 +794,19 @@
         <span class="sep" aria-hidden="true">·</span>
         <span>built <span id="app-build-date">—</span></span>
       </div>
+      <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="shortcuts-dialog" class="dialog shortcuts-dialog" aria-labelledby="shortcuts-dialog-title">
+    <div class="dialog-head">
+      <h2 id="shortcuts-dialog-title">Keyboard shortcuts</h2>
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <ul id="shortcuts-list" class="shortcut-list"></ul>
+    </div>
+    <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" data-dialog-close>Close</button>
     </div>
   </dialog>
@@ -1125,6 +1153,10 @@
     <svg class="note-share-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
   </template>
 
+  <template id="tpl-home-icon">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/></svg>
+  </template>
+
   <template id="tpl-desk-note-icon">
     <svg class="home-desk-row-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
   </template>
@@ -1158,6 +1190,8 @@
   <script src="/public/js/settings.js"></script>
   <script src="/public/js/home-desk-view.js"></script>
   <script src="/public/js/home-desk.js"></script>
+  <script src="/public/js/note-breadcrumb.js"></script>
+  <script src="/public/js/shortcuts-sheet.js"></script>
   <script src="/public/js/share-store.js"></script>
   <script src="/public/js/share-manager.js"></script>
   <script src="/public/js/share-controls.js"></script>

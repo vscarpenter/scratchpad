@@ -329,3 +329,33 @@ test('greetings, relative times, and previews follow their rules', async ({ page
   expect(out.earlier).toEqual(['Sep 1', 'Dec 25, 2025']);
   expect(out.excerpt).toBe('Buy beans at the shop\nKey point with code');
 });
+
+test('Home lists tags by use, and a tag opens its filter', async ({ page }) => {
+  const notes = [
+    { id: 'alpha', title: 'Alpha', body: 'a', tags: ['work', 'q4'], age: HOUR },
+    { id: 'beta', title: 'Beta', body: 'b', tags: ['work'], age: 2 * HOUR },
+    { id: 'gamma', title: 'Gamma', body: 'c', tags: ['reading'], age: 3 * HOUR },
+    { id: 'old', title: 'Old', body: 'd', tags: ['stale'], archivedAt: NOW - DAY, age: DAY },
+  ];
+  await seedDesk(page, { notes, folders: [] });
+  await expect(page.locator('#home-desk-tag-list .home-desk-tag-name')).toHaveText(['#work', '#q4', '#reading']);
+  await expect(page.locator('#home-desk-tag-list .home-desk-tag-count')).toHaveText(['2', '1', '1']);
+  await page.getByRole('button', { name: 'Filter notes by tag work, 2 notes' }).click();
+  await expect(page.locator('#active-filter-tag')).toHaveText('#work');
+  await expect(page.locator('#note-title-display')).toHaveText('Alpha');
+  await expect(desk(page)).toBeHidden();
+});
+
+test('Manage tags opens the tag manager, and Tags hide when no note has one', async ({ page }) => {
+  await seedDesk(page);
+  await page.locator('#home-desk-manage-tags').click();
+  await expect(page.locator('#tag-manager-dialog')).toHaveAttribute('open', '');
+  await page.keyboard.press('Escape');
+  await page.evaluate(async () => {
+    const notes = await window.ScratchpadDB.getAll();
+    await window.ScratchpadDB.bulkPut(notes.map((note) => ({ ...note, tags: [] })));
+  });
+  await page.reload();
+  await expect(desk(page)).toBeVisible();
+  await expect(page.locator('#home-desk-tags')).toBeHidden();
+});

@@ -30,9 +30,11 @@ Nothing else is ever uploaded.
 ### Notes workflow
 
 - Start from Home on a wide screen. It offers today's note, quick capture, and
-  templates as quick starts. Pinned notes appear as cards, and recently edited
-  notes as a list or a grid. Settings > Open to switches the launch back to the
-  top note, and phones still open to the note list.
+  templates as quick starts. Pinned notes appear as cards, recently edited
+  notes as a list or a grid, and your most used tags as chips that filter the
+  list. Settings > Open to switches the launch back to the top note, and phones
+  still open to the note list. The path above an open note links back to Home
+  and to the note's folder.
 - Write and preview Markdown with formatting shortcuts, autosaved drafts, the
   last 10 saved revisions per note, GitHub-style `[!NOTE]` callouts,
   `==highlights==`, syntax highlighting for common languages, and rich-text
@@ -63,7 +65,8 @@ Nothing else is ever uploaded.
 - Import one or many Markdown files, including Scratchpad frontmatter, or use
   validated JSON imports with a conflict preview.
 - Export full JSON backups, encrypted backups, selected notes, or a Markdown
-  ZIP without creating an account.
+  ZIP without creating an account. An open note's menu downloads just that
+  note as Markdown or prints it.
 
 ## Running locally
 
@@ -273,6 +276,7 @@ reports whether it succeeded.
 | `Enter`                        | Open the focused search result            |
 | `Esc`                          | Clear search when search is focused, or  |
 |                                | exit edit mode (with confirmation if dirty) |
+| `?`                            | Show every shortcut on one sheet          |
 
 ## What's in the repo
 
