@@ -35,6 +35,7 @@ body:not(.page-privacy) {
 @media (pointer: coarse), (max-width: 640px) {
   .btn,
   .popover-menu button,
+  .outline-link,
   .app-footer a {
     min-height: 44px;
   }
@@ -1266,6 +1267,7 @@ body:not(.page-privacy) {
 
 /* ---------- Main / Editor view ---------- */
 .editor-view {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1350,6 +1352,72 @@ body:not(.page-privacy) {
   gap: 6px;
   justify-content: flex-end;
   flex: none;
+}
+
+.note-outline {
+  min-width: 0;
+  color: var(--text-secondary);
+}
+
+.note-outline ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note-outline.is-open {
+  position: absolute;
+  z-index: var(--z-overlay);
+  top: 72px;
+  right: 8px;
+  width: min(280px, calc(100% - 24px));
+  max-height: min(420px, 70%);
+  overflow: auto;
+  padding: 4px;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.outline-link {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text-secondary);
+  font: 500 13px/1.35 var(--sans);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.outline-link.is-h1 { padding-left: 10px; }
+.outline-link.is-h2 { padding-left: 20px; }
+.outline-link.is-h3 { padding-left: 30px; }
+.outline-link.is-h4 { padding-left: 40px; }
+.outline-link.is-h5 { padding-left: 50px; }
+.outline-link.is-h6 { padding-left: 60px; }
+
+.outline-link:hover {
+  background: var(--control-fill-hover);
+  color: var(--ink);
+}
+
+.outline-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.outline-link[aria-current="true"] {
+  color: var(--accent-text);
+  font-weight: 650;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .overflow-wrap {
@@ -1941,6 +2009,7 @@ body:not(.page-privacy) {
   letter-spacing: -0.015em;
   color: var(--ink);
   margin: 1.5em 0 0.5em;
+  scroll-margin-top: 12px;
 }
 .note-rendered h1 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 0.2em; }
 /* Section headings pick up the serif voice; the title leads it. */
@@ -5604,6 +5673,35 @@ body:not(.page-privacy) {
   }
 }
 
+/* The outline docks only when the 620px measure still fits beside it.
+   Below this width the same list is a popover on the header button. */
+@media screen and (min-width: 1400px) {
+  .editor-view:has(#note-outline:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) 168px;
+  }
+
+  .editor-view:has(#note-outline:not([hidden])) > .editor-head {
+    grid-column: 1 / -1;
+  }
+
+  .editor-view:has(#note-outline:not([hidden])) > .editor-card {
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
+    justify-self: stretch;
+    padding-right: 40px;
+  }
+
+  .editor-view:has(#note-outline:not([hidden])) > .note-outline {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: stretch;
+    min-height: 0;
+    overflow: auto;
+    padding: 28px 16px 28px 4px;
+  }
+}
+
 @media screen and (max-width: 767px) {
   .chronicle-rail,
   .editor-date-spine {
@@ -5628,7 +5726,9 @@ body:not(.page-privacy) {
   body.focus-mode #note-breadcrumb,
   body.focus-mode #note-byline,
   body.focus-mode #tag-bar,
-  body.focus-mode #backlinks-section {
+  body.focus-mode #backlinks-section,
+  body.focus-mode #note-outline,
+  body.focus-mode #outline-btn {
     display: none;
   }
   /* The breadcrumb normally pushes editor-actions to the right via its own
@@ -5679,7 +5779,9 @@ body:not(.page-privacy) {
   #toast-region,
   #pwa-update-notice,
   #wikilink-suggest,
-  #backlinks-section {
+  #backlinks-section,
+  #note-outline,
+  #outline-btn {
     display: none !important;
   }
 

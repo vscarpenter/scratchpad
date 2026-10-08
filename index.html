@@ -199,6 +199,9 @@
             <span id="dirty-indicator" class="dirty-indicator" hidden title="You have unsaved changes">
               <span class="dot" aria-hidden="true"></span>Unsaved
             </span>
+            <button id="outline-btn" class="icon-btn" type="button" aria-label="Outline" aria-expanded="false" aria-controls="note-outline" title="Outline" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M8 12h12"/><path d="M8 18h8"/></svg>
+            </button>
             <button id="focus-mode-btn" class="icon-btn" type="button" aria-pressed="false" aria-label="Focus mode" title="Focus mode (⌘/Ctrl+Shift+F)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5h4"/><path d="M20 9V5h-4"/><path d="M4 15v4h4"/><path d="M20 15v4h-4"/></svg>
             </button>
@@ -344,6 +347,9 @@
           ></textarea>
           <div id="wikilink-suggest" class="wikilink-suggest" role="listbox" aria-label="Link suggestions" hidden></div>
         </article>
+        <nav id="note-outline" class="note-outline" aria-label="Headings" hidden>
+          <ol></ol>
+        </nav>
       </section>
 
       <section id="empty-no-notes" class="empty-state center-state" hidden>
@@ -1192,6 +1198,8 @@
   <script src="/public/js/home-desk.js"></script>
   <script src="/public/js/note-breadcrumb.js"></script>
   <script src="/public/js/shortcuts-sheet.js"></script>
+  <script src="/public/js/outline.js"></script>
+  <script src="/public/js/reading-place.js"></script>
   <script src="/public/js/revision-diff.js"></script>
   <script src="/public/js/share-store.js"></script>
   <script src="/public/js/share-manager.js"></script>

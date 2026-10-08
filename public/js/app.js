@@ -2063,13 +2063,16 @@
   function renderEditor() {
     const note = getNote(state.selectedId);
     if (!note) {
+      if (window.ScratchpadPlace) window.ScratchpadPlace.hold(null);
       els.editorView.hidden = true;
       els.editorCard.classList.remove('is-editing');
       els.backlinksSection.hidden = true;
       lastRenderedNoteId = null;
       lastEditorMode = false;
+      if (window.ScratchpadOutline) window.ScratchpadOutline.sync();
       return;
     }
+    if (window.ScratchpadPlace) window.ScratchpadPlace.hold(note.id);
 
     const trashed = isTrashed(note);
     const archived = isArchived(note);
@@ -2085,7 +2088,6 @@
       closeOverflowMenu();
     }
     lastRenderedNoteId = note.id;
-
     const preserveDraftInputs = state.editing && state.dirty && !trashed;
     if (!preserveDraftInputs && document.activeElement !== els.titleInput) {
       els.titleInput.value = note.title || '';
@@ -2134,11 +2136,6 @@
       if (!preserveDraftInputs && document.activeElement !== els.editor) {
         els.editor.value = note.body || '';
       }
-      if (enteringEdit) {
-        // Start where the reader was: the top, not where the caret landed.
-        els.editor.setSelectionRange(0, 0);
-        els.editor.scrollTop = 0;
-      }
       els.editBtn.hidden = true;
       els.saveBtn.hidden = false;
     } else {
@@ -2162,6 +2159,8 @@
     renderBacklinks(note);
     if (window.ScratchpadMentions) window.ScratchpadMentions.render(note);
     if (window.ScratchpadAttachments) window.ScratchpadAttachments.warm(note ? note.id : null);
+    if (window.ScratchpadOutline) window.ScratchpadOutline.sync();
+    if (window.ScratchpadPlace) window.ScratchpadPlace.restore(note.id, showInput, !!(noteChanged || enteringEdit));
   }
 
   function renderEyebrow(note) {
