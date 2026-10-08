@@ -1,3 +1,67 @@
+# Starter templates on first run (2026-10-08)
+
+Tier: Standard (the seed module, one line in app.js, the seed contract check,
+one new spec, docs). Branch: `feat/starter-templates`, from main at 8086ece.
+Design approved in chat on 2026-10-08; no spec file.
+
+## Plan
+
+- [x] 1. Red: `scripts/check-seed-notes.mjs` expects `buildFirstRun` to return
+      a Templates folder plus seven notes, four of them filed in it, and
+      `seedFirstRun` to write the folder before the notes;
+      `tests/starter-templates.spec.js` covers the folder, the palette, Home's
+      tile, and the Welcome line. Both failed on the missing exports.
+- [x] 2. Green: `public/js/seed.js` builds the folder and four templates
+      (Meeting notes, Project brief, Decision record, Reading notes) and
+      persists them through `seedFirstRun(db, now)`.
+- [x] 3. Vinny added scope mid-task: an "Add starter templates" palette
+      action for existing users. Red first (three more top-level tests; the
+      guidance-toast test in `templates.spec.js` retired), then green:
+      `templates.js` runs the action through a new `createFolder` helper in
+      app.js that the folder dialog now shares, and the first-run gate moved
+      from app.js into `seed.js` as `maybeSeedFirstRun` to pay for it. app.js
+      5980 to 5959 lines; ceiling 5982 to 5960; long functions 101 to 100.
+- [x] 4. Copy: Welcome checklist line, guide and README sentences, tests README
+      row.
+- [x] 5. Verify: `npm run verify` exit 0 (coverage 45.26%, audit clean, CSP
+      hashes unchanged); touched specs on three browsers 160 passed, 2
+      documented skips; full suite 1719 passed, 32 skipped, 16 failed, all on
+      Chromium and all pre-existing (see Resuming From Here). Screenshots in
+      `.verify/starter-templates-*.png`; one finding fixed (a long palette
+      meta truncated the command label).
+- [x] 6. Commit on the branch. Push and PR wait for Vinny.
+
+## Resuming From Here
+
+- Done: everything above, one commit on `feat/starter-templates`. Nothing
+  pushed.
+- Next, Vinny's call: push and open the PR, then `/release-prep` for the
+  version bump and a dry-run deploy.
+- Pre-existing local failures, not this branch: 16 Chromium-only tests about
+  dirty editors, drafts, and revision history fail with the editor reading
+  "Unsaved body remainsSaved body" (typed text plus the saved body). The
+  identical 16 fail on a clean worktree of main at 8086ece, Firefox and
+  WebKit pass them, and main's Quality CI run on 8086ece is green. Suspect
+  the local Playwright Chromium build; `node_modules/.bin/playwright install
+  chromium` is the first thing to try.
+- Blockers: none.
+- Assumptions: after the palette action, the app re-renders in place rather
+  than jumping to the Templates folder; on an empty library that opens the
+  first template, on a populated one it stays where the user was. The Home
+  tile's hint copy ("Uses a folder named Templates") is unchanged.
+
+## Decisions made without a stop
+
+- Template bodies open with an H1 that matches the template title, because a
+  note created from a template has an empty title and derives one from the
+  body's first line.
+- Template tags are the ones the created note should inherit (meeting,
+  project, decision, reading), since tags copy over.
+- No "Daily template" in the set: that title is a separate convention and
+  would also list in the palette as an ordinary template.
+- Template notes carry timestamps older than the tour notes so they sort
+  below them in the all-notes index.
+
 # Revision diff (2026-10-08)
 
 Tier: Standard (one new module, touched app.js, CSS, docs, tests). Branch:

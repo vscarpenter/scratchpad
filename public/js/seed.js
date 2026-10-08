@@ -1,4 +1,5 @@
-/* Scratchpad first-run seed notes. Exposes window.ScratchpadSeed.
+/* Scratchpad first-run seed: three tour notes plus a Templates folder holding
+   four starter templates. Exposes window.ScratchpadSeed.
    Bodies are arrays of lines joined by "\n" (not template literals) so the
    Markdown Guide's fenced code blocks and a literal ${...} survive intact. */
 (function () {
@@ -35,6 +36,7 @@
     '- [ ] Press `Cmd/Ctrl + N` and start something of your own',
     "- [ ] Open the [[Markdown Guide]] if you're new to Markdown",
     '- [ ] Press `Cmd/Ctrl + Shift + P` for every command and every note in one box',
+    '- [ ] Type "template" in that box to start from Meeting notes, Project brief, Decision record, or Reading notes',
     '',
     '## Where this lives',
     '',
@@ -44,7 +46,7 @@
     '',
     "Wrap a note's title in double brackets to link to it, like [[Markdown Guide]]. Link to a title that doesn't exist yet and it renders as a **dashed** link — click [[My First Note]] and Scratchpad creates it on the spot. That's how a web of notes grows.",
     '',
-    '> These three starter notes are ordinary notes. Edit them, delete them, make the place yours. More about how it all works on the [About page](about.html).',
+    '> These starter notes and templates are ordinary notes. Edit them, delete them, make the place yours. More about how it all works on the [About page](about.html).',
     '',
   ].join('\n');
 
@@ -135,50 +137,222 @@
     '',
   ].join('\n');
 
-  // Returns the three first-run notes. `now` (epoch ms) is stamped so ordering is
-  // deterministic: Welcome (pinned) newest, then Markdown Guide, then the daily note.
-  function buildFirstRunNotes(now) {
-    const t = typeof now === 'number' && isFinite(now) ? now : Date.now();
+  // Starter templates. A note created from a template has an empty title and
+  // derives one from the body's first line, so each body opens with an H1 that
+  // matches the template's own title; the writer edits that line. Tags copy
+  // into the created note, so each template carries the tag that note wants.
+  const MEETING_BODY = [
+    '# Meeting notes',
+    '',
+    'Date, who was there, and what the meeting was for.',
+    '',
+    '## Agenda',
+    '',
+    '1. First topic',
+    '2. Second topic',
+    '',
+    '## Discussion',
+    '',
+    'What was said that matters, one line per point.',
+    '',
+    '## Decisions',
+    '',
+    'What was decided, and who owns each one.',
+    '',
+    '## Action items',
+    '',
+    '- [ ] Who does what, and by when',
+    '',
+  ].join('\n');
+
+  const PROJECT_BODY = [
+    '# Project brief',
+    '',
+    'One sentence on what this project delivers, and for whom.',
+    '',
+    '## Why now',
+    '',
+    'The problem, and what it costs to leave it alone.',
+    '',
+    '## Scope',
+    '',
+    'What is in, and what is out.',
+    '',
+    '## Milestones',
+    '',
+    '- [ ] First milestone, with a date',
+    '- [ ] Second milestone, with a date',
+    '',
+    '## Open questions',
+    '',
+    '- What still needs an answer before work starts?',
+    '',
+  ].join('\n');
+
+  const DECISION_BODY = [
+    '# Decision record',
+    '',
+    'The decision in one sentence.',
+    '',
+    '## Context',
+    '',
+    'What forced the choice, and the constraints that shaped it.',
+    '',
+    '## Options',
+    '',
+    '1. First option, and its main trade-off',
+    '2. Second option, and its main trade-off',
+    '',
+    '## Decision',
+    '',
+    'Which option won, and why.',
+    '',
+    '## Consequences',
+    '',
+    'What gets easier, what gets harder, and when to revisit this.',
+    '',
+  ].join('\n');
+
+  const READING_BODY = [
+    '# Reading notes',
+    '',
+    'Title, author, and where you found it.',
+    '',
+    '## Summary',
+    '',
+    'The argument in three sentences or fewer.',
+    '',
+    '## Key ideas',
+    '',
+    '- The first idea worth keeping',
+    '- The second',
+    '',
+    '## Quotes',
+    '',
+    '> A line worth keeping, with the page or timestamp.',
+    '',
+    '## Takeaways',
+    '',
+    'What changes because you read this.',
+    '',
+  ].join('\n');
+
+  const TEMPLATES = [
+    { title: 'Meeting notes', body: MEETING_BODY, tags: ['meeting'] },
+    { title: 'Project brief', body: PROJECT_BODY, tags: ['project'] },
+    { title: 'Decision record', body: DECISION_BODY, tags: ['decision'] },
+    { title: 'Reading notes', body: READING_BODY, tags: ['reading'] },
+  ];
+
+  function noteRecord(t, fields) {
+    return {
+      id: uuid(),
+      pinned: false,
+      createdAt: t,
+      updatedAt: t,
+      deletedAt: null,
+      lastDraftAt: null,
+      dailyDate: null,
+      ...fields,
+    };
+  }
+
+  // The three tour notes. `t` is stamped so ordering is deterministic: Welcome
+  // (pinned) newest, then Markdown Guide, then the daily note.
+  function buildTourNotes(t) {
     const today = new Date(t);
     return [
-      {
-        id: uuid(),
+      noteRecord(t, {
         title: 'Welcome to Scratchpad',
         body: WELCOME_BODY,
         tags: ['getting-started', 'welcome'],
         pinned: true,
-        createdAt: t,
-        updatedAt: t,
-        deletedAt: null,
-        lastDraftAt: null,
-        dailyDate: null,
-      },
-      {
-        id: uuid(),
+      }),
+      noteRecord(t, {
         title: 'Markdown Guide',
         body: MARKDOWN_GUIDE_BODY,
         tags: ['reference', 'markdown'],
-        pinned: false,
-        createdAt: t,
         updatedAt: t - 1000,
-        deletedAt: null,
-        lastDraftAt: null,
-        dailyDate: null,
-      },
-      {
-        id: uuid(),
+      }),
+      noteRecord(t, {
         title: today.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
         body: DAILY_BODY,
         tags: ['daily'],
-        pinned: false,
-        createdAt: t,
         updatedAt: t - 2000,
-        deletedAt: null,
-        lastDraftAt: null,
         dailyDate: dayKey(today),
-      },
+      }),
     ];
   }
 
-  window.ScratchpadSeed = { buildFirstRunNotes };
+  // Templates sort below the tour notes in the index: each one is a second
+  // older than the one before it, starting after the daily note.
+  function buildStarterTemplates(t, folderId) {
+    return TEMPLATES.map((template, index) =>
+      noteRecord(t, {
+        title: template.title,
+        body: template.body,
+        tags: template.tags,
+        folderId,
+        updatedAt: t - 3000 - index * 1000,
+      }),
+    );
+  }
+
+  function buildTemplatesFolder(t) {
+    return { id: uuid(), name: 'Templates', color: null, sortOrder: 0, parentId: null, createdAt: t, updatedAt: t };
+  }
+
+  // The first-run records: the Templates folder and seven notes, three tour
+  // notes plus the four templates filed in that folder. `now` is epoch ms.
+  function buildFirstRun(now) {
+    const t = typeof now === 'number' && isFinite(now) ? now : Date.now();
+    const folder = buildTemplatesFolder(t);
+    return { folders: [folder], notes: buildTourNotes(t).concat(buildStarterTemplates(t, folder.id)) };
+  }
+
+  // The folder goes in first so no note ever points at a folder that is not
+  // there yet. The app heals an orphaned folderId to unfiled regardless.
+  async function seedFirstRun(db, now) {
+    const seed = buildFirstRun(now);
+    await db.bulkPutFolders(seed.folders);
+    await db.bulkPut(seed.notes);
+  }
+
+  // First run: seeds once, for a visitor who has never visited (no flag) AND
+  // has no notes yet. Returning true keeps Home closed, so the pinned Welcome
+  // opens first with something to read and tick. Existing users who predate
+  // the flag keep their place (they have notes); a returning user who cleared
+  // all their notes stays empty (their flag survives), so seeding never
+  // recurs. Clearing site data wipes both flag and notes, so it reads as a
+  // fresh first run. Fails open if localStorage is blocked, and a seeding
+  // error still lets boot proceed: nothing here may keep the app from opening.
+  async function maybeSeedFirstRun(db, now) {
+    let visited;
+    try {
+      visited = localStorage.getItem('scratchpad-visited');
+    } catch {
+      return false;
+    }
+    if (visited) return false;
+    try {
+      localStorage.setItem('scratchpad-visited', '1');
+    } catch {
+      /* private mode or quota: mark best-effort, still safe to continue */
+    }
+    let count = 0;
+    try {
+      count = (await db.getAll()).length;
+    } catch {
+      return false;
+    }
+    if (count > 0) return false;
+    try {
+      await seedFirstRun(db, now);
+    } catch (e) {
+      console.error('First-run seeding failed', e); // fail open: boot continues
+    }
+    return true;
+  }
+
+  window.ScratchpadSeed = { buildFirstRun, buildStarterTemplates, seedFirstRun, maybeSeedFirstRun };
 })();

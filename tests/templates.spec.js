@@ -57,11 +57,3 @@ test('a note created while viewing the templates folder is unfiled', async ({ pa
   expect(created.folderId).toBeNull();
   expect(created.tags).toEqual(['review']);
 });
-
-test('without a templates folder the palette offers guidance and creates nothing', async ({ page }) => {
-  await seedTemplates(page, false);
-  await runPalette(page, 'template');
-  await expect(page.locator('#toast-region')).toContainText('folder named “Templates”');
-  const count = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).length);
-  expect(count).toBe(4);
-});

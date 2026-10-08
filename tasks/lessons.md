@@ -202,3 +202,15 @@
 - A `<details>` toggle event fires after the click that opened it returns,
   so a test that reads lazily built content must use a retrying assertion
   (`toHaveText`), never a one-shot `allTextContents()`.
+- The palette matches loosely, so a query like "template" also fuzzy-matches
+  unrelated commands and only exact substring hits rank first. Assert on the
+  first option, never on the option count.
+- A palette meta longer than about 45 characters squeezes the label to an
+  ellipsis at the default dialog width. Keep metas short and check a
+  screenshot of any new command.
+- Before blaming a change for a red suite, run the failing specs on a clean
+  worktree of main with `node_modules` symlinked in, and compare with the CI
+  run for that commit. On 2026-10-08, 16 Chromium-only dirty-editor and
+  revision tests failed locally on main and this branch alike while CI was
+  green, which points at the local Chromium build.
+- zsh reserves `status`; `status=$?` aborts the command line. Use `rc`.

@@ -10,7 +10,7 @@ test.describe('first run', () => {
     expect(visited).toBe('1');
   });
 
-  test('first run seeds the three starter notes', async ({ page }) => {
+  test('first run seeds the tour notes, the daily note, and the starter templates', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#app-shell')).toBeVisible();
     await page.waitForFunction(() => !!window.ScratchpadDB);
@@ -32,7 +32,7 @@ test.describe('first run', () => {
         dailyFolderId: daily && daily.folderId,
       };
     });
-    expect(summary.count).toBe(3);
+    expect(summary.count).toBe(7);
     expect(summary.titles).toContain('Welcome to Scratchpad');
     expect(summary.titles).toContain('Markdown Guide');
     expect(summary.pinned).toEqual(['Welcome to Scratchpad']);

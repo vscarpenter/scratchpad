@@ -900,6 +900,31 @@
     return null;
   }
 
+  function newFolder(name, color) {
+    const t = now();
+    return normalizeFolder({ name, color, sortOrder: state.folders.length, createdAt: t, updatedAt: t }, state.folders.length);
+  }
+
+  // Persists a folder, tells other tabs, and reloads the list. Returns the folder.
+  async function saveFolder(folder) {
+    await DB.putFolder(folder);
+    broadcastChange({ type: 'folders-changed' });
+    await loadFolders();
+    return folder;
+  }
+
+  // Creates a folder for a feature module. Validates the name the way the
+  // dialog does; on failure it toasts the reason and returns null.
+  async function createFolder(name) {
+    const clean = normalizeFolderName(name);
+    const error = folderNameError(clean);
+    if (error) {
+      toast(error);
+      return null;
+    }
+    return saveFolder(newFolder(clean, null));
+  }
+
   function openFolderDialog(folderId) {
     if (isDailyNotesFolder(folderId)) return;
     state.folderDialogId = folderId || null;
@@ -930,13 +955,7 @@
     const selected = document.querySelector('input[name="folder-color"]:checked');
     const color = selected && FOLDER_COLORS.has(selected.value) ? selected.value : null;
     const existing = state.folderDialogId ? folderById(state.folderDialogId) : null;
-    const t = now();
-    const folder = existing
-      ? { ...existing, name, color, updatedAt: t }
-      : normalizeFolder({ name, color, sortOrder: state.folders.length, createdAt: t, updatedAt: t }, state.folders.length);
-    await DB.putFolder(folder);
-    broadcastChange({ type: 'folders-changed' });
-    await loadFolders();
+    const folder = await saveFolder(existing ? { ...existing, name, color, updatedAt: now() } : newFolder(name, color));
     state.folderDialogId = null;
     closeDialog(els.folderDialog);
     if (!existing) {
@@ -5873,46 +5892,6 @@
   }
 
   // -------- Boot --------
-  // First run: seed a few starter notes so a brand-new visitor lands in a working
-  // app instead of a blank one — only when they've never visited (no flag) AND
-  // have no notes yet. Welcome is pinned, and returning true keeps Home closed, so
-  // Welcome opens first with something to read and tick straight away; nothing,
-  // Home included, stands between arriving and writing. Existing users who
-  // predate the flag keep their place (they have notes); a returning user who
-  // cleared all their notes stays empty (their flag survives), so seeding never
-  // recurs. Clearing site data wipes both flag and notes, so it reads as a fresh
-  // first run. Fails open if localStorage is blocked, and a seeding error still
-  // lets boot proceed — nothing here may keep the app from opening.
-  async function maybeSeedFirstRun() {
-    let visited;
-    try {
-      visited = localStorage.getItem('scratchpad-visited');
-    } catch (e) {
-      return;
-    }
-    if (visited) return;
-    try {
-      localStorage.setItem('scratchpad-visited', '1');
-    } catch (e) {
-      /* private mode / quota — mark best-effort, still safe to continue */
-    }
-    let count = 0;
-    try {
-      count = (await DB.getAll()).length;
-    } catch (e) {
-      return;
-    }
-    if (count > 0) return;
-    try {
-      if (window.ScratchpadSeed) {
-        await DB.bulkPut(window.ScratchpadSeed.buildFirstRunNotes(now()));
-      }
-    } catch (e) {
-      console.error('First-run seeding failed', e); // fail open — boot continues
-    }
-    return true;
-  }
-
   // PWA shortcuts and the share viewer's save button land on /?action=<name>. Handle once at boot, then clean
   // the URL so reload/bookmark behaves normally. The service worker matches navigations by pathname, so these work offline.
   async function handleActionParam() {
@@ -5925,7 +5904,7 @@
   }
 
   async function init() {
-    const seeded = await maybeSeedFirstRun();
+    const seeded = window.ScratchpadSeed ? await window.ScratchpadSeed.maybeSeedFirstRun(DB, now()) : false;
     Markdown.setWikilinkResolver((target) => {
       const wanted = (target || '').trim().toLowerCase();
       if (!wanted) return null;
@@ -5939,7 +5918,7 @@
       openNote: openNoteFromCommand, mutateNoteBody, getDrafts: () => DB.getAllDrafts(), rerender: renderEditor, toast });
     if (window.ScratchpadTemplates) window.ScratchpadTemplates.init({ notes: () => state.notes, folders: () => state.folders, filingFolderId: () => state.folderViewId,
       isDailyNotesFolder, folderById, uuid, now, normalizeNote, putNoteRecord, addNote: (note) => state.notes.push(note),
-      openNote: openNoteFromCommand, deriveTitle, toast });
+      openNote: openNoteFromCommand, deriveTitle, toast, createFolder, rerender: renderAll });
     window.ScratchpadBreadcrumb.init({ isTrashed, isArchived, deriveTitle, noteFolderId, folderDisplayName, goHome: HomeDesk.goHome, openFolder: (id) => setFolderView(id || VIRTUAL_FOLDER_KEY) });
     HomeDesk.init({ state, seeded, now, deriveTitle, isArchived, isTrashed, noteFolderId, folderById, folderDisplayName, todayNote: () => findDailyNote(todayKey()),
       createNote, openNote: selectNote, openToday: openTodayNote, openCapture: openQuickCapture, openPalette: openCommandPalette, setFolderView,
