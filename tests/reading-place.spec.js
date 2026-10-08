@@ -147,3 +147,25 @@ test('the place stays out of the note record', async ({ page }) => {
   expect(note && note.place).toBeUndefined();
   expect(JSON.stringify(note)).not.toContain('scratchpad:place');
 });
+
+test('a burst of scroll events coalesces into one stored write', async ({ page }) => {
+  await seedPair(page);
+  const writes = await page.evaluate(async () => {
+    let count = 0;
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'scratchpad:place') count += 1;
+      return original.call(this, key, value);
+    };
+    const card = document.querySelector('.editor-card');
+    for (let step = 1; step <= 30; step += 1) {
+      card.scrollTop = step * 20;
+      card.dispatchEvent(new Event('scroll'));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    Storage.prototype.setItem = original;
+    return count;
+  });
+  expect(writes).toBe(1);
+  await expect.poll(() => storedRead(page, 'long')).toBe(600);
+});

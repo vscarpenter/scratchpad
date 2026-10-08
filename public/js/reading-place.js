@@ -62,6 +62,36 @@
     }
   }
 
+  /* Scroll and selection events arrive many times a second, and each
+     remember() rewrites the whole map, so they coalesce into one write per
+     WRITE_DELAY_MS. hold() and pagehide flush from the live DOM instead, so
+     a pending patch is dropped there rather than written late for the wrong
+     note. */
+  const WRITE_DELAY_MS = 250;
+  /** @type {{ id: string, patch: Partial<Place>, timer: number } | null} */
+  let pending = null;
+
+  function cancelPending() {
+    if (pending) clearTimeout(pending.timer);
+    pending = null;
+  }
+
+  /** @param {string} id @param {Partial<Place>} patch */
+  function schedule(id, patch) {
+    if (!id || suspended) return;
+    if (pending && pending.id === id) {
+      pending.patch = { ...pending.patch, ...patch };
+      return;
+    }
+    cancelPending();
+    const timer = window.setTimeout(() => {
+      const due = pending;
+      pending = null;
+      if (due && !suspended && heldId === due.id) remember(due.id, due.patch);
+    }, WRITE_DELAY_MS);
+    pending = { id, patch, timer };
+  }
+
   function card() {
     return document.querySelector('.editor-card');
   }
@@ -73,6 +103,7 @@
 
   /** @param {string} id */
   function flush(id) {
+    cancelPending();
     const scroller = card();
     const editor = field();
     if (!scroller || !editor) return;
@@ -87,6 +118,7 @@
   /** @param {string | null} id */
   function hold(id) {
     if (!suspended && heldId) flush(heldId);
+    cancelPending();
     epoch += 1;
     suspended = true;
     heldId = id || null;
@@ -96,14 +128,14 @@
     if (suspended || !heldId) return;
     const scroller = card();
     if (!scroller || scroller.classList.contains('is-editing')) return;
-    remember(heldId, { read: scroller.scrollTop });
+    schedule(heldId, { read: scroller.scrollTop });
   }
 
   function onEditScroll() {
     if (suspended || !heldId) return;
     const editor = field();
     if (!editor || editor.hidden) return;
-    remember(heldId, { edit: editor.scrollTop });
+    schedule(heldId, { edit: editor.scrollTop });
   }
 
   function onSelection() {
@@ -111,7 +143,7 @@
     const editor = field();
     if (!editor || editor.hidden || document.activeElement !== editor) return;
     const caret = editor.selectionStart == null ? 0 : editor.selectionStart;
-    remember(heldId, { caret, edit: editor.scrollTop });
+    schedule(heldId, { caret, edit: editor.scrollTop });
   }
 
   function onHide() {
@@ -230,5 +262,5 @@
   }
 
   boot();
-  root.ScratchpadPlace = { hold, restore };
+  root.ScratchpadPlace = Object.freeze({ hold, restore });
 }
