@@ -1,184 +1,171 @@
-# Spec: revision diff in the History dialog
+# Spec: open tasks on Home
 
-Vinny picked this on 2026-10-08 from `backlog.md` after the roadmap
-retired and approved it the same day ("build it"). The design record is
-`docs/superpowers/specs/2026-10-08-revision-diff-design.md`.
+Vinny proposed this on 2026-10-08 and asked for the spec after the revision
+diff shipped in #30. Status: draft, awaiting approval. The design record
+`docs/superpowers/specs/2026-10-08-open-tasks-design.md` is written with the
+first implementation commit.
 
-Branch: `claude/zealous-pascal-aunm2y`, on `main` at 8212aa0 (v4.5.0). One
-draft PR.
+Branch: a fresh branch from `main` once #30 merges. One draft PR.
 
 ## Goal
 
-Each row in Revision history shows what restoring that revision would
-change, so a person can see the difference before clicking Restore instead
-of reading two full texts side by side.
+Home lists every unchecked `- [ ]` line across active notes, each row showing
+the task text and the note it lives in. Ticking a row rewrites that one
+character in the note the same way the rendered checkbox does, and the row
+leaves the list. Nothing is stored and nothing is uploaded; the list is
+recomputed from note bodies already in memory, the way backlinks and unlinked
+mentions are.
 
 ## Inputs
 
-- `openHistoryDialog()`, `renderRevisionRow()`, and `restoreRevision()` in
-  app.js (the `-------- Revision history --------` block); `storeRevision()`
-  and `normalizeRevision()` for the snapshot shape (`title`, `body`, `tags`,
-  `pinned`, `savedAt`).
-- `DB.getRevisions(noteId)`, newest first, at most `REVISION_LIMIT` (10).
-- `#history-dialog`, `#history-list`, and the `.history-*` rules in app.css.
-- The current saved note from `getNote(state.selectedId)`. Unsaved editor
-  text is never part of the comparison; Restore already routes a dirty
-  editor through the discard confirmation.
-- Tokens: `--success-tint`, `--success-text`, `--rust-tint`, `--rust`,
-  `--gray-100`, `--slate`, `--gray-700`, `--mono`, `--r-sm`.
+- `Markdown.findTaskMarkers(src)` in `public/js/markdown.js`: every GFM task
+  marker outside fenced code, as `{ offset, checked }` where `offset` indexes
+  the state character inside the brackets.
+- `mutateNoteBody(noteId, transform, { coalesceToggles: true })` in app.js:
+  re-reads the record from IndexedDB, retries on a cross-tab conflict,
+  snapshots at most one revision per note per five minutes, broadcasts, and
+  patches `state.notes`.
+- `DB.getAllDrafts()` for notes with an unsaved draft, as mentions uses it.
+- `HomeDesk.init(deps)` and `draw()` in `public/js/home-desk.js`, which
+  already receive `state`, `isArchived`, `isTrashed`, `deriveTitle`, and
+  `openNote` (`selectNote`).
+- The Home section pattern in `index.html` (`home-desk-section`, a titled
+  head with an inline SVG, a list) and the focus key scheme
+  `data-desk-focus`.
 
 ## Outputs
 
-- `public/js/revision-diff.js` exporting the frozen
-  `window.ScratchpadRevisionDiff` with:
-  - `diffLines(before, after)`: pure. Returns `{ coarse, hunks }` with hunks
-    of `{ kind: 'same' | 'added' | 'removed', lines: string[] }` in order.
-  - `diffWords(before, after)`: pure. Returns `{ coarse, tokens }` with
-    tokens of `{ kind, text }` for one line pair, splitting on whitespace
-    runs and keeping the whitespace so the line reassembles exactly.
-  - `snapshotText(rev)`: `title + '\n\n' + body` when a title exists, else
-    `body`. This is what both the preview and the comparison use, so a
-    title change shows as a changed first line.
-  - `renderDetails(rev, current)`: returns two `<details>` elements, the
-    existing **Preview revision** and a new **Compare with current**, built
-    with `createElement` only.
-- app.js: `renderRevisionRow()` appends the two details from the module
-  instead of building the preview itself. Net lines negative; the app.js
-  ceiling in `config/structure-baseline.json` tightens to the new count.
-- Markup: none new in `index.html`; the dialog is unchanged.
-- CSS: `.history-diff`, `.history-diff-line`, `.is-added`, `.is-removed`,
-  `.history-diff-gap`, `.history-diff-word`, and `.history-diff-meta` in
-  the History block of app.css, tokens only.
-- Module wiring: `<script>` before app.js in `index.html`, `APP_SHELL` in
-  `public/service-worker.js`, `jsconfig.json` include, a row in
-  `tests/README.md`, and the guide's **History & drafts** paragraph.
-- The coverage workflow in `scripts/quality/check-browser-coverage.mjs`
-  opens History once and expands the comparison so the module counts.
+- `public/js/open-tasks.js` exporting the frozen `window.ScratchpadOpenTasks`
+  with `init(deps)`, `draw()`, and the pure `collect(notes, lookups)` that
+  returns rows of `{ noteId, offset, text, line }`.
+- `index.html`: a new `#home-desk-tasks` section between Recently edited and
+  Tags, with `#home-desk-task-list`, `#home-desk-task-count` in the head,
+  and `#home-desk-task-more` for the overflow line; hidden by default.
+- `home-desk.js`: `init` passes its deps through to
+  `ScratchpadOpenTasks.init`, and `draw` calls `ScratchpadOpenTasks.draw()`
+  after the view renders. `types/home-desk.d.ts` `DeskDeps` gains
+  `mutateNoteBody` and `getDrafts`.
+- app.js: the existing `HomeDesk.init({...})` call gains `mutateNoteBody`
+  and `getDrafts` on an existing line, so app.js nets zero lines and its
+  ceiling holds at 5,982.
+- CSS: `.home-desk-task-row`, `.home-desk-task-check`, `.home-desk-task-text`,
+  `.home-desk-task-note`, `.home-desk-task-more` in the Home block of
+  app.css, tokens only. The check reuses the `.task-checkbox` look.
+- Module wiring: `<script>` after `home-desk.js` and before app.js,
+  `APP_SHELL`, `jsconfig.json`, a row in `tests/README.md`, the guide's
+  Home section, and the coverage workflow visiting the section once.
 
 ## Behavior
 
-- The comparison is revision versus the current saved note, which answers
-  "what does Restore change". Removed lines are what Restore takes away
-  from today's note; added lines are what it brings back.
-- Line diff first: trim common leading and trailing lines, then run a
-  longest-common-subsequence table on the middle. When the middle exceeds
-  4,000,000 cells (for example 2,000 by 2,000 lines), the middle renders
-  as one removed block followed by one added block, with a note that the
-  comparison is coarse. Nothing is ever skipped silently.
-- Word refinement: a hunk pair of exactly one removed line followed by
-  exactly one added line (the ordinary edited paragraph) renders as one
-  removed line and one added line with only the changed words marked.
-  Larger hunks stay line level.
-- Context: unchanged lines show two before and two after each change; a
-  longer unchanged run collapses to a gap line reading
-  "12 unchanged lines". A comparison with no changes reads
-  "Same as the current note." and shows no lines.
-- A metadata line above the lines summarizes what the text cannot:
-  "Tags: +added, −removed" and "Pinned" or "Unpinned", only when those
-  differ. Restore reapplies tags and pin state, so the comparison must say
-  so.
-- Each line starts with a `+` or `−` glyph in a span marked
-  `aria-hidden`, and the line element is `<ins>` or `<del>`, so color is
-  never the only signal and assistive tech has the semantics. Lines are
-  `white-space: pre-wrap` in `--mono`, matching the preview, with the same
-  180px scroll box.
-- Both details start collapsed. Opening one does not close the other.
-- Trash: History is already hidden there; nothing changes.
+- **Scope.** Active notes only: not archived, not trashed. Unchecked markers
+  only. Rows order by the note's `updatedAt`, newest first, then by document
+  order within a note. Fenced code is skipped by the scanner; indented code
+  is not, matching the rendered checkboxes today.
+- **Row.** A checkbox button (`role="checkbox"`, `aria-checked="false"`,
+  label "Mark done: <text>") and a note button (label "Open <title>"). The
+  text is the line after the marker with leading quote markers and list
+  markers removed, trimmed, and clipped to 140 characters with an ellipsis.
+  Markdown inside the line stays literal.
+- **Ticking.** The checkbox calls `mutateNoteBody` with a transform that
+  re-scans the latest body. It picks the marker at the recorded offset when
+  the line there still carries the recorded text; otherwise the first
+  unchecked marker whose line carries that text; otherwise it returns the
+  body unchanged and the row shows a toast, "That task moved. Open the note
+  to update it." A successful tick redraws the section, so the row leaves
+  the list and focus moves to the next row's checkbox, or to the section
+  heading when none remains.
+- **Drafts.** Rows for a note with an unsaved draft render with
+  `aria-disabled="true"` and the title "Finish the note's draft first", as
+  unlinked mentions do, because a tick would write under the draft.
+- **Counts.** The head shows the total, "Open tasks · 12". The list shows at
+  most 25 rows; beyond that a muted line reads "Showing 25 of 61. Open a
+  note to see the rest." With no open tasks the section hides.
+- **Cost.** Markers are memoized per note on `updatedAt`, so a Home redraw
+  rescans only notes that changed since the last draw.
+- **Phones.** Home is desktop and tablet only today; nothing changes there.
 
 ## Constraints
 
-- No network calls, no `innerHTML`, no inline scripts (CSP hashes stay),
-  no new tokens, no dark-mode rules in app.css, no emoji in source.
-- `--success-tint` and `--rust-tint` are state colors. Added and removed
-  are states of a line, so this use is in the spirit of the one-accent
-  rule; indigo stays out of the diff.
-- Text on the tints: `--slate` over `--success-tint` or `--rust-tint`
-  composited on `--paper` in both themes. Verify AA with the design-token
-  spec's pairs before shipping; if a pairing fails, drop the tint to a
-  left border in the state color and keep the glyph.
-- New module: `// @ts-check`, script-level `'use strict'`, block scope,
-  JSDoc types, under 400 lines, no function over 40 lines, nesting at most
-  3. The LCS table uses a flat `Uint16Array` or `Uint32Array` sized to the
-  trimmed middle, never a nested array per line.
-- app.js nets at or below zero. The test file stays under 400 lines.
-- `deriveTitle()`, `formatFullTimestamp()`, and the Restore button stay in
-  app.js; the module never reads `state`.
+- No network calls, no `innerHTML`, no inline scripts, no new tokens, no
+  dark-mode rules in app.css, no emoji in source. Every string lands through
+  `textContent`.
+- New module: `// @ts-check`, script-level `'use strict'`, block scope, JSDoc
+  types, under 400 lines, no function over 40 lines, nesting at most 3.
+  `home-desk.js` and `home-desk-view.js` stay under 400.
+- app.js nets zero or fewer lines. The test file stays under 400 lines.
+- The module never reads `state` directly; it gets `notes()`, `isArchived`,
+  `isTrashed`, `deriveTitle`, `openNote`, `mutateNoteBody`, `getDrafts`, and
+  `toast` through `init`.
+- Toggles reuse `coalesceToggles`, so ten ticks in five minutes on one note
+  store one revision, the same as ticking in the rendered note.
 
 ## Edge cases
 
-- A revision identical to the current note: "Same as the current note."
-- Title only changed: the first line shows removed and added with word
-  marks on the title.
-- Body with a trailing newline difference: a single added or removed empty
-  line renders as a visibly empty `+` or `−` row rather than nothing.
-- Very long single line (a 50,000-character paragraph with one word
-  changed): the word diff runs on tokens, so the same cell cap applies;
-  past it, the pair shows as whole-line removed and added.
-- A note at `NOTE_BODY_MAX` (200,000 characters) with a few thousand
-  lines compares within the cap when the edit is local, because the
-  prefix and suffix trim leaves a small middle.
-- CRLF in an imported revision: split on `\r?\n` so a line ending
-  difference alone does not mark every line.
-- Tags normalized differently between a revision and the note (case):
-  compare the normalized sets, which `normalizeRevision` already stores.
-- The dialog opened while the editor is dirty: the comparison uses the
-  saved note, and a hint line "Compared with the last saved version"
-  appears only in that case.
+- A line like `- [ ]` with no text after the marker shows as "(empty task)".
+- A marker inside a blockquote (`> - [ ] call`) lists with the quote marker
+  stripped and toggles in place.
+- The same task text twice in one note: the offset match wins; if the line
+  moved, the first unchecked line with that text is the one ticked.
+- A note changed in another tab between draw and tick: `mutateNoteBody`
+  re-reads the latest body, so the text match runs against current content.
+- A note whose body is at `NOTE_BODY_MAX`: scanning is linear and memoized,
+  so one large note costs one pass per edit.
+- Ticking while the same note is open in the editor cannot happen from
+  Home, because Home ends when a note is selected; the draft guard covers
+  the unsaved-edit case.
+- Daily notes list like any other note, with their date as the title. The
+  monthly review's Open loops heading stays empty; filling it is a later
+  idea.
 
 ## Anti-goals
 
-- No side-by-side columns, no revision-to-revision picker, no character
-  level diff, no syntax-aware or Markdown-aware diff.
-- No change to what a revision stores, to pruning, or to Restore.
-- No new dialog, button, or menu item; the feature lives in the rows.
-- No third library. The diff is a few dozen lines of own code.
+- No stored task index, no sync, no due dates, priorities, or sorting
+  controls.
+- No change to how checkboxes behave inside the open note, to
+  `findTaskMarkers`, or to `mutateNoteBody`.
+- No palette command and no stage of its own; the list lives on Home.
+- No inline editing of task text from Home.
 
 ## Acceptance criteria
 
-1. With a note saved as "Alpha\n\nline one\nline two" and then edited to
-   "Alpha\n\nline one\nline 2\nline three", the oldest row's Compare with
-   current shows `line 2` and `line three` removed and `line two` added,
-   and `line one` as unchanged context.
-2. A title-only change shows the first line removed and added with the
-   changed word marked and the rest of the line unmarked.
-3. A paragraph where one word changed renders as one removed and one added
-   line with only that word in `.history-diff-word`.
-4. A 30-line note with one changed line shows two context lines on each
-   side and a gap line naming the count of hidden unchanged lines.
-5. A revision equal to the current note shows "Same as the current note."
-6. A revision whose tags or pin state differ shows the metadata line with
-   the exact additions, removals, and pin change.
-7. The comparison ignores unsaved editor text and says it compared with
-   the last saved version.
-8. The coarse fallback engages above the cell cap and says so, and the
-   preview still shows the full text.
-9. Preview revision still renders the full snapshot text, and every test in
-   `tests/revision-history.spec.js` passes unchanged.
-10. `npm run verify` passes, the design-token spec passes, CSP hashes are
-    unchanged, and the Chromium suite passes apart from the
+1. With two active notes holding unchecked tasks, one archived note with a
+   task, one trashed note with a task, and one checked task, Home lists only
+   the unchecked tasks from the active notes, newest note first, each with
+   its note title.
+2. Ticking a row stores the note with that one `[ ]` turned to `[x]`, leaves
+   every other character unchanged, and removes the row.
+3. When the task line moved before the tick, the tick still finds it by
+   text; when it no longer exists, the body is unchanged and the toast shows.
+4. A task inside a fenced code block is not listed.
+5. Rows for a note with an unsaved draft are disabled and do not write.
+6. With 30 open tasks the list shows 25, the head shows 30, and the
+   overflow line names both numbers. With none, the section is hidden.
+7. The note button opens that note and ends Home.
+8. Three ticks on one note inside five minutes store one revision.
+9. Space on a focused checkbox ticks it, and focus lands on the next row.
+10. `npm run verify` passes and the Chromium suite passes apart from the
     iPhone-emulation tests this container cannot launch.
 
 ## Test stubs
 
 ```js
-// tests/revision-diff.spec.js
-test('Compare with current shows removed, added, and context lines');
-test('a title change marks only the changed word on the first line');
-test('a one-word paragraph edit marks the word, not the line');
-test('long unchanged runs collapse to a counted gap');
-test('a revision equal to the current note says so');
-test('tag and pin differences show on the metadata line');
-test('the comparison uses the saved note, not the dirty editor');
-test('an oversized comparison falls back to coarse blocks and says so');
-test('diffLines and diffWords are stable on empty and identical inputs'); // page.evaluate on the pure API
+// tests/open-tasks.spec.js
+test('Home lists unchecked tasks from active notes, newest note first');
+test('ticking a row rewrites that one marker and removes the row');
+test('a moved task is found by its text and a vanished one shows a toast');
+test('fenced code, checked tasks, archived and trashed notes are excluded');
+test('rows for a note with an unsaved draft are disabled');
+test('the head counts every task, the list caps at 25, and empty hides');
+test('the note button opens the note');
+test('ticks within five minutes share one revision');
+test('Space ticks the focused row and focus moves to the next');
 ```
 
 ## Assumptions
 
-- Comparing with the current note, not the previous revision, is the right
-  default because the dialog's only action is Restore. A revision-to-
-  revision view is a later follow-up if wanted.
-- The two tints are acceptable as diff backgrounds under the one-accent
-  rule; if you would rather keep the shell free of success and rust
-  outside alerts, the fallback is a 3px left border per line and no fill.
-- Feature PRs do not bump the version.
+- Home ends on note selection, so the open-note editing path never overlaps
+  a Home tick; the draft check is the only guard needed.
+- 25 rows and 140 characters are the right caps; both are constants in the
+  module and easy to change.
+- The section sits between Recently edited and Tags. If you would rather it
+  lead, say so and it moves above Recently edited.
