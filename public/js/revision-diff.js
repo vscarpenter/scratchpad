@@ -256,15 +256,21 @@
     return body;
   }
 
+  /** @param {string} label */
+  function detailsElement(label) {
+    const details = document.createElement('details');
+    details.className = 'history-details';
+    details.append(element('summary', '', label));
+    return details;
+  }
+
   /**
    * A collapsed section whose body is built on first expand, so opening
    * History with ten large revisions costs nothing until a row is opened.
    * @param {string} label @param {() => HTMLElement} build
    */
   function lazyDetails(label, build) {
-    const details = document.createElement('details');
-    details.className = 'history-details';
-    details.append(element('summary', '', label));
+    const details = detailsElement(label);
     details.addEventListener('toggle', () => {
       if (details.open && details.childElementCount === 1) details.append(build());
     });
@@ -272,15 +278,15 @@
   }
 
   /**
-   * The two collapsed sections of a History row: the full snapshot text and
-   * the comparison with the current saved note.
+   * The two collapsed sections of a History row. The preview is one text
+   * node and renders at once, so the row's text stays searchable; the
+   * comparison, which can be thousands of nodes, waits for its first expand.
    * @param {Snapshot} rev @param {Snapshot} current @param {RenderOptions} [options]
    */
   function renderDetails(rev, current, options) {
-    return [
-      lazyDetails('Preview revision', () => element('pre', 'history-preview', snapshotText(rev) || '(empty note)')),
-      lazyDetails('Compare with current', () => renderComparison(rev, current, options)),
-    ];
+    const preview = detailsElement('Preview revision');
+    preview.append(element('pre', 'history-preview', snapshotText(rev) || '(empty note)'));
+    return [preview, lazyDetails('Compare with current', () => renderComparison(rev, current, options))];
   }
 
   /** @type {DiffWindow} */
