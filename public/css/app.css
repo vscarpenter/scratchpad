@@ -2700,6 +2700,32 @@ body:not(.page-privacy) {
   padding-top: 4px;
 }
 
+/* Tag chips use the tag pair (--accent-text on --accent-soft). Hover adds a
+   ring instead of the stronger tint, which drops below AA under indigo text. */
+.home-desk-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-desk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font: 500 13px/1 var(--sans);
+  cursor: pointer;
+}
+.home-desk-tag:hover { box-shadow: inset 0 0 0 1px var(--accent-strong-border); }
+.home-desk-tag-count {
+  font: 500 11px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .home-desk-empty {
   margin: 0;
   padding: 14px 16px;

@@ -5947,7 +5947,7 @@
     window.ScratchpadBreadcrumb.init({ isTrashed, isArchived, deriveTitle, noteFolderId, folderDisplayName, goHome: HomeDesk.goHome, openFolder: (id) => setFolderView(id || VIRTUAL_FOLDER_KEY) });
     HomeDesk.init({ state, seeded, now, deriveTitle, isArchived, isTrashed, noteFolderId, folderById, folderDisplayName, todayNote: () => findDailyNote(todayKey()),
       createNote, openNote: selectNote, openToday: openTodayNote, openCapture: openQuickCapture, openPalette: openCommandPalette, setFolderView,
-      clearFilters: clearAllFilters, confirmDiscard, discardDraft: discardCurrentDraft });
+      clearFilters: clearAllFilters, setTagFilter, openTagManager, confirmDiscard, discardDraft: discardCurrentDraft });
     if (window.ScratchpadSharedCopy) window.ScratchpadSharedCopy.init({ notes: () => state.notes, isTrashed, normalizeNote, normalizeTag, putNoteRecord, uuid, now, toast,
       addNote: (note) => state.notes.push(note), openNote: (id) => { if (state.folderViewId) setFolderView(null, false); return openNoteFromCommand(id); }, limits: { title: NOTE_TITLE_MAX, body: NOTE_BODY_MAX, tag: NOTE_TAG_MAX, tags: NOTE_TAGS_MAX } });
     if (window.ScratchpadAttachments) {

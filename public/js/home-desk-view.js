@@ -19,6 +19,7 @@
   const PIN_LIMIT = 3;
   const RECENT_LIMIT = 6;
   const CHIP_LIMIT = 6;
+  const TAG_LIMIT = 12;
   const EXCERPT_MAX = 180;
   const MINUTE = 60 * 1000;
   const HOUR = 60 * MINUTE;
@@ -222,6 +223,34 @@
     }
   }
 
+  /** The most used tags across active notes: most used first, then by name. @param {DeskNote[]} notes */
+  function topTags(notes) {
+    /** @type {Map<string, number>} */
+    const counts = new Map();
+    for (const note of notes) {
+      for (const tag of note.tags || []) counts.set(tag, (counts.get(tag) || 0) + 1);
+    }
+    return [...counts].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0])).slice(0, TAG_LIMIT);
+  }
+
+  /** @param {string} tag @param {number} count */
+  function tagButton(tag, count) {
+    const button = node('button', 'home-desk-tag');
+    button.setAttribute('type', 'button');
+    button.setAttribute('aria-label', 'Filter notes by tag ' + tag + ', ' + plural(count, 'note'));
+    button.dataset.tag = tag;
+    button.dataset.deskFocus = 'tag:' + tag;
+    button.append(node('span', 'home-desk-tag-name', '#' + tag), node('span', 'home-desk-tag-count', String(count)));
+    return button;
+  }
+
+  /** @param {DeskRefs} refs @param {DeskNote[]} notes */
+  function renderTags(refs, notes) {
+    const tags = topTags(notes);
+    refs.tags.hidden = tags.length === 0;
+    refs.tagList.replaceChildren(...tags.map(([tag, count]) => tagButton(tag, count)));
+  }
+
   /** Renders Home from active notes, newest first. @param {DeskLookups} api @param {DeskRefs} refs @param {DeskNote[]} notes @param {DeskUi} ui @param {number} nowMs */
   function render(api, refs, notes, ui, nowMs) {
     const next = { ...ui };
@@ -236,6 +265,7 @@
       nowMs,
     );
     renderRecent(api, refs, notes, next, nowMs);
+    renderTags(refs, notes);
     return next;
   }
 

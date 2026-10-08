@@ -40,6 +40,8 @@ export type DeskDeps = DeskLookups & {
   openPalette(query: string): unknown;
   setFolderView(id: string | null, render?: boolean): unknown;
   clearFilters(): unknown;
+  setTagFilter(tag: string): unknown;
+  openTagManager(): unknown;
   confirmDiscard(): Promise<boolean>;
   discardDraft(): Promise<unknown>;
 };
@@ -60,6 +62,9 @@ export type DeskRefs = {
   layout: HTMLElement;
   chips: HTMLElement;
   recent: HTMLElement;
+  tags: HTMLElement;
+  tagList: HTMLElement;
+  manageTags: HTMLElement;
   noteIcon: HTMLTemplateElement;
 };
 /** Home's view state. render() returns a copy with a stale folder filter reset. */
