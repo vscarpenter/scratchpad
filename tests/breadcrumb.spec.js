@@ -27,7 +27,8 @@ test('the folder crumb shows that folder and Home opens Home', async ({ page }) 
   await seed(page);
   await openNote(page, 'plan');
   const crumb = page.locator('#note-breadcrumb');
-  await expect(crumb).toContainText('Q4 plan');
+  // innerText applies text-transform, so this pins the title as written.
+  await expect(crumb.locator('.crumb-current')).toHaveText('Q4 plan', { useInnerText: true });
   await crumb.getByRole('button', { name: 'Work' }).click();
   await expect(page.locator('#folder-switcher-label')).toHaveText('Work');
   await expect(page.locator('#note-title-display')).toHaveText('Q4 plan');
