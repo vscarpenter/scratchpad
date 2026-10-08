@@ -11,7 +11,7 @@ deterministic. `CI=1 npm test` forces the serialized shape locally.
 
 | Product area | End-to-end specs |
 | --- | --- |
-| First visit and starter notes | `first-run.spec.js` |
+| First visit, starter notes, and the starter templates (seeded on a first visit, or added from the palette) | `first-run.spec.js`, `starter-templates.spec.js` |
 | Home: launch rules, Open to, quick starts, pinned cards, recent notes, folder chips, tags, and focus handoff | `home-desk.spec.js`, `network-isolation.spec.js` |
 | Note header and menu: the clickable breadcrumb, single-note Markdown download, and print | `breadcrumb.spec.js`, `note-menu.spec.js` |
 | Create, edit, save, format, paste as Markdown, pin, delete, restore, and empty states | `notes-crud.spec.js`, `note-organization.spec.js`, `paste-as-markdown.spec.js` |
