@@ -1,3 +1,62 @@
+# Enroll Scratchpad in Anthropic's OSS Scanner (2026-10-09)
+
+Tier: Standard (two new files under `.oss-scanner/`, no app or contract
+change). Branch: `chore/oss-scanner-enrollment`, from main at bee64b8.
+
+## Plan
+
+- [x] 1. Review anthropics/oss-scanner. Enrollment is one upstream PR that
+      adds `projects/<name>/project.yaml`. The Dockerfile and threat model
+      can live in this repo, which is the layout upstream recommends.
+- [x] 2. `.oss-scanner/Dockerfile`: node:22-bookworm, zip, Bun from
+      package.json's `packageManager`, `bun install --frozen-lockfile`,
+      `playwright install --with-deps`, then two non-fatal smoke checks.
+- [x] 3. Build-check with upstream's `tools/check`, with the Dockerfile
+      placed beside a temporary project.yaml because main has no
+      `.oss-scanner/` yet. The first run failed 10 of 85 share API tests on
+      `zip: command not found` from provision-updates.sh. With zip added,
+      the rebuild passed 85 of 85 and the scanner's layer installed.
+      Offline in the finished image with 2 CPUs and 8 GB, the share,
+      sanitization, isolation, and shared-copy specs passed 132 of 132 on
+      three engines with `--workers=1`. At the default worker count, one
+      WebKit test timed out because Node reports the host's 14 CPUs inside
+      the container.
+- [x] 4. `.oss-scanner/threat_model.md`: entry points, components, how to
+      run things offline, severity defaults, and known non-issues. It names
+      no live AWS resources.
+- [x] 5. `projects/scratchpad/project.yaml` drafted, and upstream's
+      `tools/validate.py` passes.
+- [x] 6. Commit on the branch. Push, merge, and the upstream PR wait for
+      Vinny.
+
+## Resuming From Here
+
+- Done: both files committed on `chore/oss-scanner-enrollment`.
+- Next, in order, and all Vinny's call:
+  1. Push the branch, open a PR here, and merge it. The scanner reads the
+     Dockerfile from the default branch, so this lands first.
+  2. Fork anthropics/oss-scanner, add `projects/scratchpad/project.yaml`
+     with the contents below, run `tools/validate.py`, and open the PR.
+     Vinny ticks the core-maintainer, terms, and contact boxes and signs
+     the CLA when the bot asks.
+- project.yaml:
+
+      repo: https://github.com/vscarpenter/scratchpad
+      primary_contact: vscarpenter@gmail.com
+      homepage: https://notes.vinny.dev
+      disabled: false
+      dockerfile: .oss-scanner/Dockerfile
+      threat_model: .oss-scanner/threat_model.md
+
+- Blockers: none technical. Anthropic accepts "established projects with a
+  critical impact on infrastructure and user security" case by case, so
+  approval is unlikely for a one-star personal app.
+- Assumptions: primary_contact uses the address already public in this
+  repo's commit history. The file is public, so swap in an alias if
+  preferred. The severity ratings in threat_model.md are defaults to tune
+  before the upstream PR. The repo has no LICENSE file; the terms don't
+  require one, but reviewers may notice.
+
 # Starter templates on first run (2026-10-08)
 
 Tier: Standard (the seed module, one line in app.js, the seed contract check,
