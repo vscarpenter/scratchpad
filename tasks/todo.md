@@ -31,12 +31,19 @@ change). Branch: `chore/oss-scanner-enrollment`, from main at bee64b8.
 
 ## Resuming From Here
 
-- Done: both files committed on `chore/oss-scanner-enrollment`.
+- Done: both files committed on `chore/oss-scanner-enrollment`. The full
+  local suite ran 1718 passed, 32 skipped, and 17 failed, all on Chromium.
+  They're the 16 known local failures plus `encrypted-backup.spec.js:5`,
+  which typed its passphrase twice (the same local text-doubling) and
+  passed three of three on re-run. The branch changes no app or test code,
+  and Quality CI on bee64b8 is green.
 - Next, in order, and all Vinny's call:
   1. Push the branch, open a PR here, and merge it. The scanner reads the
      Dockerfile from the default branch, so this lands first.
   2. Fork anthropics/oss-scanner, add `projects/scratchpad/project.yaml`
-     with the contents below, run `tools/validate.py`, and open the PR.
+     with the contents below, and run `tools/validate.py`. Re-run
+     `tools/check scratchpad` against the merged in-repo layout, then open
+     the PR.
      Vinny ticks the core-maintainer, terms, and contact boxes and signs
      the CLA when the bot asks.
 - project.yaml:
