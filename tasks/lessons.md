@@ -214,3 +214,10 @@
   revision tests failed locally on main and this branch alike while CI was
   green, which points at the local Chromium build.
 - zsh reserves `status`; `status=$?` aborts the command line. Use `rc`.
+- Inside `docker run --cpus 2`, Node's `os.cpus()` still reports every host
+  core, so Playwright starts one worker per two host cores and oversubscribes
+  the quota. On 2026-10-09 that timed out one WebKit test in the
+  oss-scanner image; `--workers=1` passed all 132. Pass an explicit worker
+  count when running the suite under a CPU limit.
+- The provisioning tests shell out to `zip`. A fresh Debian or Node image
+  lacks it, so any new test image must install it or 10 tests fail.
