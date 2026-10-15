@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Scope | Full service: browser app, share viewer, share API, CloudFront edge, operator scripts, and CI |
-| Code revision | `58540c2` |
+| Code revision | `bee64b8`, main at v4.6.0 (this model's branch changes no app or infrastructure code) |
 | Date | 2026-10-15 |
 | Status | First draft for Threat Management review |
 | Related | `.oss-scanner/threat_model.md` (scanner brief and severity rubric) |
@@ -86,7 +86,7 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | T1 | TB1 | T, E | Script injection from a shared note's Markdown, in the viewer or after Save to my Scratchpad | C1, C2 | F1 |
 | T2 | TB1 | I | A shared note loads remote images to track the reader | C1 strips remote `src`; C2 `img-src` | None |
-| T3 | TB1 | T, D | A crafted backup, Markdown file, or linked-folder file corrupts notes | C10 | None |
+| T3 | TB1 | T, D | A crafted backup, Markdown file, or linked-folder file corrupts notes or exhausts the tab | C10, partial | F9 |
 | T4 | TB2 | I | Share key or plaintext leaves the browser | C3, C4 | F4 |
 | T5 | TB2 | T | Framing, downgrade, or a response missing its headers | C2, C9 | F6 |
 | T6 | TB2 | T | Service worker caches attacker content or a revoked share | C11 | None |
@@ -115,7 +115,7 @@ Three generic entries don't apply. Injection: no database or shell sits on the r
 | C7 | Origin secret checked in constant time | `handler.mjs:41-54` | Key | Code read; CloudFront header not checked |
 | C8 | Expiry on read, in the viewer, by tag lifecycle with a 30-day backstop, and by hourly cleanup; updates refused on a versioned bucket | `handler.mjs:117`; `share.js:154-157`; `share-infra/lifecycle.json`; `cleanup.mjs`; `provision-updates.sh:98-100` | Key | Code tested; live lifecycle not checked |
 | C9 | Unknown paths rewritten to `index.html` so headers apply | `cloudfront/share-router-function.js:54-73` | Key | Code read |
-| C10 | Import caps and attachment type allowlist | `public/js/app.js:13-23`; `public/js/attachments.js:10` | Non-key | Code read |
+| C10 | Import caps and attachment type allowlist; files that pass `isNativeBackup` skip the caps (F9) | `public/js/app.js:13-23`, `:4720-4724`; `public/js/attachments.js:10` | Non-key | Code read |
 | C11 | Worker caches same-origin shell GETs only; `/api/share` passes through | `public/service-worker.js:140-190` | Non-key | Code read |
 | C12 | 20 req/s throttle, reserved concurrency of 25, invocation and cost alarms | `share-infra/README.md` section 8 | Non-key | No, live config |
 | C13 | API role limited to four object actions on `shares/*`, no list | `share-infra/iam-policy.json` | Key | File read; live role not checked |
@@ -135,6 +135,7 @@ A grep of the app's own scripts in `public/js`, vendor files excluded, found no 
 | F6 | Missing `/public/*` objects return S3's 403 with no security headers | `share-router-function.js:67-69` | Low | Low | Acceptance |
 | F7 | The review workflow loads an unpinned plugin marketplace beside the OAuth secret | `.github/workflows/claude-code-review.yml:38-45` | Low | Low | Acceptance |
 | F8 | Revoke and update leave no audit trail | `handler.mjs:152-153` | Low | Low | Acceptance |
+| F9 | A file that claims to be a native backup skips the import caps | `app.js:4720-4724`, `:5081`, `:5120`, `:5144`; `attachments.js:235-258` | Low | Low | Mitigation |
 
 F1. The viewer shares the app's origin, so script there can read every note, share key, and owner token in the visitor's IndexedDB. C1 and C2 are independent layers, and C1 is tested. The custom `marked` renderers still build HTML strings before sanitizing, and each new renderer widens that surface. Serving the viewer from its own origin would confine a bypass to a page that holds no notes. Saving would then need an explicit cross-origin handoff.
 
@@ -145,6 +146,8 @@ F3. Bodies up to 256 KB are accepted, and the WAF body-size rule runs in Count m
 F4. Anyone holding the full link reads the note until it expires or the owner revokes it. Links persist in chat logs and synced browser history. This is inherent to link sharing, and the share dialog already tells the owner that anyone with the link can read and forward it (`index.html:1113`).
 
 F5. Both provisioning scripts set the secret, and `provision-updates.sh:56-57` refuses to enable updates without it. Failing closed in deployed code, with an explicit local-only bypass, removes the misconfiguration path.
+
+F9. `isNativeBackup` trusts a file's own `app` and `schemaVersion` fields. A crafted file therefore skips the 2 MB file cap, the note and revision counts, and the text-length checks. Its attachment bytes also decode with no size bound. The exemption exists so a real full-library backup restores. The harm stays in the importing user's own tab, because existing notes change only if the user picks Replace in the import preview (`index.html:856-870`, `app.js:5218`). Capping each imported attachment at the 4 MB paste limit (`attachments.js:12`) closes the unbounded part without breaking real backups.
 
 F6 to F8 need no change. The F6 body is an S3 error document with no app content. F7 is documented in the file, and fork PRs get no secrets on that trigger. F8 is a privacy choice: CloudFront access logs aren't available on the current plan, and takedown works by share ID (`share-infra/README.md` section 7).
 
@@ -170,4 +173,5 @@ The reviewer should answer these questions:
 
 | Date | Change |
 | --- | --- |
-| 2026-10-15 | First full-mode draft at `58540c2`. |
+| 2026-10-15 | First full-mode draft. |
+| 2026-10-15 | Review fixes on PR #35: pinned the revision to `bee64b8`, narrowed C10, and added F9. |

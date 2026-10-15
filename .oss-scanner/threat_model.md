@@ -57,7 +57,8 @@ Critical:
 
 - Note plaintext, a share key, or an owner token leaves the browser in any request, including requests to the share API.
 - Script runs on the app origin from content an attacker controls: a shared note, an imported file, a linked-folder file, or pasted HTML. If the production CSP would block that specific payload, rate it high and say so.
-- Someone without the owner token reads a share's plaintext, or changes, replaces, or deletes another person's share.
+- Someone without a share's fragment key recovers its plaintext.
+- Someone without a share's owner token changes, replaces, or deletes it.
 
 High:
 

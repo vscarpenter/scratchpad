@@ -16,7 +16,7 @@ change). Branch: `chore/oss-scanner-enrollment`, on top of 58540c2.
 
 ## Resuming From Here
 
-- Done: the model, eight findings, none High residual. Four are Medium:
+- Done: the model, nine findings, none High residual. Four are Medium:
   F1 (same-origin viewer), F2 (deploy identity not asserted), F3
   (storage-cost abuse), and F4 (bearer links, accepted).
 - Next, Vinny's call: answer the four open questions at the end of the
