@@ -221,3 +221,8 @@
   count when running the suite under a CPU limit.
 - The provisioning tests shell out to `zip`. A fresh Debian or Node image
   lacks it, so any new test image must install it or 10 tests fail.
+- The local Chromium dirty-editor failures depend on the checkout as well as
+  timing. On 2026-10-15, `archive.spec.js:105` passed four of four in a
+  fresh worktree of main and failed four of six on the same commit in the
+  main checkout. To clear a change of one of these failures, switch the code
+  in the same checkout and rerun, rather than comparing against a worktree.
