@@ -231,6 +231,14 @@
     }));
   }
 
+  // Read from the length so an oversized attachment is never decoded. Exact for
+  // btoa's padded output; anything else can only be overestimated.
+  /** @param {string} data */
+  function decodedSize(data) {
+    const padding = data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0;
+    return Math.floor((data.length * 3) / 4) - padding;
+  }
+
   /** @param {unknown} raw @returns {AttachmentEntry[]} */
   function parseBackup(raw) {
     if (!Array.isArray(raw)) return [];
@@ -240,7 +248,8 @@
         typeof entry.id === 'string' &&
         typeof entry.noteId === 'string' &&
         TYPES.has(entry.type) &&
-        typeof entry.data === 'string',
+        typeof entry.data === 'string' &&
+        decodedSize(entry.data) <= MAX_BYTES,
     );
   }
 

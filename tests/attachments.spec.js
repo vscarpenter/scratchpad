@@ -271,6 +271,33 @@ test('importing a backup as duplicates gives the copy its own attachment ids', a
   expect(copyAttachment.id).not.toBe(state.attachments.find((a) => a.noteId === 'host').id);
 });
 
+test('a backup import stores attachments up to 4 MB and drops larger ones', async ({ page }) => {
+  const MAX_BYTES = 4 * 1024 * 1024;
+  const entry = (id, bytes) => ({
+    id,
+    noteId: 'host',
+    name: id + '.png',
+    type: 'image/png',
+    size: bytes,
+    createdAt: 1,
+    data: Buffer.alloc(bytes).toString('base64'),
+  });
+  await gotoApp(page);
+  await importJson(page, {
+    app: 'scratchpad',
+    schemaVersion: 5,
+    notes: [{ id: 'host', title: 'Host', body: '![fit](attachment:fit) ![big](attachment:big)' }],
+    trashedNotes: [],
+    revisions: [],
+    folders: [],
+    attachments: [entry('fit', MAX_BYTES), entry('big', MAX_BYTES + 1)],
+  });
+  await page.locator('#confirm-import').click();
+  const stored = () =>
+    page.evaluate(async () => (await window.ScratchpadAttachments.all()).map((a) => ({ id: a.id, size: a.size })));
+  await expect.poll(stored).toEqual([{ id: 'fit', size: MAX_BYTES }]);
+});
+
 test('the markdown zip carries attachment files and relative links', async ({ page }) => {
   await seedRawNotes(page, [{ id: 'host', title: 'Host', body: 'Intro' }]);
   await attachOne(page, 'host', 'pic.png');

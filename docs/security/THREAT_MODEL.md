@@ -115,7 +115,7 @@ Three generic entries don't apply. Injection: no database or shell sits on the r
 | C7 | Origin secret checked in constant time | `handler.mjs:41-54` | Key | Code read; CloudFront header not checked |
 | C8 | Expiry on read, in the viewer, by tag lifecycle with a 30-day backstop, and by hourly cleanup; updates refused on a versioned bucket | `handler.mjs:117`; `share.js:154-157`; `share-infra/lifecycle.json`; `cleanup.mjs`; `provision-updates.sh:98-100` | Key | Code tested; live lifecycle not checked |
 | C9 | Unknown paths rewritten to `index.html` so headers apply | `cloudfront/share-router-function.js:54-73` | Key | Code read |
-| C10 | Import caps and attachment type allowlist; files that pass `isNativeBackup` skip the caps (F9) | `public/js/app.js:13-23`, `:4720-4724`; `public/js/attachments.js:10` | Non-key | Code read |
+| C10 | Import caps, attachment type allowlist, and a 4 MB cap on every imported attachment; files that pass `isNativeBackup` skip the other caps (F9) | `public/js/app.js:13-23`, `:4720-4724`; `public/js/attachments.js:10-12`, `:237-252` | Non-key | Attachment cap yes, `attachments.spec.js`; rest code read |
 | C11 | Worker caches same-origin shell GETs only; `/api/share` passes through | `public/service-worker.js:140-190` | Non-key | Code read |
 | C12 | 20 req/s throttle, reserved concurrency of 25, invocation and cost alarms | `share-infra/README.md` section 8 | Non-key | No, live config |
 | C13 | API role limited to four object actions on `shares/*`, no list | `share-infra/iam-policy.json` | Key | File read; live role not checked |
@@ -135,7 +135,7 @@ A grep of the app's own scripts in `public/js`, vendor files excluded, found no 
 | F6 | Missing `/public/*` objects return S3's 403 with no security headers | `share-router-function.js:67-69` | Low | Low | Acceptance |
 | F7 | The review workflow loads an unpinned plugin marketplace beside the OAuth secret | `.github/workflows/claude-code-review.yml:38-45` | Low | Low | Acceptance |
 | F8 | Revoke and update leave no audit trail | `handler.mjs:152-153` | Low | Low | Acceptance |
-| F9 | A file that claims to be a native backup skips the import caps | `app.js:4720-4724`, `:5081`, `:5120`, `:5144`; `attachments.js:235-258` | Low | Low | Mitigation |
+| F9 | A file that claims to be a native backup skips the file-size, count, and length caps | `app.js:4720-4724`, `:5081`, `:5120`, `:5144` | Low | Low | Mitigation for attachments; acceptance for the rest |
 
 F1. The viewer shares the app's origin, so script there can read every note, share key, and owner token in the visitor's IndexedDB. C1 and C2 are independent layers, and C1 is tested. The custom `marked` renderers still build HTML strings before sanitizing, and each new renderer widens that surface. Serving the viewer from its own origin would confine a bypass to a page that holds no notes. Saving would then need an explicit cross-origin handoff.
 
@@ -147,7 +147,7 @@ F4. Anyone holding the full link reads the note until it expires or the owner re
 
 F5. Both provisioning scripts set the secret, and `provision-updates.sh:56-57` refuses to enable updates without it. Failing closed in deployed code, with an explicit local-only bypass, removes the misconfiguration path.
 
-F9. `isNativeBackup` trusts a file's own `app` and `schemaVersion` fields. A crafted file therefore skips the 2 MB file cap, the note and revision counts, and the text-length checks. Its attachment bytes also decode with no size bound. The exemption exists so a real full-library backup restores. The harm stays in the importing user's own tab, because existing notes change only if the user picks Replace in the import preview (`index.html:856-870`, `app.js:5218`). Capping each imported attachment at the 4 MB paste limit (`attachments.js:12`) closes the unbounded part without breaking real backups.
+F9. `isNativeBackup` trusts a file's own `app` and `schemaVersion` fields. A crafted file therefore skips the 2 MB file cap, the note and revision counts, and the text-length checks. The exemption exists so a real full-library backup restores. The harm stays in the importing user's own tab, because existing notes change only if the user picks Replace in the import preview (`index.html:856-870`, `app.js:5218`). Attachments no longer share the exemption. `parseBackup` drops any attachment over the 4 MB paste limit before decoding it (`attachments.js:237-252`), and `tests/attachments.spec.js` pins the boundary at exactly 4 MB. The count and length exemptions stay, accepted.
 
 F6 to F8 need no change. The F6 body is an S3 error document with no app content. F7 is documented in the file, and fork PRs get no secrets on that trigger. F8 is a privacy choice: CloudFront access logs aren't available on the current plan, and takedown works by share ID (`share-infra/README.md` section 7).
 
@@ -175,3 +175,4 @@ The reviewer should answer these questions:
 | --- | --- |
 | 2026-10-15 | First full-mode draft. |
 | 2026-10-15 | Review fixes on PR #35: pinned the revision to `bee64b8`, narrowed C10, and added F9. |
+| 2026-10-15 | F9 mitigated for attachments: backup imports drop any attachment over 4 MB. |

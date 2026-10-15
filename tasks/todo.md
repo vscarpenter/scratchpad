@@ -1,3 +1,41 @@
+# Fix F9: cap imported attachments at 4 MB (2026-10-15)
+
+Tier: Standard (one guard in `public/js/attachments.js`, one regression
+test, no interface change). Branch: `fix/import-attachment-cap`, from main
+at da94d9e.
+
+## Plan
+
+- [x] 1. Red: `tests/attachments.spec.js` imports a native backup with one
+      attachment of exactly 4 MB and one of 4 MB plus a byte, and expects
+      only the first stored. It failed with `big` stored at 4,194,305 bytes.
+- [x] 2. Green: `parseBackup` drops entries whose decoded size exceeds
+      `MAX_BYTES`, measured from the base64 length without decoding.
+- [x] 3. Verify: attachments spec 28 passed and 5 documented skips on three
+      browsers; import, encrypted-backup, archive-portability, and
+      share-export specs 81 passed; `bun run verify` exit 0 (coverage
+      45.24%, audit clean); CSP hashes unchanged.
+- [x] 4. Docs: F9 and C10 in `docs/security/THREAT_MODEL.md`.
+- [x] 5. Commit on the branch. Push and PR wait for Vinny.
+
+## Resuming From Here
+
+- Done: backup imports drop any attachment over 4 MB, with a boundary test.
+- Next: push the branch and open a PR when Vinny says so.
+- Blockers: none.
+- Assumptions: an oversized attachment is dropped silently, the same way
+  `parseBackup` already drops one with a disallowed type. No real backup
+  can hit it, so the import preview doesn't report it.
+- Full suite: 1,721 passed, 32 skipped, and 17 failed, all on Chromium.
+  Every failure is the known race where the editor reads the typed text
+  plus the saved body. Twelve fail on a clean main worktree, and the other
+  five fail on main's code in this checkout too, so none comes from this
+  change. None of them imports a backup.
+
+Why it's safe: paste, drop, and the attach menu all enforce the 4 MB cap,
+and `MAX_BYTES` has been 4 MB since attachments shipped (0bc851e), so no
+real backup holds a larger attachment.
+
 # Full STRIDE threat model (2026-10-15)
 
 Tier: Standard (one new doc under `docs/security/`, no code or contract
