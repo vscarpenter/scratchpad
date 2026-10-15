@@ -1,7 +1,7 @@
 # Full STRIDE threat model (2026-10-15)
 
 Tier: Standard (one new doc under `docs/security/`, no code or contract
-change). Branch: `chore/oss-scanner-enrollment`, on top of 58540c2.
+change). Shipped in PR #35, squash-merged to main as 514f2b8.
 
 ## Plan
 
@@ -13,14 +13,20 @@ change). Branch: `chore/oss-scanner-enrollment`, on top of 58540c2.
 - [x] 4. Verify: share API tests 85 of 85; sanitization, network-isolation,
       and share-viewer specs 32 of 32 on Chromium.
 - [x] 5. Write `docs/security/THREAT_MODEL.md` and commit it.
+- [x] 6. PR #35 review: three Codex comments answered in 418d818. The
+      scanner brief now names the fragment key for reads and the owner
+      token for writes; C10 is narrowed and F9 added; the model pins
+      bee64b8. CI green, merged, and the branch deleted.
 
 ## Resuming From Here
 
-- Done: the model, nine findings, none High residual. Four are Medium:
-  F1 (same-origin viewer), F2 (deploy identity not asserted), F3
-  (storage-cost abuse), and F4 (bearer links, accepted).
+- Done: merged to main as 514f2b8. Nine findings, none High residual. Four
+  are Medium: F1 (same-origin viewer), F2 (deploy identity not asserted),
+  F3 (storage-cost abuse), and F4 (bearer links, accepted).
 - Next, Vinny's call: answer the four open questions at the end of the
-  model. Question 1 decides whether F2 becomes High and goes to ERMC.
+  model. Question 1 decides whether F2 becomes High and goes to ERMC. A
+  Jira ticket for F1 to F3 was drafted in the 2026-10-15 session but not
+  filed. F9's fix, capping each imported attachment at 4 MB, is small.
 - Blockers: none.
 - Assumptions: the skill's EW reference files and template were missing, so
   the tiers and treatments follow the names SKILL.md defines. Live AWS
@@ -59,21 +65,18 @@ change). Branch: `chore/oss-scanner-enrollment`, from main at bee64b8.
 
 ## Resuming From Here
 
-- Done: both files committed on `chore/oss-scanner-enrollment`. The full
-  local suite ran 1718 passed, 32 skipped, and 17 failed, all on Chromium.
+- Done: both files merged to main in PR #35 (514f2b8) on 2026-10-15. The
+  full local suite ran 1718 passed, 32 skipped, and 17 failed, all on Chromium.
   They're the 16 known local failures plus `encrypted-backup.spec.js:5`,
   which typed its passphrase twice (the same local text-doubling) and
   passed three of three on re-run. The branch changes no app or test code,
   and Quality CI on bee64b8 is green.
-- Next, in order, and all Vinny's call:
-  1. Push the branch, open a PR here, and merge it. The scanner reads the
-     Dockerfile from the default branch, so this lands first.
-  2. Fork anthropics/oss-scanner, add `projects/scratchpad/project.yaml`
-     with the contents below, and run `tools/validate.py`. Re-run
-     `tools/check scratchpad` against the merged in-repo layout, then open
-     the PR.
-     Vinny ticks the core-maintainer, terms, and contact boxes and signs
-     the CLA when the bot asks.
+- Upstream enrollment: shelved. GSD Task Manager was enrolled instead
+  (anthropics/oss-scanner#213). If ScratchPad is ever submitted, fork
+  anthropics/oss-scanner, add `projects/scratchpad/project.yaml` with the
+  contents below, run `tools/validate.py` and `tools/check scratchpad`,
+  then open the PR. Vinny ticks the maintainer, terms, and contact boxes
+  and signs the CLA when the bot asks.
 - project.yaml:
 
       repo: https://github.com/vscarpenter/scratchpad
