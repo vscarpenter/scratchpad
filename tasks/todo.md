@@ -1,3 +1,31 @@
+# Full STRIDE threat model (2026-10-15)
+
+Tier: Standard (one new doc under `docs/security/`, no code or contract
+change). Branch: `chore/oss-scanner-enrollment`, on top of 58540c2.
+
+## Plan
+
+- [x] 1. Inventory: share Lambda, provisioning, CloudFront functions, crypto,
+      share and sanitizer modules, service worker, imports, CI, deploy.sh.
+- [x] 2. Assets with EW tiers, actors, and flows; Mermaid boundaries (parses
+      as flowchart-v2 under mermaid 11.4.1).
+- [x] 3. STRIDE per boundary; controls credited against code and tests.
+- [x] 4. Verify: share API tests 85 of 85; sanitization, network-isolation,
+      and share-viewer specs 32 of 32 on Chromium.
+- [x] 5. Write `docs/security/THREAT_MODEL.md` and commit it.
+
+## Resuming From Here
+
+- Done: the model, eight findings, none High residual. Four are Medium:
+  F1 (same-origin viewer), F2 (deploy identity not asserted), F3
+  (storage-cost abuse), and F4 (bearer links, accepted).
+- Next, Vinny's call: answer the four open questions at the end of the
+  model. Question 1 decides whether F2 becomes High and goes to ERMC.
+- Blockers: none.
+- Assumptions: the skill's EW reference files and template were missing, so
+  the tiers and treatments follow the names SKILL.md defines. Live AWS
+  configuration, `.env.local`, Firefox, and WebKit were not checked.
+
 # Enroll Scratchpad in Anthropic's OSS Scanner (2026-10-09)
 
 Tier: Standard (two new files under `.oss-scanner/`, no app or contract
