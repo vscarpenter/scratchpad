@@ -1,3 +1,97 @@
+# Full STRIDE threat model (2026-10-15)
+
+Tier: Standard (one new doc under `docs/security/`, no code or contract
+change). Branch: `chore/oss-scanner-enrollment`, on top of 58540c2.
+
+## Plan
+
+- [x] 1. Inventory: share Lambda, provisioning, CloudFront functions, crypto,
+      share and sanitizer modules, service worker, imports, CI, deploy.sh.
+- [x] 2. Assets with EW tiers, actors, and flows; Mermaid boundaries (parses
+      as flowchart-v2 under mermaid 11.4.1).
+- [x] 3. STRIDE per boundary; controls credited against code and tests.
+- [x] 4. Verify: share API tests 85 of 85; sanitization, network-isolation,
+      and share-viewer specs 32 of 32 on Chromium.
+- [x] 5. Write `docs/security/THREAT_MODEL.md` and commit it.
+
+## Resuming From Here
+
+- Done: the model, nine findings, none High residual. Four are Medium:
+  F1 (same-origin viewer), F2 (deploy identity not asserted), F3
+  (storage-cost abuse), and F4 (bearer links, accepted).
+- Next, Vinny's call: answer the four open questions at the end of the
+  model. Question 1 decides whether F2 becomes High and goes to ERMC.
+- Blockers: none.
+- Assumptions: the skill's EW reference files and template were missing, so
+  the tiers and treatments follow the names SKILL.md defines. Live AWS
+  configuration, `.env.local`, Firefox, and WebKit were not checked.
+
+# Enroll Scratchpad in Anthropic's OSS Scanner (2026-10-09)
+
+Tier: Standard (two new files under `.oss-scanner/`, no app or contract
+change). Branch: `chore/oss-scanner-enrollment`, from main at bee64b8.
+
+## Plan
+
+- [x] 1. Review anthropics/oss-scanner. Enrollment is one upstream PR that
+      adds `projects/<name>/project.yaml`. The Dockerfile and threat model
+      can live in this repo, which is the layout upstream recommends.
+- [x] 2. `.oss-scanner/Dockerfile`: node:22-bookworm, zip, Bun from
+      package.json's `packageManager`, `bun install --frozen-lockfile`,
+      `playwright install --with-deps`, then two non-fatal smoke checks.
+- [x] 3. Build-check with upstream's `tools/check`, with the Dockerfile
+      placed beside a temporary project.yaml because main has no
+      `.oss-scanner/` yet. The first run failed 10 of 85 share API tests on
+      `zip: command not found` from provision-updates.sh. With zip added,
+      the rebuild passed 85 of 85 and the scanner's layer installed.
+      Offline in the finished image with 2 CPUs and 8 GB, the share,
+      sanitization, isolation, and shared-copy specs passed 132 of 132 on
+      three engines with `--workers=1`. At the default worker count, one
+      WebKit test timed out because Node reports the host's 14 CPUs inside
+      the container.
+- [x] 4. `.oss-scanner/threat_model.md`: entry points, components, how to
+      run things offline, severity defaults, and known non-issues. It names
+      no live AWS resources.
+- [x] 5. `projects/scratchpad/project.yaml` drafted, and upstream's
+      `tools/validate.py` passes.
+- [x] 6. Commit on the branch. Push, merge, and the upstream PR wait for
+      Vinny.
+
+## Resuming From Here
+
+- Done: both files committed on `chore/oss-scanner-enrollment`. The full
+  local suite ran 1718 passed, 32 skipped, and 17 failed, all on Chromium.
+  They're the 16 known local failures plus `encrypted-backup.spec.js:5`,
+  which typed its passphrase twice (the same local text-doubling) and
+  passed three of three on re-run. The branch changes no app or test code,
+  and Quality CI on bee64b8 is green.
+- Next, in order, and all Vinny's call:
+  1. Push the branch, open a PR here, and merge it. The scanner reads the
+     Dockerfile from the default branch, so this lands first.
+  2. Fork anthropics/oss-scanner, add `projects/scratchpad/project.yaml`
+     with the contents below, and run `tools/validate.py`. Re-run
+     `tools/check scratchpad` against the merged in-repo layout, then open
+     the PR.
+     Vinny ticks the core-maintainer, terms, and contact boxes and signs
+     the CLA when the bot asks.
+- project.yaml:
+
+      repo: https://github.com/vscarpenter/scratchpad
+      primary_contact: vscarpenter@gmail.com
+      homepage: https://notes.vinny.dev
+      disabled: false
+      dockerfile: .oss-scanner/Dockerfile
+      threat_model: .oss-scanner/threat_model.md
+
+- Blockers: none technical. Anthropic accepts "established projects with a
+  critical impact on infrastructure and user security" case by case, so
+  approval is unlikely for a one-star personal app.
+- Assumptions: primary_contact uses the address already public in this
+  repo's commit history. The file is public, so swap in an alias if
+  preferred. The severity ratings in threat_model.md are defaults to tune
+  before the upstream PR. The repo has no LICENSE file; the terms don't
+  require one, but reviewers may notice.
+
 # Starter templates on first run (2026-10-08)
 
 Tier: Standard (the seed module, one line in app.js, the seed contract check,
