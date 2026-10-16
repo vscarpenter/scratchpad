@@ -226,3 +226,8 @@
   fresh worktree of main and failed four of six on the same commit in the
   main checkout. To clear a change of one of these failures, switch the code
   in the same checkout and rerun, rather than comparing against a worktree.
+- The tasteskill inspector (`.claude/skills/design-taste-frontend`) serves a
+  file path from the current directory, which from the repo root exposes
+  `.env.local` and `.git/` on loopback. Point it at a
+  `scripts/dev-server.mjs` URL instead, and run its scripts from the session
+  scratchpad so `.taste-skill/` never lands in the repo.

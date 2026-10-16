@@ -1,3 +1,24 @@
+# Fix the About mockup's false claims (2026-10-16)
+
+Tier: Trivial (three lines of SVG copy in `about.html`, one test). Branch:
+`fix/about-mockup-claims`, from main at 31540db.
+
+- [x] Red: `static-pages.spec.js` "the About mockup claims no sync or
+      pricing" failed on "opt-in sync only".
+- [x] Green: the bets read "no account needed" and "plain settings", and
+      the list excerpt reads "Trust is the moat" instead of "Pricing
+      experiments". Static-pages and print specs 57 of 57 on three
+      browsers; CSP hashes unchanged (c00eff2).
+
+## Resuming From Here
+
+- Done: the fix, committed on the branch. Push and PR wait for Vinny.
+- Context: the same session built a tasteskill "sentence as layout" About
+  redesign with a plain content-page bar. Vinny tried it locally, rejected
+  it, and had the branch deleted. Don't propose that direction again
+  without asking.
+- Blockers: none.
+
 # Fix F9: cap imported attachments at 4 MB (2026-10-15)
 
 Tier: Standard (one guard in `public/js/attachments.js`, one regression
