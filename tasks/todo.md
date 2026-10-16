@@ -12,7 +12,18 @@ Tier: Trivial (three lines of SVG copy in `about.html`, one test). Branch:
 
 ## Resuming From Here
 
-- Done: the fix, committed on the branch. Push and PR wait for Vinny.
+- Done: SHIPPED as v4.6.1 on 2026-10-16. PR #38 squash-merged as 0fd513a;
+  release bump fcc0807 on `release/v4.6.1` as PR #39; deployed with
+  `./deploy.sh` as scratchpad-deploy (invalidation
+  I14DBK5AGFYD64OMPLARZK93NM) and verified live: version.js serves 4.6.1
+  and 2026-10-16, about.html carries the new lines and none of the old
+  claims, and CSP, HSTS, and X-Frame-Options are intact. The build date
+  matched, so version.js stayed clean after the deploy.
+- Next: merge PR #39 and pull main.
+- Repo hygiene: `bd init` ran in this checkout at 14:47 and set
+  `core.hooksPath` to `.beads/hooks`. Vinny discarded its commit, the
+  hooks path is back on `scripts/hooks`, and `.beads/` plus
+  `.beads.gate.lock` sit in `.git/info/exclude`.
 - Context: the same session built a tasteskill "sentence as layout" About
   redesign with a plain content-page bar. Vinny tried it locally, rejected
   it, and had the branch deleted. Don't propose that direction again
