@@ -75,3 +75,12 @@ test.describe('site navigation', () => {
     expect(overflow, 'horizontal page overflow at 390px').toBe(false);
   });
 });
+
+// The About mockup is read as a picture of Scratchpad, so its sample note must
+// not claim features the app doesn't have.
+test('the About mockup claims no sync or pricing', async ({ page }) => {
+  await page.goto('/about.html');
+  const text = await page.locator('main').evaluate((main) => main.textContent || '');
+  expect(text).not.toMatch(/\bsync\b/i);
+  expect(text).not.toMatch(/\bpricing\b/i);
+});
