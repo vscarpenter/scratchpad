@@ -139,9 +139,10 @@
     const api = deps;
     const ids = Array.from(pending);
     pending.clear();
-    const paths = assignPaths(api.notes());
+    let paths = assignPaths(api.notes());
     try {
       for (const id of ids) {
+        if (await readUnseenEdit(id, api)) paths = assignPaths(api.notes());
         const note = api.notes().find((item) => item.id === id);
         await writeNote(note || { id, deletedAt: 1 }, paths);
       }
@@ -149,6 +150,29 @@
     } catch (error) {
       api.toast('Could not write to the linked folder.', { tone: 'error' });
       console.warn('Linked folder write failed', error);
+    }
+  }
+
+  /* A write-back replaces the file, so read any unseen edit first. `reads` holds write-backs while memory lags. */
+  /** @param {string} id @param {Deps} api */
+  async function readUnseenEdit(id, api) {
+    const rec = record;
+    const note = api.notes().find((item) => item.id === id);
+    const path = rec?.paths[id];
+    if (!rec || !note || !path || !rec.written[path] || api.isTrashed(note)) return 0;
+    reads += 1;
+    try {
+      const handle = await (await directoryFor(path, false)).getFileHandle(path.split('/').pop() || '');
+      const changed = await applyFile({ path, handle }, api, rec);
+      if (changed) await api.reload();
+      if (changed) api.toast('Read 1 changed file from “' + rec.name + '”.');
+      return changed;
+    } catch (error) {
+      if (/** @type {Error} */ (error).name === 'NotFoundError') return 0;
+      throw error;
+    } finally {
+      reads -= 1;
+      scheduleFlush();
     }
   }
 
