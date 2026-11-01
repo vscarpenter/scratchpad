@@ -1,3 +1,26 @@
+# Fix F1: stop a save overwriting an unread file edit (2026-10-31)
+
+Tier: Standard (one guard in `public/js/linked-folder.js`, tests, no interface
+change). Branch: `fix/linked-folder-unread-edit`, stacked on
+`chore/verify-linked-folder`.
+
+- [x] Red: three new checker guards and a Chromium test failed because the
+      write-back overwrote the unread edit.
+- [x] Green: `readUnseenEdit` reads the file before each write-back, and the
+      existing conflict rule decides the winner.
+- [x] Able to fail: two new variants, plus a `file-current` property that the
+      new reload needed. A stale variant `find` was also pinned to `readAll`.
+
+## Resuming From Here
+
+- Done: the fix on the branch. Not pushed, and not released.
+- Next: decide about F2 and F3, and the remaining F1 window, which the
+  skill describes. Merge the checker branch first, since this one stacks on it.
+- Blockers: Vinny still needs to remove the untracked
+  `tests/zz-tmp-f1.spec.js`.
+- Behavior change: Write now also reads unseen edits before it writes, so it
+  no longer discards a newer file edit.
+
 # Add a verification skill for the linked folder (2026-10-31)
 
 Tier: Standard (new tooling only, no product code). Branch:

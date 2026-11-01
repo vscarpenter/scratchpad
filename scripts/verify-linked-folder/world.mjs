@@ -24,6 +24,10 @@ function slugify(text) {
     .replace(/^-|-$/g, '');
 }
 
+function notFound(path) {
+  return Object.assign(new Error(`${path} was not found`), { name: 'NotFoundError' });
+}
+
 export class World {
   constructor(source) {
     this.clock = 1000000;
@@ -149,7 +153,10 @@ export class World {
       name: 'linked',
       kind: 'directory',
       getDirectoryHandle: async (name) => this.directory(`${prefix}${name}/`),
-      getFileHandle: async (name) => this.fileHandle(prefix + name),
+      getFileHandle: async (name, options) => {
+        if (!options?.create && !this.files.has(prefix + name)) throw notFound(prefix + name);
+        return this.fileHandle(prefix + name);
+      },
       removeEntry: (name) => this.removeEntry(prefix + name),
       entries: () => this.entries(prefix),
     };
@@ -197,7 +204,7 @@ export class World {
   getFile(path) {
     return this.operation(`the app opens ${path}`, () => {
       const file = this.files.get(path);
-      if (!file) throw new Error(`NotFoundError: ${path}`);
+      if (!file) throw notFound(path);
       return { lastModified: file.mtime, text: () => this.readBlob(path, file) };
     });
   }

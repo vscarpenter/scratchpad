@@ -167,6 +167,25 @@ test('unlink forgets the folder but leaves files, and the row hides without the 
   await expect(page.locator('#linked-folder-row')).toBeHidden();
 });
 
+test('saving a note keeps a file edit nobody has read yet', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="loose-note"]').click();
+  await page.locator('#edit-btn').click();
+  await page.locator('#note-editor').fill('Edited inside');
+  // No read runs here: a tool like git pull edits the file while the tab keeps focus.
+  const original = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside'));
+  await page.locator('#save-btn').click();
+  await expect.poll(() => opfs(page, 'read', 'loose-idea.md')).toContain('Edited inside');
+  await expect
+    .poll(() =>
+      page.evaluate(async () => (await window.ScratchpadDB.getRevisions('loose-note')).map((rev) => rev.body).join()),
+    )
+    .toContain('Edited outside');
+});
+
 test('a read slower than the write-back delay never deletes the files it is adopting', async ({ page }) => {
   await seedLinkedNotes(page);
   await link(page);

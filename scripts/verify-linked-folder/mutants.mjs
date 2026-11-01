@@ -43,8 +43,23 @@ export const mutants = [
     edits: [{ find: 'if (previous) await removeFile(previous);\n      delete', replace: 'delete' }],
   },
   {
+    name: 'a write-back overwrites an edit nobody has read (F1)',
+    guard: 'file edited, then note saved, then the write-back fires',
+    edits: [{ find: 'if (await readUnseenEdit(id, api)) paths = assignPaths(api.notes());', replace: '' }],
+  },
+  {
     name: 'a read never reloads memory',
     guard: 'a new file adopted while another note saves',
-    edits: [{ find: 'if (changed) await api.reload();', replace: '' }],
+    edits: [{ find: 'await saveRecord();\n      if (changed) await api.reload();', replace: 'await saveRecord();' }],
+  },
+  {
+    name: 'a write-back keeps stale memory after it reads an unseen edit',
+    guard: 'note saved, then file edited, then the write-back fires',
+    edits: [
+      {
+        find: 'if (changed) await api.reload();\n      if (changed) api.toast',
+        replace: 'if (changed) api.toast',
+      },
+    ],
   },
 ];

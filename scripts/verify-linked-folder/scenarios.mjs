@@ -58,6 +58,12 @@ export function check(world, scenario) {
     if (trashed(note) && hasFile) {
       violations.push({ property: 'file-removed', message: `${note.id} is trashed, but its file is still on disk` });
     }
+    const isCurrent = [...world.files.values()].some(
+      (file) => file.text.includes(`\nid: ${note.id}\n`) && file.text.endsWith(`\n\n${note.body}`),
+    );
+    if (!trashed(note) && hasFile && !isCurrent) {
+      violations.push({ property: 'file-current', message: `the file for ${note.id} no longer matches the note` });
+    }
   }
   return violations;
 }
@@ -92,6 +98,33 @@ export const guards = [
     mustReadBack: [FILE_TEXT],
   },
   {
+    name: 'file edited, then note saved, then the write-back fires',
+    promise: 'A write-back never overwrites an edit nobody has read.',
+    notes: [NOTE],
+    events: [externalEdit, appSave],
+    serial: true,
+    mustSurvive: [FILE_TEXT, APP_TEXT],
+    mustReadBack: [FILE_TEXT],
+  },
+  {
+    name: 'note saved, then file edited, then the write-back fires',
+    promise: 'A write-back never overwrites an edit nobody has read.',
+    notes: [NOTE],
+    events: [appSave, externalEdit],
+    serial: true,
+    mustSurvive: [FILE_TEXT, APP_TEXT],
+    mustReadBack: [FILE_TEXT],
+  },
+  {
+    name: 'file edited, then note renamed, then the write-back fires',
+    promise: 'A rename never deletes an edit nobody has read.',
+    notes: [NOTE],
+    events: [externalEdit, { run: (world) => world.appSave('n1', { title: 'Renamed idea', body: APP_TEXT }) }],
+    serial: true,
+    mustSurvive: [FILE_TEXT, APP_TEXT],
+    mustReadBack: [FILE_TEXT],
+  },
+  {
     name: 'a new file adopted while another note saves',
     promise: 'A read never deletes the files it is adopting (d0d9339).',
     notes: [NOTE, OTHER],
@@ -118,8 +151,8 @@ export const guards = [
 // code is fixed, and its entry moves to `guards` then. Never weaken one to pass.
 export const findings = [
   {
-    name: 'F1: a note saved while a file edit is unread',
-    promise: 'When both change, the newer one wins and the other text stays in History.',
+    name: 'F1: a file edit landing between the check and the overwrite',
+    promise: 'A write-back never overwrites an edit nobody has read.',
     notes: [NOTE],
     events: [externalEdit, appSave],
     mustSurvive: [FILE_TEXT, APP_TEXT],

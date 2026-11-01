@@ -15,7 +15,7 @@ Browser tests check the orders someone thought to write. This check runs the rea
 npm run check:linked-folder
 ```
 
-It takes about 30 seconds and prints three sections. Exit 0 means every guard holds, every listed finding still reproduces, and every broken variant is caught.
+It takes about 45 seconds and prints three sections. Exit 0 means every guard holds, every listed finding still reproduces, and every broken variant is caught.
 
 | Line | Meaning | What to do |
 | --- | --- | --- |
@@ -53,9 +53,9 @@ When you fix a finding, move its scenario from `findings` to `guards` and add a 
 
 ## Open findings
 
-The check reproduces each of these at the sync commit.
+The check reproduces each of these on the current code.
 
-F1 is the serious one. `flush` calls `writeFile` without looking at the file first. If a tool edits the file while the tab stays focused, such as `git pull` or a sync client, and the user then saves that note, the save overwrites the unread edit. The text ends up nowhere. Real Chromium reproduced this on 2026-10-31: after the save and a Read now, "Edited outside" was gone from the note, History, and the file. Focus reads don't help here, because no focus event fires, and they're throttled to one per 10 seconds anyway.
+F1 is what remains of a larger bug. `flush` used to overwrite files without looking first, so a save lost any edit made by a tool like `git pull` or a sync client while the tab kept focus. `readUnseenEdit` now reads the file first, and `tests/linked-folder.spec.js` holds the browser regression test. An edit can still land in the moment between that read and `writable.close()`. The File System Access API has no conditional write, so this window can only shrink, not close.
 
 F2 needs a save and a read within milliseconds of each other on a note whose file has an unread edit. `applyToExisting` takes `existing` from memory and writes it after two awaits, with no check that the database still matches. Either write can replace the other, and the losing text gets no History entry.
 
@@ -70,6 +70,7 @@ These stay outside the check:
 - Two tabs of the app open at once. Each tab holds its own `record` and `pending`.
 - The conflict dialog in `saveCurrent`. The check assumes the user keeps the edit as a separate note.
 - Attachments, folders, and archived notes, including the paths they produce.
+- A file the app has never written or read. Linking, or a rename that lands on that path, overwrites it unread, because `readUnseenEdit` only checks paths in `record.written`.
 - Lost permission and failed writes.
 - A crash between steps. `saveRecord` is a stub.
 - Timestamps that tie, or a file system clock that disagrees with the browser's. The fake clock always moves forward.

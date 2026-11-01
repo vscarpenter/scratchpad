@@ -2,7 +2,12 @@
 // with a list of choices, because a suspended async function cannot be snapshotted.
 import { World } from './world.mjs';
 
-const settle = () => new Promise((resolve) => setImmediate(resolve));
+// Lets every continuation run until each task blocks on an operation or finishes.
+// Promises alone are far quicker than setImmediate per step, and 256 ticks is well
+// past the longest await chain here: the order counts match a setImmediate run.
+async function settle() {
+  for (let tick = 0; tick < 256; tick += 1) await null;
+}
 
 function startTask(world, task) {
   Promise.resolve()
