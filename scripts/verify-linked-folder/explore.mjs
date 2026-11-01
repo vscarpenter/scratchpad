@@ -39,8 +39,8 @@ function fireTimer(world, id) {
   startTask(world, callback);
 }
 
-async function prepare(source, scenario) {
-  const world = new World(source);
+async function prepare(source, scenario, options) {
+  const world = new World(source, options);
   for (const note of scenario.notes) world.seed(note);
   startTask(world, () => world.linkedFolder.link());
   await runToQuiet(world);
@@ -88,8 +88,8 @@ async function finish(world) {
   await runToQuiet(world);
 }
 
-async function runOnce(source, scenario, prefix) {
-  const world = await prepare(source, scenario);
+async function runOnce(source, scenario, prefix, options) {
+  const world = await prepare(source, scenario, options);
   world.active = new Set();
   const remaining = [...scenario.events];
   const branching = [];
@@ -131,12 +131,12 @@ function record(violations, world, stepCount) {
 
 // `maxRuns` keeps a mutant that blows up the search from hanging the command. A
 // capped result is reported as incomplete, never as a pass.
-export async function explore(source, scenario, check, maxRuns) {
+export async function explore(source, scenario, check, maxRuns, options) {
   const violations = new Map();
   let prefix = [];
   let runs = 0;
-  while (prefix && runs < maxRuns) {
-    const { world, branching } = await runOnce(source, scenario, prefix);
+  while (prefix && runs < maxRuns && !(options?.stopAtFirstViolation && violations.size)) {
+    const { world, branching } = await runOnce(source, scenario, prefix, options);
     if (world.failure) throw world.failure;
     runs += 1;
     world.violations = check(world, scenario);

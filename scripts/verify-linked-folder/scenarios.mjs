@@ -125,6 +125,23 @@ export const guards = [
     mustReadBack: [FILE_TEXT],
   },
   {
+    name: 'a read overlapping a note save',
+    promise: 'When both change, the newer one wins and the other text stays in History.',
+    notes: [NOTE],
+    setup: [externalEdit],
+    events: [readNow, appSave],
+    mustSurvive: [FILE_TEXT, APP_TEXT],
+  },
+  {
+    // Only read-back is checked here. The open finding F1 owns the orders where the
+    // edit lands before the overwrite and is lost outright.
+    name: 'a file edit landing just after the app writes that file',
+    promise: 'An edit still on disk gets read back, even if it landed right after a write.',
+    notes: [NOTE],
+    events: [externalEdit, appSave],
+    mustReadBack: [FILE_TEXT],
+  },
+  {
     name: 'a new file adopted while another note saves',
     promise: 'A read never deletes the files it is adopting (d0d9339).',
     notes: [NOTE, OTHER],
@@ -156,21 +173,5 @@ export const findings = [
     notes: [NOTE],
     events: [externalEdit, appSave],
     mustSurvive: [FILE_TEXT, APP_TEXT],
-  },
-  {
-    name: 'F2: a read overlapping a note save',
-    promise: 'When both change, the newer one wins and the other text stays in History.',
-    notes: [NOTE],
-    events: [readNow, appSave],
-    setup: [externalEdit],
-    holdTimersUntilDone: true,
-    mustSurvive: [FILE_TEXT, APP_TEXT],
-  },
-  {
-    name: 'F3: a file edit landing just after the app writes that file',
-    promise: 'An edit made in the file is read back, or stays on disk until it is.',
-    notes: [NOTE],
-    events: [externalEdit, appSave],
-    mustReadBack: [FILE_TEXT],
   },
 ];

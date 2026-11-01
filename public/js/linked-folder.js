@@ -4,17 +4,15 @@
 {
   /** @typedef {{ id: string, title?: string, body?: string, tags?: string[], folderId?: string | null, archivedAt?: number | null, deletedAt?: number | null, updatedAt?: number, createdAt?: number }} Note */
   /** @typedef {{ handle: FileSystemDirectoryHandle, name: string, linkedAt: number, paths: Record<string, string>, written: Record<string, number> }} LinkRecord */
-  /** @typedef {{ notes(): Note[], folders(): Array<{ id: string, name: string }>, noteToMarkdown(note: Note): string, parseMarkdownNote(text: string): Note, storeRevision(note: Note): Promise<unknown>, putNoteRecord(note: Note): Promise<unknown>, deriveTitle(note: Note): string, slugify(text: string): string, noteFolderId(note: Note): string | null, folderDisplayName(id: string | null): string, isArchived(note: Note): boolean, isTrashed(note: Note): boolean, uuid(): string, now(): number, toast(message: string, options?: object): void, reload(): Promise<unknown> }} Deps */
+  /** @typedef {{ notes(): Note[], folders(): Array<{ id: string, name: string }>, noteToMarkdown(note: Note): string, parseMarkdownNote(text: string): Note, storeRevision(note: Note): Promise<unknown>, putNoteRecord(note: Note, changeType?: string, expectedUpdatedAt?: number): Promise<unknown>, deriveTitle(note: Note): string, slugify(text: string): string, noteFolderId(note: Note): string | null, folderDisplayName(id: string | null): string, isArchived(note: Note): boolean, isTrashed(note: Note): boolean, uuid(): string, now(): number, toast(message: string, options?: object): void, reload(): Promise<unknown> }} Deps */
 
   const KEY = 'linked-folder';
   const WRITE_DELAY = 800;
   const READ_THROTTLE = 10000;
-  /** @type {Deps | null} */
-  let deps = null;
-  /** @type {LinkRecord | null} */
-  let record = null;
-  /** @type {Set<string>} */
-  const pending = new Set();
+  const UNSEEN = 1; // Older than any real file, so the next read treats the file as changed.
+  /** @type {Deps | null} */ let deps = null;
+  /** @type {LinkRecord | null} */ let record = null;
+  /** @type {Set<string>} */ const pending = new Set();
   let writeTimer = 0;
   let lastRead = 0;
   let reads = 0;
@@ -85,11 +83,12 @@
     const writable = await handle.createWritable();
     await writable.write(typeof content === 'string' ? content : new Blob([content]));
     await writable.close();
-    return (await handle.getFile()).lastModified;
+    const file = await handle.getFile();
+    const same = typeof content !== 'string' || (await file.text().catch(() => null)) === content;
+    return same ? file.lastModified : UNSEEN;
   }
 
-  /** @param {string} path */
-  async function removeFile(path) {
+  /** @param {string} path */ async function removeFile(path) {
     try {
       const dir = await directoryFor(path, false);
       await dir.removeEntry(path.split('/').pop() || '');
@@ -135,14 +134,27 @@
 
   async function flush() {
     writeTimer = 0;
-    if (reads || !deps || !record || (await permission()) !== 'granted') return;
-    const api = deps;
+    if (reads || !deps || !record) return;
+    reads += 1; // Two write-backs of one file could finish out of order, so a write-back counts as a hold.
+    let granted = false;
+    try {
+      granted = (await permission()) === 'granted';
+      if (granted) await writePending(deps);
+    } finally {
+      reads -= 1;
+      if (granted) scheduleFlush();
+    }
+  }
+
+  /** @param {Deps} api */ async function writePending(api) {
     const ids = Array.from(pending);
     pending.clear();
     let paths = assignPaths(api.notes());
     try {
       for (const id of ids) {
-        if (await readUnseenEdit(id, api)) paths = assignPaths(api.notes());
+        const seen = await readUnseenEdit(id, api);
+        if (seen < 0) continue; // A newer write beat the read; its own write-back and the next read settle this.
+        if (seen) paths = assignPaths(api.notes());
         const note = api.notes().find((item) => item.id === id);
         await writeNote(note || { id, deletedAt: 1 }, paths);
       }
@@ -164,8 +176,8 @@
     try {
       const handle = await (await directoryFor(path, false)).getFileHandle(path.split('/').pop() || '');
       const changed = await applyFile({ path, handle }, api, rec);
-      if (changed) await api.reload();
-      if (changed) api.toast('Read 1 changed file from “' + rec.name + '”.');
+      if (changed > 0) await api.reload();
+      if (changed > 0) api.toast('Read 1 changed file from “' + rec.name + '”.');
       return changed;
     } catch (error) {
       if (/** @type {Error} */ (error).name === 'NotFoundError') return 0;
@@ -279,14 +291,8 @@
     }
     if ((existing.body || '') === (parsed.body || '') && (existing.title || '') === (parsed.title || '')) return 0;
     await api.storeRevision(existing);
-    await api.putNoteRecord({
-      ...existing,
-      title: parsed.title,
-      body: parsed.body,
-      tags: parsed.tags,
-      updatedAt: api.now(),
-    });
-    return 1;
+    const next = { ...existing, title: parsed.title, body: parsed.body, tags: parsed.tags, updatedAt: api.now() };
+    return (await api.putNoteRecord(next, undefined, existing.updatedAt)) ? 1 : -1;
   }
 
   /** @param {{ path: string, handle: FileSystemFileHandle }} file @param {Deps} api @param {LinkRecord} rec */
@@ -300,6 +306,7 @@
     let changed = 0;
     if (existing && !api.isTrashed(existing)) {
       changed = await applyToExisting(existing, parsed, known, mtime, api);
+      if (changed < 0) return changed; // The file stays unread, so a later read applies it to the newer note.
     } else if (!existing) {
       const archivedAt = file.path.startsWith('archive/') ? api.now() : null;
       await api.putNoteRecord({ ...parsed, folderId: folderIdForPath(file.path), archivedAt });
@@ -319,7 +326,7 @@
     let changed = 0;
     reads += 1;
     try {
-      for (const file of await walk(rec.handle, '')) changed += await applyFile(file, api, rec);
+      for (const file of await walk(rec.handle, '')) changed += Math.max(0, await applyFile(file, api, rec));
       await saveRecord();
       if (changed) await api.reload();
     } catch (error) {
@@ -347,13 +354,8 @@
         : 'Reconnect “' + record.name + '”'
       : 'Not linked';
     row.setAttribute('data-state', record ? (granted ? 'ok' : 'warn') : 'muted');
-    const show = {
-      link: !record,
-      write: !!record && granted,
-      read: !!record && granted,
-      reconnect: !!record && !granted,
-      unlink: !!record,
-    };
+    const ok = !!record && granted;
+    const show = { link: !record, write: ok, read: ok, reconnect: !!record && !granted, unlink: !!record };
     for (const [name, visible] of Object.entries(show)) {
       const button = document.getElementById('linked-folder-' + name);
       if (button) button.hidden = !visible;

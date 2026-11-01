@@ -1,3 +1,24 @@
+# Fix F2 and F3: linked-folder races (2026-11-01)
+
+Tier: Non-trivial, because it changes `saveCurrent`. Spec approved; see the top of
+`tasks/spec.md`. Branch: `fix/linked-folder-races`, stacked on PR #40.
+
+- [x] Red: both checker guards and both new browser tests failed first.
+- [x] Green: conditional writes for reads and saves, one write-back at a time,
+      and a text comparison after each write.
+- [x] Able to fail: 12 variants caught. F1's narrow window is the only finding
+      left open.
+
+## Resuming From Here
+
+- Done: the fix and its tests, committed on the branch.
+- Next: land the audit fix, then PR #40, then this branch. Merging doesn't deploy.
+- Local test notes: Firefox can't launch from the agent shell, and Chromium's
+  `fill` appends in several dirty-editor tests with or without these changes. CI
+  is the suite verdict.
+- Blockers: Vinny still needs to remove the untracked
+  `tests/zz-tmp-f1.spec.js`.
+
 # Fix F1: stop a save overwriting an unread file edit (2026-10-31)
 
 Tier: Standard (one guard in `public/js/linked-folder.js`, tests, no interface

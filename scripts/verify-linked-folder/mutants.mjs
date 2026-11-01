@@ -8,8 +8,8 @@ export const mutants = [
     guard: 'a new file adopted while another note saves',
     edits: [
       {
-        find: "if (reads || !deps || !record || (await permission()) !== 'granted') return;",
-        replace: "if (!deps || !record || (await permission()) !== 'granted') return;",
+        find: 'if (reads || !deps || !record) return;',
+        replace: 'if (!deps || !record) return;',
       },
       {
         find: 'if (pending.size && !writeTimer && !reads) writeTimer',
@@ -45,7 +45,33 @@ export const mutants = [
   {
     name: 'a write-back overwrites an edit nobody has read (F1)',
     guard: 'file edited, then note saved, then the write-back fires',
-    edits: [{ find: 'if (await readUnseenEdit(id, api)) paths = assignPaths(api.notes());', replace: '' }],
+    edits: [{ find: 'const seen = await readUnseenEdit(id, api);', replace: 'const seen = 0;' }],
+  },
+  {
+    name: 'two write-backs of one file can overlap',
+    guard: 'a read overlapping a note save',
+    edits: [
+      { find: 'reads += 1; //', replace: '//' },
+      { find: 'reads -= 1;\n      if (granted)', replace: 'if (granted)' },
+    ],
+  },
+  {
+    name: 'a read overwrites the note without checking it changed (F2)',
+    guard: 'a read overlapping a note save',
+    edits: [{ find: ', undefined, existing.updatedAt)', replace: ')' }],
+  },
+  {
+    // saveCurrent lives in app.js, so this breaks the copy in world.mjs. The browser
+    // test in tests/linked-folder.spec.js covers the real function.
+    name: 'a save overwrites the note without checking it changed (F2)',
+    guard: 'a read overlapping a note save',
+    edits: [],
+    world: { unconditionalSave: true },
+  },
+  {
+    name: 'a write trusts the timestamp without checking the text (F3)',
+    guard: 'a file edit landing just after the app writes that file',
+    edits: [{ find: 'return same ? file.lastModified : UNSEEN;', replace: 'return file.lastModified;' }],
   },
   {
     name: 'a read never reloads memory',
@@ -57,8 +83,8 @@ export const mutants = [
     guard: 'note saved, then file edited, then the write-back fires',
     edits: [
       {
-        find: 'if (changed) await api.reload();\n      if (changed) api.toast',
-        replace: 'if (changed) api.toast',
+        find: 'if (changed > 0) await api.reload();\n      if (changed > 0) api.toast',
+        replace: 'if (changed > 0) api.toast',
       },
     ],
   },

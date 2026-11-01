@@ -186,6 +186,50 @@ test('saving a note keeps a file edit nobody has read yet', async ({ page }) => 
     .toContain('Edited outside');
 });
 
+test('a save that loses a race with a read keeps both texts', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="loose-note"]').click();
+  await page.locator('#edit-btn').click();
+  await page.locator('#note-editor').fill('Edited inside');
+  const original = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside'));
+  // The read lands after the save has read the note and before the save writes it.
+  await page.evaluate(() => {
+    const db = window.ScratchpadDB;
+    const write = db.putRevision;
+    let paused = false;
+    db.putRevision = async (revision) => {
+      if (!paused && revision.body === 'Idea body') {
+        paused = true;
+        await window.ScratchpadLinkedFolder.readAll(true);
+      }
+      return write(revision);
+    };
+  });
+  await page.locator('#save-btn').click();
+  await expect(page.locator('#toast-region')).toContainText('Save again');
+  await expect(page.locator('#note-editor')).toHaveValue(/Edited inside/);
+  expect(await page.evaluate(() => window.ScratchpadDB.get('loose-note').then((n) => n.body))).toBe('Edited outside');
+  await page.locator('#save-btn').click();
+  await expect
+    .poll(() => page.evaluate(() => window.ScratchpadDB.get('loose-note').then((n) => n.body)))
+    .toContain('Edited inside');
+  const history = await page.evaluate(() => window.ScratchpadDB.getRevisions('loose-note'));
+  expect(history.map((revision) => revision.body).join()).toContain('Edited outside');
+});
+
+test('ticking a task updates the linked file', async ({ page }) => {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] Buy beans' }]);
+  await link(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="task-note"]').click();
+  await page.locator('#note-rendered .task-checkbox').first().click();
+  await expect.poll(() => opfs(page, 'read', 'task-note.md')).toContain('- [x] Buy beans');
+});
+
 test('a read slower than the write-back delay never deletes the files it is adopting', async ({ page }) => {
   await seedLinkedNotes(page);
   await link(page);

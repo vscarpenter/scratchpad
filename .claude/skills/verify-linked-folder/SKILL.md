@@ -15,7 +15,7 @@ Browser tests check the orders someone thought to write. This check runs the rea
 npm run check:linked-folder
 ```
 
-It takes about 45 seconds and prints three sections. Exit 0 means every guard holds, every listed finding still reproduces, and every broken variant is caught.
+It takes about 10 seconds and prints three sections. Exit 0 means every guard holds, every listed finding still reproduces, and every broken variant is caught.
 
 | Line | Meaning | What to do |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ It takes about 45 seconds and prints three sections. Exit 0 means every guard ho
 Run this, using the sync commit from the coverage record below:
 
 ```sh
-git diff 71f9740 HEAD -- public/js/linked-folder.js public/js/app.js
+git diff "$(git log -1 --format=%h --grep='(#42)' main)" HEAD -- public/js/linked-folder.js public/js/app.js
 ```
 
 Any change to `linked-folder.js` runs through the check automatically, because the check loads that file. Changes in `app.js` don't, because `scripts/verify-linked-folder/world.mjs` holds a hand-written copy of how those functions behave. If the diff changes a function in the coverage record, compare it against its counterpart in `world.mjs` and update the copy.
@@ -57,9 +57,13 @@ The check reproduces each of these on the current code.
 
 F1 is what remains of a larger bug. `flush` used to overwrite files without looking first, so a save lost any edit made by a tool like `git pull` or a sync client while the tab kept focus. `readUnseenEdit` now reads the file first, and `tests/linked-folder.spec.js` holds the browser regression test. An edit can still land in the moment between that read and `writable.close()`. The File System Access API has no conditional write, so this window can only shrink, not close.
 
-F2 needs a save and a read within milliseconds of each other on a note whose file has an unread edit. `applyToExisting` takes `existing` from memory and writes it after two awaits, with no check that the database still matches. Either write can replace the other, and the losing text gets no History entry.
+## Safeguards a change must keep
 
-F3 needs an external edit between `writable.close()` and `getFile()` in `writeFile`, a very small window. `record.written` then records the edit's own timestamp, so every later read skips the file. The text stays on disk until the next write replaces it.
+Reads and saves write notes through `putNoteRecord` with the `updatedAt` they started from, so neither can replace a newer note (formerly F2). When a read loses, `applyFile` leaves `record.written` alone and the file stays unread. When a save loses, the editor stays open.
+
+`writeFile` compares the text after each write and records `UNSEEN` if another writer got in, so that edit still gets read (formerly F3).
+
+Only one write-back runs at a time, because two of them can finish out of order and leave older text in the file. A write-back counts toward `reads` to hold the next one back.
 
 ## What this does and doesn't prove
 
@@ -69,6 +73,7 @@ These stay outside the check:
 
 - Two tabs of the app open at once. Each tab holds its own `record` and `pending`.
 - The conflict dialog in `saveCurrent`. The check assumes the user keeps the edit as a separate note.
+- `mutateNoteBody`, which uses the same conditional write but has no copy in `world.mjs`.
 - Attachments, folders, and archived notes, including the paths they produce.
 - A file the app has never written or read. Linking, or a rename that lands on that path, overwrites it unread, because `readUnseenEdit` only checks paths in `record.written`.
 - Lost permission and failed writes.
@@ -79,7 +84,7 @@ These stay outside the check:
 
 ## Coverage record
 
-Sync commit: `71f9740`. Move it forward only after you confirm `world.mjs` still describes `app.js` at the new commit.
+Sync commit: the squash commit of PR #42 on `main`, whose `world.mjs` was checked against that `app.js`. Replace it with a newer hash only after you confirm `world.mjs` still describes `app.js` at the new commit.
 
 | Covered code | How the check sees it |
 | --- | --- |
