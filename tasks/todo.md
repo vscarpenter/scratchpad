@@ -1,3 +1,31 @@
+# Add a verification skill for the linked folder (2026-10-31)
+
+Tier: Standard (new tooling only, no product code). Branch:
+`chore/verify-linked-folder`, from main at 71f9740.
+
+- [x] Target: the guide's promise that no text is lost when a note and its
+      file both change.
+- [x] Check: `npm run check:linked-folder` runs the real
+      `linked-folder.js` through every async order in six guard scenarios.
+- [x] Able to fail: six broken variants run on every check, each pinned to
+      the guard that must catch it. A scratch break in the real file failed
+      five guards, and the change was then dropped.
+- [x] Skill: `.claude/skills/verify-linked-folder/SKILL.md`, with the coverage
+      record and sync commit.
+
+## Resuming From Here
+
+- Done: the check, the skill, and this record, committed on the branch. Not
+  pushed.
+- Next: decide how to fix F1, then fix F2 and F3. The skill describes all
+  three. F1 reproduced in real Chromium: an unread file edit vanished from
+  the note, History, and the file after a save.
+- Blockers: `tests/zz-tmp-f1.spec.js` is an untracked leftover from the F1
+  reproduction. Deleting it was denied in the session, so Vinny needs to
+  remove it. It isn't committed.
+- Assumptions: the check stays out of `npm run verify` for now, and the full
+  three-browser suite didn't run because no product code changed.
+
 # Fix the About mockup's false claims (2026-10-16)
 
 Tier: Trivial (three lines of SVG copy in `about.html`, one test). Branch:

@@ -8,6 +8,7 @@
     "audit": "bun audit",
     "check:coverage": "node scripts/quality/check-browser-coverage.mjs",
     "check:format": "node scripts/quality/check-changed-format.mjs",
+    "check:linked-folder": "node scripts/verify-linked-folder/check.mjs",
     "check:lint": "biome lint .",
     "check:seed": "node scripts/check-seed-notes.mjs",
     "check:shell": "node scripts/check-app-shell.mjs",

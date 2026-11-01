@@ -31,6 +31,9 @@ ehthumbs.db
 !.claude/commands/qspec.md
 !.claude/commands/tdd.md
 !.claude/commands/qcheck.md
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/verify-linked-folder/
 .agents/*
 !.agents/setup
 !.agents/resume
