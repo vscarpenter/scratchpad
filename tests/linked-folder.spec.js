@@ -239,6 +239,49 @@ test('reads that keep losing to a newer note leave History alone', async ({ page
   expect(await opfs(page, 'read', 'loose-idea.md')).toContain('Edited outside');
 });
 
+test('a read leaves a note with a lone surrogate alone', async ({ page }) => {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'odd-note', title: 'Odd note', body: 'plain' }]);
+  await link(page);
+  const result = await page.evaluate(async () => {
+    await window.ScratchpadDB.put({
+      ...(await window.ScratchpadDB.get('odd-note')),
+      body: `x${String.fromCharCode(0xd83d)}y`,
+    });
+    await window.ScratchpadLinkedFolder.writeAll();
+    const changed = await window.ScratchpadLinkedFolder.readAll(true);
+    return { changed, code: (await window.ScratchpadDB.get('odd-note')).body.charCodeAt(1) };
+  });
+  expect(result).toEqual({ changed: 0, code: 0xd83d });
+});
+
+test('ticking a task keeps another tab save on a note with no updatedAt', async ({ page }) => {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] one' }]);
+  await page.locator('.note-row[data-id="task-note"]').click();
+  const body = await page.evaluate(async () => {
+    const db = window.ScratchpadDB;
+    const { updatedAt: _removed, ...legacy } = await db.get('task-note');
+    await db.put(legacy);
+    const write = db.putRevision;
+    let raced = false;
+    // Another tab saves after this tab read the note and before it writes.
+    db.putRevision = async (revision) => {
+      if (!raced) {
+        raced = true;
+        await db.put({ ...legacy, body: '- [ ] one\nonly copy of the other tab', updatedAt: 5 });
+      }
+      return write(revision);
+    };
+    return 'prepared';
+  });
+  expect(body).toBe('prepared');
+  await page.locator('#note-rendered .task-checkbox').first().click();
+  await expect
+    .poll(() => page.evaluate(() => window.ScratchpadDB.get('task-note').then((note) => note.body)))
+    .toContain('only copy of the other tab');
+});
+
 test('ticking a task updates the linked file', async ({ page }) => {
   await withPicker(page);
   await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] Buy beans' }]);

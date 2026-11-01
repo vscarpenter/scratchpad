@@ -80,7 +80,7 @@ These stay outside the check:
 - An edit to a note being trashed. Its file is removed unread, which the design allows.
 - An edit whose file keeps an older timestamp, as some sync tools preserve. A read skips any file no newer than its last write.
 - A file the app has never written or read. Linking, or a rename that lands on that path, overwrites it unread, because `readUnseenEdit` only checks paths in `record.written`.
-- Lost permission and failed writes.
+- Lost permission and failed writes. A write that never resolves holds up every later write-back until reload, though the database keeps the text.
 - A crash between steps. `saveRecord` is a stub.
 - Timestamps that tie, or a file system clock that disagrees with the browser's. The fake clock always moves forward.
 - The real `noteToMarkdown` and `parseMarkdownNote`, which `world.mjs` replaces with a simple format.

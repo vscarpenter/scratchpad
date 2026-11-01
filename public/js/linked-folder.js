@@ -85,7 +85,8 @@
     await writable.write(typeof content === 'string' ? content : new Blob([content]));
     await writable.close();
     const file = await handle.getFile();
-    const same = typeof content !== 'string' || (await file.text().catch(() => null)) === content;
+    const written = typeof content === 'string' ? new TextDecoder().decode(new TextEncoder().encode(content)) : null;
+    const same = written === null || (await file.text().catch(() => null)) === written; // Encoding replaces lone surrogates.
     return same ? file.lastModified : UNSEEN;
   }
 

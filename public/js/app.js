@@ -320,7 +320,7 @@
   }
 
   async function putNoteRecord(note, changeType, expectedUpdatedAt) {
-    if (expectedUpdatedAt === undefined) await DB.put(note);
+    if (arguments.length < 3) await DB.put(note);
     else if (!(await DB.putIfUnchanged(note, expectedUpdatedAt))) return false;
     if (window.ScratchpadLinkedFolder) window.ScratchpadLinkedFolder.noteChanged(note);
     broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
@@ -2718,7 +2718,7 @@
         lastDraftAt: null,
       };
       if (changed) await storeRevision(baseNote);
-      if (!(await putNoteRecord(nextNote, undefined, latestRaw?.updatedAt))) return toast('This note changed while saving. Save again to keep your edits.');
+      if (!(await (latestRaw ? putNoteRecord(nextNote, undefined, latestRaw.updatedAt) : putNoteRecord(nextNote)))) return toast('This note changed while saving. Save again to keep your edits.');
       await DB.removeDraft(note.id);
       const index = state.notes.findIndex((item) => item.id === note.id);
       if (index >= 0) state.notes[index] = nextNote;
