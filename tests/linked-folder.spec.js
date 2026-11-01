@@ -220,6 +220,25 @@ test('a save that loses a race with a read keeps both texts', async ({ page }) =
   expect(history.map((revision) => revision.body).join()).toContain('Edited outside');
 });
 
+test('reads that keep losing to a newer note leave History alone', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  const original = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside'));
+  const result = await page.evaluate(async () => {
+    const db = window.ScratchpadDB;
+    const stored = await db.get('loose-note');
+    // Another tab saved, and this tab's memory stays stale, as it does under a dirty editor.
+    await db.put({ ...stored, body: 'Saved in another tab', updatedAt: stored.updatedAt + 1000 });
+    const before = (await db.getRevisions('loose-note')).length;
+    for (let read = 0; read < 3; read += 1) await window.ScratchpadLinkedFolder.readAll(true);
+    return { before, after: (await db.getRevisions('loose-note')).length, body: (await db.get('loose-note')).body };
+  });
+  expect(result.after).toBe(result.before);
+  expect(result.body).toBe('Saved in another tab');
+  expect(await opfs(page, 'read', 'loose-idea.md')).toContain('Edited outside');
+});
+
 test('ticking a task updates the linked file', async ({ page }) => {
   await withPicker(page);
   await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] Buy beans' }]);

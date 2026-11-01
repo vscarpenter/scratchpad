@@ -75,6 +75,7 @@ export class World {
       folders: () => [],
       noteToMarkdown: toMarkdown,
       parseMarkdownNote: (text) => this.parseMarkdown(text),
+      getStoredNote: (id) => this.operation(`the app reads the stored ${id}`, () => this.db.get(id)),
       storeRevision: async (note) => this.storeRevision(note),
       putNoteRecord: (note, changeType, expected) => this.putNoteRecord(note, changeType, expected),
       deriveTitle: (note) => note.title || 'Untitled',
@@ -255,6 +256,8 @@ export class World {
     const next = { ...latest, ...changes, updatedAt: this.clock };
     const expected = this.options.unconditionalSave ? undefined : latest.updatedAt;
     if (!(await this.putNoteRecord(next, undefined, expected))) return this.saveAgainAfterRace(id, changes);
+    // saveCurrent awaits DB.removeDraft here, so memory lags the database for a moment.
+    await this.operation('the app removes the draft', () => {});
     this.memory = this.memory.map((note) => (note.id === id ? next : note));
     return undefined;
   }

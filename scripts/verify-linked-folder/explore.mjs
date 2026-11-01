@@ -61,7 +61,7 @@ function availableChoices(world, scenario, remaining) {
   const timersHeld = scenario.holdTimersUntilDone && remaining.length > 0;
   if (!timersHeld) for (const id of world.timers.keys()) choices.push({ type: 'timer', id });
   const events = scenario.serial ? remaining.slice(0, isQuiet(world) ? 1 : 0) : remaining;
-  for (const event of events) choices.push({ type: 'event', event });
+  for (const event of events) if (!event.when || event.when(world)) choices.push({ type: 'event', event });
   return choices;
 }
 
@@ -102,7 +102,8 @@ async function runOnce(source, scenario, prefix, options) {
     apply(world, choices[picked], remaining);
   }
   await finish(world);
-  return { world, branching };
+  // An order that never reached a conditional event says nothing about that event.
+  return { world, branching, applicable: remaining.length === 0 };
 }
 
 function nextPrefix(branching) {
@@ -136,10 +137,10 @@ export async function explore(source, scenario, check, maxRuns, options) {
   let prefix = [];
   let runs = 0;
   while (prefix && runs < maxRuns && !(options?.stopAtFirstViolation && violations.size)) {
-    const { world, branching } = await runOnce(source, scenario, prefix, options);
+    const { world, branching, applicable } = await runOnce(source, scenario, prefix, options);
     if (world.failure) throw world.failure;
     runs += 1;
-    world.violations = check(world, scenario);
+    world.violations = applicable ? check(world, scenario) : [];
     record(violations, world, world.trace.length);
     prefix = nextPrefix(branching);
   }

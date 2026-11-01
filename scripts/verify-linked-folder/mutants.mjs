@@ -8,8 +8,8 @@ export const mutants = [
     guard: 'a new file adopted while another note saves',
     edits: [
       {
-        find: 'if (reads || !deps || !record) return;',
-        replace: 'if (!deps || !record) return;',
+        find: 'if (reads || !deps || !record || (await permission())',
+        replace: 'if (!deps || !record || (await permission())',
       },
       {
         find: 'if (pending.size && !writeTimer && !reads) writeTimer',
@@ -50,10 +50,22 @@ export const mutants = [
   {
     name: 'two write-backs of one file can overlap',
     guard: 'a read overlapping a note save',
-    edits: [
-      { find: 'reads += 1; //', replace: '//' },
-      { find: 'reads -= 1;\n      if (granted)', replace: 'if (granted)' },
-    ],
+    edits: [{ find: 'writes = writes.then(writeBack).catch(', replace: 'writes = writeBack().catch(' }],
+  },
+  {
+    name: 'Write now returns before its write finishes',
+    guard: 'Write now finishes only after the write in progress and its own',
+    edits: [{ find: 'await flush();\n    return Object.keys', replace: 'flush();\n    return Object.keys' }],
+  },
+  {
+    name: 'a write-back writes stale memory after its read loses',
+    guard: 'file edited, then note saved, then the write-back fires',
+    edits: [{ find: 'if (seen < 0) continue;', replace: '' }],
+  },
+  {
+    name: 'an edit found after a write is marked as already read',
+    guard: 'a file edit landing just after a write survives the next save',
+    edits: [{ find: 'const UNSEEN = 1;', replace: 'const UNSEEN = 0;' }],
   },
   {
     name: 'a read overwrites the note without checking it changed (F2)',

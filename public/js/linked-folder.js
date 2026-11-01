@@ -4,7 +4,7 @@
 {
   /** @typedef {{ id: string, title?: string, body?: string, tags?: string[], folderId?: string | null, archivedAt?: number | null, deletedAt?: number | null, updatedAt?: number, createdAt?: number }} Note */
   /** @typedef {{ handle: FileSystemDirectoryHandle, name: string, linkedAt: number, paths: Record<string, string>, written: Record<string, number> }} LinkRecord */
-  /** @typedef {{ notes(): Note[], folders(): Array<{ id: string, name: string }>, noteToMarkdown(note: Note): string, parseMarkdownNote(text: string): Note, storeRevision(note: Note): Promise<unknown>, putNoteRecord(note: Note, changeType?: string, expectedUpdatedAt?: number): Promise<unknown>, deriveTitle(note: Note): string, slugify(text: string): string, noteFolderId(note: Note): string | null, folderDisplayName(id: string | null): string, isArchived(note: Note): boolean, isTrashed(note: Note): boolean, uuid(): string, now(): number, toast(message: string, options?: object): void, reload(): Promise<unknown> }} Deps */
+  /** @typedef {{ notes(): Note[], folders(): Array<{ id: string, name: string }>, noteToMarkdown(note: Note): string, parseMarkdownNote(text: string): Note, storeRevision(note: Note): Promise<unknown>, putNoteRecord(note: Note, changeType?: string, expectedUpdatedAt?: number): Promise<unknown>, getStoredNote(id: string): Promise<Note | undefined>, deriveTitle(note: Note): string, slugify(text: string): string, noteFolderId(note: Note): string | null, folderDisplayName(id: string | null): string, isArchived(note: Note): boolean, isTrashed(note: Note): boolean, uuid(): string, now(): number, toast(message: string, options?: object): void, reload(): Promise<unknown> }} Deps */
 
   const KEY = 'linked-folder';
   const WRITE_DELAY = 800;
@@ -16,6 +16,7 @@
   let writeTimer = 0;
   let lastRead = 0;
   let reads = 0;
+  let writes = Promise.resolve();
 
   /** @type {Window & typeof globalThis & { ScratchpadDB?: any, ScratchpadAttachments?: any, ScratchpadLinkedFolder?: object, showDirectoryPicker?: (options?: object) => Promise<FileSystemDirectoryHandle> }} */
   const root = window;
@@ -121,7 +122,7 @@
   async function writeNote(note, paths) {
     if (!record || !deps) return;
     const previous = record.paths[note.id];
-    const path = paths.get(note.id);
+    const path = deps.isTrashed(note) ? undefined : paths.get(note.id);
     if (!path) {
       if (previous) await removeFile(previous);
       delete record.paths[note.id];
@@ -132,21 +133,16 @@
     record.paths[note.id] = path;
   }
 
-  async function flush() {
+  /* One at a time, because two write-backs of one file could finish out of order. */
+  function flush() {
     writeTimer = 0;
-    if (reads || !deps || !record) return;
-    reads += 1; // Two write-backs of one file could finish out of order, so a write-back counts as a hold.
-    let granted = false;
-    try {
-      granted = (await permission()) === 'granted';
-      if (granted) await writePending(deps);
-    } finally {
-      reads -= 1;
-      if (granted) scheduleFlush();
-    }
+    writes = writes.then(writeBack).catch((error) => console.warn('Linked folder write failed', error));
+    return writes;
   }
 
-  /** @param {Deps} api */ async function writePending(api) {
+  async function writeBack() {
+    if (reads || !deps || !record || (await permission()) !== 'granted') return;
+    const api = deps;
     const ids = Array.from(pending);
     pending.clear();
     let paths = assignPaths(api.notes());
@@ -155,7 +151,7 @@
         const seen = await readUnseenEdit(id, api);
         if (seen < 0) continue; // A newer write beat the read; its own write-back and the next read settle this.
         if (seen) paths = assignPaths(api.notes());
-        const note = api.notes().find((item) => item.id === id);
+        const note = await api.getStoredNote(id); // Memory can lag the database, and nothing rewrites a stale file.
         await writeNote(note || { id, deletedAt: 1 }, paths);
       }
       await saveRecord();
@@ -290,6 +286,8 @@
       return 0;
     }
     if ((existing.body || '') === (parsed.body || '') && (existing.title || '') === (parsed.title || '')) return 0;
+    // A stale copy must not reach History: repeated losing reads would push real entries past its limit.
+    if ((await api.getStoredNote(existing.id))?.updatedAt !== existing.updatedAt) return -1;
     await api.storeRevision(existing);
     const next = { ...existing, title: parsed.title, body: parsed.body, tags: parsed.tags, updatedAt: api.now() };
     return (await api.putNoteRecord(next, undefined, existing.updatedAt)) ? 1 : -1;

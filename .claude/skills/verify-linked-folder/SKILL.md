@@ -15,7 +15,7 @@ Browser tests check the orders someone thought to write. This check runs the rea
 npm run check:linked-folder
 ```
 
-It takes about 10 seconds and prints three sections. Exit 0 means every guard holds, every listed finding still reproduces, and every broken variant is caught.
+It takes about 3 minutes and prints three sections. Exit 0 means every guard holds, every listed finding still reproduces, and every broken variant is caught.
 
 | Line | Meaning | What to do |
 | --- | --- | --- |
@@ -63,7 +63,9 @@ Reads and saves write notes through `putNoteRecord` with the `updatedAt` they st
 
 `writeFile` compares the text after each write and records `UNSEEN` if another writer got in, so that edit still gets read (formerly F3).
 
-Only one write-back runs at a time, because two of them can finish out of order and leave older text in the file. A write-back counts toward `reads` to hold the next one back.
+Only one write-back runs at a time, through the `writes` promise queue, because two of them can finish out of order and leave older text in the file. Each one reads the stored note rather than memory, because memory can lag the database and nothing rewrites a stale file.
+
+A read checks the stored note before it writes to History, so reads that keep losing cannot push real entries past the History limit.
 
 ## What this does and doesn't prove
 
@@ -75,6 +77,8 @@ These stay outside the check:
 - The conflict dialog in `saveCurrent`. The check assumes the user keeps the edit as a separate note.
 - `mutateNoteBody`, which uses the same conditional write but has no copy in `world.mjs`.
 - Attachments, folders, and archived notes, including the paths they produce.
+- An edit to a note being trashed. Its file is removed unread, which the design allows.
+- An edit whose file keeps an older timestamp, as some sync tools preserve. A read skips any file no newer than its last write.
 - A file the app has never written or read. Linking, or a rename that lands on that path, overwrites it unread, because `readUnseenEdit` only checks paths in `record.written`.
 - Lost permission and failed writes.
 - A crash between steps. `saveRecord` is a stub.

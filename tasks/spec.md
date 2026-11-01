@@ -3,9 +3,12 @@
 Status: approved by Vinny on 2026-10-31. Implemented on
 `fix/linked-folder-races`, stacked on PR #40.
 
-Two things changed during implementation. The checker found overlapping
-write-backs leaving stale text in a file, so write-backs now run one at a time.
-And a save that loses its race may not reach the conflict dialog on the next
+Things that changed during implementation. The checker found overlapping
+write-backs leaving stale text in a file, so write-backs now run one at a time
+through a promise queue and read the stored note, not memory. Independent review
+found repeated losing reads flushing History, so a read checks the stored note
+before it writes a revision.
+A save that loses its race may not reach the conflict dialog on the next
 try: when the read has already refreshed memory, that save succeeds and the read's
 text stays in History.
 

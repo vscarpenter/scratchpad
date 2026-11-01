@@ -5930,7 +5930,7 @@
       window.ScratchpadAttachments.init({ noteId: () => state.selectedId, editing: () => state.editing, uuid, now, toast, rerender: renderEditor, insert: window.ScratchpadPaste.insert, editor: els.editor });
     }
     if (window.ScratchpadLinkedFolder) window.ScratchpadLinkedFolder.init({
-      notes: () => state.notes, folders: () => state.folders, noteToMarkdown, parseMarkdownNote, storeRevision, putNoteRecord,
+      notes: () => state.notes, folders: () => state.folders, noteToMarkdown, parseMarkdownNote, storeRevision, putNoteRecord, getStoredNote: (id) => DB.get(id).then((raw) => raw && normalizeNote(raw)),
       deriveTitle, slugify, noteFolderId, folderDisplayName, isArchived, isTrashed, uuid, now, toast, reload: loadAll,
     });
     window.ScratchpadShareManager.init({ db: DB, crypto: ScratchpadCrypto });
