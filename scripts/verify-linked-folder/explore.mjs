@@ -39,8 +39,8 @@ function fireTimer(world, id) {
   startTask(world, callback);
 }
 
-async function prepare(source, scenario) {
-  const world = new World(source);
+async function prepare(source, scenario, options) {
+  const world = new World(source, options);
   for (const note of scenario.notes) world.seed(note);
   startTask(world, () => world.linkedFolder.link());
   await runToQuiet(world);
@@ -61,7 +61,7 @@ function availableChoices(world, scenario, remaining) {
   const timersHeld = scenario.holdTimersUntilDone && remaining.length > 0;
   if (!timersHeld) for (const id of world.timers.keys()) choices.push({ type: 'timer', id });
   const events = scenario.serial ? remaining.slice(0, isQuiet(world) ? 1 : 0) : remaining;
-  for (const event of events) choices.push({ type: 'event', event });
+  for (const event of events) if (!event.when || event.when(world)) choices.push({ type: 'event', event });
   return choices;
 }
 
@@ -88,8 +88,8 @@ async function finish(world) {
   await runToQuiet(world);
 }
 
-async function runOnce(source, scenario, prefix) {
-  const world = await prepare(source, scenario);
+async function runOnce(source, scenario, prefix, options) {
+  const world = await prepare(source, scenario, options);
   world.active = new Set();
   const remaining = [...scenario.events];
   const branching = [];
@@ -102,7 +102,8 @@ async function runOnce(source, scenario, prefix) {
     apply(world, choices[picked], remaining);
   }
   await finish(world);
-  return { world, branching };
+  // An order that never reached a conditional event says nothing about that event.
+  return { world, branching, applicable: remaining.length === 0 };
 }
 
 function nextPrefix(branching) {
@@ -131,15 +132,15 @@ function record(violations, world, stepCount) {
 
 // `maxRuns` keeps a mutant that blows up the search from hanging the command. A
 // capped result is reported as incomplete, never as a pass.
-export async function explore(source, scenario, check, maxRuns) {
+export async function explore(source, scenario, check, maxRuns, options) {
   const violations = new Map();
   let prefix = [];
   let runs = 0;
-  while (prefix && runs < maxRuns) {
-    const { world, branching } = await runOnce(source, scenario, prefix);
+  while (prefix && runs < maxRuns && !(options?.stopAtFirstViolation && violations.size)) {
+    const { world, branching, applicable } = await runOnce(source, scenario, prefix, options);
     if (world.failure) throw world.failure;
     runs += 1;
-    world.violations = check(world, scenario);
+    world.violations = applicable ? check(world, scenario) : [];
     record(violations, world, world.trace.length);
     prefix = nextPrefix(branching);
   }

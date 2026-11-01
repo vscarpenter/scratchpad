@@ -10,7 +10,8 @@ test.describe('reliability — drafts, history, and failed writes', () => {
     await page.locator('#edit-btn').click();
     await page.locator('#note-editor').fill('Changed but not saved.');
     await page.evaluate(() => {
-      /** @type {any} */ (window.ScratchpadDB).put = async () => {
+      const db = /** @type {any} */ (window.ScratchpadDB);
+      db.put = db.putIfUnchanged = async () => {
         throw new Error('simulated write failure');
       };
     });
@@ -90,16 +91,12 @@ test.describe('reliability — drafts, history, and failed writes', () => {
     await expect(page.locator('#tag-delete-dialog')).toBeHidden();
     await expect(page.locator('#tag-manager-list .tag-rename-input[value="doomed"]')).toHaveCount(0);
 
-    const tags = await page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).map((n) => n.tags).sort()
-    );
+    const tags = await page.evaluate(async () => (await window.ScratchpadDB.getAll()).map((n) => n.tags).sort());
     expect(tags).toEqual([[], ['keeper']]);
   });
 
   test('renaming a tag onto an existing tag name merges them without duplicates', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'merge-note', title: 'Merge note', body: 'Body.', tags: ['alpha', 'beta'] },
-    ]);
+    await seedRawNotes(page, [{ id: 'merge-note', title: 'Merge note', body: 'Body.', tags: ['alpha', 'beta'] }]);
 
     await openTagManagerViaMenu(page);
     const alphaRow = page.locator('#tag-manager-list .tag-manager-row').filter({
@@ -108,8 +105,8 @@ test.describe('reliability — drafts, history, and failed writes', () => {
     await alphaRow.locator('.tag-rename-input').fill('beta');
     await alphaRow.locator('button', { hasText: 'Rename' }).click();
 
-    const tags = await page.evaluate(async () =>
-      (await window.ScratchpadDB.getAll()).find((n) => n.id === 'merge-note').tags
+    const tags = await page.evaluate(
+      async () => (await window.ScratchpadDB.getAll()).find((n) => n.id === 'merge-note').tags,
     );
     expect(tags).toEqual(['beta']);
   });

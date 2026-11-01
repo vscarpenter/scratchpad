@@ -1,3 +1,101 @@
+# Spec: fix linked-folder findings F2 and F3
+
+Status: approved by Vinny on 2026-10-31. Implemented on
+`fix/linked-folder-races`, stacked on PR #40.
+
+Things that changed during implementation. The checker found overlapping
+write-backs leaving stale text in a file, so write-backs now run one at a time
+through a promise queue and read the stored note, not memory. Independent review
+found repeated losing reads flushing History, so a read checks the stored note
+before it writes a revision.
+A save that loses its race may not reach the conflict dialog on the next
+try: when the read has already refreshed memory, that save succeeds and the read's
+text stays in History.
+
+## Goal
+
+No text is lost when a linked-folder read races a note save (F2), and a file
+edit landing just after the app writes that file still gets read (F3).
+
+## Inputs and outputs
+
+- `DB.putIfUnchanged(note, expectedUpdatedAt)` already exists and commits only
+  when the stored `updatedAt` still matches. `mutateNoteBody` uses it today.
+- `putNoteRecord(note, changeType, expectedUpdatedAt)` gains an optional third
+  argument. With it, the write is conditional and the function returns whether
+  it committed. Without it, callers behave as they do now.
+
+## Design
+
+F2 has two directions, so both writers become conditional.
+
+- A read calls `putNoteRecord` with the `updatedAt` it based its decision on.
+  If that write loses, `applyFile` leaves `record.written` alone, so the file
+  stays unread and the next read applies the conflict rule to the newer note.
+  A write-back that hits this skips that note's write for the round.
+- `saveCurrent` passes `latestRaw.updatedAt`. If that write loses, the editor
+  stays open with the user's text and the draft, and a toast asks them to save
+  again. That next save opens the existing conflict dialog, because the
+  `updatedAt` check already differs. When `latest` is missing, it writes
+  unconditionally as it does today.
+
+F3: `writeFile` compares the file's text with what it just wrote. If they differ,
+or the read fails because the file changed, it records a timestamp older than
+any real file instead of the file's own. Later reads then treat the file as
+unread. Attachments skip the comparison.
+
+## Constraints
+
+- The structure ratchet leaves no room: `app.js` and `linked-folder.js` must fit
+  their ceilings, and ceilings never rise. In `app.js`, `mutateNoteBody` switches
+  to the new `putNoteRecord` argument and its comment gets shorter. In
+  `linked-folder.js`, the `show` object in `render` collapses to one line.
+- No version bump. `npm run verify` and the three-browser suite must pass.
+
+## Edge cases
+
+- A legacy note with no finite `updatedAt`: normalizing gives memory a value the
+  database lacks, so a read's conditional write keeps losing. The text stays on
+  disk, nothing is lost, and the next save repairs the note.
+- A write-back must not retry on a timer after losing, or that legacy note would
+  loop every 800 ms. The save that won already scheduled its own write-back.
+- Reading text back on every write adds a small cost, once per note written.
+
+## Anti-goals
+
+- The remaining F1 window. The File System Access API has no conditional write.
+- Two-tab coordination in the checker, and files the app has never read.
+- New conflict UI. The existing dialog handles the retry.
+
+## Behavior changes
+
+- Task toggles and other `mutateNoteBody` writes now reach the linked folder,
+  because they go through `putNoteRecord`. Today they skip it, so the file stays
+  stale until the next save of that note.
+- A save can now stop with a toast in a race it used to win silently.
+
+## Acceptance criteria
+
+- `F2` and `F3` move from `findings` to `guards` in `scenarios.mjs`, and pass in
+  every order. `F1` is the only open finding left.
+- `npm run check:linked-folder` exits 0, with a variant removing each fix caught.
+- `scripts/verify-linked-folder/world.mjs` mirrors the new `saveCurrent` path.
+
+## Test stubs
+
+- Guard: a read overlapping a note save keeps both texts.
+- Guard: a file edit landing just after a write-back gets read back.
+- Variants: read writes unconditionally; save writes unconditionally; `writeFile`
+  trusts the timestamp.
+- `tests/linked-folder.spec.js`: slow the real `DB` seam so a read lands between
+  the save's read and write. Assert the editor stays open and both texts survive.
+- `tests/linked-folder.spec.js`: a task toggle updates the linked file.
+
+## Assumptions
+
+- The checker models the conflict dialog as the user keeping a separate note.
+- A second save after the toast is an acceptable cost, given how rare this race is.
+
 # Spec: open tasks on Home
 
 Vinny proposed this on 2026-10-08 and asked for the spec after the revision

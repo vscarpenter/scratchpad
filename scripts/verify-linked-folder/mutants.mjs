@@ -8,8 +8,8 @@ export const mutants = [
     guard: 'a new file adopted while another note saves',
     edits: [
       {
-        find: "if (reads || !deps || !record || (await permission()) !== 'granted') return;",
-        replace: "if (!deps || !record || (await permission()) !== 'granted') return;",
+        find: 'if (reads || !deps || !record || (await permission())',
+        replace: 'if (!deps || !record || (await permission())',
       },
       {
         find: 'if (pending.size && !writeTimer && !reads) writeTimer',
@@ -45,7 +45,45 @@ export const mutants = [
   {
     name: 'a write-back overwrites an edit nobody has read (F1)',
     guard: 'file edited, then note saved, then the write-back fires',
-    edits: [{ find: 'if (await readUnseenEdit(id, api)) paths = assignPaths(api.notes());', replace: '' }],
+    edits: [{ find: 'const seen = await readUnseenEdit(id, api);', replace: 'const seen = 0;' }],
+  },
+  {
+    name: 'two write-backs of one file can overlap',
+    guard: 'a read overlapping a note save',
+    edits: [{ find: 'writes = writes.then(writeBack).catch(', replace: 'writes = writeBack().catch(' }],
+  },
+  {
+    name: 'Write now returns before its write finishes',
+    guard: 'Write now finishes only after the write in progress and its own',
+    edits: [{ find: 'await flush();\n    return Object.keys', replace: 'flush();\n    return Object.keys' }],
+  },
+  {
+    name: 'a write-back writes stale memory after its read loses',
+    guard: 'file edited, then note saved, then the write-back fires',
+    edits: [{ find: 'if (seen < 0) continue;', replace: '' }],
+  },
+  {
+    name: 'an edit found after a write is marked as already read',
+    guard: 'a file edit landing just after a write survives the next save',
+    edits: [{ find: 'const UNSEEN = 1;', replace: 'const UNSEEN = 0;' }],
+  },
+  {
+    name: 'a read overwrites the note without checking it changed (F2)',
+    guard: 'a read overlapping a note save',
+    edits: [{ find: ', undefined, existing.updatedAt)', replace: ')' }],
+  },
+  {
+    // saveCurrent lives in app.js, so this breaks the copy in world.mjs. The browser
+    // test in tests/linked-folder.spec.js covers the real function.
+    name: 'a save overwrites the note without checking it changed (F2)',
+    guard: 'a read overlapping a note save',
+    edits: [],
+    world: { unconditionalSave: true },
+  },
+  {
+    name: 'a write trusts the timestamp without checking the text (F3)',
+    guard: 'a file edit landing just after the app writes that file',
+    edits: [{ find: 'return same ? file.lastModified : UNSEEN;', replace: 'return file.lastModified;' }],
   },
   {
     name: 'a read never reloads memory',
@@ -57,8 +95,8 @@ export const mutants = [
     guard: 'note saved, then file edited, then the write-back fires',
     edits: [
       {
-        find: 'if (changed) await api.reload();\n      if (changed) api.toast',
-        replace: 'if (changed) api.toast',
+        find: 'if (changed > 0) await api.reload();\n      if (changed > 0) api.toast',
+        replace: 'if (changed > 0) api.toast',
       },
     ],
   },

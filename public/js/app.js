@@ -319,10 +319,12 @@
     }
   }
 
-  async function putNoteRecord(note, changeType) {
-    await DB.put(note);
+  async function putNoteRecord(note, changeType, expectedUpdatedAt) {
+    if (arguments.length < 3) await DB.put(note);
+    else if (!(await DB.putIfUnchanged(note, expectedUpdatedAt))) return false;
     if (window.ScratchpadLinkedFolder) window.ScratchpadLinkedFolder.noteChanged(note);
     broadcastChange({ type: changeType || 'note-changed', noteId: note.id, updatedAt: note.updatedAt });
+    return true;
   }
 
   async function bulkPutNoteRecords(notes, changeType) {
@@ -2716,7 +2718,7 @@
         lastDraftAt: null,
       };
       if (changed) await storeRevision(baseNote);
-      await putNoteRecord(nextNote);
+      if (!(await (latestRaw ? putNoteRecord(nextNote, undefined, latestRaw.updatedAt) : putNoteRecord(nextNote)))) return toast('This note changed while saving. Save again to keep your edits.');
       await DB.removeDraft(note.id);
       const index = state.notes.findIndex((item) => item.id === note.id);
       if (index >= 0) state.notes[index] = nextNote;
@@ -3311,11 +3313,10 @@
   async function mutateNoteBody(noteId, transform, opts) {
     opts = opts || {};
     // Retried because the read and the write are separate transactions --
-    // storeRevision alone adds two more in between -- and a write committed
-    // by another tab in that gap would be clobbered wholesale by the stale
-    // {...latest} snapshot, every field of it, with nothing to show for it.
-    // The conditional put detects the conflict; the transform then re-runs
-    // against the newer record.
+    // storeRevision alone adds two more in between -- and a write committed by
+    // another tab in that gap would be clobbered by the stale {...latest} snapshot,
+    // with nothing to show for it. The conditional put detects the conflict; the
+    // transform then re-runs against the newer record.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const latestRaw = await DB.get(noteId);
       if (!latestRaw) return null;
@@ -3331,8 +3332,7 @@
       }
       if (snapshot) await storeRevision(latest);
       const nextNote = { ...latest, body: nextBody, updatedAt: nextUpdatedAt(latest) };
-      if (!(await DB.putIfUnchanged(nextNote, latestRaw.updatedAt))) continue;
-      broadcastChange({ type: 'note-changed', noteId: nextNote.id, updatedAt: nextNote.updatedAt });
+      if (!(await putNoteRecord(nextNote, undefined, latestRaw.updatedAt))) continue;
       const index = state.notes.findIndex((n) => n.id === noteId);
       if (index >= 0) state.notes[index] = nextNote;
       else state.notes.push(nextNote);
@@ -5930,7 +5930,7 @@
       window.ScratchpadAttachments.init({ noteId: () => state.selectedId, editing: () => state.editing, uuid, now, toast, rerender: renderEditor, insert: window.ScratchpadPaste.insert, editor: els.editor });
     }
     if (window.ScratchpadLinkedFolder) window.ScratchpadLinkedFolder.init({
-      notes: () => state.notes, folders: () => state.folders, noteToMarkdown, parseMarkdownNote, storeRevision, putNoteRecord,
+      notes: () => state.notes, folders: () => state.folders, noteToMarkdown, parseMarkdownNote, storeRevision, putNoteRecord, getStoredNote: (id) => DB.get(id).then((raw) => raw && normalizeNote(raw)),
       deriveTitle, slugify, noteFolderId, folderDisplayName, isArchived, isTrashed, uuid, now, toast, reload: loadAll,
     });
     window.ScratchpadShareManager.init({ db: DB, crypto: ScratchpadCrypto });

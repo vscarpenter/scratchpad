@@ -47,7 +47,7 @@ async function runMutant(mutant) {
   }
   const broken = mutant.edits.reduce((text, edit) => text.replace(edit.find, edit.replace), source);
   const scenario = guards.find((guard) => guard.name === mutant.guard);
-  const result = await explore(broken, scenario, check, MAX_RUNS);
+  const result = await explore(broken, scenario, check, MAX_RUNS, { ...mutant.world, stopAtFirstViolation: true });
   const caught = result.violations.length > 0;
   console.log(`${caught ? 'caught' : 'MISSED'}  ${mutant.name}, by "${mutant.guard}"`);
   return caught;

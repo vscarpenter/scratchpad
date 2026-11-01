@@ -16,6 +16,9 @@ const readNow = {
 };
 const focusLate = { run: (world) => world.focusAfterThrottle() };
 
+const anyStepWas = (text) => (world) => world.trace.some((line) => line.includes(text));
+const lastStepWas = (text) => (world) => !!world.trace.at(-1)?.includes(text);
+
 function survives(world, text) {
   const inNote = [...world.db.values()].some((note) => note.body === text);
   const inHistory = world.revisions.some((revision) => revision.body === text);
@@ -28,7 +31,7 @@ function readBack(world, text) {
   return inNote || world.revisions.some((revision) => revision.body === text);
 }
 
-export function check(world, scenario) {
+function textViolations(world, scenario) {
   const violations = [];
   for (const text of scenario.mustSurvive || []) {
     if (!survives(world, text)) {
@@ -46,6 +49,11 @@ export function check(world, scenario) {
       });
     }
   }
+  return violations;
+}
+
+function fileViolations(world) {
+  const violations = [];
   const trashed = (note) => !!note.deletedAt;
   for (const note of world.db.values()) {
     const hasFile = [...world.files.values()].some((file) => file.text.includes(`\nid: ${note.id}\n`));
@@ -64,8 +72,19 @@ export function check(world, scenario) {
     if (!trashed(note) && hasFile && !isCurrent) {
       violations.push({ property: 'file-current', message: `the file for ${note.id} no longer matches the note` });
     }
+    const inMemory = world.memory.find((item) => item.id === note.id);
+    if (inMemory && inMemory.body !== note.body) {
+      violations.push({ property: 'memory-current', message: `the app shows old text for ${note.id}` });
+    }
   }
   return violations;
+}
+
+export function check(world, scenario) {
+  const stale = world.staleAfterWriteNow
+    ? [{ property: 'write-now', message: 'Write now reported success before a file matched its note' }]
+    : [];
+  return [...stale, ...textViolations(world, scenario), ...fileViolations(world)];
 }
 
 // Guards: these hold on the current code, so a regression shows up here.
@@ -125,9 +144,54 @@ export const guards = [
     mustReadBack: [FILE_TEXT],
   },
   {
+    name: 'a file edit landing just after a write survives the next save',
+    promise: 'An edit the app has not read is never overwritten by a later write-back.',
+    notes: [NOTE],
+    events: [
+      appSave,
+      { when: lastStepWas('the app overwrites'), run: externalEdit.run },
+      { when: anyStepWas('external editor saves'), run: (world) => world.appSave('n1', { body: 'typed again' }) },
+    ],
+    mustSurvive: [FILE_TEXT, 'typed again'],
+  },
+  {
+    name: 'Write now finishes only after the write in progress and its own',
+    promise: 'When Write now reports success, every file matches its note.',
+    notes: [NOTE],
+    events: [
+      appSave,
+      {
+        when: (world) => anyStepWas('write-back timer')(world) && anyStepWas('removes the draft')(world),
+        run: async (world) => {
+          await world.linkedFolder.writeAll();
+          world.staleAfterWriteNow = [...world.db.values()].some(
+            (note) => ![...world.files.values()].some((file) => file.text.endsWith(`\n\n${note.body}`)),
+          );
+        },
+      },
+    ],
+  },
+  {
+    name: 'a read overlapping a note save',
+    promise: 'When both change, the newer one wins and the other text stays in History.',
+    notes: [NOTE],
+    setup: [externalEdit],
+    events: [readNow, appSave],
+    mustSurvive: [FILE_TEXT, APP_TEXT],
+  },
+  {
+    // Only read-back is checked here. The open finding F1 owns the orders where the
+    // edit lands before the overwrite and is lost outright.
+    name: 'a file edit landing just after the app writes that file',
+    promise: 'An edit still on disk gets read back, even if it landed right after a write.',
+    notes: [NOTE],
+    events: [externalEdit, appSave],
+    mustReadBack: [FILE_TEXT],
+  },
+  {
     name: 'a new file adopted while another note saves',
     promise: 'A read never deletes the files it is adopting (d0d9339).',
-    notes: [NOTE, OTHER],
+    notes: [NOTE],
     events: [{ run: (world) => world.externalCreate('fresh-thought.md', 'fresh') }, readNow, appSave],
     mustSurvive: ['fresh', APP_TEXT],
   },
@@ -156,21 +220,5 @@ export const findings = [
     notes: [NOTE],
     events: [externalEdit, appSave],
     mustSurvive: [FILE_TEXT, APP_TEXT],
-  },
-  {
-    name: 'F2: a read overlapping a note save',
-    promise: 'When both change, the newer one wins and the other text stays in History.',
-    notes: [NOTE],
-    events: [readNow, appSave],
-    setup: [externalEdit],
-    holdTimersUntilDone: true,
-    mustSurvive: [FILE_TEXT, APP_TEXT],
-  },
-  {
-    name: 'F3: a file edit landing just after the app writes that file',
-    promise: 'An edit made in the file is read back, or stays on disk until it is.',
-    notes: [NOTE],
-    events: [externalEdit, appSave],
-    mustReadBack: [FILE_TEXT],
   },
 ];

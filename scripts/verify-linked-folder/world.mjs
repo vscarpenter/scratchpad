@@ -29,7 +29,8 @@ function notFound(path) {
 }
 
 export class World {
-  constructor(source) {
+  constructor(source, options = {}) {
+    this.options = options;
     this.clock = 1000000;
     this.files = new Map();
     this.db = new Map();
@@ -74,8 +75,9 @@ export class World {
       folders: () => [],
       noteToMarkdown: toMarkdown,
       parseMarkdownNote: (text) => this.parseMarkdown(text),
+      getStoredNote: (id) => this.operation(`the app reads the stored ${id}`, () => this.db.get(id)),
       storeRevision: async (note) => this.storeRevision(note),
-      putNoteRecord: (note) => this.putNoteRecord(note),
+      putNoteRecord: (note, changeType, expected) => this.putNoteRecord(note, changeType, expected),
       deriveTitle: (note) => note.title || 'Untitled',
       slugify,
       noteFolderId: () => null,
@@ -134,11 +136,20 @@ export class World {
     this.note(`History keeps "${note.body}"`);
   }
 
-  async putNoteRecord(note) {
-    await this.operation(`the database saves "${note.body}" for ${note.id}`, () => {
+  // With `expected`, this mirrors DB.putIfUnchanged: one transaction that commits
+  // only when the stored updatedAt still matches.
+  async putNoteRecord(note, _changeType, expected) {
+    const committed = await this.operation(`the database saves "${note.body}" for ${note.id}`, () => {
+      if (expected !== undefined && this.db.get(note.id)?.updatedAt !== expected) return false;
       this.db.set(note.id, { ...note });
+      return true;
     });
+    if (!committed) {
+      this.note('the database refuses that write, because the note changed');
+      return false;
+    }
     this.linkedFolder.noteChanged(note);
+    return true;
   }
 
   async reload() {
@@ -243,9 +254,18 @@ export class World {
     if (latest.updatedAt !== opened.updatedAt) return this.saveAsSeparateNote(latest, changes);
     this.storeRevision(latest);
     const next = { ...latest, ...changes, updatedAt: this.clock };
-    await this.putNoteRecord(next);
+    const expected = this.options.unconditionalSave ? undefined : latest.updatedAt;
+    if (!(await this.putNoteRecord(next, undefined, expected))) return this.saveAgainAfterRace(id, changes);
+    // saveCurrent awaits DB.removeDraft here, so memory lags the database for a moment.
+    await this.operation('the app removes the draft', () => {});
     this.memory = this.memory.map((note) => (note.id === id ? next : note));
     return undefined;
+  }
+
+  // saveCurrent keeps the editor open when its write loses, and the user saves again.
+  saveAgainAfterRace(id, changes) {
+    this.note('the editor stays open');
+    return this.appSave(id, changes);
   }
 
   // saveCurrent opens a conflict dialog when the note changed underneath the editor.

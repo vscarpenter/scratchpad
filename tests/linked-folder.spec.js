@@ -186,6 +186,112 @@ test('saving a note keeps a file edit nobody has read yet', async ({ page }) => 
     .toContain('Edited outside');
 });
 
+test('a save that loses a race with a read keeps both texts', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="loose-note"]').click();
+  await page.locator('#edit-btn').click();
+  await page.locator('#note-editor').fill('Edited inside');
+  const original = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside'));
+  // The read lands after the save has read the note and before the save writes it.
+  await page.evaluate(() => {
+    const db = window.ScratchpadDB;
+    const write = db.putRevision;
+    let paused = false;
+    db.putRevision = async (revision) => {
+      if (!paused && revision.body === 'Idea body') {
+        paused = true;
+        await window.ScratchpadLinkedFolder.readAll(true);
+      }
+      return write(revision);
+    };
+  });
+  await page.locator('#save-btn').click();
+  await expect(page.locator('#toast-region')).toContainText('Save again');
+  await expect(page.locator('#note-editor')).toHaveValue(/Edited inside/);
+  expect(await page.evaluate(() => window.ScratchpadDB.get('loose-note').then((n) => n.body))).toBe('Edited outside');
+  await page.locator('#save-btn').click();
+  await expect
+    .poll(() => page.evaluate(() => window.ScratchpadDB.get('loose-note').then((n) => n.body)))
+    .toContain('Edited inside');
+  const history = await page.evaluate(() => window.ScratchpadDB.getRevisions('loose-note'));
+  expect(history.map((revision) => revision.body).join()).toContain('Edited outside');
+});
+
+test('reads that keep losing to a newer note leave History alone', async ({ page }) => {
+  await seedLinkedNotes(page);
+  await link(page);
+  const original = await opfs(page, 'read', 'loose-idea.md');
+  await opfs(page, 'write', 'loose-idea.md', original.replace('Idea body', 'Edited outside'));
+  const result = await page.evaluate(async () => {
+    const db = window.ScratchpadDB;
+    const stored = await db.get('loose-note');
+    // Another tab saved, and this tab's memory stays stale, as it does under a dirty editor.
+    await db.put({ ...stored, body: 'Saved in another tab', updatedAt: stored.updatedAt + 1000 });
+    const before = (await db.getRevisions('loose-note')).length;
+    for (let read = 0; read < 3; read += 1) await window.ScratchpadLinkedFolder.readAll(true);
+    return { before, after: (await db.getRevisions('loose-note')).length, body: (await db.get('loose-note')).body };
+  });
+  expect(result.after).toBe(result.before);
+  expect(result.body).toBe('Saved in another tab');
+  expect(await opfs(page, 'read', 'loose-idea.md')).toContain('Edited outside');
+});
+
+test('a read leaves a note with a lone surrogate alone', async ({ page }) => {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'odd-note', title: 'Odd note', body: 'plain' }]);
+  await link(page);
+  const result = await page.evaluate(async () => {
+    await window.ScratchpadDB.put({
+      ...(await window.ScratchpadDB.get('odd-note')),
+      body: `x${String.fromCharCode(0xd83d)}y`,
+    });
+    await window.ScratchpadLinkedFolder.writeAll();
+    const changed = await window.ScratchpadLinkedFolder.readAll(true);
+    return { changed, code: (await window.ScratchpadDB.get('odd-note')).body.charCodeAt(1) };
+  });
+  expect(result).toEqual({ changed: 0, code: 0xd83d });
+});
+
+test('ticking a task keeps another tab save on a note with no updatedAt', async ({ page }) => {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] one' }]);
+  await page.locator('.note-row[data-id="task-note"]').click();
+  const body = await page.evaluate(async () => {
+    const db = window.ScratchpadDB;
+    const { updatedAt: _removed, ...legacy } = await db.get('task-note');
+    await db.put(legacy);
+    const write = db.putRevision;
+    let raced = false;
+    // Another tab saves after this tab read the note and before it writes.
+    db.putRevision = async (revision) => {
+      if (!raced) {
+        raced = true;
+        await db.put({ ...legacy, body: '- [ ] one\nonly copy of the other tab', updatedAt: 5 });
+      }
+      return write(revision);
+    };
+    return 'prepared';
+  });
+  expect(body).toBe('prepared');
+  await page.locator('#note-rendered .task-checkbox').first().click();
+  await expect
+    .poll(() => page.evaluate(() => window.ScratchpadDB.get('task-note').then((note) => note.body)))
+    .toContain('only copy of the other tab');
+});
+
+test('ticking a task updates the linked file', async ({ page }) => {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] Buy beans' }]);
+  await link(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.note-row[data-id="task-note"]').click();
+  await page.locator('#note-rendered .task-checkbox').first().click();
+  await expect.poll(() => opfs(page, 'read', 'task-note.md')).toContain('- [x] Buy beans');
+});
+
 test('a read slower than the write-back delay never deletes the files it is adopting', async ({ page }) => {
   await seedLinkedNotes(page);
   await link(page);
