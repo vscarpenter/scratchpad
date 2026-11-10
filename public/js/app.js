@@ -3262,9 +3262,10 @@
   }
 
   // -------- Dialogs --------
+  // An IME confirms a candidate with Enter; Safari reports that keydown as 229.
+  const imeConfirming = (e) => e.isComposing || e.keyCode === 229;
   function openDialog(dialog) {
-    if (typeof dialog.showModal === 'function') dialog.showModal();
-    else dialog.setAttribute('open', '');
+    dialog.showModal();
   }
 
   function closeDialog(dialog) {
@@ -3272,8 +3273,7 @@
       els.commandPaletteInput.setAttribute('aria-expanded', 'false');
       els.commandPaletteInput.removeAttribute('aria-activedescendant');
     }
-    if (typeof dialog.close === 'function') dialog.close();
-    else dialog.removeAttribute('open');
+    dialog.close();
   }
 
   function bindDialogClosers() {
@@ -3601,7 +3601,7 @@
       e.preventDefault();
       wikilinkSuggestState.index = Math.max(0, wikilinkSuggestState.index - 1);
       renderWikilinkSuggest();
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
+    } else if ((e.key === 'Enter' && !imeConfirming(e)) || e.key === 'Tab') {
       e.preventDefault();
       insertWikilinkSuggestion(wikilinkSuggestState.index);
     } else if (e.key === 'Escape') {
@@ -4583,7 +4583,7 @@
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setCommandPaletteIndex(state.commandIndex - 1, true);
-    } else if (e.key === 'Enter') {
+    } else if (e.key === 'Enter' && !imeConfirming(e)) {
       e.preventDefault();
       runCommandAt(state.commandIndex);
     } else if (e.key === 'Escape') {
@@ -5513,7 +5513,7 @@
     });
     els.folderDialogSave.addEventListener('click', () => { saveFolderDialog(); });
     els.folderNameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !imeConfirming(e)) {
         e.preventDefault();
         saveFolderDialog();
       }
@@ -5633,7 +5633,7 @@
       if (!els.tagInput.hidden && e.target.closest('button')) e.preventDefault();
     });
     els.tagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
+      if ((e.key === 'Enter' || e.key === ',') && !imeConfirming(e)) {
         e.preventDefault();
         addTagFromInput();
         els.tagInput.focus();
@@ -5751,7 +5751,7 @@
     els.confirmTagDelete.addEventListener('click', deletePendingTag);
     els.bulkApplyTag.addEventListener('click', applyBulkTag);
     els.bulkTagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !imeConfirming(e)) {
         e.preventDefault();
         applyBulkTag();
       }
@@ -5766,7 +5766,7 @@
       els.commandPaletteInput.removeAttribute('aria-activedescendant');
     });
     els.quickCaptureInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !imeConfirming(e)) {
         e.preventDefault();
         submitQuickCapture();
       }
