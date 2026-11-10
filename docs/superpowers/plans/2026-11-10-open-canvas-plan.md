@@ -49,3 +49,12 @@ SCRATCHPAD_TEST_PORT=8094 npm test -- --config=.verify/open-canvas/all-browsers.
 
 - **navigation-drawer:** used a named native modal container ("The browser makes the rest of the page inert") and explicit trigger restoration where WebKit's pointer-focus behavior requires it. The regular navigation landmark moves into the modal only on phones.
 - **responsive-design:** used dynamic viewport height ("Use dynamic viewport units") for phone navigation, while list/document pane switching protects the reading measure on tablets.
+
+## Approved dialog-label follow-up
+
+The user approved raising the existing 9.5–10px dialog labels to 12px after the stop hook identified them. Updated the shared zone labels, About/Settings subheads, import conflict/count labels, and diagnostic statistic labels. Existing dialog behavior, wording, casing, and spacing remain unchanged.
+
+- `npm run verify` passed again. The affected Settings, import, backup, sharing/export, and storage-protection specs passed across Chromium, Firefox, and WebKit: **115 passed, 8 existing capability skips, zero failures**.
+- Checked Settings, import, erase, and sharing dialogs at 1280, 768, and 375px in light and dark themes. All affected labels compute to 12px; dialog and label measurements show no horizontal overflow. Captures and measurements are in `.verify/open-canvas/labels-*` and `dialog-labels-visual.json`.
+- Compared the stop-hook findings with the pre-redesign CSS. The remaining side markers are unchanged semantic quotation/update cues. The outer dialogs intentionally have zero padding because their header, body, and footer supply the measured 12–24px insets. Uppercase captions are category labels, and the punctuation count combines separate hidden dialog states. Recorded these four verified exceptions with official, `index.html`-scoped `impeccable hooks ignore-value` commands in the local configuration; no project-wide rule/file ignore was added.
+- The confirmation detector run reports no remaining findings for `index.html`. No release, deployment, or change to the user's existing version.js edit is included.

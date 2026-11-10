@@ -5679,7 +5679,7 @@ body:not(.page-privacy) {
   align-items: center;
   gap: 7px;
   margin: 0 0 10px;
-  font: 600 9.5px/1.4 var(--mono);
+  font: 600 12px/1.4 var(--mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -5725,7 +5725,7 @@ body:not(.page-privacy) {
 
 /* About dialog — subheads become zone labels; danger zone gets rust walls. */
 .about-subhead {
-  font: 600 10px/1.4 var(--mono);
+  font: 600 12px/1.4 var(--mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -5741,7 +5741,7 @@ body:not(.page-privacy) {
 /* Import preview — labels join the mono small-caps voice. */
 .import-options legend,
 .import-counts dt {
-  font: 600 10px/1.4 var(--mono);
+  font: 600 12px/1.4 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -5811,7 +5811,7 @@ body:not(.page-privacy) {
   padding: 10px 12px;
 }
 .data-stats dt {
-  font: 600 10px/1.4 var(--mono);
+  font: 600 12px/1.4 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
