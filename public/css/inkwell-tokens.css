@@ -210,6 +210,12 @@
   color-scheme: light dark;
 }
 
+/* A forced light theme must also pin native UI (scrollbars, form controls,
+   system colors) to light, or a dark system keeps drawing them dark. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 /* =====================================================================
    Dark mode — Pattern B  (proposal per handoff; AA-validated)
    • prefers-color-scheme: dark applies UNLESS data-theme="light"
