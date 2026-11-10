@@ -118,9 +118,12 @@
     document.getElementById('home-back-to-list')?.addEventListener('click', () => api.navigate('notes'));
     panel.addEventListener('click', onAction);
     dialog.addEventListener('close', restorePanel);
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) close();
-    });
+    // closedby="any" dismisses on a backdrop click where the browser supports it.
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) close();
+      });
+    }
     wide.addEventListener('change', close);
   }
 

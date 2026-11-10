@@ -204,3 +204,14 @@ test('navigation and calendar interactions stay entirely local', async ({ page }
   await expect(page.locator('#home-desk')).toBeVisible();
   expect(requests).toEqual([]);
 });
+
+test('phone navigation declares light dismiss and closes on a backdrop click', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await seedRawNotes(page, NOTES);
+  const dialog = page.locator('#navigation-dialog');
+  await expect(dialog).toHaveAttribute('closedby', 'any');
+  await page.locator('#navigation-toggle').click();
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(350, 400);
+  await expect(dialog).toBeHidden();
+});

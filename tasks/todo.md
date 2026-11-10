@@ -1,3 +1,22 @@
+# Modernize the UI against modern-web-guidance (2026-11-10)
+
+Tier: Standard (three bounded fixes, no interface change). Branch:
+`codex/open-canvas-redesign`.
+
+- [x] Red: IME, forced-light, and drawer tests failed first.
+- [x] Green: eight Enter handlers skip an IME-confirming keydown, a forced light
+      theme sets `color-scheme: light`, and the drawer uses `closedby="any"`.
+- [x] Verified: `bun run verify` passes, and Chromium plus WebKit pass 1215 tests.
+
+## Resuming From Here
+
+- Done: three commits on the branch. Not pushed.
+- Next: Vinny decides on the larger options (popover menus, meta color-scheme
+  sync). Neither has started.
+- Assumptions: the forced-light rule lives in the vendored `inkwell-tokens.css`,
+  so the same rule belongs upstream in Inkwell.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
 # Fix F2 and F3: linked-folder races (2026-11-01)
 
 Tier: Non-trivial, because it changes `saveCurrent`. Spec approved; see the top of
