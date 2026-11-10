@@ -1,3 +1,26 @@
+# Fix the tier 1 audit findings (2026-11-10)
+
+Tier: a batch of Standard fixes from the modern-web-guidance audit. Vinny
+approved it with "start with tier 1". Branch: `codex/open-canvas-redesign`.
+
+- [x] Red: 15 new tests failed first, each for its own defect.
+- [x] Green: 12 of the 13 findings are fixed. See the two commits.
+- [x] Verified: `bun run verify` passes, and Chromium plus WebKit pass 1245 tests.
+
+## Resuming From Here
+
+- Done: two commits on the branch. Not pushed, not deployed.
+- Next: Vinny decides how toasts should behave while a dialog is open. That is
+  the one tier 1 finding left, and it is a design choice. `.dialog` has a
+  `backdrop-filter`, so a toast region moved into the dialog would anchor to
+  the dialog and cover its footer. The options are in-dialog status text,
+  holding the toast until the dialog closes, or leaving it alone.
+- Then: tier 2, if Vinny wants it.
+- Assumptions: `.note-rendered` wraps with `overflow-wrap: break-word`. The
+  `anywhere` value hangs WebKit on a 2 MB unbroken token, which
+  `tests/import.spec.js` renders.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
 # Modernize the UI against modern-web-guidance (2026-11-10)
 
 Tier: Standard (three bounded fixes, no interface change). Branch:

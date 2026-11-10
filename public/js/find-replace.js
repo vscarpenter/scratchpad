@@ -163,7 +163,10 @@
   }
 
   function onBarKey(event) {
-    if (event.key !== 'Enter') return;
+    // Enter on a button in the bar must press that button, and an IME confirms
+    // a candidate with Enter (Safari reports that keydown as 229).
+    if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return;
+    if (event.isComposing || event.keyCode === 229) return;
     event.preventDefault();
     if (event.metaKey || event.ctrlKey) replaceCurrent();
     else cycle(event.shiftKey ? -1 : 1);

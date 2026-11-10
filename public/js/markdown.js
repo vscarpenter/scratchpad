@@ -150,6 +150,11 @@
         bq.classList.add('is-pullquote');
       }
     }
+    // A bare role="checkbox" span has no name; its task's first line is the name.
+    for (const box of root.querySelectorAll('.task-checkbox')) {
+      const item = box.closest('li');
+      if (item) box.setAttribute('aria-label', item.textContent.trim().split('\n')[0]);
+    }
   }
 
   // Wikilinks: [[Title]] / [[Title|alias]]. Resolution is injected by app.js

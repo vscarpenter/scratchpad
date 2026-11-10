@@ -102,6 +102,8 @@
   /** @param {KeyboardEvent} event */
   function onKey(event) {
     if (!(event.target instanceof HTMLButtonElement)) return;
+    // Alt+Left is browser Back, and other modified arrows belong to the OS.
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     const key = event.target.dataset.date;
     if (!key) return;
     const date = dateOf(key);

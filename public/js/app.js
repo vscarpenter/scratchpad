@@ -527,8 +527,8 @@
     const d = new Date(ms || now());
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
-    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+    const yesterdayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).getTime();
+    const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).getTime();
 
     if (ms >= todayStart) {
       let hour = d.getHours();
@@ -563,8 +563,8 @@
   function bucketizeNotes(notes) {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
-    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+    const yesterdayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).getTime();
+    const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).getTime();
 
     const pinned = [];
     const todayBucket = [];
@@ -3269,10 +3269,6 @@
   }
 
   function closeDialog(dialog) {
-    if (dialog === els.commandPaletteDialog) {
-      els.commandPaletteInput.setAttribute('aria-expanded', 'false');
-      els.commandPaletteInput.removeAttribute('aria-activedescendant');
-    }
     dialog.close();
   }
 
@@ -3965,8 +3961,9 @@
     return 'Last backup ' + formatFullTimestamp(ms);
   }
 
-  function formatDaysAgo(elapsedMs) {
-    const days = Math.floor(elapsedMs / DAY_MS);
+  function formatDaysAgo(ms) {
+    const dayStart = (t) => new Date(t).setHours(0, 0, 0, 0);
+    const days = Math.round((dayStart(now()) - dayStart(ms)) / DAY_MS);
     if (days <= 0) return 'today';
     if (days === 1) return 'yesterday';
     return days + ' days ago';
@@ -3980,10 +3977,10 @@
     let label = 'Never backed up. Export now.';
     if (last && elapsed <= BACKUP_HEALTHY_MS) {
       backupState = 'healthy';
-      label = 'Backed up ' + formatDaysAgo(elapsed);
+      label = 'Backed up ' + formatDaysAgo(last);
     } else if (last && elapsed <= BACKUP_AGING_MS) {
       backupState = 'aging';
-      label = 'Last backup ' + formatDaysAgo(elapsed);
+      label = 'Last backup ' + formatDaysAgo(last);
     }
     els.backupChip.dataset.backupState = backupState;
     els.backupChipLabel.textContent = label;
@@ -4738,6 +4735,7 @@
     els.backupPassphraseConfirmWrap.hidden = false;
     els.confirmEncryptedExport.hidden = false;
     els.confirmEncryptedImport.hidden = true;
+    els.backupPassphrase.autocomplete = 'new-password';
     openDialog(els.backupPassphraseDialog);
     els.backupPassphrase.focus();
   }
@@ -4752,6 +4750,7 @@
     els.backupPassphraseConfirmWrap.hidden = true;
     els.confirmEncryptedExport.hidden = true;
     els.confirmEncryptedImport.hidden = false;
+    els.backupPassphrase.autocomplete = 'current-password';
     openDialog(els.backupPassphraseDialog);
     els.backupPassphrase.focus();
   }
@@ -5500,7 +5499,7 @@
     els.archiveView.addEventListener('click', () => setView('archive'));
     els.trashView.addEventListener('click', () => setView('trash'));
     els.viewMenuBtn.addEventListener('click', () => viewMenuController.toggle());
-    els.viewMenu.addEventListener('click', () => viewMenuController.close());
+    els.viewMenu.addEventListener('click', () => viewMenuController.close({ returnFocus: true }), true);
     els.homeView.addEventListener('click', HomeDesk.goHome);
     els.folderSwitcherBtn.addEventListener('click', toggleFolderSwitcher);
     els.folderSwitcherSearch.addEventListener('input', () => {
@@ -5527,8 +5526,8 @@
     els.manageTags.addEventListener('click', openTagManager);
     els.listMenuBtn.addEventListener('click', toggleListMenu);
     els.listMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeListMenu();
-    });
+      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeListMenu({ returnFocus: true });
+    }, true);
     els.newFolderMenuBtn.addEventListener('click', () => openFolderDialog(null));
 
     els.newNote.addEventListener('click', createNote);
@@ -5657,8 +5656,8 @@
       toggleOverflowMenu();
     });
     els.overflowMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeOverflowMenu();
-    });
+      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeOverflowMenu({ returnFocus: true });
+    }, true);
     els.exportOverflowBtn.addEventListener('click', () => {
       closeOverflowMenu();
       exportMarkdownZip(getNote(state.selectedId));
@@ -5697,8 +5696,8 @@
     els.importBtn.addEventListener('click', () => els.importFile.click());
     els.backupChip.addEventListener('click', toggleBackupMenu);
     els.backupMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"]')) closeBackupMenu();
-    });
+      if (e.target.closest('[role="menuitem"]')) closeBackupMenu({ returnFocus: true });
+    }, true);
     els.protectStorageBtn.addEventListener('click', requestStorageProtection);
     els.checkUpdatesBtn.addEventListener('click', () => withBusy(
       'check-updates',
