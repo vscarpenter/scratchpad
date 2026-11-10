@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-10T21:02:57.586556+00:00",
+  "generatedAt": "2026-11-10T21:14:54.752363+00:00",
   "title": "Design System: Scratchpad \u2014 Open Canvas v6",
   "extensions": {
     "colorMeta": {
@@ -9,14 +9,14 @@
         "displayName": "Warm near-white canvas",
         "canonical": "#F8F7F4",
         "tonalRamp": [
-          "oklch(15% 0.0157 86.43)",
-          "oklch(26% 0.0157 86.43)",
-          "oklch(38% 0.0157 86.43)",
-          "oklch(49% 0.0157 86.43)",
-          "oklch(61% 0.0157 86.43)",
-          "oklch(72% 0.0157 86.43)",
-          "oklch(84% 0.0157 86.43)",
-          "oklch(95% 0.0157 86.43)"
+          "oklch(15% 0.0041 91.45)",
+          "oklch(26% 0.0041 91.45)",
+          "oklch(38% 0.0041 91.45)",
+          "oklch(49% 0.0041 91.45)",
+          "oklch(61% 0.0041 91.45)",
+          "oklch(72% 0.0041 91.45)",
+          "oklch(84% 0.0041 91.45)",
+          "oklch(95% 0.0041 91.45)"
         ]
       },
       "paper": {
@@ -24,14 +24,14 @@
         "displayName": "Open writing surface",
         "canonical": "#FFFEFC",
         "tonalRamp": [
-          "oklch(15% 0.0000 0.00)",
-          "oklch(26% 0.0000 0.00)",
-          "oklch(38% 0.0000 0.00)",
-          "oklch(49% 0.0000 0.00)",
-          "oklch(61% 0.0000 0.00)",
-          "oklch(72% 0.0000 0.00)",
-          "oklch(84% 0.0000 0.00)",
-          "oklch(95% 0.0000 0.00)"
+          "oklch(15% 0.0028 84.56)",
+          "oklch(26% 0.0028 84.56)",
+          "oklch(38% 0.0028 84.56)",
+          "oklch(49% 0.0028 84.56)",
+          "oklch(61% 0.0028 84.56)",
+          "oklch(72% 0.0028 84.56)",
+          "oklch(84% 0.0028 84.56)",
+          "oklch(95% 0.0028 84.56)"
         ]
       },
       "ink": {
@@ -148,6 +148,10 @@
       "prose": {
         "displayName": "Platform serif",
         "purpose": "Document title and matching rendered/Markdown body; 20px desktop, 18px phone."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Inline and fenced code retain the platform mono stack."
       }
     },
     "shadows": [
