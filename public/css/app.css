@@ -1997,6 +1997,9 @@ body:not(.page-privacy) {
   color: var(--text-body);
   font-size: 16.5px;
   line-height: 1.75;
+  /* break-word, not anywhere: anywhere stalls WebKit layout on a
+     megabyte-long unbroken token. */
+  overflow-wrap: break-word;
 }
 .note-rendered h1,
 .note-rendered h2,
@@ -2203,7 +2206,7 @@ body:not(.page-privacy) {
   height: 1.05em;
   margin-right: 0.45em;
   vertical-align: -0.15em;
-  border: 1px solid var(--border);
+  border: var(--border);
   border-radius: 5px;
   background: var(--control-fill);
   cursor: pointer;
@@ -3605,7 +3608,7 @@ body:not(.page-privacy) {
   font: 650 12.5px/1 var(--sans);
   cursor: pointer;
 }
-.toast-action:hover { color: var(--accent-hover); }
+.toast-action:hover { color: var(--accent-d); }
 .toast-action:disabled {
   color: var(--text-muted);
   cursor: default;
@@ -5287,7 +5290,7 @@ body:not(.page-privacy) {
 .workspace-item[aria-current] svg { color: var(--accent-text); }
 .workspace-item:focus-visible, .calendar-toggle:focus-visible, .calendar-today:focus-visible,
 .chronicle-day:focus-visible {
-  outline: 2px solid var(--accent-focus-ring);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 .workspace-folder-heading {
@@ -5668,9 +5671,11 @@ body:not(.page-privacy) {
   transition: transform var(--hold-ms) linear;
 }
 /* The fill reports progress, so reduced motion keeps it and drops the
-   snap-back. */
+   snap-back. Inkwell's global reduced-motion reset is !important, so the
+   fill needs the same weight to keep its full duration. */
 @media (prefers-reduced-motion: reduce) {
   .btn[data-hold-confirm]:not(.is-holding)::before { transition: none; }
+  .btn[data-hold-confirm].is-holding::before { transition-duration: var(--hold-ms) !important; }
 }
 
 /* Zone labels — mono small-caps that name a trust boundary. */
