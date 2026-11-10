@@ -16,7 +16,7 @@ colors:
 typography:
   chrome: "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
   prose: "Iowan Old Style, Palatino, Georgia, serif"
-  metadata: "ui-monospace, SFMono-Regular, Menlo, monospace"
+  code: "ui-monospace, SFMono-Regular, Menlo, monospace"
 document-measure: "680px"
 ---
 

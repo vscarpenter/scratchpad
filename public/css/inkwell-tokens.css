@@ -2,7 +2,7 @@
    Inkwell — design tokens & dark-mode cascade.
    Version: 6.0.0 — "Open Canvas"
    Palette: restrained indigo (#5661B3) over warm paper surfaces;
-   chronological wayfinding, opaque panels, and editorial document depth.
+   persistent navigation, local chronology, and an open writing canvas.
    Spec: docs/superpowers/specs/2026-11-10-open-canvas-design.md
 
    This file contains ONLY:
@@ -11,12 +11,10 @@
        manual override via [data-theme="dark"|"light"] on <html>)
      • The dark-mode .select chevron override
 
-   Soft Glass deliberately retires three older Inkwell rules: the flat
-   no-shadow surface, the signature 1.5px border, and the no-gradient
-   rule. Surfaces now float as frosted glass with soft shadows, outer
-   borders are 1px hairlines, and gradients appear on the brand glyph,
-   the About display headline, and the page wash. Colors still route
-   through tokens; nothing loads off-origin.
+   The app shell uses opaque flat surfaces and 1px column dividers.
+   Legacy depth/glass tokens remain available for existing dialogs and
+   static content pages. Colors resolve through tokens in both themes;
+   nothing loads off-origin.
 
    Component CSS lives in inkwell-components.css; app layout in app.css.
    ===================================================================== */

@@ -69,7 +69,7 @@
     return open;
   }
 
-  /** The Home button. In Archive and on phones it keeps its old job: reset the folder scope. */
+  /** The Home button opens the landing stage; in Archive it resets the folder scope. */
   async function goHome() {
     if (!deps) return;
     const api = deps;
@@ -248,7 +248,7 @@
     });
   }
 
-  /** Wires Home to app state and decides the launch stage: Home, unless this is the first visit, a phone, or Open to says Top note. @param {DeskDeps} api */
+  /** Wires Home to app state and decides the launch stage: Home, unless this is the first visit, a compact viewport, or Open to says Top note. @param {DeskDeps} api */
   function init(api) {
     deps = api;
     refs = collectRefs();

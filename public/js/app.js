@@ -54,7 +54,7 @@
     pinnedOnly: false,
     folderViewId: readFolderView(),
     folderSwitcherQuery: '',
-    mobileView: 'list', // 'list' | 'editor' - only meaningful on narrow viewports
+    mobileView: 'list', // 'list' | 'editor' | 'home' on compact viewports
     focusMode: false, // distraction-free writing; runtime-only, never persisted or restored on reload
     promptedDrafts: new Set(),
     pendingTagDelete: null,
@@ -2961,9 +2961,9 @@
 
   // Focus mode only swaps which chrome is visible (CSS class + a floating
   // exit button) — it never touches note content, editing state, or dirty
-  // tracking, so there's nothing to re-render and no risk to drafts or
-  // cross-tab sync.
+  // tracking. Compact panes already give the note the available width.
   function toggleFocusMode() {
+    if (MobileView.isNarrow() && !state.focusMode) return;
     state.focusMode = !state.focusMode;
     applyFocusMode();
   }

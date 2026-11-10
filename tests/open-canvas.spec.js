@@ -123,6 +123,11 @@ for (const width of [375, 768, 1024, 1280, 1710]) {
     expect(metrics.radius).toBe('0px');
     expect(metrics.overflow).toBe(false);
     if (width >= 768) await expect(page.locator('#workspace-navigation')).toBeVisible();
+    if (width < 1100) {
+      await page.keyboard.press('ControlOrMeta+Shift+F');
+      await expect(page.locator('body')).not.toHaveClass(/focus-mode/);
+      await expect(page.locator('#focus-exit-btn')).toBeHidden();
+    }
     await page.locator('#edit-btn').click();
     await page.locator('#note-editor').fill('## Saved\n\nA thought worth keeping.');
     await page.locator('#save-btn').click();
