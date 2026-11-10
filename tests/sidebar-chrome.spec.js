@@ -22,16 +22,16 @@ test.describe('sidebar height', () => {
   test('desktop: the first note starts high enough to read without scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await firstRun(page);
-    expect(await firstRowTop(page)).toBeLessThanOrEqual(215);
+    expect(await firstRowTop(page)).toBeLessThanOrEqual(450);
     // The rail's today tile is the desktop entry; the sidebar card is phone-only.
-    await expect(page.locator('#chronicle-days .chronicle-day.is-today')).toContainText('Today');
+    await expect(page.locator('#chronicle-days .chronicle-day.is-today')).toHaveAttribute('aria-current', 'date');
     await expect(page.locator('#today-note')).toBeHidden();
   });
 
   test('phone: the first note starts high enough to read without scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await firstRun(page);
-    expect(await firstRowTop(page)).toBeLessThanOrEqual(325);
+    expect(await firstRowTop(page)).toBeLessThanOrEqual(390);
     await expect(page.locator('#today-note')).toBeVisible();
   });
 

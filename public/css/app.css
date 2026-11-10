@@ -94,7 +94,7 @@ body:not(.page-privacy) {
 }
 
 /* The shell is flat at every width. Dialogs and floating utilities keep the
-   intentional glass treatment; the document is the only raised shell surface. */
+   intentional dialog treatment; the document shares its flat stage surface. */
 .sidebar,
 .main {
   border: 0;
@@ -1803,7 +1803,7 @@ body:not(.page-privacy) {
 
 /* ---------- Editor card ---------- */
 /* On narrow screens editor content sits directly on the document stage. The
-   desktop Chronicle treatment below promotes it to the one raised surface. */
+   open-canvas treatment below preserves that flat reading surface. */
 .editor-card {
   flex: 1;
   min-height: 0;
@@ -3162,7 +3162,7 @@ body:not(.page-privacy) {
 .history-diff-gap {
   padding: 2px 10px;
   color: var(--gray-700);
-  font: 400 11px/1.5 var(--sans);
+  font: 400 12px/1.5 var(--sans);
 }
 
 .history-diff-meta,
@@ -4511,10 +4511,7 @@ body:not(.page-privacy) {
 }
 .about-display em.accent {
   font-style: normal;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--accent-text);
 }
 
 .about-lede {
@@ -4612,7 +4609,7 @@ body:not(.page-privacy) {
 .mock-day-label-today     { font: 700 7.5px/1 var(--mono); fill: var(--accent-text); letter-spacing: 0.04em; }
 
 .mock-input         { fill: var(--ivory); stroke: var(--gray-300); stroke-width: 1.5; }
-.mock-input-label   { font: 400 11px/1 var(--sans); fill: var(--gray-500); }
+.mock-input-label   { font: 400 12px/1 var(--sans); fill: var(--gray-500); }
 .mock-primary       { fill: var(--accent); }
 .mock-icon-dot      { fill: none; stroke: var(--gray-700); stroke-width: 1.2; }
 .mock-icon-line     { stroke: var(--gray-700); stroke-width: 1.2; stroke-linecap: round; fill: none; }
@@ -5132,7 +5129,7 @@ body:not(.page-privacy) {
 .command-bar-heading {
   margin: 6px 10px 6px;
   color: var(--text-muted);
-  font: 650 9.5px/1 var(--mono);
+  font: 650 11px/1 var(--sans);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -5253,461 +5250,219 @@ body:not(.page-privacy) {
   display: none;
 }
 
+/* Open Canvas v6: the navigation and index frame one continuous page. */
+.workspace-navigation {
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  padding: 24px 12px 16px;
+  color: var(--text-secondary);
+  background: var(--surface-rail);
+  border-right: 1px solid var(--hairline-color);
+}
+.workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 28px;
+  color: var(--ink);
+  font: 650 16px/1.2 var(--sans);
+  letter-spacing: -0.02em;
+}
+.workspace-brand .brand-mark { width: 28px; height: 28px; flex: none; box-shadow: none; }
+.workspace-links, .workspace-secondary { display: grid; gap: 3px; }
+.workspace-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  font: 400 13px/1.4 var(--sans);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.workspace-item svg { flex: none; color: var(--text-muted); }
+.workspace-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-item:hover { color: var(--ink); background: var(--control-fill-hover); }
+.workspace-item[aria-current] { color: var(--ink); background: var(--control-fill); font-weight: 600; }
+.workspace-item[aria-current] svg { color: var(--accent-text); }
+.workspace-item:focus-visible, .calendar-toggle:focus-visible, .calendar-today:focus-visible,
+.chronicle-day:focus-visible {
+  outline: 2px solid var(--accent-focus-ring);
+  outline-offset: -2px;
+}
+.workspace-folder-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 8px 6px 12px;
+  color: var(--text-muted);
+  font: 500 11px/1.3 var(--sans);
+}
+.workspace-folder-heading .icon-btn { width: 28px; height: 28px; background: transparent; }
+.workspace-folders { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.workspace-folder-hint { margin: 8px 12px; color: var(--text-muted); font: 400 12px/1.5 var(--sans); }
+.has-folders .workspace-folder-hint { display: none; }
+.workspace-secondary { margin-top: auto; padding-top: 28px; }
+.workspace-local {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 10px 0;
+  color: var(--text-muted);
+  font: 400 12px/1.4 var(--sans);
+}
+.navigation-close, .navigation-toggle { display: none; }
+.navigation-dialog {
+  inset: 0 auto 0 0;
+  width: min(300px, calc(100vw - 48px));
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background: var(--surface-rail);
+  border: 0;
+  overscroll-behavior: contain;
+}
+.navigation-dialog::backdrop { background: var(--backdrop); }
+.navigation-dialog .workspace-navigation { display: flex; height: 100%; border: 0; }
+.navigation-dialog .navigation-close { display: inline-flex; margin-left: auto; flex: none; }
+.navigation-dialog .workspace-brand { padding-inline: 8px; gap: 8px; }
+
+.sidebar { border-right: 1px solid var(--hairline-color); }
+.sidebar-head { gap: 8px; padding: 16px 18px 10px; flex: none; }
+.sidebar-kicker { color: var(--text-muted); font-size: 12px; line-height: 1.3; }
+.sidebar-kicker .accent { color: var(--text-muted); }
+.brand-actions .btn { width: 32px; height: 32px; padding: 0; border-radius: var(--r-sm); background: transparent; box-shadow: none; }
+.brand-actions .compose-btn { color: var(--ink); background: transparent; }
+.brand-actions .compose-btn:hover { color: var(--accent-text); background: var(--control-fill-hover); }
+.search-control { height: 36px; padding-inline: 10px; background: var(--surface-list); border-color: var(--hairline-color); border-radius: var(--r-sm); box-shadow: none; }
+.search-hint { padding: 0; background: transparent; font: 400 12px/1 var(--sans); }
+.note-calendar { flex: none; padding: 0 18px 12px; border-bottom: 1px solid var(--hairline-color); }
+.calendar-toolbar { display: flex; align-items: center; gap: 2px; min-height: 36px; }
+.calendar-toggle { display: flex; align-items: center; gap: 6px; flex: 1; min-height: 32px; padding: 0; color: var(--ink); background: transparent; border: 0; font: 600 12px/1.3 var(--sans); text-align: left; cursor: pointer; }
+.calendar-toggle svg { color: var(--text-muted); }
+.calendar-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.calendar-toolbar .icon-btn { width: 28px; height: 28px; background: transparent; border-radius: var(--r-xs); }
+.calendar-today { padding: 5px; min-height: 28px; color: var(--text-secondary); background: transparent; border: 0; border-radius: var(--r-xs); font: 400 12px/1 var(--sans); cursor: pointer; }
+.calendar-today:hover, .calendar-toggle:hover { color: var(--accent-text); }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; }
+.calendar-weekdays { padding: 6px 0 4px; color: var(--text-muted); font: 500 12px/1.4 var(--sans); }
+.chronicle-day { position: relative; justify-self: center; width: 100%; min-width: 0; height: 32px; padding: 0; color: var(--text-secondary); background: transparent; border: 0; border-radius: var(--r-xs); font: 400 12px/1 var(--sans); font-variant-numeric: tabular-nums; cursor: pointer; touch-action: manipulation; }
+.chronicle-day:hover { color: var(--ink); background: var(--control-fill-hover); }
+.chronicle-day.is-outside { color: var(--text-muted); }
+.chronicle-day.is-active { color: var(--accent-text); background: var(--accent-soft); font-weight: 650; }
+.chronicle-day.is-today { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.chronicle-day.has-note::after { content: ""; position: absolute; width: 3px; height: 3px; left: calc(50% - 1.5px); bottom: 2px; border-radius: var(--r-pill); background: var(--accent-text); }
+.list-header { min-height: 40px; padding: 6px 18px; border-bottom-color: var(--hairline-color); }
+.note-list { gap: 0; padding: 0 0 16px; }
+.note-section { gap: 0; padding-top: 0; }
+.note-section-head { margin: 0; padding: 12px 20px 6px; font: 500 12px/1.4 var(--sans); letter-spacing: 0; text-transform: none; }
+.note-row, .note-row.is-active { padding: 16px 20px; border: 0; border-bottom: 1px solid var(--hairline-color); border-radius: 0; box-shadow: none; }
+.note-row.is-active { background: var(--control-fill); }
+.note-row.is-active::before { content: none; }
+.note-row-title { font-size: 14px; font-weight: 600; }
+.note-row-excerpt { font-size: 12px; line-height: 1.5; }
+.note-row-when { font: 400 12px/1.4 var(--sans); font-variant-numeric: tabular-nums; }
+.note-row-tag { height: 18px; padding-inline: 6px; background: var(--control-fill); color: var(--text-secondary); font: 400 12px/1 var(--sans); }
+.sidebar-foot { padding: 10px 18px 14px; }
+.status-chip { width: 100%; min-height: 32px; height: auto; justify-content: flex-start; border-radius: var(--r-sm); box-shadow: none; }
+.editor-view { display: grid; grid-template-rows: 64px minmax(0, 1fr); min-width: 0; padding: 0; }
+.editor-head { position: relative; min-width: 0; height: 64px; gap: 8px; padding: 0 32px; border-bottom: 0; background: var(--surface-document); }
+.note-breadcrumb { height: auto; padding: 0; color: var(--text-muted); background: transparent; border-radius: 0; font-size: 11.5px; }
+.editor-actions { flex: none; gap: 6px; }
+.editor-actions .icon-btn { width: 32px; height: 32px; background: transparent; border: 0; border-radius: var(--r-sm); box-shadow: none; }
+.editor-actions .btn { border-radius: var(--r-sm); box-shadow: none; }
+.editor-actions .btn-primary { height: 32px; min-height: 32px; padding-inline: 16px; }
+.editor-card { position: relative; width: 100%; min-width: 0; min-height: 0; margin: 0; padding: 36px 40px 96px; overflow: auto; background: var(--surface-document); border: 0; border-radius: 0; box-shadow: none; }
+.editor-doc-head, .tag-bar, .note-rendered, .note-editor, .editor-empty, .backlinks { width: 100%; max-width: var(--measure-doc); margin-left: auto; margin-right: auto; }
+.editor-doc-head { margin-bottom: 20px; padding-bottom: 0; border-bottom: 0; }
+.editor-doc-head .eyebrow { display: none; }
+.note-doc-title { margin-bottom: 14px; font: 500 44px/1.15 var(--serif); letter-spacing: -0.02em; }
+.editor-doc-head .byline { font-size: 12px; line-height: 1.5; }
+.tag-bar { margin-bottom: 28px; }
+.tag-pill { background: var(--control-fill); color: var(--text-secondary); border-radius: var(--r-xs); font-weight: 400; }
+.tag-add-plus { border-radius: var(--r-xs); }
+.note-rendered, .note-editor, .note-rendered p.is-lede { color: var(--text-body); font-family: var(--serif); font-size: 20px; line-height: 1.6; }
+.note-rendered h1, .note-rendered h2, .note-rendered h3, .note-rendered h4 { font-family: var(--sans); font-weight: 650; letter-spacing: -0.015em; }
+.note-rendered h2 { margin-top: 30px; margin-bottom: 6px; font-size: 20px; line-height: 1.4; }
+.note-rendered h3 { margin-top: 24px; margin-bottom: 6px; font-size: 18px; line-height: 1.4; }
+.note-rendered p.is-lede { margin-bottom: 24px; }
+.editor-card.is-editing .note-editor { max-width: var(--measure-doc); padding: 26px 0 20px; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.home-pane-controls { display: none; }
+.home-desk { background: var(--surface-document-stage); }
+.home-desk-card, .home-desk-start { box-shadow: none; }
+
 @media screen and (min-width: 768px) {
-  .sidebar {
-    border-right: 1px solid var(--hairline-color-2);
-  }
-
-  .sidebar-head {
-    gap: 6px;
-    padding: 16px 20px 8px;
-  }
-
-  .sidebar-head .brand {
-    align-items: flex-start;
-  }
-
-  .sidebar-head .brand-title {
-    display: none;
-  }
-
-  .chronicle-sidebar-heading {
-    order: 0;
-    flex: 1 1 0;
-  }
-
-  .sidebar-kicker {
-    color: var(--text-muted);
-    font-size: 11px;
-    line-height: 1.2;
-  }
-
-  .sidebar-kicker .accent {
-    color: var(--text-muted);
-  }
-
-  .brand-actions .btn {
-    width: 36px;
-    height: 36px;
-    background: transparent;
-    border-radius: 10px;
-  }
-
-  .brand-actions .compose-btn {
-    width: 40px;
-    height: 40px;
-    background: var(--accent);
-    border-radius: var(--r-md);
-  }
-
-  .search-control {
-    height: 44px;
-    padding-inline: 13px;
-    background: var(--surface-document);
-    border-color: var(--hairline-color-2);
-    border-radius: var(--r-md);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .search-hint {
-    padding: 0;
-    background: transparent;
-    font-family: var(--mono);
-    font-size: 10px;
-  }
-
-  .list-header {
-    min-height: 34px;
-    padding: 5px 14px 7px;
-    border-bottom-color: var(--hairline-color);
-  }
-
-  .note-list {
-    gap: 4px;
-    padding: 8px 12px 18px;
-  }
-
-  .note-section {
-    gap: 3px;
-  }
-
-  .note-section-head {
-    padding-inline: 5px;
-  }
-
-  .note-row {
-    padding: 13px 14px;
-    border-radius: 13px;
-  }
-
-  .note-row.is-active {
-    padding-left: 14px;
-    border-color: var(--hairline-color-2);
-    box-shadow: var(--shadow-row-active);
-  }
-
-  .note-row.is-active::before {
-    content: none;
-  }
-
-  .note-row-title {
-    font-size: 13.5px;
-    font-weight: 700;
-  }
-
-  .note-row-excerpt {
-    font-size: 11.3px;
-    line-height: 1.43;
-  }
-
-  .note-row-when {
-    font-family: var(--mono);
-    font-size: 9.5px;
-  }
-
-  .note-row-tag {
-    height: 18px;
-    padding-inline: 7px;
-    font-family: var(--mono);
-    font-size: 9px;
-  }
-
-  .sidebar-foot {
-    padding: 10px 20px 20px;
-  }
-
-  .status-chip {
-    width: 100%;
-    min-height: 34px;
-    height: auto;
-    justify-content: flex-start;
-    border-radius: 10px;
-  }
-
-  .editor-view {
-    display: grid;
-    grid-template-rows: 72px minmax(0, 1fr);
-  }
-
-  .editor-head {
-    min-width: 0;
-    height: 72px;
-    padding: 0 30px;
-    border-bottom: 0;
-  }
-
-  .note-breadcrumb {
-    height: auto;
-    padding: 0;
-    background: transparent;
-    border-radius: 0;
-    color: var(--text-muted);
-    font-size: 11.5px;
-  }
-
-  .note-breadcrumb .crumb-current {
-    color: var(--text-secondary);
-    font-weight: 650;
-  }
-
-  .editor-actions .icon-btn,
-  .editor-actions .btn {
-    border-radius: 11px;
-  }
-
-  .editor-actions .icon-btn {
-    width: 40px;
-    height: 40px;
-    background: var(--surface-document);
-    border: 1px solid var(--hairline-color-2);
-  }
-
-  .editor-actions .btn-primary {
-    height: 40px;
-    padding-inline: 16px;
-  }
-
-  .editor-card {
-    position: relative;
-    width: min(850px, calc(100% - 84px));
-    min-height: 100%;
-    margin: 6px auto 0;
-    padding: 56px 48px 88px 92px;
-    overflow: auto;
-    background: var(--surface-document);
-    border: 1px solid var(--hairline-color-2);
-    border-radius: 22px 22px 0 0;
-    box-shadow: var(--glass-shadow);
-  }
-
-  .editor-doc-head,
-  .tag-bar,
-  .note-rendered,
-  .note-editor,
-  .editor-empty {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  .editor-doc-head {
-    margin-bottom: 22px;
-  }
-
-  .editor-doc-head .eyebrow {
-    display: inline-flex;
-    margin: 0 0 15px;
-    color: var(--accent-text);
-    font: 650 10.5px/1 var(--mono);
-    letter-spacing: 0;
-    text-transform: none;
-  }
-
-  .editor-doc-head .eyebrow::before {
-    content: none;
-  }
-
-  .note-doc-title {
-    margin-bottom: 11px;
-    font-size: 36px;
-    font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.015em;
-  }
-
-  .editor-doc-head .byline {
-    font-size: 11.5px;
-  }
-
-  .tag-bar {
-    margin-bottom: 30px;
-  }
-
-  .note-rendered,
-  .note-editor {
-    color: var(--text-body);
-    font-size: 16px;
-    line-height: 1.72;
-  }
-
-  .note-rendered p.is-lede {
-    margin-bottom: 20px;
-    color: var(--ink);
-  }
-
-  .note-rendered h2,
-  .note-rendered h3 {
-    font-weight: 600;
-  }
-
-  .note-rendered h2 {
-    margin-top: 33px;
-    font-size: 19px;
-  }
-
-  .editor-card.is-editing .note-editor {
-    max-width: var(--measure-doc);
-    padding: 26px 0 20px;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
+  .app-shell { grid-template-columns: 176px minmax(0, 1fr); }
+  .workspace-navigation { display: flex; grid-column: 1; grid-row: 1; }
+  .sidebar, .main { grid-column: 2; grid-row: 1; }
+  .sidebar-head .brand-title { display: none; }
+  .chronicle-sidebar-heading { order: 0; flex: 1 1 0; }
+  .chronicle-daily-card { display: none; }
 }
-
-@media screen and (min-width: 900px) {
-  .app-shell {
-    grid-template-columns: 80px 296px minmax(0, 1fr);
-  }
-
-  .chronicle-rail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 0;
-    min-height: 0;
-    padding: 22px 0 20px;
-    background: var(--surface-rail);
-    border-right: 1px solid var(--hairline-color-2);
-  }
-
-  .chronicle-brand {
-    display: grid;
-    place-items: center;
-  }
-
-  .chronicle-brand .brand-mark {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: var(--accent);
-  }
-
-  .chronicle-month {
-    margin: 36px 0 0;
-    color: var(--text-muted);
-    font: 650 10px/1 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .chronicle-days {
-    display: grid;
-    gap: 8px;
-    margin-top: 17px;
-  }
-
-  .chronicle-day {
-    display: grid;
-    place-items: center;
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    color: var(--text-muted);
-    background: transparent;
-    border: 0;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: color var(--t-fast) ease, background var(--t-fast) ease, box-shadow var(--t-fast) ease;
-  }
-
-  .chronicle-day b {
-    font-size: 14px;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .chronicle-day small {
-    margin-top: -4px;
-    font-size: 8px;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
-  .chronicle-day:hover {
-    color: var(--ink);
-    background: var(--control-fill);
-  }
-
-  .chronicle-day.is-active {
-    color: var(--on-accent);
-    background: var(--accent);
-    box-shadow: var(--shadow-primary-sm);
-  }
-
-  .chronicle-day:focus-visible {
-    outline: 3px solid var(--accent-focus-ring);
-    outline-offset: 2px;
-  }
-
-  .chronicle-day.is-today:not(.is-active) {
-    color: var(--accent-text);
-    background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1px var(--accent-strong-border);
-  }
-
-  .chronicle-day.is-today small {
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  /* The rail's today tile is the desktop entry to today's note, so the
-     sidebar card only shows where the rail does not. */
-  .chronicle-daily-card {
-    display: none;
-  }
-
-  .editor-date-spine {
-    position: absolute;
-    top: 58px;
-    left: 28px;
-    display: grid;
-    justify-items: center;
-    color: var(--accent-text);
-  }
-
-  .editor-date-spine strong {
-    font: 600 26px/1 var(--serif);
-  }
-
-  .editor-date-spine span {
-    margin-top: 4px;
-    font: 650 9px/1 var(--mono);
-    text-transform: uppercase;
-  }
-
-  .editor-date-spine::after {
-    content: "";
-    width: 1px;
-    height: 460px;
-    margin-top: 18px;
-    background: var(--hairline-color-2);
-  }
+@media screen and (min-width: 1100px) {
+  .app-shell { grid-template-columns: 208px 330px minmax(0, 1fr); }
+  .main { grid-column: 3; }
 }
-
-@media screen and (min-width: 1200px) {
-  .app-shell {
-    grid-template-columns: 104px 330px minmax(0, 1fr);
-  }
-
-  .chronicle-day {
-    width: 50px;
-    height: 50px;
-    border-radius: 15px;
-  }
-
-  .editor-card {
-    padding: 66px 82px 100px 116px;
-  }
-
-  .editor-date-spine {
-    top: 66px;
-    left: 38px;
-  }
-
-  .editor-date-spine::after {
-    height: 520px;
-  }
-
-  .note-doc-title {
-    font-size: 44px;
-  }
-}
-
-/* The outline docks only when the 620px measure still fits beside it.
-   Below this width the same list is a popover on the header button. */
 @media screen and (min-width: 1400px) {
-  .editor-view:has(#note-outline:not([hidden])) {
-    grid-template-columns: minmax(0, 1fr) 168px;
-  }
-
-  .editor-view:has(#note-outline:not([hidden])) > .editor-head {
-    grid-column: 1 / -1;
-  }
-
-  .editor-view:has(#note-outline:not([hidden])) > .editor-card {
-    width: auto;
-    margin-left: 0;
-    margin-right: 0;
-    justify-self: stretch;
-    padding-right: 40px;
-  }
-
-  .editor-view:has(#note-outline:not([hidden])) > .note-outline {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: stretch;
-    min-height: 0;
-    overflow: auto;
-    padding: 28px 16px 28px 4px;
-  }
+  .editor-view:has(#note-outline:not([hidden])) { grid-template-columns: minmax(0, 1fr) 160px; }
+  .editor-view:has(#note-outline:not([hidden])) > .editor-head { grid-column: 1 / -1; }
+  .editor-view:has(#note-outline:not([hidden])) > .editor-card { grid-column: 1; grid-row: 2; }
+  .editor-view:has(#note-outline:not([hidden])) > .note-outline { grid-column: 2; grid-row: 2; align-self: stretch; min-height: 0; overflow: auto; padding: 30px 16px 30px 0; }
 }
-
+@media screen and (max-width: 1099px) {
+  .home-pane-controls { display: flex; align-items: center; gap: 8px; padding: 12px 24px 0; }
+  #focus-mode-btn { display: none; }
+  .app-shell.mobile-editor .sidebar { display: none; }
+  .app-shell.mobile-editor .main { display: flex; }
+  .app-shell.mobile-list .sidebar { display: flex; }
+  .app-shell.mobile-list .main { display: none; }
+  .back-btn { display: inline-flex; }
+  .editor-card { padding: 28px 32px 72px; }
+  .editor-head { padding-inline: 24px; }
+  .note-doc-title { font-size: 36px; }
+}
 @media screen and (max-width: 767px) {
-  .chronicle-rail,
-  .editor-date-spine {
-    display: none;
-  }
-
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
+  .navigation-toggle { display: inline-flex; }
+  .sidebar-head { padding: 12px 16px 8px; }
+  .brand-actions { gap: 2px; }
+  .editor-view { padding: 0; }
+  .editor-head { height: auto; min-height: 64px; padding: 8px 16px; }
+  .editor-head .note-breadcrumb { display: none; }
+  .editor-head .back-btn { margin-right: auto; }
+  .editor-head .back-btn span { display: none; }
+  .editor-head .back-btn { min-width: 44px; padding-inline: 8px; }
+  .editor-actions .dirty-indicator { position: absolute; right: 24px; bottom: -6px; font-size: 12px; }
+  .editor-head #editor-navigation-toggle { order: -1; }
+  .editor-card { padding: 20px 24px 64px; }
+  .note-doc-title { font-size: 30px; }
+  .note-rendered, .note-editor, .note-rendered p.is-lede { font-size: 18px; }
+  .note-calendar { padding-inline: 16px; padding-bottom: 6px; }
+  .calendar-toggle { min-height: 44px; }
+  .calendar-days { gap: 2px; }
+  .chronicle-day { height: 44px; }
+  .chronicle-daily-card { background: transparent; color: var(--text-secondary); border-color: var(--hairline-color); border-radius: var(--r-sm); }
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .workspace-item { min-height: 44px; }
+  .search-control { height: 44px; }
+  .chronicle-day { height: 44px; }
+  .calendar-toolbar .icon-btn { min-width: 44px; min-height: 44px; }
+  .calendar-today { min-height: 44px; }
+  .calendar-toggle { min-height: 44px; }
+  .editor-actions .icon-btn, .editor-actions .btn { min-width: 44px; min-height: 44px; }
+  .brand-actions .btn { min-width: 44px; min-height: 44px; }
 }
 
 /* ---------- Focus mode (distraction-free writing) ----------
@@ -5717,12 +5472,12 @@ body:not(.page-privacy) {
    are deliberately left alone — people still need to write and save.
    Scoped to the desktop breakpoint: the app is already single-pane below
    768px, so the toggle is a deliberate no-op there. */
-@media (min-width: 768px) {
+@media (min-width: 1100px) {
   body.focus-mode .app-shell {
     grid-template-columns: 1fr;
   }
   body.focus-mode .sidebar,
-  body.focus-mode .chronicle-rail,
+  body.focus-mode .workspace-navigation,
   body.focus-mode #note-breadcrumb,
   body.focus-mode #note-byline,
   body.focus-mode #tag-bar,
@@ -5734,6 +5489,7 @@ body:not(.page-privacy) {
   /* The breadcrumb normally pushes editor-actions to the right via its own
      margin-right: auto; carry that over so hiding it doesn't yank the
      toolbar and save/edit controls flush left. */
+  body.focus-mode .main { grid-column: 1; }
   body.focus-mode .editor-actions {
     margin-left: auto;
   }
@@ -5773,7 +5529,7 @@ body:not(.page-privacy) {
 
   /* App chrome that never belongs on paper. */
   #sidebar,
-  #chronicle-rail,
+  #workspace-navigation,
   dialog,
   .popover-menu,
   #toast-region,

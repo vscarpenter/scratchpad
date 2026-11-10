@@ -42,39 +42,33 @@ guarantee, not an implementation detail.
 - **`marked` and `DOMPurify` are vendored**, not loaded from a CDN. They live
   in `public/js/vendor/`. Don't replace with CDN URLs.
 
-### Inkwell design system — "Indigo on Paper" (v5)
-This repo overrides the base Inkwell system with the **Indigo on Paper**
-direction: a quiet chronology rail, an opaque note index, and a raised document
-on warm paper surfaces with a serif display voice. Restrained Indigo
-(`#5661B3`) is the sole accent. The approved spec is in
-`docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md` (structure and
-accent carry over from Porcelain Chronicle v4; the neutral temperature and
-display voice are what changed). The executable form of the contract lives in
-`tests/design-tokens.spec.js` — warm surfaces, AA pairs, dark-block parity,
-and the pinned indigo accent.
-Read `https://raw.githubusercontent.com/vscarpenter/inkwell/main/agent-instructions.md`
-for the base system, but the rules below reflect this repo's overrides and win.
+### Inkwell design system — "Open Canvas" (v6)
+The approved v6 design uses persistent navigation, a month calendar above the
+note index, and a flat open writing canvas on warm near-white surfaces.
+Restrained Indigo remains the sole accent. The source of truth is
+`docs/superpowers/specs/2026-11-10-open-canvas-design.md`; it supersedes v5's
+chronology rail, raised page, date spine, and prose typography. Tests enforce
+semantic tokens, AA pairs, dark-block parity, and the pinned Indigo accent.
 Key rules for anything in `public/css/app.css`:
 - **All colors via `var(--token)`** — no hex codes anywhere in app CSS. Use
   `--accent`, `--ink`, `--text-secondary`/`--text-muted`/`--text-body`, `--paper`,
   `--accent-soft`, `--glass-*`, `--wash-*`, `--control-fill`, `--gray-*`, etc.
   Gradients built from token colors (e.g. `--accent-grad`) are fine.
 - **Outer borders are 1px hairlines** via `var(--border)` / `var(--border-hair)`.
-  The chronology rail and note index are flat opaque surfaces; the document is
-  the only raised surface in the application shell. Focus outlines remain the
+  Navigation, note index, and document are flat opaque surfaces; the document
+  shares its stage background with no enclosing border, radius, or shadow. Focus outlines remain the
   exception and stay visible.
 - **No decorative glass in the app shell.** The rail, list, top bar, and document
   stage use the semantic `--surface-*` tokens. Do not add blur or gradients to
-  the Chronicle shell. Legacy glass tokens remain for dialogs, onboarding, and
+  the application shell. Legacy glass tokens remain for dialogs, onboarding, and
   static pages until those surfaces are redesigned.
 - **One accent** — `--accent`. Indigo marks the selected day, primary actions,
-  links, tags, the document date spine, and focus. `--accent-text` is the
+  links, calendar state, and focus. `--accent-text` is the
   legibility sibling for accent text or glyphs sitting on a tint. Semantic
   success, warning, and danger colors remain state-only.
 - **Platform fonts only** — no `@font-face`, no Google Fonts. The editorial
-  serif (`--serif`) carries the display voice: document title, list date
-  heading, date-spine numeral, and rendered prose headings. Everything else in
-  the chrome uses `--sans`. `--mono` is metadata only and never prose.
+  serif (`--serif`) carries document titles and prose, including the Markdown
+  textarea. Chrome and rendered section headings use `--sans`. `--mono` is metadata only and never prose.
 - **No emoji in source.** Icons are inline SVG strokes (the `⌘K` hint is a
   Unicode symbol, matching the existing kbd shortcuts).
 - **Dark mode** extends the Pattern-B cascade in `inkwell-tokens.css`; validate

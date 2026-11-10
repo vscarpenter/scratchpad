@@ -2,23 +2,28 @@
 const { test, expect } = require('@playwright/test');
 const { seedRawNotes } = require('./helpers');
 
-test.describe('typography — Indigo on Paper headings and matched read/edit metrics', () => {
-  test('title and rendered headings use the platform serif stack, code stays mono', async ({ page }) => {
+test.describe('typography — Open Canvas prose and matched read/edit metrics', () => {
+  test('title and prose use platform serif, section headings use sans, code stays mono', async ({ page }) => {
     await seedRawNotes(page, [
       { id: 'serif-note', title: 'Serif title', body: '## Section\n\nBody paragraph.\n\nUses a `code span` too.' },
     ]);
 
     const title = page.locator('#note-title-display');
     expect(await title.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Iowan Old Style|Palatino|Georgia/);
-    expect(await title.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
+    expect(await title.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('500');
 
     const h2 = page.locator('#note-rendered h2');
-    expect(await h2.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Iowan Old Style|Palatino|Georgia/);
-    expect(await h2.evaluate((el) => getComputedStyle(el).fontSize)).toBe('19px');
-    expect(await h2.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
+    expect(await h2.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/system-ui|-apple-system|Segoe UI/);
+    expect(await page.locator('#note-rendered').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(
+      /Iowan Old Style|Palatino|Georgia/,
+    );
+    expect(await h2.evaluate((el) => getComputedStyle(el).fontSize)).toBe('20px');
+    expect(await h2.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('650');
 
     const code = page.locator('#note-rendered code').first();
-    expect(await code.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/ui-monospace|SF Mono|Menlo|monospace/);
+    expect(await code.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(
+      /ui-monospace|SF Mono|Menlo|monospace/,
+    );
   });
 
   test('the title input inherits the display title font, so Edit does not jump', async ({ page }) => {
@@ -48,10 +53,13 @@ test.describe('typography — Indigo on Paper headings and matched read/edit met
 
     // Probe the first paragraph: at over 60 characters it carries the
     // auto-lede decoration, which must not drift from the shared metrics.
-    const rendered = await page.locator('#note-rendered p').first().evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return { font: [cs.fontFamily, cs.fontSize, cs.lineHeight].join('|'), width: el.clientWidth };
-    });
+    const rendered = await page
+      .locator('#note-rendered p')
+      .first()
+      .evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { font: [cs.fontFamily, cs.fontSize, cs.lineHeight].join('|'), width: el.clientWidth };
+      });
 
     await page.locator('#edit-btn').click();
     const editor = await page.locator('#note-editor').evaluate((el) => {

@@ -44,17 +44,29 @@
 </head>
 <body>
   <div class="app-shell" id="app-shell">
-    <nav class="chronicle-rail" id="chronicle-rail" aria-label="Daily notes by date">
-      <div class="chronicle-brand" aria-label="Scratchpad">
-        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <rect class="brand-mark-bg" x="0" y="0" width="24" height="24" rx="5" />
-          <path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9" />
-        </svg>
-        <span class="visually-hidden">Scratchpad</span>
+    <aside id="workspace-navigation" class="workspace-navigation" aria-label="Notebook">
+      <div class="workspace-brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect class="brand-mark-bg" width="24" height="24" rx="5"/><path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9"/></svg>
+        <span>Scratchpad</span>
+        <button id="navigation-close" class="icon-btn navigation-close" type="button" aria-label="Close navigation" autofocus><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
-      <p class="chronicle-month" id="chronicle-month"></p>
-      <div class="chronicle-days" id="chronicle-days"></div>
-    </nav>
+      <nav class="workspace-links" aria-label="Notebook views">
+          <button id="nav-home" class="workspace-item" type="button" data-nav-action="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Home</span></button>
+          <button id="nav-notes" class="workspace-item" type="button" data-nav-action="notes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>Notes</span></button>
+          <button id="nav-daily" class="workspace-item" type="button" data-nav-action="daily"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18"/></svg><span>Daily Notes</span></button>
+          <button id="nav-pinned" class="workspace-item" type="button" data-nav-action="pinned"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg><span>Pinned</span></button>
+      </nav>
+      <div class="workspace-folder-heading"><span>Folders</span><button id="nav-new-folder" class="icon-btn" type="button" data-nav-action="new-folder" aria-label="New folder" title="New folder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+      <nav id="workspace-folders" class="workspace-folders" aria-label="Folders"></nav>
+      <p class="workspace-folder-hint">A place for every thought.</p>
+      <nav class="workspace-secondary" aria-label="Notebook utilities">
+          <button id="nav-archive" class="workspace-item" type="button" data-nav-action="archive"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16v12H4zM3 3h18v5H3zM10 12h4"/></svg><span>Archive</span></button>
+          <button id="nav-trash" class="workspace-item" type="button" data-nav-action="trash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg><span>Trash</span></button>
+          <button id="nav-search" class="workspace-item" type="button" data-nav-action="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Search</span></button>
+          <button id="nav-settings" class="workspace-item" type="button" data-nav-action="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m9 3-1 3-3 1-2 3 2 3v4l3 1 2 3 3-1 3 1 2-3 3-1v-4l2-3-2-3-3-1-1-3z"/></svg><span>Settings</span></button>
+      </nav>
+      <p class="workspace-local"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Stored on this device</p>
+    </aside>
     <aside class="sidebar" id="sidebar" aria-label="Notes">
       <div class="sidebar-head">
         <div class="sidebar-brand">
@@ -85,6 +97,7 @@
               </p>
             </div>
             <div class="brand-actions">
+              <button id="navigation-toggle" class="icon-btn navigation-toggle" type="button" data-open-navigation aria-label="Open navigation" aria-expanded="false" aria-controls="navigation-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
               <button id="open-settings" class="btn btn-ghost" type="button" aria-label="Settings" title="Settings">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
               </button>
@@ -140,6 +153,19 @@
         </button>
       </div>
 
+      <section id="note-calendar" class="note-calendar" aria-label="Daily note calendar">
+        <div class="calendar-toolbar">
+          <button id="calendar-toggle" class="calendar-toggle" type="button" aria-expanded="true" aria-controls="calendar-body"><span id="chronicle-month"></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+          <button id="calendar-today" class="calendar-today" type="button" aria-label="Show current month">Today</button>
+          <button id="calendar-prev" class="icon-btn" type="button" aria-label="Previous month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+          <button id="calendar-next" class="icon-btn" type="button" aria-label="Next month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
+        <div id="calendar-body">
+          <div class="calendar-weekdays" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+          <div id="chronicle-days" class="calendar-days" role="group" aria-label="Month dates"></div>
+        </div>
+      </section>
+
       <nav class="note-list" id="note-list" aria-label="Note list">
         <div class="list-header" id="list-header">
           <div id="folder-navigation" class="folder-navigation" role="group" aria-label="Note location">
@@ -193,6 +219,7 @@
             <span>Back</span>
           </button>
 
+          <button id="editor-navigation-toggle" class="icon-btn navigation-toggle" type="button" data-open-navigation aria-label="Open navigation" aria-expanded="false" aria-controls="navigation-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
           <nav id="note-breadcrumb" class="note-breadcrumb" aria-label="Note location">notes</nav>
 
           <div class="editor-actions">
@@ -233,10 +260,6 @@
         </header>
 
         <article class="card editor-card">
-          <div class="editor-date-spine" id="editor-date-spine" aria-hidden="true">
-            <strong id="editor-date-number"></strong>
-            <span id="editor-date-day"></span>
-          </div>
           <div class="editor-doc-head" id="editor-doc-head">
             <p class="eyebrow" id="note-eyebrow">Note · draft</p>
             <h2 id="note-title-display" class="note-doc-title" tabindex="-1">Untitled note</h2>
@@ -380,6 +403,10 @@
            fills the date, greeting, counts, cards, and rows from notes already
            in memory. -->
       <section id="home-desk" class="home-desk" aria-labelledby="home-desk-greeting" hidden>
+        <div class="home-pane-controls">
+          <button id="home-navigation-toggle" class="icon-btn navigation-toggle" type="button" data-open-navigation aria-label="Open navigation" aria-expanded="false" aria-controls="navigation-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          <button id="home-back-to-list" class="btn btn-ghost btn-sm" type="button">Notes</button>
+        </div>
         <div class="home-desk-inner">
           <header class="home-desk-hello">
             <div class="home-desk-hello-text">
@@ -1167,6 +1194,9 @@
     <svg class="home-desk-row-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
   </template>
 
+  <dialog id="navigation-dialog" class="navigation-dialog" aria-label="Notebook navigation"></dialog>
+  <template id="tpl-navigation-folder"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5h7l2 3h9v12H3z"/></svg></template>
+
   <script src="/public/js/vendor/marked.min.js"></script>
   <script src="/public/js/vendor/purify.min.js"></script>
   <script src="/public/js/vendor/prism.min.js" data-manual></script>
@@ -1192,6 +1222,8 @@
   <script src="/public/js/toast.js"></script>
   <script src="/public/js/hold-confirm.js"></script>
   <script src="/public/js/swipe-row.js"></script>
+  <script src="/public/js/workspace-navigation.js"></script>
+  <script src="/public/js/note-calendar.js"></script>
   <script src="/public/js/mobile-view.js"></script>
   <script src="/public/js/settings.js"></script>
   <script src="/public/js/home-desk-view.js"></script>

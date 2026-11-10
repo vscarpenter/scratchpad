@@ -57,10 +57,11 @@ test('archived notes keep a plain label', async ({ page }) => {
   await expect(page.locator('#note-breadcrumb button')).toHaveCount(0);
 });
 
-test('phones hide the Home crumb', async ({ page }) => {
+test('phones expose folders through navigation instead of crowding the toolbar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seed(page);
   await openNote(page, 'plan');
-  await expect(page.locator('#note-breadcrumb').getByRole('button', { name: 'Work' })).toBeVisible();
-  await expect(page.locator('#note-breadcrumb').getByRole('button', { name: 'Home' })).toBeHidden();
+  await expect(page.locator('#note-breadcrumb')).toBeHidden();
+  await page.locator('#editor-navigation-toggle').click();
+  await expect(page.locator('.workspace-folder[data-folder-id="f-work"]')).toHaveText('Work');
 });

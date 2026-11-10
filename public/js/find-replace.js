@@ -89,14 +89,13 @@
   }
 
   /**
-   * Schedules caret focus for the editor, yielding to an open find bar so a
-   * stale timer from an Edit click can never steal focus from the query.
+   * Focus after rendering, before typing can begin. This consumes the saved
+   * caret's one-time focus restoration before a new user selection, and
+   * yields to a find bar or modal that already owns focus.
    * @param {HTMLTextAreaElement} target
    */
   function editorFocus(target) {
-    setTimeout(() => {
-      if (!barOpen) target.focus();
-    }, 0);
+    if (!barOpen && !anyDialogOpen()) target.focus({ preventScroll: true });
   }
 
   /**

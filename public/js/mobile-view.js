@@ -1,12 +1,12 @@
 // @ts-check
-/* Narrow-screen pane switching. Below 768px the shell shows either the note
+/* Narrow-screen pane switching. Below 1100px the shell shows either the note
    list or the editor, never both, so a switch hides the pane that held
    keyboard focus. sync() sets the shell classes from state. focusPane() then
    moves focus into the pane that appeared: the note title on the way in, the
    note's own row (or New note) on the way back. */
 'use strict';
 {
-  const NARROW = '(max-width: 767px)';
+  const NARROW = '(max-width: 1099px)';
 
   function isNarrow() {
     return window.matchMedia(NARROW).matches;
@@ -21,8 +21,9 @@
       shell.classList.remove('mobile-list', 'mobile-editor');
       return;
     }
-    shell.classList.toggle('mobile-editor', state.mobileView === 'editor' && !!state.selectedId);
-    shell.classList.toggle('mobile-list', state.mobileView === 'list' || !state.selectedId);
+    const stage = state.mobileView === 'home' || (state.mobileView === 'editor' && !!state.selectedId);
+    shell.classList.toggle('mobile-editor', stage);
+    shell.classList.toggle('mobile-list', !stage);
   }
 
   /**

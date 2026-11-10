@@ -134,7 +134,7 @@ test('rail: today tile labels today and opens today’s note', async ({ page }) 
   await seedRawNotes(page, [{ id: 'rail-one', title: 'Rail note', body: 'Body.' }]);
   const tile = page.locator('#chronicle-days .chronicle-day.is-today');
   await expect(tile).toHaveCount(1);
-  await expect(tile).toContainText('Today');
+  await expect(tile).toHaveAttribute('aria-current', 'date');
   await expect(page.locator('#chronicle-today')).toHaveCount(0);
   await tile.click();
   await expect
