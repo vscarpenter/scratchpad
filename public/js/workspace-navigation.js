@@ -14,14 +14,22 @@
   const folders = /** @type {HTMLElement} */ (document.getElementById('workspace-folders'));
   const wide = matchMedia('(min-width: 768px)');
   const triggers = document.querySelectorAll('[data-open-navigation]');
+  /** @type {HTMLElement | null} */
+  let opener = null;
 
   function syncExpanded() {
     triggers.forEach((trigger) => trigger.setAttribute('aria-expanded', String(dialog.open)));
   }
 
   function restorePanel() {
-    shell.prepend(panel);
+    if (panel.parentElement !== shell) shell.prepend(panel);
     syncExpanded();
+    // WebKit does not focus a pointer-clicked button, so its native modal
+    // restoration can land on body. Restore the actual trigger explicitly.
+    if (!dialog.open && opener) {
+      if (opener.getClientRects().length) opener.focus({ preventScroll: true });
+      opener = null;
+    }
   }
 
   function close() {
@@ -29,8 +37,10 @@
     restorePanel();
   }
 
-  function open() {
+  /** @param {Event} event */
+  function open(event) {
     if (wide.matches || dialog.open) return;
+    opener = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
     dialog.append(panel);
     dialog.showModal();
     syncExpanded();

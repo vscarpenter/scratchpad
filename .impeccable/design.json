@@ -1,13 +1,13 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-02T16:14:42.209165+00:00",
-  "title": "Design System: Scratchpad — Indigo on Paper v5",
+  "generatedAt": "2026-11-10T21:02:57.586556+00:00",
+  "title": "Design System: Scratchpad \u2014 Open Canvas v6",
   "extensions": {
     "colorMeta": {
       "canvas": {
         "role": "neutral",
-        "displayName": "Canvas",
-        "canonical": "#ECE7DC",
+        "displayName": "Warm near-white canvas",
+        "canonical": "#F8F7F4",
         "tonalRamp": [
           "oklch(15% 0.0157 86.43)",
           "oklch(26% 0.0157 86.43)",
@@ -21,8 +21,8 @@
       },
       "paper": {
         "role": "neutral",
-        "displayName": "Paper",
-        "canonical": "#FFFFFF",
+        "displayName": "Open writing surface",
+        "canonical": "#FFFEFC",
         "tonalRamp": [
           "oklch(15% 0.0000 0.00)",
           "oklch(26% 0.0000 0.00)",
@@ -142,38 +142,24 @@
     },
     "typographyMeta": {
       "chrome": {
-        "displayName": "Chrome",
-        "purpose": "System sans owns the chrome: rail, note index rows, controls, and dialog bodies."
+        "displayName": "System sans",
+        "purpose": "Navigation, note rows, section headings, and metadata."
       },
       "prose": {
-        "displayName": "Prose",
-        "purpose": "The editorial serif carries the display voice: the document title, the list date heading, the date-spine numeral, and rendered prose headings."
-      },
-      "metadata": {
-        "displayName": "Metadata",
-        "purpose": "Monospace is reserved for compact metadata and keyboard hints — it is Scratchpad's second signature alongside indigo."
+        "displayName": "Platform serif",
+        "purpose": "Document title and matching rendered/Markdown body; 20px desktop, 18px phone."
       }
     },
     "shadows": [
       {
-        "name": "shadow-card",
-        "value": "0 8px 20px rgba(40, 33, 22, 0.12)",
-        "purpose": "The document card is the sole raised surface in the shell."
+        "name": "flat-shell",
+        "value": "none",
+        "purpose": "Navigation, note index, and open writing canvas."
       },
       {
-        "name": "shadow-row-active",
-        "value": "0 2px 8px rgba(40, 33, 22, 0.07)",
-        "purpose": "Restrained elevation on the selected note row."
-      },
-      {
-        "name": "shadow-sm",
-        "value": "0 1px 2px rgba(33, 30, 26, 0.05)",
-        "purpose": "Small existing control elevation."
-      },
-      {
-        "name": "shadow-md",
-        "value": "0 8px 20px rgba(40, 33, 22, 0.10)",
-        "purpose": "Existing popovers and toasts."
+        "name": "dialogs",
+        "value": "var(--glass-shadow)",
+        "purpose": "Existing dialogs and floating utilities only."
       }
     ],
     "motion": [
@@ -205,16 +191,20 @@
     ],
     "breakpoints": [
       {
-        "name": "single-pane",
+        "name": "phone navigation drawer",
+        "value": "767px"
+      },
+      {
+        "name": "persistent navigation",
         "value": "768px"
       },
       {
-        "name": "chronology-rail",
-        "value": "900px"
+        "name": "three panes",
+        "value": "1100px"
       },
       {
-        "name": "wide-shell",
-        "value": "1200px"
+        "name": "docked outline",
+        "value": "1400px"
       }
     ]
   },
@@ -225,13 +215,13 @@
       "refersTo": "button-primary",
       "description": "The single most important action in a context. Pill geometry with a colored indigo glow.",
       "html": "<button class=\"ds-btn ds-btn-primary\">New note</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 18px; font-family: var(--sans); font-size: 14px; font-weight: 600; border-radius: var(--r-pill); border: 1px solid transparent; cursor: pointer; transition: background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease, transform var(--t-fast) var(--press); } .ds-btn:active { transform: scale(0.98); } .ds-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-primary); } .ds-btn-primary:hover { background: var(--accent-d); }"
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 18px; font-family: var(--sans); font-size: 14px; font-weight: 600; border-radius: var(--r-sm); border: 1px solid transparent; cursor: pointer; transition: background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-fast) ease, transform var(--t-fast) var(--press); } .ds-btn:active { transform: scale(0.98); } .ds-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-primary); } .ds-btn-primary:hover { background: var(--accent-d); }"
     },
     {
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "A tinted pill rather than an outlined one — control-fill at 5% ink, no border.",
+      "description": "A tinted pill rather than an outlined one \u2014 control-fill at 5% ink, no border.",
       "html": "<button class=\"ds-btn ds-btn-secondary\">Cancel</button>",
       "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 18px; font-family: var(--sans); font-size: 14px; font-weight: 600; border-radius: var(--r-pill); border: 1px solid transparent; cursor: pointer; transition: background var(--t-fast) ease, color var(--t-fast) ease, transform var(--t-fast) var(--press); } .ds-btn:active { transform: scale(0.98); } .ds-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-secondary { background: var(--control-fill); color: var(--ink); } .ds-btn-secondary:hover { background: var(--control-fill-hover); }"
     },
@@ -244,12 +234,12 @@
       "css": ".ds-search { display: flex; align-items: center; gap: 8px; min-width: 0; height: 38px; padding: 0 10px; background: var(--field-bg); border: 1px solid var(--hairline-color-2); border-radius: var(--r-md); box-shadow: var(--field-inset-shadow); transition: border-color var(--t-fast) ease, box-shadow var(--t-fast) ease; } .ds-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-focus-ring); } .ds-search-icon { flex: none; color: var(--text-muted); } .ds-search-input { flex: 1 1 auto; min-width: 0; height: 100%; border: 0; background: transparent; outline: none; padding: 0; font: 400 13.5px/1 var(--sans); color: var(--ink); } .ds-search-input::placeholder { color: var(--text-muted); } .ds-search-hint { flex: none; font: 500 11px/1 var(--sans); color: var(--text-muted); background: var(--control-fill); border-radius: var(--r-code); padding: 3px 6px; }"
     },
     {
-      "name": "Note Row — Selected",
+      "name": "Note Row \u2014 Selected",
       "kind": "nav",
       "refersTo": "note-row-active",
       "description": "Selected note row in the Indigo on Paper index. Warm paper, hairline border, compact title and metadata.",
       "html": "<button class=\"ds-note-row ds-is-active\"><span class=\"ds-note-title\">Weekly review</span><span class=\"ds-note-when\">2h ago</span><span class=\"ds-note-excerpt\">Three things that went well, one that didn't, and the one change worth making next week.</span></button>",
-      "css": ".ds-note-row { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; row-gap: 3px; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: var(--r-lg); padding: 10px 12px; cursor: pointer; color: var(--ink); font-family: var(--sans); position: relative; transition: background var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease; } .ds-note-row:hover { background: var(--row-hover); } .ds-note-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; } .ds-note-row.ds-is-active { background: var(--paper); border-color: var(--hairline-color); box-shadow: var(--shadow-row-active); padding-left: 14px; overflow: hidden; } .ds-note-row.ds-is-active::before { content: \"\"; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2.5px; border-radius: var(--r-pill); background: var(--accent); } .ds-note-title { font: 700 13.5px/1.35 var(--sans); color: var(--ink); } .ds-note-when { font: 400 11.5px/1.35 var(--mono); color: var(--text-muted); } .ds-note-excerpt { grid-column: 1 / -1; font: 400 11.3px/1.43 var(--sans); color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } @media (min-width: 900px) { .ds-note-row.ds-is-active::before { content: none; } }"
+      "css": ".ds-note-row { display: block; width: 100%; padding: 16px 20px; background: var(--control-fill); color: var(--ink); border: 0; border-bottom: 1px solid var(--hairline-color); border-radius: 0; box-shadow: none; text-align: left; font: 600 14px/1.4 var(--sans); } .ds-note-row:hover { background: var(--row-hover); } .ds-note-row:focus-visible { outline: 2px solid var(--accent-focus-ring); outline-offset: -2px; }"
     },
     {
       "name": "Status Chip",
@@ -265,51 +255,53 @@
       "refersTo": "badge-accent",
       "description": "A tag is a filter button plus an optional remove control. Accent-soft fill, accent text, pill radius.",
       "html": "<span class=\"ds-tag\"><button class=\"ds-tag-filter\">review</button><button class=\"ds-tag-remove\" aria-label=\"Remove tag\">&times;</button></span>",
-      "css": ".ds-tag { display: inline-flex; align-items: center; height: 22px; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent); font: 500 12px/1 var(--sans); overflow: hidden; transition: background var(--t-fast) ease; } .ds-tag:hover { background: var(--accent-soft-2); } .ds-tag-filter { border: 0; background: transparent; color: inherit; font: inherit; padding: 0 4px 0 9px; height: 100%; cursor: pointer; } .ds-tag-remove { border: 0; background: transparent; color: inherit; font: 13px/1 var(--sans); padding: 0 8px 0 2px; height: 100%; cursor: pointer; opacity: 0.65; } .ds-tag-remove:hover { opacity: 1; } .ds-tag-filter:focus-visible, .ds-tag-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }"
+      "css": ".ds-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: var(--r-xs); background: var(--control-fill); color: var(--text-secondary); font: 400 12px/1 var(--sans); }"
     },
     {
       "name": "Brand Glyph",
       "kind": "custom",
       "refersTo": "brand-glyph",
-      "description": "A 26px gradient squircle at 9px radius with an indigo glow — one of the three sanctioned gradients in the system. Strokes stay white in both themes.",
+      "description": "A 26px gradient squircle at 9px radius with an indigo glow \u2014 one of the three sanctioned gradients in the system. Strokes stay white in both themes.",
       "html": "<span class=\"ds-glyph\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 26 26\" fill=\"none\"><path class=\"ds-glyph-lines\" d=\"M7.5 9h11M7.5 13h11M7.5 17h6.5\"/></svg></span>",
-      "css": ".ds-glyph { width: 26px; height: 26px; flex-shrink: 0; display: block; background: var(--accent-grad); border-radius: var(--r-glyph); box-shadow: var(--shadow-glyph); } .ds-glyph-lines { stroke: var(--glyph-ink); stroke-width: 2.4; stroke-linecap: round; fill: none; }"
+      "css": ".ds-glyph { width: 26px; height: 26px; flex-shrink: 0; display: block; background: var(--accent); border-radius: var(--r-glyph); box-shadow: none; } .ds-glyph-lines { stroke: var(--glyph-ink); stroke-width: 2.4; stroke-linecap: round; fill: none; }"
     },
     {
       "name": "Writing Surface",
       "kind": "card",
       "refersTo": "document-card",
       "description": "The sole raised surface in the app shell. Serif title and readable prose on warm paper.",
-      "html": "<article class=\"ds-document\"><h2 class=\"ds-document-title\">Daily note</h2><p class=\"ds-document-body\">A quiet place to write, with room for the words.</p></article>",
-      "css": ".ds-document { background: var(--paper); color: var(--ink); border-radius: var(--r-lg); box-shadow: var(--shadow-card); padding: 32px; } .ds-document-title { margin: 0 0 20px; font: 600 36px/1.15 var(--serif); letter-spacing: -0.02em; } .ds-document-body { margin: 0; max-width: 620px; font: 400 16px/1.65 var(--serif); }"
+      "html": "<article class=\"ds-document\"><h2 class=\"ds-document-title\">A writing day</h2><p>A quiet place to gather your thoughts.</p></article>",
+      "css": ".ds-document { background: var(--surface-document); color: var(--text-body); padding: 32px; border: 0; border-radius: 0; box-shadow: none; font: 400 20px/1.6 var(--serif); } .ds-document-title { margin: 0 0 14px; color: var(--ink); font: 500 44px/1.15 var(--serif); letter-spacing: -0.02em; }"
     }
   ],
   "narrative": {
-    "northStar": "Scratchpad is a quiet private chronicle.",
-    "overview": "Scratchpad is a quiet private chronicle. The interface should make the current\nday easy to find, the recent past easy to scan, and the open note feel like the\nonly thing that matters. It is calm without becoming anonymous: the vertical\ndate rail and the document date spine are its recognizable signature.\n\nThe design has three layers:\n\n1. A narrow chronology rail for orientation and daily-note entry.\n2. A compact note index for navigation and local-only trust cues.\n3. A generous document stage with one raised paper writing surface.\n\nThe application remains local-only. Visual changes must never add remote fonts,\nassets, analytics, or user-content requests.",
+    "northStar": "The words are the subject.",
+    "overview": "Persistent navigation, a month calendar, and a flat document on warm near-white surfaces. The document and stage share one surface; serif prose is the visual focus.",
     "keyCharacteristics": [
-      "A narrow chronology rail for orientation and daily-note entry.",
-      "A compact note index for navigation and local-only trust cues.",
-      "A generous document stage with one raised paper writing surface."
+      "Persistent navigation",
+      "Local month calendar",
+      "Open serif writing canvas",
+      "Markdown Edit/Save"
     ],
     "rules": [
       {
-        "name": "Color",
-        "body": "Indigo is the only decorative accent. Use it for the selected date, primary\nactions, links, tags, focus rings, the date spine, and the active daily-note\ncallout. Semantic success, warning, and danger colors are reserved for actual\nstate.\n\n- Canvas: `#ECE7DC`\n- Paper: `#FFFFFF`\n- Ink: `#211E1A`\n- Secondary text: `#55504A`\n- Muted text: `#797368`\n- Indigo: `#5661B3`\n- Indigo hover: `#414B91`\n- Indigo tint: `#E8E9F4`\n- Indigo pressed/strong tint: `#DBDDF1`\n\nAll application CSS colors route through tokens in\n`public/css/inkwell-tokens.css`. Do not put literal color values in\n`public/css/app.css`.\n\nDark mode is a token flip, not a separate composition. Keep auto-dark and the\nexplicit `[data-theme=\"dark\"]` token blocks synchronized and verify contrast on\nthe opaque active note row, the tinted daily-note card, and primary controls.",
-        "section": "colors"
-      },
-      {
-        "name": "Surfaces and depth",
-        "body": "The Chronicle shell is opaque and architectural:\n\n- The date rail is the quietest surface.\n- The note index is a slightly brighter adjacent plane.\n- The main area is a warm sunken document stage.\n- The document card is the sole raised surface in the shell.\n\nDo not add blur or gradients to the app shell. Use one-pixel separators and\nrestrained existing elevation on the document. Dialogs and static pages may\ncontinue using legacy glass tokens until they receive their own redesign.",
+        "name": "Flat shell",
+        "body": "The document and stage share one surface; no enclosing document shadow or rounded corners.",
         "section": "elevation"
       },
       {
-        "name": "Typography",
-        "body": "Use platform fonts only.\n\n- The editorial serif carries the display voice: the document title, the list\n  date heading, the date-spine numeral, and rendered prose headings.\n- System sans owns the chrome: rail, note index rows, controls, and dialog\n  bodies. Dialog titles take the serif (see Dialogs).\n- Monospace is reserved for compact metadata and keyboard hints — it is\n  Scratchpad's second signature alongside indigo.\n\nDesktop document titles should be substantial but not promotional: serif at\nweight 600, 36px rising to about 44px at the wide breakpoint, with gentle\ntracking. Body prose stays readable at a maximum measure of 620px.",
-        "section": "typography"
+        "name": "Local first",
+        "body": "No remote fonts, assets, telemetry, or new network requests.",
+        "section": "layout"
       }
     ],
-    "dos": [],
-    "donts": []
+    "dos": [
+      "Use platform serif for prose and sans for section headings.",
+      "Match read/edit font metrics and measure."
+    ],
+    "donts": [
+      "Do not restore the date rail or decorative date spine.",
+      "Do not squeeze the document beside the list on tablet."
+    ]
   }
 }

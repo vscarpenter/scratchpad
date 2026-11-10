@@ -4739,7 +4739,7 @@
     els.confirmEncryptedExport.hidden = false;
     els.confirmEncryptedImport.hidden = true;
     openDialog(els.backupPassphraseDialog);
-    setTimeout(() => els.backupPassphrase.focus(), 0);
+    els.backupPassphrase.focus();
   }
 
   function openEncryptedImportDialog(envelope) {
@@ -4753,7 +4753,7 @@
     els.confirmEncryptedExport.hidden = true;
     els.confirmEncryptedImport.hidden = false;
     openDialog(els.backupPassphraseDialog);
-    setTimeout(() => els.backupPassphrase.focus(), 0);
+    els.backupPassphrase.focus();
   }
 
   function showPassphraseError(message) {

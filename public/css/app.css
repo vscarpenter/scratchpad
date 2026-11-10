@@ -5383,6 +5383,7 @@ body:not(.page-privacy) {
 .editor-actions .icon-btn { width: 32px; height: 32px; background: transparent; border: 0; border-radius: var(--r-sm); box-shadow: none; }
 .editor-actions .btn { border-radius: var(--r-sm); box-shadow: none; }
 .editor-actions .btn-primary { height: 32px; min-height: 32px; padding-inline: 16px; }
+.editor-format { background: var(--surface-document); border: 1px solid var(--hairline-color); border-radius: var(--r-sm); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .editor-card { position: relative; width: 100%; min-width: 0; min-height: 0; margin: 0; padding: 36px 40px 96px; overflow: auto; background: var(--surface-document); border: 0; border-radius: 0; box-shadow: none; }
 .editor-doc-head, .tag-bar, .note-rendered, .note-editor, .editor-empty, .backlinks { width: 100%; max-width: var(--measure-doc); margin-left: auto; margin-right: auto; }
 .editor-doc-head { margin-bottom: 20px; padding-bottom: 0; border-bottom: 0; }

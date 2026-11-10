@@ -2,6 +2,18 @@ const { test, expect } = require('@playwright/test');
 const { gotoApp, createAndSaveNote, openBackupMenu } = require('./helpers');
 
 test.describe('encrypted backups', () => {
+  test('opening export does not steal focus back from the confirmation field', async ({ page }) => {
+    await gotoApp(page);
+    await createAndSaveNote(page, 'Backup focus', 'Body');
+    await openBackupMenu(page);
+    await page.evaluate(() => {
+      document.getElementById('export-encrypted-btn').click();
+      document.getElementById('backup-passphrase-confirm').focus();
+    });
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    await expect(page.locator('#backup-passphrase-confirm')).toBeFocused();
+  });
+
   test('shows and hides both export passphrase fields without losing their values', async ({ page }) => {
     await gotoApp(page);
     await createAndSaveNote(page, 'Visible passphrase test', 'Body');
