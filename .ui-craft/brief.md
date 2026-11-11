@@ -12,7 +12,7 @@ A frequent Mac and mobile user who writes throughout the day, usually on a lapto
 2. **Chronology is quiet wayfinding.** Dates help people return to thoughts without turning Scratchpad into a calendar application.
 3. **Privacy must stay visible.** Local storage and backup state remain legible, not buried in settings.
 4. **Fast capture beats ceremony.** New notes, daily notes, search, and keyboard flows remain one action away.
-5. **Restraint creates character.** Porcelain neutrals carry the surface; Indigo is reserved for actions and current state.
+5. **Restraint creates character.** Warm near-white neutrals carry the surface; Indigo is reserved for actions and current state.
 
 ## Success metric for the surface
 
@@ -22,9 +22,10 @@ A returning user can identify the current day, open or create its daily note, fi
 
 - Does not add accounts, remote synchronization, telemetry, or third-party assets.
 - Does not replace folders, search, archive, trash, backups, or the command palette.
-- Does not turn the date rail into event scheduling or task planning.
+- Does not turn the month calendar into event scheduling or task planning.
 - Does not deploy or publish the redesign.
 
 ## Learned constraints
 
 - **2026-07-31** — Use Porcelain Chronicle as the approved shell and Indigo as its accent. *Why:* the date spine and calm porcelain composition fit Scratchpad, while green does not fit the desired visual identity.
+- **2026-11-10** — Open Canvas v6 supersedes the date rail and raised page: persistent navigation, month calendar, flat writing canvas, platform-serif prose, sans section headings. Preserve Markdown Edit/Save. *Why:* quiet navigation and editorial reading put the writing first.

@@ -39,15 +39,15 @@ size thresholds until the ratchets actually reach them.
   `replaceChildren()` — see `public/js/markdown.js` `renderMarkdownInto()`. Clear with
   `container.replaceChildren()`, not `innerHTML = ''`. Clone static SVG from a
   `<template>`. External links open in new tabs with `rel="noopener noreferrer"`.
-- **Design (Inkwell "Indigo on Paper" v5): colors via `var(--token)` only** in
+- **Design (Inkwell "Open Canvas" v6): colors via `var(--token)` only** in
   `public/css/app.css` — no hex. Gradients _built from token colors_ are fine;
-  decorative glass is not (keep the app shell flat; the document is the one
-  raised surface). Restrained Indigo `--accent` is the sole accent. **Platform
+  decorative glass is not (keep navigation, note index, and document flat; use an open
+  writing canvas). Restrained Indigo `--accent` is the sole accent. **Platform
   fonts only** (no `@font-face` / Google Fonts); no emoji in source. **No
   dark-mode rules in `app.css`** — dark mode is driven by `inkwell-tokens.css`
   tokens; fix token usage, don't add `[data-theme="dark"]` rules. Executable in
   `tests/design-tokens.spec.js`; full spec at
-  `docs/superpowers/specs/2026-08-16-indigo-on-paper-design.md`.
+  `docs/superpowers/specs/2026-11-10-open-canvas-design.md`.
 
 ## Commands
 

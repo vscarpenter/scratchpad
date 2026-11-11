@@ -69,12 +69,12 @@
     return open;
   }
 
-  /** The Home button. In Archive and on phones it keeps its old job: reset the folder scope. */
+  /** The Home button opens the landing stage; in Archive it resets the folder scope. */
   async function goHome() {
     if (!deps) return;
     const api = deps;
     const state = api.state;
-    if (isNarrow() || state.view !== 'active') {
+    if (state.view !== 'active') {
       api.setFolderView(null);
       return;
     }
@@ -82,11 +82,11 @@
       if (!(await api.confirmDiscard())) return;
       await api.discardDraft();
     }
-    Object.assign(state, { editing: false, dirty: false, selectedId: null });
+    Object.assign(state, { editing: false, dirty: false, selectedId: null, mobileView: 'home' });
     open = true;
     api.setFolderView(null, false);
     api.clearFilters();
-    if (refs && document.activeElement === document.body) refs.greeting.focus();
+    if (refs && (isNarrow() || document.activeElement === document.body)) refs.greeting.focus();
   }
 
   function commands() {
@@ -248,15 +248,20 @@
     });
   }
 
-  /** Wires Home to app state and decides the launch stage: Home, unless this is the first visit, a phone, or Open to says Top note. @param {DeskDeps} api */
+  /** Wires Home to app state and decides the launch stage: Home, unless this is the first visit, a compact viewport, or Open to says Top note. @param {DeskDeps} api */
   function init(api) {
     deps = api;
     refs = collectRefs();
     ui = { pinsExpanded: false, folderFilter: view().ALL, layout: readLayout() };
     const openTo = root.ScratchpadSettings ? root.ScratchpadSettings.readOpenTo() : 'home';
     open = !api.seeded && !isNarrow() && openTo === 'home';
+    if (open) api.state.mobileView = 'home';
     bindControls(api, refs);
   }
 
-  root.ScratchpadHomeDesk = Object.freeze({ init, holds, show, goHome, commands });
+  function leave() {
+    open = false;
+  }
+
+  root.ScratchpadHomeDesk = Object.freeze({ init, holds, show, goHome, commands, leave });
 }

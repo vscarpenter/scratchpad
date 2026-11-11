@@ -1,11 +1,11 @@
 ---
 name: Scratchpad
-direction: Indigo on Paper
-version: 5
-description: A private daily chronicle on warm paper, with a quiet date rail, a calm note index, and a raised writing surface with a serif voice.
+direction: Open Canvas
+version: 6
+description: A private notebook with persistent navigation, a month calendar, and an open serif writing canvas.
 colors:
-  canvas: "#ECE7DC"
-  paper: "#FFFFFF"
+  canvas: "#F8F7F4"
+  paper: "#FFFEFC"
   ink: "#211E1A"
   text-secondary: "#55504A"
   text-muted: "#797368"
@@ -16,212 +16,29 @@ colors:
 typography:
   chrome: "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
   prose: "Iowan Old Style, Palatino, Georgia, serif"
-  metadata: "ui-monospace, SFMono-Regular, Menlo, monospace"
-document-measure: "620px"
+  code: "ui-monospace, SFMono-Regular, Menlo, monospace"
+document-measure: "680px"
 ---
 
-# Design System: Porcelain Chronicle
+# Design System: Open Canvas
 
-## North star
+The user approved v6 on November 10, 2026. The canonical specification is
+[Open Canvas](docs/superpowers/specs/2026-11-10-open-canvas-design.md), with token decisions in [.ui-craft/tokens.md](.ui-craft/tokens.md).
 
-Scratchpad is a quiet private chronicle. The interface should make the current
-day easy to find, the recent past easy to scan, and the open note feel like the
-only thing that matters. It is calm without becoming anonymous: the vertical
-date rail and the document date spine are its recognizable signature.
+## Composition and typography
 
-The design has three layers:
+Persistent 208px navigation, a 330px note index with month calendar, and a flat document occupy desktop widths from 1100px. Tablets keep 176px navigation beside a single list/editor pane. Phones use a named native navigation dialog. The calendar starts collapsed on phones.
 
-1. A narrow chronology rail for orientation and daily-note entry.
-2. A compact note index for navigation and local-only trust cues.
-3. A generous document stage with one raised paper writing surface.
+Use platform serif for title and prose, system sans for navigation and section headings, mono for code. Reading and Markdown editing share a 680px maximum measure and identical metrics: 20px/1.6 desktop/tablet and 18px/1.6 phone.
 
-The application remains local-only. Visual changes must never add remote fonts,
-assets, analytics, or user-content requests.
+## Surfaces and interaction
 
-## Color
+The document and stage share one warm near-white surface. The app shell uses flat rows and hairline column dividers. Indigo marks focus, links, and current state. All colors resolve through tokens; dark mode is driven by byte-parallel auto/manual token blocks. Existing dialog treatment stays scoped to dialogs.
 
-Indigo is the only decorative accent. Use it for the selected date, primary
-actions, links, tags, focus rings, the date spine, and the active daily-note
-callout. Semantic success, warning, and danger colors are reserved for actual
-state.
+Calendar dates use local numeric arithmetic at noon, expose today separately from selection, and offer arrows, week Home/End, and month Page Up/Down. Navigation and calendar actions retain draft confirmation and existing daily-note identity. Mobile navigation uses native modal focus and Escape handling; no decorative entrance motion.
 
-- Canvas: `#ECE7DC`
-- Paper: `#FFFFFF`
-- Ink: `#211E1A`
-- Secondary text: `#55504A`
-- Muted text: `#797368`
-- Indigo: `#5661B3`
-- Indigo hover: `#414B91`
-- Indigo tint: `#E8E9F4`
-- Indigo pressed/strong tint: `#DBDDF1`
+## Product invariants
 
-All application CSS colors route through tokens in
-`public/css/inkwell-tokens.css`. Do not put literal color values in
-`public/css/app.css`.
+Keep Markdown Edit/Save, local-only IndexedDB, encrypted opt-in sharing, offline precache, backup visibility, platform fonts, sanitized rendering, keyboard access, and visible focus. No remote assets, telemetry, data migration, or new network requests.
 
-Dark mode is a token flip, not a separate composition. Keep auto-dark and the
-explicit `[data-theme="dark"]` token blocks synchronized and verify contrast on
-the opaque active note row, the tinted daily-note card, and primary controls.
-
-## Surfaces and depth
-
-The Chronicle shell is opaque and architectural:
-
-- The date rail is the quietest surface.
-- The note index is a slightly brighter adjacent plane.
-- The main area is a warm sunken document stage.
-- The document card is the sole raised surface in the shell.
-
-Do not add blur or gradients to the app shell. Use one-pixel separators and
-restrained existing elevation on the document. Dialogs and static pages may
-continue using legacy glass tokens until they receive their own redesign.
-
-## Typography
-
-Use platform fonts only.
-
-- The editorial serif carries the display voice: the document title, the list
-  date heading, the date-spine numeral, and rendered prose headings.
-- System sans owns the chrome: rail, note index rows, controls, and dialog
-  bodies. Dialog titles take the serif (see Dialogs).
-- Monospace is reserved for compact metadata and keyboard hints — it is
-  Scratchpad's second signature alongside indigo.
-
-Desktop document titles should be substantial but not promotional: serif at
-weight 600, 36px rising to about 44px at the wide breakpoint, with gentle
-tracking. Body prose stays readable at a maximum measure of 620px.
-
-## Layout
-
-At 1200px and wider, the shell is approximately:
-
-- 104px chronology rail
-- 330px note index
-- flexible document stage
-
-At 900–1199px, compress to an 80px rail and 296px index. Below 900px the date
-spine may disappear; below 768px preserve the proven single-pane list/editor
-navigation and hide the chronology rail entirely.
-
-The rail displays five local dates ending today. Selecting a date opens the
-matching daily note or creates it if absent. The active date follows the open
-daily note; ordinary notes fall back to their creation date.
-
-## Signature elements
-
-### Chronology rail
-
-The rail carries the brand mark, abbreviated month, and five vertically stacked
-dates. Today's tile reads "Today" and carries a restrained Indigo tint; it is the
-desktop entry to today's note, so the rail has no separate Today button. The
-selected date uses solid Indigo with white text. Non-selected dates remain quiet
-and use a tinted hover state.
-
-### Command-bar header
-
-The note index header has two rows. The first holds the view menu ("Notes ▾",
-switching Notes, Archive, and Trash), the note count kicker, the Settings and
-About icons, and an icon-only Indigo compose button for New note. The second is
-the search field, which doubles as the command bar: an empty focused field
-suggests everyday commands, a leading ">" searches commands instead of notes,
-and the panel footer opens the full command palette.
-
-### Daily-note card
-
-The daily-note row appears in the note index only where the chronology rail is
-hidden (below 900px), using a restrained Indigo tint and border. On desktop the
-rail's Today tile replaces it.
-
-### Home
-
-When no note is open on a wide screen, the stage shows Home instead of a
-document: a mono date eyebrow, a serif time-of-day greeting, three quick-start
-tiles, pinned notes as cards, and recently edited notes as rows or tiles. Home
-stands on the stage like the document, but nothing on it is raised. Tiles and
-cards are flat `--paper` with hairlines; hover strengthens the hairline to
-`--accent-strong-border` instead of adding a shadow, so the open document stays
-the only lifted surface. Informative text on the stage uses
-`--text-secondary`, because `--text-muted` falls below AA on the canvas. Phones
-keep the list as their home.
-
-### Document date spine
-
-At desktop widths the open document has a left-hand date marker and a thin
-vertical Indigo rule. It should align with the title block and feel printed into
-the page, not floated above it.
-
-## Dialogs
-
-Every dialog follows the Chronicle dialog recipe (2026-08 design review).
-Rules, in priority order:
-
-1. **Serif titles.** Dialog titles render in the editorial serif at weight 600,
-   20px, -0.01em tracking. Everything else in the dialog chrome stays sans.
-2. **Mono small-caps zone labels.** Sections inside a dialog are named by a
-   `.zone-label`: mono, 600, 9.5–10px, 0.14em tracking, uppercase. Labels name
-   trust boundaries, not headings — "On this device — nothing is sent",
-   "Public link — uploads an encrypted copy", "This browser will forget".
-3. **Hairlines for structure.** Zones are `--r-md` boxes with hairline or
-   tinted one-pixel borders. No new shadows; dialog primary and danger buttons
-   carry no glow.
-4. **Indigo for action only.** Primary buttons, the command palette's selected
-   row (accent-soft fill plus a two-pixel inset indigo bar — the app's
-   selected-row signature), and the public share zone's border.
-5. **Rust reserved for erasure.** The rust-tinted zone treatment appears only
-   in the erase-local-data dialog and the About danger zone.
-
-Phase 2 (2026-08-30) extends the recipe. The About panel is "Your data":
-three stat cards (mono small-caps label, serif value), a quiet meta line,
-and hairline status rows whose token-colored dots pair with a text value —
-color is never the only signal — and carry their actions inline. Import
-preview counts render as the same stat cards, each conflict radio states its
-one-clause consequence, and the primary button states the outcome ("Import
-16 notes"). Quick capture is a spotlight bar — no title bar, `aria-label`
-names it — whose foot previews the exact line to be appended and where it
-lands. The erase button stays visibly disabled until ERASE is typed exactly.
-Native form controls join the one-accent rule via
-`accent-color: var(--accent)`.
-
-## Interaction and accessibility
-
-- Interactive targets are at least 44px where space allows.
-- All controls retain visible keyboard focus.
-- Selected dates expose an accessible current state.
-- Color is never the only signal for destructive or backup status.
-- Motion is brief and functional; respect reduced-motion and
-  reduced-transparency preferences.
-- Never hide focus outlines unless a replacement is present.
-
-### Interaction feedback
-
-Four small interactions, each a vanilla rewrite of a React Bits idea. None adds
-a dependency, a token, or a dark-mode rule, and all four honor reduced motion.
-
-- The Undo toast draws its remaining time as a 2px accent bar. Every
-  auto-dismissing toast waits while the pointer or focus is on it
-  (`public/js/toast.js`).
-- A checked task pops its box and draws its tick. Task text never strikes or
-  dims, so a done parent cannot cross out its open sub-tasks.
-- Delete forever and Empty Trash need a one second hold inside their dialogs
-  (`public/js/hold-confirm.js`). The fill is a 28 percent wash of `--ink`.
-  Ink flips with the theme, so the wash raises label contrast in both. A click
-  with no press before it comes from assistive technology and confirms at once.
-- On touch, a note row swipes left for Archive and Trash and right for Pin
-  (`public/js/swipe-row.js`). Rails reuse the button color pairs and exist
-  only while a swipe is live. Mouse keeps the drag to a folder.
-
-## Responsive behavior
-
-Desktop expresses the full Chronicle concept. Mobile keeps the familiar
-single-pane model: list first, then editor with a Back control. The rail and
-document date spine are hidden rather than squeezed into the narrow viewport.
-No horizontal page overflow is permitted at 390px, 1000px, or 1440px.
-
-## Source of truth
-
-- Approved spec:
-  `docs/superpowers/specs/2026-07-31-porcelain-chronicle-indigo-design.md`
-- Implementation plan:
-  `docs/superpowers/plans/2026-07-31-porcelain-chronicle-indigo.md`
-- Working craft brief: `.ui-craft/brief.md`
-- Token rationale: `.ui-craft/tokens.md`
+V4/v5 historical rationale remains in docs/superpowers/specs; v6 supersedes the date rail, date spine, raised page, and serif section headings.

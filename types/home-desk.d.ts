@@ -18,6 +18,7 @@ export type DeskState = {
   tagFilter: string | null;
   editing: boolean;
   dirty: boolean;
+  mobileView: string;
 };
 /** What the view needs to describe a note; app.js supplies these at init. */
 export type DeskLookups = {

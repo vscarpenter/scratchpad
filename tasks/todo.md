@@ -1,3 +1,72 @@
+# Fix the tier 2 audit findings (2026-11-10)
+
+Tier: a batch of Standard fixes from the modern-web-guidance audit. Vinny
+approved it with "lets implement tier 2". Branch: `codex/open-canvas-redesign`.
+
+- [x] Red: 22 new tests failed first.
+- [x] Green: all 15 findings are fixed. See the two commits.
+- [x] Verified: `bun run verify` passes, CSP hashes are unchanged, and Chromium
+      plus WebKit pass 1290 tests.
+
+## Resuming From Here
+
+- Done: two commits on the branch. Not pushed, not deployed.
+- Next: check on a real phone. Playwright can't simulate safe-area insets, the
+  OS Back gesture, or pull-to-refresh. Forced colors ran only under Chromium's
+  emulation.
+- Then: tier 3, if Vinny wants it. The toast question from tier 1 is still open.
+- Assumptions:
+  - Safe-area padding covers the app shell and its fixed UI. The five content
+    pages are not padded.
+  - Cross-tab theme sync covers the app page only. The content pages have only
+    the CSP-hashed inline script.
+  - The service worker still precaches `inkwell.css` and `tokens.css`. No page
+    links them now, and they stay as valid entry points.
+  - Quick capture closes through an "Esc to close" button in its hint row.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
+# Fix the tier 1 audit findings (2026-11-10)
+
+Tier: a batch of Standard fixes from the modern-web-guidance audit. Vinny
+approved it with "start with tier 1". Branch: `codex/open-canvas-redesign`.
+
+- [x] Red: 15 new tests failed first, each for its own defect.
+- [x] Green: 12 of the 13 findings are fixed. See the two commits.
+- [x] Verified: `bun run verify` passes, and Chromium plus WebKit pass 1245 tests.
+
+## Resuming From Here
+
+- Done: two commits on the branch. Not pushed, not deployed.
+- Next: Vinny decides how toasts should behave while a dialog is open. That is
+  the one tier 1 finding left, and it is a design choice. `.dialog` has a
+  `backdrop-filter`, so a toast region moved into the dialog would anchor to
+  the dialog and cover its footer. The options are in-dialog status text,
+  holding the toast until the dialog closes, or leaving it alone.
+- Then: tier 2, if Vinny wants it.
+- Assumptions: `.note-rendered` wraps with `overflow-wrap: break-word`. The
+  `anywhere` value hangs WebKit on a 2 MB unbroken token, which
+  `tests/import.spec.js` renders.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
+# Modernize the UI against modern-web-guidance (2026-11-10)
+
+Tier: Standard (three bounded fixes, no interface change). Branch:
+`codex/open-canvas-redesign`.
+
+- [x] Red: IME, forced-light, and drawer tests failed first.
+- [x] Green: eight Enter handlers skip an IME-confirming keydown, a forced light
+      theme sets `color-scheme: light`, and the drawer uses `closedby="any"`.
+- [x] Verified: `bun run verify` passes, and Chromium plus WebKit pass 1215 tests.
+
+## Resuming From Here
+
+- Done: three commits on the branch. Not pushed.
+- Next: Vinny decides on the larger options (popover menus, meta color-scheme
+  sync). Neither has started.
+- Assumptions: the forced-light rule lives in the vendored `inkwell-tokens.css`,
+  so the same rule belongs upstream in Inkwell.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
 # Fix F2 and F3: linked-folder races (2026-11-01)
 
 Tier: Non-trivial, because it changes `saveCurrent`. Spec approved; see the top of

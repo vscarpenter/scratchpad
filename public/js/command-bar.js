@@ -141,7 +141,7 @@
     if (bar.panel.hidden) return;
     const moves = /** @type {Record<string, number>} */ ({ ArrowDown: 1, ArrowUp: -1 });
     if (event.key in moves) setIndex(bar, bar.index + moves[event.key]);
-    else if (event.key === 'Enter') runAt(bar, bar.index);
+    else if (event.key === 'Enter' && !(event.isComposing || event.keyCode === 229)) runAt(bar, bar.index);
     else if (event.key === 'Escape') close(bar);
     else return;
     event.preventDefault();

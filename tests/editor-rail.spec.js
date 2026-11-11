@@ -9,6 +9,7 @@ test.describe('editor rail — fixed top rail and floating format pill', () => {
       await seedRawNotes(page, [
         { id: 'rail-note', title: 'A reasonably long note title to stress the breadcrumb pill', body: 'Body text.' },
       ]);
+      if (width < 1100) await page.locator('.note-row-open').first().click();
 
       // Let the one-shot panel-rise entrance animation settle before measuring.
       await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
@@ -32,9 +33,7 @@ test.describe('editor rail — fixed top rail and floating format pill', () => {
   }
 
   test('format pill floats over the textarea only in edit mode', async ({ page }) => {
-    await seedRawNotes(page, [
-      { id: 'pill-note', title: 'Pill', body: 'First line stays readable.' },
-    ]);
+    await seedRawNotes(page, [{ id: 'pill-note', title: 'Pill', body: 'First line stays readable.' }]);
 
     await expect(page.locator('#editor-format')).toBeHidden();
     await page.locator('#edit-btn').click();
@@ -45,8 +44,7 @@ test.describe('editor rail — fixed top rail and floating format pill', () => {
     expect(await page.locator('.editor-head #editor-format').count()).toBe(0);
 
     // The textarea clears the pill: top padding keeps line one readable.
-    const paddingTop = await page.locator('#note-editor')
-      .evaluate((el) => parseFloat(getComputedStyle(el).paddingTop));
+    const paddingTop = await page.locator('#note-editor').evaluate((el) => parseFloat(getComputedStyle(el).paddingTop));
     expect(paddingTop).toBeGreaterThanOrEqual(26);
     const pillBox = await pill.boundingBox();
     const editorBox = await page.locator('#note-editor').boundingBox();

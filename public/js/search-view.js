@@ -198,6 +198,8 @@
   /** @param {KeyboardEvent} event @param {KeyboardOptions} options */
   function handleInputKey(event, options) {
     if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) return;
+    // An IME confirms a candidate with Enter; Safari reports that keydown as 229.
+    if (event.key === 'Enter' && (event.isComposing || event.keyCode === 229)) return;
     if (event.key === 'Escape') {
       if (!options.hasActiveFilters() && !options.input.value) return;
       event.preventDefault();

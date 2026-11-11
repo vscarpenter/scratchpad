@@ -89,14 +89,13 @@
   }
 
   /**
-   * Schedules caret focus for the editor, yielding to an open find bar so a
-   * stale timer from an Edit click can never steal focus from the query.
+   * Focus after rendering, before typing can begin. This consumes the saved
+   * caret's one-time focus restoration before a new user selection, and
+   * yields to a find bar or modal that already owns focus.
    * @param {HTMLTextAreaElement} target
    */
   function editorFocus(target) {
-    setTimeout(() => {
-      if (!barOpen) target.focus();
-    }, 0);
+    if (!barOpen && !anyDialogOpen()) target.focus({ preventScroll: true });
   }
 
   /**
@@ -164,7 +163,10 @@
   }
 
   function onBarKey(event) {
-    if (event.key !== 'Enter') return;
+    // Enter on a button in the bar must press that button, and an IME confirms
+    // a candidate with Enter (Safari reports that keydown as 229).
+    if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return;
+    if (event.isComposing || event.keyCode === 229) return;
     event.preventDefault();
     if (event.metaKey || event.ctrlKey) replaceCurrent();
     else cycle(event.shiftKey ? -1 : 1);

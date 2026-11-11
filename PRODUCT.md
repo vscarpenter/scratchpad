@@ -174,7 +174,7 @@ is no second device, so the word names something the product does not do.
 - **Name and home.** Scratchpad, at notes.vinny.dev. Authored and maintained by
   Vinny Carpenter (vinny.dev); the source repository is public.
 - **Design system.** Inkwell (`vscarpenter/inkwell`), vendored locally and
-  never loaded from a CDN. This repo's active direction is Indigo on Paper v5;
+  never loaded from a CDN. This repo's active direction is Open Canvas v6;
   DESIGN.md owns the visual world.
 - **Platform fonts only.** No `@font-face`, no hosted font services. This is a
   privacy commitment before it is an aesthetic one.

@@ -36,10 +36,12 @@
   <link rel="icon" type="image/png" sizes="32x32" href="public/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="public/favicon-16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="public/favicon-180.png" />
-  <link rel="stylesheet" href="public/css/inkwell.css" />
+  <link rel="stylesheet" href="public/css/inkwell-tokens.css" />
+  <link rel="stylesheet" href="public/css/inkwell-components.css" />
   <link rel="stylesheet" href="public/css/app.css" />
 </head>
 <body class="page-privacy">
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-nav-wrap">
     <nav class="site-nav" aria-label="Site">
       <a class="site-nav-brand" href="index.html" aria-label="Scratchpad home">
@@ -62,7 +64,7 @@
     </nav>
   </header>
 
-  <main class="privacy-main">
+  <main id="main" class="privacy-main" tabindex="-1">
     <article class="card privacy-card">
       <p class="eyebrow">Terms of use</p>
       <h1 class="privacy-title">Plain-language terms for a local-first app.</h1>

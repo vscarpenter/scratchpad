@@ -39,22 +39,36 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="/public/css/inkwell.css" />
+  <link rel="stylesheet" href="/public/css/inkwell-tokens.css" />
+  <link rel="stylesheet" href="/public/css/inkwell-components.css" />
   <link rel="stylesheet" href="/public/css/app.css" />
 </head>
 <body>
+  <a id="skip-link" class="skip-link" href="#main">Skip to note</a>
   <div class="app-shell" id="app-shell">
-    <nav class="chronicle-rail" id="chronicle-rail" aria-label="Daily notes by date">
-      <div class="chronicle-brand" aria-label="Scratchpad">
-        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <rect class="brand-mark-bg" x="0" y="0" width="24" height="24" rx="5" />
-          <path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9" />
-        </svg>
-        <span class="visually-hidden">Scratchpad</span>
+    <aside id="workspace-navigation" class="workspace-navigation" aria-label="Notebook">
+      <div class="workspace-brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect class="brand-mark-bg" width="24" height="24" rx="5"/><path class="brand-mark-lines" d="M7 8h10M7 13h7M7 18h9"/></svg>
+        <span>Scratchpad</span>
+        <button id="navigation-close" class="icon-btn navigation-close" type="button" aria-label="Close navigation" autofocus><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
-      <p class="chronicle-month" id="chronicle-month"></p>
-      <div class="chronicle-days" id="chronicle-days"></div>
-    </nav>
+      <nav class="workspace-links" aria-label="Notebook views">
+          <button id="nav-home" class="workspace-item" type="button" data-nav-action="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Home</span></button>
+          <button id="nav-notes" class="workspace-item" type="button" data-nav-action="notes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>Notes</span></button>
+          <button id="nav-daily" class="workspace-item" type="button" data-nav-action="daily"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18"/></svg><span>Daily Notes</span></button>
+          <button id="nav-pinned" class="workspace-item" type="button" data-nav-action="pinned"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg><span>Pinned</span></button>
+      </nav>
+      <div class="workspace-folder-heading"><span>Folders</span><button id="nav-new-folder" class="icon-btn" type="button" data-nav-action="new-folder" aria-label="New folder" title="New folder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+      <nav id="workspace-folders" class="workspace-folders" aria-label="Folders"></nav>
+      <p class="workspace-folder-hint">A place for every thought.</p>
+      <nav class="workspace-secondary" aria-label="Notebook utilities">
+          <button id="nav-archive" class="workspace-item" type="button" data-nav-action="archive"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16v12H4zM3 3h18v5H3zM10 12h4"/></svg><span>Archive</span></button>
+          <button id="nav-trash" class="workspace-item" type="button" data-nav-action="trash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg><span>Trash</span></button>
+          <button id="nav-search" class="workspace-item" type="button" data-nav-action="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Search</span></button>
+          <button id="nav-settings" class="workspace-item" type="button" data-nav-action="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m9 3-1 3-3 1-2 3 2 3v4l3 1 2 3 3-1 3 1 2-3 3-1v-4l2-3-2-3-3-1-1-3z"/></svg><span>Settings</span></button>
+      </nav>
+      <p class="workspace-local"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Stored on this device</p>
+    </aside>
     <aside class="sidebar" id="sidebar" aria-label="Notes">
       <div class="sidebar-head">
         <div class="sidebar-brand">
@@ -85,6 +99,7 @@
               </p>
             </div>
             <div class="brand-actions">
+              <button id="navigation-toggle" class="icon-btn navigation-toggle" type="button" data-open-navigation aria-label="Open navigation" aria-expanded="false" aria-controls="navigation-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
               <button id="open-settings" class="btn btn-ghost" type="button" aria-label="Settings" title="Settings">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
               </button>
@@ -134,11 +149,24 @@
           </div>
         </div>
 
-        <button id="today-note" class="chronicle-daily-card" type="button" aria-label="Open today's daily note">
+        <button id="today-note" class="chronicle-daily-card" type="button">
           <span class="chronicle-daily-title">Today’s note</span>
           <svg class="chronicle-daily-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
         </button>
       </div>
+
+      <section id="note-calendar" class="note-calendar" aria-label="Daily note calendar">
+        <div class="calendar-toolbar">
+          <button id="calendar-toggle" class="calendar-toggle" type="button" aria-expanded="true" aria-controls="calendar-body"><span id="chronicle-month"></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+          <button id="calendar-today" class="calendar-today" type="button" aria-label="Today, show current month">Today</button>
+          <button id="calendar-prev" class="icon-btn" type="button" aria-label="Previous month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+          <button id="calendar-next" class="icon-btn" type="button" aria-label="Next month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        </div>
+        <div id="calendar-body">
+          <div class="calendar-weekdays" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+          <div id="chronicle-days" class="calendar-days" role="group" aria-label="Month dates"></div>
+        </div>
+      </section>
 
       <nav class="note-list" id="note-list" aria-label="Note list">
         <div class="list-header" id="list-header">
@@ -155,7 +183,7 @@
             <button id="list-menu-btn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="List options" title="List options">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>
             </button>
-            <div id="list-menu" class="popover-menu" role="menu" hidden>
+            <div id="list-menu" class="popover-menu" role="menu" aria-labelledby="list-menu-btn" hidden>
               <button id="manage-tags" role="menuitem" type="button">Manage tags…</button>
               <button id="new-folder-menu-btn" role="menuitem" type="button">New folder…</button>
               <button id="bulk-toggle" role="menuitemcheckbox" aria-checked="false" type="button">Select notes</button>
@@ -171,7 +199,7 @@
             <span id="backup-chip-label">Never backed up. Export now.</span>
             <span class="backup-caret" aria-hidden="true"></span>
           </button>
-          <div id="backup-menu" class="popover-menu popover-menu-up" role="menu" hidden>
+          <div id="backup-menu" class="popover-menu popover-menu-up" role="menu" aria-labelledby="backup-chip" hidden>
             <button id="export-btn" role="menuitem" type="button">Export backup (JSON)</button>
             <button id="export-encrypted-btn" role="menuitem" type="button">Export encrypted backup…</button>
             <button id="export-markdown-btn" role="menuitem" type="button">Export Markdown ZIP</button>
@@ -185,7 +213,7 @@
       </div>
     </aside>
 
-    <main class="main" id="main">
+    <main class="main" id="main" tabindex="-1">
       <section id="editor-view" class="editor-view" hidden aria-labelledby="note-title-display">
         <header class="editor-head">
           <button id="back-to-list" class="btn btn-ghost btn-sm back-btn" type="button" aria-label="Back to list">
@@ -193,6 +221,7 @@
             <span>Back</span>
           </button>
 
+          <button id="editor-navigation-toggle" class="icon-btn navigation-toggle" type="button" data-open-navigation aria-label="Open navigation" aria-expanded="false" aria-controls="navigation-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
           <nav id="note-breadcrumb" class="note-breadcrumb" aria-label="Note location">notes</nav>
 
           <div class="editor-actions">
@@ -211,7 +240,7 @@
               <button id="overflow-btn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More actions" title="More actions">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>
               </button>
-              <div id="overflow-menu" class="popover-menu" role="menu" hidden>
+              <div id="overflow-menu" class="popover-menu" role="menu" aria-labelledby="overflow-btn" hidden>
                 <button id="pin-toggle" role="menuitemcheckbox" aria-checked="false" type="button" aria-label="Pin note" title="Pin note">Pin note</button>
                 <button id="share-btn" role="menuitem" type="button" aria-label="Share note" title="Share note">Share…</button>
                 <button id="move-note-overflow" role="menuitem" type="button" data-action="move">Move to folder…</button>
@@ -233,10 +262,6 @@
         </header>
 
         <article class="card editor-card">
-          <div class="editor-date-spine" id="editor-date-spine" aria-hidden="true">
-            <strong id="editor-date-number"></strong>
-            <span id="editor-date-day"></span>
-          </div>
           <div class="editor-doc-head" id="editor-doc-head">
             <p class="eyebrow" id="note-eyebrow">Note · draft</p>
             <h2 id="note-title-display" class="note-doc-title" tabindex="-1">Untitled note</h2>
@@ -334,7 +359,7 @@
             <button id="format-code" class="fmt-chip fmt-code" type="button" data-format="code" aria-label="Code" title="Code">&lt;/&gt;</button>
             <button id="format-link" class="fmt-chip fmt-link" type="button" data-format="link" aria-label="Link" title="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
             <span class="fmt-sep" aria-hidden="true"></span>
-            <button id="format-h2" class="fmt-chip fmt-text" type="button" data-format="h2" aria-label="Heading level 2" title="Heading">H2</button>
+            <button id="format-h2" class="fmt-chip fmt-text" type="button" data-format="h2" aria-label="H2 heading" title="Heading">H2</button>
             <button id="format-list" class="fmt-chip fmt-text" type="button" data-format="list" aria-label="Bulleted list" title="List">List</button>
             <button id="format-quote" class="fmt-chip fmt-text" type="button" data-format="quote" aria-label="Block quote" title="Quote">Quote</button>
           </div>
@@ -342,6 +367,7 @@
             id="note-editor"
             class="textarea note-editor"
             placeholder="Start writing in markdown…"
+            aria-label="Note body"
             spellcheck="true"
             hidden
           ></textarea>
@@ -380,6 +406,10 @@
            fills the date, greeting, counts, cards, and rows from notes already
            in memory. -->
       <section id="home-desk" class="home-desk" aria-labelledby="home-desk-greeting" hidden>
+        <div class="home-pane-controls">
+          <button id="home-navigation-toggle" class="icon-btn navigation-toggle" type="button" data-open-navigation aria-label="Open navigation" aria-expanded="false" aria-controls="navigation-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          <button id="home-back-to-list" class="btn btn-ghost btn-sm" type="button">Notes</button>
+        </div>
         <div class="home-desk-inner">
           <header class="home-desk-hello">
             <div class="home-desk-hello-text">
@@ -526,7 +556,7 @@
     <button id="folder-switcher-new" class="folder-switcher-new" type="button">New folder</button>
   </div>
 
-  <div id="folder-menu" class="popover-menu folder-menu" role="menu" hidden>
+  <div id="folder-menu" class="popover-menu folder-menu" role="menu" aria-label="Folder actions" hidden>
     <button role="menuitem" type="button" data-action="rename">Rename…</button>
     <button role="menuitem" type="button" data-action="new-note">New note here</button>
     <hr class="menu-divider"/>
@@ -575,7 +605,7 @@
     </div>
     <div class="dialog-body"><p id="folder-delete-copy"></p></div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="folder-delete-keep" class="btn btn-primary" type="button">Keep the notes</button>
       <button id="folder-delete-trash" class="btn btn-danger" type="button">Move to Trash</button>
     </div>
@@ -590,7 +620,7 @@
       <p>The note will move to Trash. You can restore it later or delete it forever from Trash.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-delete" class="btn btn-danger" type="button">Move to Trash</button>
     </div>
   </dialog>
@@ -604,7 +634,7 @@
       <p id="permanent-delete-copy">This removes the note, its draft, and its revision history from this browser.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-permanent-delete" class="btn btn-danger" type="button" data-hold-confirm>Hold to delete forever</button>
     </div>
   </dialog>
@@ -618,7 +648,7 @@
       <p>Every note in Trash will be permanently removed from this browser.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-empty-trash" class="btn btn-danger" type="button" data-hold-confirm>Hold to empty Trash</button>
     </div>
   </dialog>
@@ -632,7 +662,7 @@
       <p>You have unsaved edits. Leaving edit mode will lose them.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Keep editing</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Keep editing</button>
       <button id="confirm-discard" class="btn btn-danger" type="button">Discard</button>
     </div>
   </dialog>
@@ -949,7 +979,7 @@
     </div>
     <div class="dialog-body"><p id="erase-shares-copy"></p></div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-erase-anyway" class="btn btn-danger" type="button" data-hold-confirm>Hold to erase anyway</button>
     </div>
   </dialog>
@@ -1014,7 +1044,7 @@
       <p id="tag-delete-copy">This removes the tag from matching active notes.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-tag-delete" class="btn btn-danger" type="button">Delete tag</button>
     </div>
   </dialog>
@@ -1080,7 +1110,7 @@
       <div class="quick-capture-hint">
         <p id="quick-capture-preview" class="quick-capture-preview" aria-hidden="true"></p>
         <span id="quick-capture-destination" class="quick-capture-destination">Today’s note</span>
-        <span class="quick-capture-shortcut"><kbd>Enter</kbd> to capture</span>
+        <span class="quick-capture-shortcut"><kbd>Enter</kbd> to capture <button class="quick-capture-close" type="button" data-dialog-close><kbd>Esc</kbd> to close</button></span>
       </div>
     </div>
   </dialog>
@@ -1167,6 +1197,9 @@
     <svg class="home-desk-row-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
   </template>
 
+  <dialog id="navigation-dialog" class="navigation-dialog" aria-label="Notebook navigation" closedby="any"></dialog>
+  <template id="tpl-navigation-folder"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5h7l2 3h9v12H3z"/></svg></template>
+
   <script src="/public/js/vendor/marked.min.js"></script>
   <script src="/public/js/vendor/purify.min.js"></script>
   <script src="/public/js/vendor/prism.min.js" data-manual></script>
@@ -1192,6 +1225,8 @@
   <script src="/public/js/toast.js"></script>
   <script src="/public/js/hold-confirm.js"></script>
   <script src="/public/js/swipe-row.js"></script>
+  <script src="/public/js/workspace-navigation.js"></script>
+  <script src="/public/js/note-calendar.js"></script>
   <script src="/public/js/mobile-view.js"></script>
   <script src="/public/js/settings.js"></script>
   <script src="/public/js/home-desk-view.js"></script>

@@ -181,5 +181,12 @@
     show('doc');
   }
 
+  // The URL fragment holds the decryption key, so the skip link must move
+  // focus itself and never navigate to #main.
+  document.getElementById('skip-link')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    document.getElementById('main')?.focus();
+  });
+
   main();
 })();

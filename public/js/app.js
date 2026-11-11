@@ -51,9 +51,10 @@
     search: '',
     tagFilter: null,
     view: 'active',
+    pinnedOnly: false,
     folderViewId: readFolderView(),
     folderSwitcherQuery: '',
-    mobileView: 'list', // 'list' | 'editor' - only meaningful on narrow viewports
+    mobileView: 'list', // 'list' | 'editor' | 'home' on compact viewports
     focusMode: false, // distraction-free writing; runtime-only, never persisted or restored on reload
     promptedDrafts: new Set(),
     pendingTagDelete: null,
@@ -81,9 +82,6 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     shell: $('app-shell'),
-    chronicleRail: $('chronicle-rail'),
-    chronicleMonth: $('chronicle-month'),
-    chronicleDays: $('chronicle-days'),
     viewMenuBtn: $('view-menu-btn'),
     viewMenu: $('view-menu'),
     sidebar: $('sidebar'),
@@ -126,9 +124,6 @@
     titleInput: $('note-title-input'),
     noteEyebrow: $('note-eyebrow'),
     noteByline: $('note-byline'),
-    editorDateSpine: $('editor-date-spine'),
-    editorDateNumber: $('editor-date-number'),
-    editorDateDay: $('editor-date-day'),
     editorDocHead: $('editor-doc-head'),
     editorCard: document.querySelector('.editor-card'),
     pinToggle: $('pin-toggle'),
@@ -532,8 +527,8 @@
     const d = new Date(ms || now());
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
-    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+    const yesterdayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).getTime();
+    const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).getTime();
 
     if (ms >= todayStart) {
       let hour = d.getHours();
@@ -568,8 +563,8 @@
   function bucketizeNotes(notes) {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
-    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+    const yesterdayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).getTime();
+    const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).getTime();
 
     const pinned = [];
     const todayBucket = [];
@@ -834,6 +829,7 @@
 
   function setFolderView(folderId, render) {
     const nextId = folderId && isValidFolderView(folderId) ? folderId : null;
+    state.pinnedOnly = false;
     state.folderViewId = nextId;
     writeFolderView(nextId);
     closeFolderSwitcher();
@@ -1306,7 +1302,8 @@
   // -------- Sidebar rendering --------
   function tagFilteredNotes() {
     const tag = state.tagFilter;
-    return currentBaseNotes().filter((note) => !tag || (note.tags || []).includes(tag));
+    return currentBaseNotes().filter((note) => (!tag || (note.tags || []).includes(tag)) &&
+      (state.view !== 'active' || !state.pinnedOnly || note.pinned));
   }
 
   function currentSearchResults() {
@@ -1326,7 +1323,7 @@
       item.classList.toggle('is-active', state.view === view);
       item.setAttribute('aria-checked', state.view === view ? 'true' : 'false');
     }
-    els.viewMenuLabel.textContent = { active: 'Notes', archive: 'Archive', trash: 'Trash' }[state.view];
+    els.viewMenuLabel.textContent = state.view === 'active' && state.pinnedOnly ? 'Pinned' : { active: 'Notes', archive: 'Archive', trash: 'Trash' }[state.view];
     if (!els.folderNavigation) return;
     const showNavigation = state.view !== 'trash';
     els.folderNavigation.hidden = !showNavigation;
@@ -1529,6 +1526,10 @@
   }
 
   function renderSidebarEmptyState() {
+    if (state.pinnedOnly && state.view === 'active') return el('div', { class: 'sidebar-empty', children: [
+      el('p', { class: 'sidebar-empty-title', text: 'No pinned notes yet' }),
+      el('p', { class: 'sidebar-empty-copy', text: 'Pin a note from its actions menu to keep it nearby.' }),
+    ] });
     const hasActiveNotes = activeNotes().length > 0;
     const hasArchivedNotes = archivedNotes().length > 0;
     const hasTrash = trashedNotes().length > 0;
@@ -2344,7 +2345,7 @@
   function ensureSelectionForView() {
     if (HomeDesk.holds()) return;
     const visible = filteredNotes();
-    const hasFilter = !!(state.search || state.tagFilter);
+    const hasFilter = !!(state.search || state.tagFilter || state.pinnedOnly);
     if (state.editing && state.dirty && selectedNoteIsInView()) return;
     if (state.search.trim() && selectedNoteIsInView()) return;
     if (selectedNoteIsInView() && (!hasFilter || visible.some((n) => n.id === state.selectedId))) return;
@@ -2354,7 +2355,7 @@
     const others = state.view === 'active'
       ? sortNotes(visible.filter((n) => !n.pinned || isTrashed(n)))
       : sortNotes(visible);
-    const next = pinned.concat(others)[0] || currentBaseNotes()[0] || null;
+    const next = pinned.concat(others)[0] || (!hasFilter && currentBaseNotes()[0]) || null;
     state.selectedId = next ? next.id : null;
   }
 
@@ -2378,55 +2379,33 @@
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
-  function chronicleDateForNote(note) {
-    if (note && note.dailyDate) {
-      const dailyDate = localDateFromKey(note.dailyDate);
-      if (dailyDate) return dailyDate;
+  async function navigateWorkspace(action, folderId) {
+    if (action === 'settings') return openSettingsDialog();
+    if (action === 'new-folder') return openFolderDialog();
+    if (action === 'search') {
+      state.mobileView = 'list';
+      syncMobileView();
+      els.search.focus();
+      return;
     }
-    return new Date(note && Number.isFinite(note.createdAt) ? note.createdAt : now());
-  }
-
-  function renderChronicle() {
-    if (!els.chronicleDays) return;
-    const selected = getNote(state.selectedId);
-    const contextDate = chronicleDateForNote(selected);
-    const activeKey = selected ? localDateKey(contextDate) : todayKey();
-    const today = new Date();
-    const dayButtons = [];
-
-    els.chronicleMonth.textContent = today.toLocaleDateString([], { month: 'long' });
-    els.editorDateNumber.textContent = String(contextDate.getDate());
-    els.editorDateDay.textContent = contextDate.toLocaleDateString([], { weekday: 'short' });
-    els.editorDateSpine.title = contextDate.toLocaleDateString([], {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-
-    for (let offset = 4; offset >= 0; offset -= 1) {
-      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset, 12);
-      const key = localDateKey(date);
-      dayButtons.push(el('button', {
-        class: 'chronicle-day' + (key === activeKey ? ' is-active' : '') + (key === todayKey() ? ' is-today' : ''),
-        attrs: {
-          type: 'button',
-          'data-date': key,
-          'aria-current': key === activeKey ? 'date' : null,
-          'aria-label': 'Open daily note for ' + date.toLocaleDateString([], {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-          }),
-        },
-        children: [
-          el('b', { text: String(date.getDate()) }),
-          el('small', { text: key === todayKey() ? 'Today' : date.toLocaleDateString([], { weekday: 'short' }) }),
-        ],
-        on: { click: (event) => openDailyNote(key, event.currentTarget) },
-      }));
+    if (action === 'home') {
+      if (state.view !== 'active') await setView('active');
+      state.pinnedOnly = false;
+      return HomeDesk.goHome();
     }
-    els.chronicleDays.replaceChildren(...dayButtons);
+    if (state.editing && state.dirty) {
+      if (!(await confirmDiscard())) return;
+      await discardCurrentDraft();
+    }
+    HomeDesk.leave();
+    state.view = ['archive', 'trash'].includes(action) ? action : 'active';
+    Object.assign(state, { selectedId: null, editing: false, dirty: false, search: '', tagFilter: null, mobileView: 'list' });
+    els.search.value = '';
+    const scope = action === 'folder' ? folderId : action === 'daily' ? DAILY_NOTES_FOLDER_ID : null;
+    setFolderView(scope, false);
+    state.pinnedOnly = action === 'pinned';
+    renderAll();
+    if (window.ScratchpadMobileView.isNarrow()) els.search.focus();
   }
 
   // -------- Overflow menu (#6) --------
@@ -2492,7 +2471,8 @@
     renderSidebar();
     renderActiveFilter();
     updateNoteCount();
-    renderChronicle();
+    window.ScratchpadCalendar.render();
+    window.ScratchpadNavigation.render();
     renderBackupChip();
     renderNoActiveNotesState();
 
@@ -2524,6 +2504,7 @@
       await discardCurrentDraft();
     }
     state.view = view;
+    state.pinnedOnly = false;
     state.editing = false;
     state.dirty = false;
     state.selectedId = null;
@@ -2561,6 +2542,7 @@
     return withBusy('create-note', [els.newNote, els.emptyNewNote], 'Could not create a new note.', async () => {
       await putNoteRecord(note);
       state.view = 'active';
+      state.pinnedOnly = false;
       state.notes.push(note);
       state.selectedId = note.id;
       state.editing = true;
@@ -2960,6 +2942,7 @@
 
   function clearAllFilters() {
     state.tagFilter = null;
+    state.pinnedOnly = false;
     state.search = '';
     els.search.value = '';
     renderAll();
@@ -2978,9 +2961,9 @@
 
   // Focus mode only swaps which chrome is visible (CSS class + a floating
   // exit button) — it never touches note content, editing state, or dirty
-  // tracking, so there's nothing to re-render and no risk to drafts or
-  // cross-tab sync.
+  // tracking. Compact panes already give the note the available width.
   function toggleFocusMode() {
+    if (MobileView.isNarrow() && !state.focusMode) return;
     state.focusMode = !state.focusMode;
     applyFocusMode();
   }
@@ -3279,18 +3262,14 @@
   }
 
   // -------- Dialogs --------
+  // An IME confirms a candidate with Enter; Safari reports that keydown as 229.
+  const imeConfirming = (e) => e.isComposing || e.keyCode === 229;
   function openDialog(dialog) {
-    if (typeof dialog.showModal === 'function') dialog.showModal();
-    else dialog.setAttribute('open', '');
+    dialog.showModal();
   }
 
   function closeDialog(dialog) {
-    if (dialog === els.commandPaletteDialog) {
-      els.commandPaletteInput.setAttribute('aria-expanded', 'false');
-      els.commandPaletteInput.removeAttribute('aria-activedescendant');
-    }
-    if (typeof dialog.close === 'function') dialog.close();
-    else dialog.removeAttribute('open');
+    dialog.close();
   }
 
   function bindDialogClosers() {
@@ -3618,7 +3597,7 @@
       e.preventDefault();
       wikilinkSuggestState.index = Math.max(0, wikilinkSuggestState.index - 1);
       renderWikilinkSuggest();
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
+    } else if ((e.key === 'Enter' && !imeConfirming(e)) || e.key === 'Tab') {
       e.preventDefault();
       insertWikilinkSuggestion(wikilinkSuggestState.index);
     } else if (e.key === 'Escape') {
@@ -3756,6 +3735,7 @@
     const existing = findDailyNote(key);
     if (existing) {
       await openNoteFromCommand(existing.id);
+      if (state.selectedId === existing.id && !state.editing) setFolderView(DAILY_NOTES_FOLDER_ID);
       return existing;
     }
     if (state.editing && state.dirty) {
@@ -3767,6 +3747,7 @@
     if (key === todayKey()) controls.push(els.todayNote);
     return withBusy('open-daily-' + key, controls.filter(Boolean), 'Could not open that daily note.', async () => {
       const note = await createDailyNote(key);
+      setFolderView(DAILY_NOTES_FOLDER_ID, false);
       state.view = 'active';
       state.selectedId = note.id;
       state.editing = false;
@@ -3980,8 +3961,9 @@
     return 'Last backup ' + formatFullTimestamp(ms);
   }
 
-  function formatDaysAgo(elapsedMs) {
-    const days = Math.floor(elapsedMs / DAY_MS);
+  function formatDaysAgo(ms) {
+    const dayStart = (t) => new Date(t).setHours(0, 0, 0, 0);
+    const days = Math.round((dayStart(now()) - dayStart(ms)) / DAY_MS);
     if (days <= 0) return 'today';
     if (days === 1) return 'yesterday';
     return days + ' days ago';
@@ -3995,10 +3977,10 @@
     let label = 'Never backed up. Export now.';
     if (last && elapsed <= BACKUP_HEALTHY_MS) {
       backupState = 'healthy';
-      label = 'Backed up ' + formatDaysAgo(elapsed);
+      label = 'Backed up ' + formatDaysAgo(last);
     } else if (last && elapsed <= BACKUP_AGING_MS) {
       backupState = 'aging';
-      label = 'Last backup ' + formatDaysAgo(elapsed);
+      label = 'Last backup ' + formatDaysAgo(last);
     }
     els.backupChip.dataset.backupState = backupState;
     els.backupChipLabel.textContent = label;
@@ -4490,6 +4472,7 @@
       await discardCurrentDraft();
     }
     state.view = noteLifecycleView(note);
+    state.pinnedOnly = false;
     state.selectedId = note.id;
     state.editing = false;
     state.dirty = false;
@@ -4597,7 +4580,7 @@
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setCommandPaletteIndex(state.commandIndex - 1, true);
-    } else if (e.key === 'Enter') {
+    } else if (e.key === 'Enter' && !imeConfirming(e)) {
       e.preventDefault();
       runCommandAt(state.commandIndex);
     } else if (e.key === 'Escape') {
@@ -4752,8 +4735,9 @@
     els.backupPassphraseConfirmWrap.hidden = false;
     els.confirmEncryptedExport.hidden = false;
     els.confirmEncryptedImport.hidden = true;
+    els.backupPassphrase.autocomplete = 'new-password';
     openDialog(els.backupPassphraseDialog);
-    setTimeout(() => els.backupPassphrase.focus(), 0);
+    els.backupPassphrase.focus();
   }
 
   function openEncryptedImportDialog(envelope) {
@@ -4766,8 +4750,9 @@
     els.backupPassphraseConfirmWrap.hidden = true;
     els.confirmEncryptedExport.hidden = true;
     els.confirmEncryptedImport.hidden = false;
+    els.backupPassphrase.autocomplete = 'current-password';
     openDialog(els.backupPassphraseDialog);
-    setTimeout(() => els.backupPassphrase.focus(), 0);
+    els.backupPassphrase.focus();
   }
 
   function showPassphraseError(message) {
@@ -5514,7 +5499,7 @@
     els.archiveView.addEventListener('click', () => setView('archive'));
     els.trashView.addEventListener('click', () => setView('trash'));
     els.viewMenuBtn.addEventListener('click', () => viewMenuController.toggle());
-    els.viewMenu.addEventListener('click', () => viewMenuController.close());
+    els.viewMenu.addEventListener('click', () => viewMenuController.close({ returnFocus: true }), true);
     els.homeView.addEventListener('click', HomeDesk.goHome);
     els.folderSwitcherBtn.addEventListener('click', toggleFolderSwitcher);
     els.folderSwitcherSearch.addEventListener('input', () => {
@@ -5527,7 +5512,7 @@
     });
     els.folderDialogSave.addEventListener('click', () => { saveFolderDialog(); });
     els.folderNameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !imeConfirming(e)) {
         e.preventDefault();
         saveFolderDialog();
       }
@@ -5541,8 +5526,8 @@
     els.manageTags.addEventListener('click', openTagManager);
     els.listMenuBtn.addEventListener('click', toggleListMenu);
     els.listMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeListMenu();
-    });
+      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeListMenu({ returnFocus: true });
+    }, true);
     els.newFolderMenuBtn.addEventListener('click', () => openFolderDialog(null));
 
     els.newNote.addEventListener('click', createNote);
@@ -5647,7 +5632,7 @@
       if (!els.tagInput.hidden && e.target.closest('button')) e.preventDefault();
     });
     els.tagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
+      if ((e.key === 'Enter' || e.key === ',') && !imeConfirming(e)) {
         e.preventDefault();
         addTagFromInput();
         els.tagInput.focus();
@@ -5671,8 +5656,8 @@
       toggleOverflowMenu();
     });
     els.overflowMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeOverflowMenu();
-    });
+      if (e.target.closest('[role="menuitem"], [role="menuitemcheckbox"]')) closeOverflowMenu({ returnFocus: true });
+    }, true);
     els.exportOverflowBtn.addEventListener('click', () => {
       closeOverflowMenu();
       exportMarkdownZip(getNote(state.selectedId));
@@ -5711,8 +5696,8 @@
     els.importBtn.addEventListener('click', () => els.importFile.click());
     els.backupChip.addEventListener('click', toggleBackupMenu);
     els.backupMenu.addEventListener('click', (e) => {
-      if (e.target.closest('[role="menuitem"]')) closeBackupMenu();
-    });
+      if (e.target.closest('[role="menuitem"]')) closeBackupMenu({ returnFocus: true });
+    }, true);
     els.protectStorageBtn.addEventListener('click', requestStorageProtection);
     els.checkUpdatesBtn.addEventListener('click', () => withBusy(
       'check-updates',
@@ -5765,7 +5750,7 @@
     els.confirmTagDelete.addEventListener('click', deletePendingTag);
     els.bulkApplyTag.addEventListener('click', applyBulkTag);
     els.bulkTagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !imeConfirming(e)) {
         e.preventDefault();
         applyBulkTag();
       }
@@ -5780,7 +5765,7 @@
       els.commandPaletteInput.removeAttribute('aria-activedescendant');
     });
     els.quickCaptureInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !imeConfirming(e)) {
         e.preventDefault();
         submitQuickCapture();
       }
@@ -5802,6 +5787,7 @@
 
   function onGlobalKey(e) {
     const meta = e.metaKey || e.ctrlKey;
+    if (e.key === 'Escape' && document.querySelector('dialog[open]')) return;
 
     if (meta && (e.key === 's' || e.key === 'S')) {
       if (state.editing) {
@@ -5937,6 +5923,9 @@
     window.ScratchpadShareControls.init({ manager: window.ScratchpadShareManager, db: DB,
       note: () => { const note = getNote(state.selectedId); return note && !isTrashed(note) ? note : null; }, dirty: () => state.dirty,
       getNote: (id) => DB.get(id).then((note) => note && !isTrashed(note) ? note : undefined), refreshShared: syncSharedNoteIds, render: renderAll, toast, busy: withBusy, renderMarkdown: Markdown.renderMarkdownInto });
+    window.ScratchpadCalendar.init({ selected: () => getNote(state.selectedId), notes: () => state.notes.filter((note) => !isTrashed(note)), openDate: openDailyNote });
+    window.ScratchpadNavigation.init({ navigate: navigateWorkspace, read: () => ({ view: state.view, folderId: state.folderViewId, pinned: state.pinnedOnly,
+      home: HomeDesk.holds(), folders: sortedFolders() }) });
     bindEvents();
     try {
       await purgeExpiredTrash();

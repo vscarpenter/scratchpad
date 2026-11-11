@@ -35,7 +35,7 @@ async function shellStyles(page) {
       sidebar: surface('#sidebar'),
       main: surface('#main'),
       editor: surface('.editor-card'),
-      rail: surface('#chronicle-rail'),
+      rail: surface('#workspace-navigation'),
       tokens: {
         list: token('--surface-list'),
         stage: token('--surface-document-stage'),
@@ -48,8 +48,8 @@ async function shellStyles(page) {
   });
 }
 
-test.describe('Porcelain Chronicle shell', () => {
-  test('renders five recent dates and opens or creates the chosen daily note', async ({ page }) => {
+test.describe('Open Canvas shell', () => {
+  test('renders the visible month and opens or creates the chosen daily note', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const now = new Date();
     const today = localDateKey(now);
@@ -64,10 +64,10 @@ test.describe('Porcelain Chronicle shell', () => {
       },
     ]);
 
-    const rail = page.locator('#chronicle-rail');
+    const rail = page.locator('#workspace-navigation');
     await expect(rail).toBeVisible();
-    await expect(page.locator('#chronicle-days .chronicle-day')).toHaveCount(5);
-    await expect(page.locator(`#chronicle-days [data-date="${today}"]`)).toHaveAttribute('aria-current', 'date');
+    expect(await page.locator('#chronicle-days .chronicle-day').count()).toBeGreaterThanOrEqual(28);
+    await expect(page.locator(`#chronicle-days [data-date="${today}"]`)).toHaveAttribute('aria-pressed', 'true');
 
     const prior = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12);
     const priorKey = localDateKey(prior);
@@ -81,27 +81,17 @@ test.describe('Porcelain Chronicle shell', () => {
         }, priorKey),
       )
       .toBe(1);
-    await expect(page.locator(`#chronicle-days [data-date="${priorKey}"]`)).toHaveAttribute('aria-current', 'date');
+    await expect(page.locator(`#chronicle-days [data-date="${priorKey}"]`)).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('uses the selected note date for the document spine', async ({ page }) => {
+  test('follows the selected daily note month without a decorative date spine', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    const createdAt = new Date(2026, 6, 29, 12, 0, 0).getTime();
     await seedRawNotes(page, [
-      {
-        id: 'dated-note',
-        title: 'Dated note',
-        body: 'A note with a stable local creation date.',
-        createdAt,
-        updatedAt: createdAt,
-      },
+      { id: 'dated-note', title: 'Dated note', body: 'A daily note.', dailyDate: '2026-07-29' },
     ]);
-
-    await expect(page.locator('#editor-date-spine')).toBeVisible();
-    await expect(page.locator('#editor-date-number')).toHaveText('29');
-    await expect(page.locator('#editor-date-day')).toHaveText('Wed');
-    // The sidebar heading names the view now; the date lives on the spine.
-    await expect(page.locator('#view-menu-label')).toHaveText('Notes');
+    await expect(page.locator('#chronicle-month')).toHaveText('July 2026');
+    await expect(page.locator('#chronicle-days [data-date="2026-07-29"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#editor-date-spine')).toHaveCount(0);
   });
 
   test('keeps all three desktop regions inside the viewport', async ({ page }) => {
@@ -115,7 +105,7 @@ test.describe('Porcelain Chronicle shell', () => {
       })),
     );
 
-    const rail = await page.locator('#chronicle-rail').boundingBox();
+    const rail = await page.locator('#workspace-navigation').boundingBox();
     const sidebar = await page.locator('#sidebar').boundingBox();
     const main = await page.locator('#main').boundingBox();
     if (!rail || !sidebar || !main) throw new Error('Chronicle region missing');
@@ -127,11 +117,11 @@ test.describe('Porcelain Chronicle shell', () => {
   });
 });
 
-test.describe('Porcelain Chronicle mobile', () => {
-  test('hides the chronological rail and document spine in the one-pane flow', async ({ page }) => {
+test.describe('Open Canvas mobile', () => {
+  test('uses a navigation drawer in the one-pane flow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await seedRawNotes(page, [{ id: 'mobile-note', title: 'Mobile note', body: 'Mobile body.' }]);
-    await expect(page.locator('#chronicle-rail')).toBeHidden();
+    await expect(page.locator('#workspace-navigation')).toBeHidden();
     await page.locator('[data-id="mobile-note"]').click();
     await expect(page.locator('#editor-date-spine')).toBeHidden();
     await expect(page.locator('#note-title-display')).toHaveText('Mobile note');
@@ -159,7 +149,7 @@ for (const width of [390, 768, 1440]) {
     });
     if (width >= 768) {
       expect(styles.editor.background).toBe(styles.tokens.document);
-      expect(styles.editor.shadow).not.toBe('none');
+      expect(styles.editor.shadow).toBe('none');
     }
     if (width >= 900) expect(styles.rail.background).toBe(styles.tokens.rail);
   });
