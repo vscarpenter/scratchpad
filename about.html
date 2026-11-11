@@ -33,10 +33,12 @@
   </script>
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233B4A8C'/%3E%3Cpath d='M9 10h14M9 16h10M9 22h12' stroke='%23F4F4F0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="public/css/inkwell.css" />
+  <link rel="stylesheet" href="public/css/inkwell-tokens.css" />
+  <link rel="stylesheet" href="public/css/inkwell-components.css" />
   <link rel="stylesheet" href="public/css/app.css" />
 </head>
 <body class="page-privacy page-about">
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-nav-wrap">
     <nav class="site-nav" aria-label="Site">
       <a class="site-nav-brand" href="index.html" aria-label="Scratchpad home">
@@ -59,7 +61,7 @@
     </nav>
   </header>
 
-  <main class="about-main">
+  <main id="main" class="about-main" tabindex="-1">
 
     <!-- ============ HERO ============ -->
     <section class="about-hero" aria-labelledby="hero-title">

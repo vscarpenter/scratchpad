@@ -41,6 +41,11 @@
     applyTheme(choice);
   }
 
+  // Another tab changed the theme; follow it so open tabs never disagree.
+  window.addEventListener('storage', (event) => {
+    if (event.key === KEY) applyTheme(readTheme());
+  });
+
   /** Where a launch on a wide screen lands: Home, or the note at the top of the list. */
   function readOpenTo() {
     try {

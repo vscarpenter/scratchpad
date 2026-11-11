@@ -88,7 +88,8 @@ body:not(.page-privacy) {
   grid-template-columns: 310px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   gap: 0;
-  padding: 0;
+  /* viewport-fit=cover draws under the notch and home indicator. */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   flex: 1;
   min-height: 0;
 }
@@ -835,8 +836,8 @@ body:not(.page-privacy) {
 }
 .status-chip.is-floating {
   position: fixed;
-  left: 30px;
-  bottom: 30px;
+  left: max(30px, env(safe-area-inset-left, 0px));
+  bottom: max(30px, env(safe-area-inset-bottom, 0px));
   height: 28px;
   background: var(--glass-bg-pill);
   -webkit-backdrop-filter: blur(var(--glass-blur-pill));
@@ -1151,7 +1152,7 @@ body:not(.page-privacy) {
   grid-row: 1;
   align-self: start;
   margin-top: 1px;
-  color: var(--warning);
+  color: var(--warning-dark);
   display: inline-flex;
 }
 
@@ -1230,7 +1231,7 @@ body:not(.page-privacy) {
   display: inline-block;
   width: 10px;
   height: 10px;
-  background: var(--warning);
+  background: var(--warning-dark);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M9 4h6l-1 6 3 3H7l3-3-1-6z'/%3E%3C/svg%3E") center / contain no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M9 4h6l-1 6 3 3H7l3-3-1-6z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
@@ -3376,6 +3377,17 @@ body:not(.page-privacy) {
   color: var(--text-muted);
 }
 
+.quick-capture-close {
+  min-height: 24px;
+  margin-left: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 .quick-capture-shortcut kbd {
   display: inline-flex;
   align-items: center;
@@ -3497,7 +3509,7 @@ body:not(.page-privacy) {
 .toast-region {
   position: fixed;
   left: 50%;
-  bottom: 20px;
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: var(--z-modal);
   display: flex;
@@ -3511,8 +3523,8 @@ body:not(.page-privacy) {
 
 .pwa-update-notice {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
   z-index: var(--z-modal);
   display: flex;
   align-items: center;
@@ -3551,8 +3563,8 @@ body:not(.page-privacy) {
   }
 
   .pwa-update-notice {
-    right: 16px;
-    bottom: 16px;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
     max-width: calc(100% - 32px);
   }
 }
@@ -5323,7 +5335,7 @@ body:not(.page-privacy) {
   height: 100dvh;
   max-height: 100dvh;
   margin: 0;
-  padding: 0;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   background: var(--surface-rail);
   border: 0;
   overscroll-behavior: contain;
@@ -5497,8 +5509,8 @@ body:not(.page-privacy) {
    hidden along with the rest of the sidebar in focus mode. */
 .focus-exit-btn {
   position: fixed;
-  left: 30px;
-  bottom: 30px;
+  left: max(30px, env(safe-area-inset-left, 0px));
+  bottom: max(30px, env(safe-area-inset-bottom, 0px));
   z-index: var(--z-sticky);
 }
 
@@ -5993,4 +6005,54 @@ body:not(.page-privacy) {
   .shell-foot-meta {
     display: none;
   }
+}
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: var(--z-modal);
+  padding: 10px 14px;
+  background: var(--paper);
+  color: var(--accent-text);
+  border: var(--border);
+  border-radius: var(--r-md);
+  font: 600 14px/1 var(--sans);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible { transform: none; }
+/* The skip link lands here; a ring around the whole region adds nothing. */
+main:focus-visible { outline: none; }
+
+/* ---------- Scroll containment ---------- */
+/* A pull at the end of a scroller must not chain to the page, where it
+   triggers pull-to-refresh on Android. */
+.note-list,
+.editor-card,
+.home-desk,
+.command-palette-list,
+.share-review { overscroll-behavior: contain; }
+dialog:modal { overscroll-behavior: contain; }
+/* ::backdrop ignores overscroll-behavior until it is a scroll container. */
+dialog::backdrop { overflow: hidden; overscroll-behavior: contain; }
+
+/* ---------- Forced colors (Windows High Contrast) ---------- */
+/* System color keywords are the one sanctioned exception to tokens-only:
+   in this mode the browser discards author colors, shadows, and tints. */
+@media (forced-colors: active) {
+  /* These fields draw focus with box-shadow, which this mode removes. */
+  .search-control:focus-within,
+  .quick-capture-control:focus-within,
+  .note-doc-title-input:focus-visible,
+  .note-editor:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* A masked icon paints with background, which this mode replaces. */
+  .note-section-head.is-pinned::before,
+  .note-breadcrumb .crumb-sep { forced-color-adjust: none; background: CanvasText; }
+  /* Selection shown only by a tint needs a shape that survives. */
+  .note-row.is-active:not(:focus-within),
+  .chronicle-day.is-active:not(:focus-visible),
+  .workspace-item[aria-current]:not(:focus-visible),
+  .find-chip[aria-pressed="true"]:not(:focus-visible) { outline: 1px solid CanvasText; outline-offset: -1px; }
 }

@@ -2,10 +2,11 @@
   "name": "Scratchpad",
   "short_name": "Scratchpad",
   "description": "A private, local-only notes app.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#EFF1F7",
+  "background_color": "#F8F7F4",
   "theme_color": "#5661B3",
   "icons": [
     {

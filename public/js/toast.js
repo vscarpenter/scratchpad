@@ -112,6 +112,11 @@
       if (removed) return;
       removed = true;
       node.classList.remove('is-visible');
+      // Leave when the fade ends. The timer covers a toast that never became
+      // visible, which has no transition to end.
+      node.addEventListener('transitionend', (event) => {
+        if (event.target === node) node.remove();
+      });
       window.setTimeout(() => node.remove(), EXIT_MS);
     };
   }

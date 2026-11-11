@@ -39,10 +39,12 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="/public/css/inkwell.css" />
+  <link rel="stylesheet" href="/public/css/inkwell-tokens.css" />
+  <link rel="stylesheet" href="/public/css/inkwell-components.css" />
   <link rel="stylesheet" href="/public/css/app.css" />
 </head>
 <body>
+  <a id="skip-link" class="skip-link" href="#main">Skip to note</a>
   <div class="app-shell" id="app-shell">
     <aside id="workspace-navigation" class="workspace-navigation" aria-label="Notebook">
       <div class="workspace-brand">
@@ -147,7 +149,7 @@
           </div>
         </div>
 
-        <button id="today-note" class="chronicle-daily-card" type="button" aria-label="Open today's daily note">
+        <button id="today-note" class="chronicle-daily-card" type="button">
           <span class="chronicle-daily-title">Today’s note</span>
           <svg class="chronicle-daily-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
         </button>
@@ -156,7 +158,7 @@
       <section id="note-calendar" class="note-calendar" aria-label="Daily note calendar">
         <div class="calendar-toolbar">
           <button id="calendar-toggle" class="calendar-toggle" type="button" aria-expanded="true" aria-controls="calendar-body"><span id="chronicle-month"></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
-          <button id="calendar-today" class="calendar-today" type="button" aria-label="Show current month">Today</button>
+          <button id="calendar-today" class="calendar-today" type="button" aria-label="Today, show current month">Today</button>
           <button id="calendar-prev" class="icon-btn" type="button" aria-label="Previous month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
           <button id="calendar-next" class="icon-btn" type="button" aria-label="Next month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
         </div>
@@ -181,7 +183,7 @@
             <button id="list-menu-btn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="List options" title="List options">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>
             </button>
-            <div id="list-menu" class="popover-menu" role="menu" hidden>
+            <div id="list-menu" class="popover-menu" role="menu" aria-labelledby="list-menu-btn" hidden>
               <button id="manage-tags" role="menuitem" type="button">Manage tags…</button>
               <button id="new-folder-menu-btn" role="menuitem" type="button">New folder…</button>
               <button id="bulk-toggle" role="menuitemcheckbox" aria-checked="false" type="button">Select notes</button>
@@ -197,7 +199,7 @@
             <span id="backup-chip-label">Never backed up. Export now.</span>
             <span class="backup-caret" aria-hidden="true"></span>
           </button>
-          <div id="backup-menu" class="popover-menu popover-menu-up" role="menu" hidden>
+          <div id="backup-menu" class="popover-menu popover-menu-up" role="menu" aria-labelledby="backup-chip" hidden>
             <button id="export-btn" role="menuitem" type="button">Export backup (JSON)</button>
             <button id="export-encrypted-btn" role="menuitem" type="button">Export encrypted backup…</button>
             <button id="export-markdown-btn" role="menuitem" type="button">Export Markdown ZIP</button>
@@ -211,7 +213,7 @@
       </div>
     </aside>
 
-    <main class="main" id="main">
+    <main class="main" id="main" tabindex="-1">
       <section id="editor-view" class="editor-view" hidden aria-labelledby="note-title-display">
         <header class="editor-head">
           <button id="back-to-list" class="btn btn-ghost btn-sm back-btn" type="button" aria-label="Back to list">
@@ -238,7 +240,7 @@
               <button id="overflow-btn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More actions" title="More actions">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>
               </button>
-              <div id="overflow-menu" class="popover-menu" role="menu" hidden>
+              <div id="overflow-menu" class="popover-menu" role="menu" aria-labelledby="overflow-btn" hidden>
                 <button id="pin-toggle" role="menuitemcheckbox" aria-checked="false" type="button" aria-label="Pin note" title="Pin note">Pin note</button>
                 <button id="share-btn" role="menuitem" type="button" aria-label="Share note" title="Share note">Share…</button>
                 <button id="move-note-overflow" role="menuitem" type="button" data-action="move">Move to folder…</button>
@@ -357,7 +359,7 @@
             <button id="format-code" class="fmt-chip fmt-code" type="button" data-format="code" aria-label="Code" title="Code">&lt;/&gt;</button>
             <button id="format-link" class="fmt-chip fmt-link" type="button" data-format="link" aria-label="Link" title="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
             <span class="fmt-sep" aria-hidden="true"></span>
-            <button id="format-h2" class="fmt-chip fmt-text" type="button" data-format="h2" aria-label="Heading level 2" title="Heading">H2</button>
+            <button id="format-h2" class="fmt-chip fmt-text" type="button" data-format="h2" aria-label="H2 heading" title="Heading">H2</button>
             <button id="format-list" class="fmt-chip fmt-text" type="button" data-format="list" aria-label="Bulleted list" title="List">List</button>
             <button id="format-quote" class="fmt-chip fmt-text" type="button" data-format="quote" aria-label="Block quote" title="Quote">Quote</button>
           </div>
@@ -554,7 +556,7 @@
     <button id="folder-switcher-new" class="folder-switcher-new" type="button">New folder</button>
   </div>
 
-  <div id="folder-menu" class="popover-menu folder-menu" role="menu" hidden>
+  <div id="folder-menu" class="popover-menu folder-menu" role="menu" aria-label="Folder actions" hidden>
     <button role="menuitem" type="button" data-action="rename">Rename…</button>
     <button role="menuitem" type="button" data-action="new-note">New note here</button>
     <hr class="menu-divider"/>
@@ -603,7 +605,7 @@
     </div>
     <div class="dialog-body"><p id="folder-delete-copy"></p></div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="folder-delete-keep" class="btn btn-primary" type="button">Keep the notes</button>
       <button id="folder-delete-trash" class="btn btn-danger" type="button">Move to Trash</button>
     </div>
@@ -618,7 +620,7 @@
       <p>The note will move to Trash. You can restore it later or delete it forever from Trash.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-delete" class="btn btn-danger" type="button">Move to Trash</button>
     </div>
   </dialog>
@@ -632,7 +634,7 @@
       <p id="permanent-delete-copy">This removes the note, its draft, and its revision history from this browser.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-permanent-delete" class="btn btn-danger" type="button" data-hold-confirm>Hold to delete forever</button>
     </div>
   </dialog>
@@ -646,7 +648,7 @@
       <p>Every note in Trash will be permanently removed from this browser.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-empty-trash" class="btn btn-danger" type="button" data-hold-confirm>Hold to empty Trash</button>
     </div>
   </dialog>
@@ -660,7 +662,7 @@
       <p>You have unsaved edits. Leaving edit mode will lose them.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Keep editing</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Keep editing</button>
       <button id="confirm-discard" class="btn btn-danger" type="button">Discard</button>
     </div>
   </dialog>
@@ -977,7 +979,7 @@
     </div>
     <div class="dialog-body"><p id="erase-shares-copy"></p></div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-erase-anyway" class="btn btn-danger" type="button" data-hold-confirm>Hold to erase anyway</button>
     </div>
   </dialog>
@@ -1042,7 +1044,7 @@
       <p id="tag-delete-copy">This removes the tag from matching active notes.</p>
     </div>
     <div class="dialog-foot">
-      <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-dialog-close autofocus>Cancel</button>
       <button id="confirm-tag-delete" class="btn btn-danger" type="button">Delete tag</button>
     </div>
   </dialog>
@@ -1108,7 +1110,7 @@
       <div class="quick-capture-hint">
         <p id="quick-capture-preview" class="quick-capture-preview" aria-hidden="true"></p>
         <span id="quick-capture-destination" class="quick-capture-destination">Today’s note</span>
-        <span class="quick-capture-shortcut"><kbd>Enter</kbd> to capture</span>
+        <span class="quick-capture-shortcut"><kbd>Enter</kbd> to capture <button class="quick-capture-close" type="button" data-dialog-close><kbd>Esc</kbd> to close</button></span>
       </div>
     </div>
   </dialog>

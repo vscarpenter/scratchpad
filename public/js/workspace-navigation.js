@@ -117,6 +117,11 @@
     document.getElementById('navigation-close')?.addEventListener('click', close);
     document.getElementById('home-back-to-list')?.addEventListener('click', () => api.navigate('notes'));
     panel.addEventListener('click', onAction);
+    // A hash jump would fight the wikilink hash, so the skip link moves focus itself.
+    document.getElementById('skip-link')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      document.getElementById('main')?.focus();
+    });
     dialog.addEventListener('close', restorePanel);
     // closedby="any" dismisses on a backdrop click where the browser supports it.
     if (!('closedBy' in HTMLDialogElement.prototype)) {

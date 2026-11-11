@@ -32,10 +32,12 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/public/favicon-180.png" />
-  <link rel="stylesheet" href="/public/css/inkwell.css" />
+  <link rel="stylesheet" href="/public/css/inkwell-tokens.css" />
+  <link rel="stylesheet" href="/public/css/inkwell-components.css" />
   <link rel="stylesheet" href="/public/css/app.css" />
 </head>
 <body class="page-privacy page-share">
+  <a id="skip-link" class="skip-link" href="#main">Skip to content</a>
   <header class="privacy-header">
     <a class="brand-link" href="/" aria-label="Scratchpad">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -46,7 +48,7 @@
     </button>
   </header>
 
-  <main class="privacy-main share-main">
+  <main id="main" class="privacy-main share-main" tabindex="-1">
     <p class="share-state share-state-loading" id="share-loading" role="status" aria-live="polite">Decrypting&hellip;</p>
 
     <article class="card privacy-card share-doc" id="share-doc" hidden>
