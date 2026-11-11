@@ -1,3 +1,30 @@
+# Fix the tier 2 audit findings (2026-11-10)
+
+Tier: a batch of Standard fixes from the modern-web-guidance audit. Vinny
+approved it with "lets implement tier 2". Branch: `codex/open-canvas-redesign`.
+
+- [x] Red: 22 new tests failed first.
+- [x] Green: all 15 findings are fixed. See the two commits.
+- [x] Verified: `bun run verify` passes, CSP hashes are unchanged, and Chromium
+      plus WebKit pass 1290 tests.
+
+## Resuming From Here
+
+- Done: two commits on the branch. Not pushed, not deployed.
+- Next: check on a real phone. Playwright can't simulate safe-area insets, the
+  OS Back gesture, or pull-to-refresh. Forced colors ran only under Chromium's
+  emulation.
+- Then: tier 3, if Vinny wants it. The toast question from tier 1 is still open.
+- Assumptions:
+  - Safe-area padding covers the app shell and its fixed UI. The five content
+    pages are not padded.
+  - Cross-tab theme sync covers the app page only. The content pages have only
+    the CSP-hashed inline script.
+  - The service worker still precaches `inkwell.css` and `tokens.css`. No page
+    links them now, and they stay as valid entry points.
+  - Quick capture closes through an "Esc to close" button in its hint row.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
 # Fix the tier 1 audit findings (2026-11-10)
 
 Tier: a batch of Standard fixes from the modern-web-guidance audit. Vinny
