@@ -3797,6 +3797,7 @@ body:not(.page-privacy) {
   max-width: 1180px;
   margin: 0 auto;
   justify-content: center;
+  font-size: 13px;
 }
 
 /* ---------- Mobile (≤640px) ---------- */
@@ -3878,7 +3879,12 @@ body:not(.page-privacy) {
   background: var(--paper);
   border: var(--border-hair);
   border-radius: var(--r-pill);
-  box-shadow: var(--shadow-md);
+}
+
+/* Content pages are flat: the hairline carries the nav, and the primary
+   action reads by fill alone. */
+.page-privacy .btn-primary {
+  box-shadow: none;
 }
 
 .site-nav-brand {
@@ -3916,7 +3922,7 @@ body:not(.page-privacy) {
 }
 
 .site-nav-links a {
-  font: 500 13.5px/1 var(--sans);
+  font: 500 14px/1 var(--sans);
   color: var(--text-secondary);
   text-decoration: none;
 }
@@ -4420,7 +4426,13 @@ body:not(.page-privacy) {
   margin: 0 auto 12px;
   font-size: 13px;
   line-height: 1.55;
-  color: var(--text-muted);
+  /* The footer sits on the page stage, where --text-muted misses 4.5:1. */
+  color: var(--text-secondary);
+}
+
+.share-footer .shell-foot,
+.share-footer .shell-foot a {
+  color: var(--text-secondary);
 }
 
 .share-provenance a {
@@ -4506,8 +4518,6 @@ body:not(.page-privacy) {
   gap: 22px;
   padding: 44px 0 0;
 }
-/* Soft Glass hero drops the eyebrow above the display headline. */
-.about-hero .eyebrow { display: none; }
 
 .about-hero-text {
   display: flex;
@@ -4520,19 +4530,20 @@ body:not(.page-privacy) {
 
 .about-display {
   margin: 0;
-  font: 800 clamp(40px, 6vw, 62px)/1.08 var(--sans);
+  /* 7vw keeps "Your thoughts. Your browser." on one line down to 320px, so
+     the headline holds two lines at every width. */
+  font: 800 clamp(22px, 7vw, 62px)/1.08 var(--sans);
   letter-spacing: -0.035em;
   color: var(--ink);
 }
-.about-display em.accent {
-  font-style: normal;
-  color: var(--accent-text);
+.about-display-phrase {
+  white-space: nowrap;
 }
 
 .about-lede {
   margin: 0;
   max-width: 54ch;
-  font: 400 17px/1.65 var(--sans);
+  font: 400 18px/1.6 var(--sans);
   color: var(--text-secondary);
 }
 
@@ -4561,12 +4572,12 @@ body:not(.page-privacy) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
-  padding: 0 11px;
+  min-height: 28px;
+  padding: 0 12px;
   border: var(--glass-border);
   border-radius: var(--r-pill);
   background: var(--glass-bg-pill);
-  font: 600 11px/1 var(--sans);
+  font: 600 13px/1 var(--sans);
   color: var(--text-secondary);
 }
 .about-pill .dot {
@@ -4682,13 +4693,13 @@ body:not(.page-privacy) {
   letter-spacing: -0.02em;
   color: var(--ink);
   max-width: 22ch;
+  text-wrap: balance;
 }
 .about-h-tight { max-width: 18ch; }
-.about-h em.accent { font-style: italic; color: var(--accent); }
 .about-section-lede {
   margin: 0;
   max-width: 56ch;
-  font: 400 16.5px/1.6 var(--sans);
+  font: 400 18px/1.6 var(--sans);
   color: var(--gray-700);
 }
 
@@ -4699,36 +4710,25 @@ body:not(.page-privacy) {
   padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  counter-reset: step;
+  gap: 40px;
 }
+/* Flat columns under a hairline. The list order carries the sequence. */
 .about-step {
-  position: relative;
-  padding: 28px 26px 24px;
-  background: var(--paper);
-  border: none;
-  border-radius: var(--r-panel);
-  box-shadow: var(--glass-shadow);
+  padding: 22px 0 0;
+  border-top: var(--border-hair);
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.about-step-num {
-  display: inline-block;
-  font: 700 28px/1 var(--sans);
-  letter-spacing: -0.02em;
-  color: var(--accent);
-  margin-bottom: 6px;
-}
 .about-step-title {
   margin: 0;
-  font: 700 19px/1.25 var(--sans);
+  font: 700 18px/1.25 var(--sans);
   color: var(--ink);
   letter-spacing: -0.015em;
 }
 .about-step-body {
   margin: 0;
-  font: 400 14.5px/1.6 var(--sans);
+  font: 400 16px/1.6 var(--sans);
   color: var(--text-secondary);
 }
 
@@ -4770,7 +4770,7 @@ body:not(.page-privacy) {
   grid-column: 2;
   grid-row: 1;
   margin: 0;
-  font: 700 17px/1.25 var(--sans);
+  font: 700 18px/1.25 var(--sans);
   letter-spacing: -0.015em;
   color: var(--ink);
 }
@@ -4778,7 +4778,7 @@ body:not(.page-privacy) {
   grid-column: 2;
   grid-row: 2;
   margin: 0;
-  font: 400 14px/1.55 var(--sans);
+  font: 400 16px/1.55 var(--sans);
   color: var(--text-secondary);
 }
 
@@ -4826,13 +4826,13 @@ body:not(.page-privacy) {
 }
 .about-promise-title {
   margin: 0 0 4px;
-  font: 700 16px/1.25 var(--sans);
+  font: 700 18px/1.25 var(--sans);
   letter-spacing: -0.01em;
   color: var(--ink);
 }
 .about-promise-body {
   margin: 0;
-  font: 400 14px/1.55 var(--sans);
+  font: 400 16px/1.55 var(--sans);
   color: var(--text-secondary);
 }
 
@@ -4907,8 +4907,10 @@ body:not(.page-privacy) {
   gap: 4px;
   flex-wrap: wrap;
 }
+/* Inkwell's key caps default to 11px, under the page's 13px floor. */
+.page-about .kbd { font-size: 13px; }
 .about-kbd-action {
-  font: 400 14.5px/1.4 var(--sans);
+  font: 400 16px/1.4 var(--sans);
   color: var(--ink);
 }
 
@@ -4936,10 +4938,11 @@ body:not(.page-privacy) {
 }
 .about-final-title {
   margin: 0;
-  font: 700 clamp(28px, 3.6vw, 40px)/1.15 var(--sans);
+  font: 700 clamp(26px, 3.4vw, 38px)/1.18 var(--sans);
   letter-spacing: -0.02em;
   color: var(--ink);
   max-width: 22ch;
+  text-wrap: balance;
 }
 .about-final-lede {
   margin: 0;
@@ -4972,6 +4975,8 @@ body:not(.page-privacy) {
 
 @media (max-width: 640px) {
   .about-main { padding: 0 16px; }
+  /* The headline shrinks to hold two lines, so the lede steps down with it. */
+  .about-lede { font-size: 16px; }
   .about-section { padding: 48px 0; }
   .about-section-head { margin-bottom: 32px; }
   .about-features {

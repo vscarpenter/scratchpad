@@ -84,3 +84,80 @@ test('the About mockup claims no sync or pricing', async ({ page }) => {
   expect(text).not.toMatch(/\bsync\b/i);
   expect(text).not.toMatch(/\bpricing\b/i);
 });
+
+// Findings from the content-page design audit (2026-11-11).
+/** @param {import('@playwright/test').Locator} heading */
+const lineCount = (heading) =>
+  heading.evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const tops = new Set(
+      [...range.getClientRects()].filter((rect) => rect.width > 1).map((rect) => Math.round(rect.top)),
+    );
+    return tops.size;
+  });
+
+for (const width of [1440, 768, 390, 320]) {
+  test(`the About headline fits two lines at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/about.html');
+    const heading = page.locator('h1');
+    expect(await lineCount(heading)).toBeLessThanOrEqual(2);
+    const clipped = await heading.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    expect(clipped, `headline wider than its column at ${width}px`).toBe(false);
+  });
+}
+
+test('no headline styles one phrase differently from the rest', async ({ page }) => {
+  for (const pageInfo of PAGES) {
+    await page.goto(pageInfo.path);
+    await expect(page.locator('h1 em, h2 em'), `${pageInfo.path} accent phrase`).toHaveCount(0);
+  }
+});
+
+test('the document pages open on the headline with no label above it', async ({ page }) => {
+  for (const path of ['/guide.html', '/privacy.html', '/terms.html']) {
+    await page.goto(path);
+    await expect(page.locator('.privacy-card .eyebrow'), `${path} eyebrow`).toHaveCount(0);
+  }
+});
+
+test('the pill nav and the primary buttons are flat', async ({ page }) => {
+  for (const pageInfo of PAGES) {
+    await page.goto(pageInfo.path);
+    await expect(page.locator('.site-nav'), `${pageInfo.path} nav`).toHaveCSS('box-shadow', 'none');
+    for (const button of await page.locator('.btn-primary').all()) {
+      await expect(button, `${pageInfo.path} primary button`).toHaveCSS('box-shadow', 'none');
+    }
+  }
+});
+
+test('the About steps carry no index numbers and sit flat on the page', async ({ page }) => {
+  await page.goto('/about.html');
+  const steps = page.locator('ol.about-steps > li');
+  await expect(steps).toHaveCount(3);
+  await expect(page.locator('.about-step-num')).toHaveCount(0);
+  await expect(steps.first()).toHaveCSS('box-shadow', 'none');
+});
+
+test('About running text is 16px or larger and nothing drops under 13px', async ({ page }) => {
+  await page.goto('/about.html');
+  const bodies = '.about-step-body, .about-feature-body, .about-promise-body, .about-kbd-action';
+  const bodySizes = await page
+    .locator(bodies)
+    .evaluateAll((els) => els.map((el) => parseFloat(getComputedStyle(el).fontSize)));
+  expect(bodySizes.length).toBeGreaterThan(0);
+  expect(Math.min(...bodySizes)).toBeGreaterThanOrEqual(16);
+
+  const smallest = await page.locator('main').evaluate((main) => {
+    const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+    let min = Infinity;
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const parent = node.parentElement;
+      if (!parent || !(node.textContent || '').trim() || parent.closest('svg')) continue;
+      min = Math.min(min, parseFloat(getComputedStyle(parent).fontSize));
+    }
+    return min;
+  });
+  expect(smallest).toBeGreaterThanOrEqual(13);
+});

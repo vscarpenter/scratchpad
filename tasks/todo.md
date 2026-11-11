@@ -1,3 +1,35 @@
+# Fix the content-page taste audit findings (2026-11-11)
+
+Tier: a batch of Standard fixes from the design-taste-frontend audit of the five
+content pages. Vinny approved it with "let's resolve all of the 'worth acting
+on' items". Branch: `fix/content-page-taste-audit`.
+
+- [x] Red: 10 new tests failed first.
+- [x] Green: all eight findings are fixed in one commit.
+- [x] Verified: `bun run verify` passes, CSP hashes are unchanged, and Chromium
+      plus WebKit pass 1310 tests.
+
+## Resuming From Here
+
+- Done: one commit on the branch. Not pushed, not deployed.
+- Next: Vinny decides the About headline question below, then reviews the
+  before and after screenshots in `.verify/taste-audit/` and
+  `.verify/taste-audit-after/`.
+- Open, not fixed here:
+  - The pill nav overflows the viewport at 320px. It did before this branch.
+  - `.shell-foot` uses `--text-muted` in the app shell too. I fixed the share
+    page only and did not measure the app shell.
+  - About still has shadows on the mockup, the promises panel, the shortcut
+    list, and the final card.
+- Assumptions:
+  - The About tagline keeps its words. It fits two lines by shrinking on
+    phones (27px at 390px wide, down from 40px). The other choice is to cut it
+    to two short sentences and keep 40px.
+  - The share page keeps its "Shared note" label, because the heading under it
+    is the sender's title.
+  - Sizes stay in px to match the rest of `app.css`.
+- Local test notes: Firefox can't launch from the agent shell. CI covers it.
+
 # Fix the tier 2 audit findings (2026-11-10)
 
 Tier: a batch of Standard fixes from the modern-web-guidance audit. Vinny
