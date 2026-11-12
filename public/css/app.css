@@ -4530,14 +4530,22 @@ body:not(.page-privacy) {
 
 .about-display {
   margin: 0;
-  /* 7vw keeps "Your thoughts. Your browser." on one line down to 320px, so
-     the headline holds two lines at every width. */
-  font: 800 clamp(22px, 7vw, 62px)/1.08 var(--sans);
+  /* The first line is about 13em wide in an Arial-class font. At 6.5vw that
+     leaves roughly 7% of the column spare at 360px, so two lines hold on
+     platform fonts wider than Apple's. */
+  font: 800 clamp(23px, 6.5vw, 62px)/1.08 var(--sans);
   letter-spacing: -0.035em;
   color: var(--ink);
 }
 .about-display-phrase {
   white-space: nowrap;
+}
+/* Under 360px two lines would need type near body size, so each sentence
+   takes its own line at a larger size. */
+@media (max-width: 359px) {
+  .about-display { font-size: 32px; }
+  .about-display-phrase { display: block; }
+  .about-display br { display: none; }
 }
 
 .about-lede {

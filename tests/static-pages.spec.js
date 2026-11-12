@@ -91,22 +91,46 @@ const lineCount = (heading) =>
   heading.evaluate((el) => {
     const range = document.createRange();
     range.selectNodeContents(el);
-    const tops = new Set(
-      [...range.getClientRects()].filter((rect) => rect.width > 1).map((rect) => Math.round(rect.top)),
-    );
-    return tops.size;
+    // A block-level phrase reports its box and its text a pixel or two apart,
+    // so rectangles within a few pixels count as one line.
+    const tops = [...range.getClientRects()]
+      .filter((rect) => rect.width > 1)
+      .map((rect) => rect.top)
+      .sort((first, second) => first - second);
+    return tops.filter((top, index) => index === 0 || top - tops[index - 1] > 6).length;
   });
 
-for (const width of [1440, 768, 390, 320]) {
+// The platform sans differs by OS, so the headline tests pin Arial. It is
+// metric-compatible with Liberation Sans on Linux and wider than Apple's
+// system font, which makes the result the same on every machine.
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {number} width
+ */
+async function aboutHeadlineAt(page, width) {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto('/about.html');
+  const heading = page.locator('h1');
+  // Set through the CSSOM: the page's CSP blocks an injected style tag.
+  await heading.evaluate((el) => {
+    el.style.fontFamily = 'Arial, sans-serif';
+  });
+  const clipped = await heading.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+  expect(clipped, `headline wider than its column at ${width}px`).toBe(false);
+  return lineCount(heading);
+}
+
+for (const width of [1440, 768, 390, 360]) {
   test(`the About headline fits two lines at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto('/about.html');
-    const heading = page.locator('h1');
-    expect(await lineCount(heading)).toBeLessThanOrEqual(2);
-    const clipped = await heading.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
-    expect(clipped, `headline wider than its column at ${width}px`).toBe(false);
+    expect(await aboutHeadlineAt(page, width)).toBe(2);
   });
 }
+
+test('the About headline stacks one sentence per line under 360px', async ({ page }) => {
+  expect(await aboutHeadlineAt(page, 320)).toBe(3);
+  const size = await page.locator('h1').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  expect(size).toBeGreaterThanOrEqual(30);
+});
 
 test('no headline styles one phrase differently from the rest', async ({ page }) => {
   for (const pageInfo of PAGES) {

@@ -1,3 +1,25 @@
+# Make the About headline breakpoint structural (2026-11-11)
+
+Tier: Trivial follow-up to PR #44, from its one review comment. Vinny chose
+option 3: keep the tagline and let the smallest phones go to three lines.
+Branch: `fix/about-headline-breakpoint`.
+
+- [x] Red: the 320px stack test failed first.
+- [x] Green: two lines from 360px up, one sentence per line below it.
+- [x] Verified: `bun run verify` passes, and Chromium plus WebKit pass 1312
+      tests.
+
+## Resuming From Here
+
+- Done: one commit on the branch. Not pushed.
+- Next: Vinny confirms the push and whether to reply on the PR #44 thread.
+- Assumptions:
+  - Two lines hold for Arial-class fonts, about 4% wider than Apple's. A
+    Verdana-class font (about 26% wider) still wraps to three lines on phones.
+  - The headline tests pin Arial so they give the same result on macOS and
+    Linux CI.
+  - Phone type is 25.4px at 390px, down from 27.3px, to buy the margin.
+
 # Fix the content-page taste audit findings (2026-11-11)
 
 Tier: a batch of Standard fixes from the design-taste-frontend audit of the five
