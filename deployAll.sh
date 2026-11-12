@@ -17,6 +17,10 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# AWS CLI v2 pipes each command's output through a pager and waits for "q".
+# Turn it off here so provision.sh and deploy.sh inherit the setting.
+export AWS_PAGER=""
+
 HEADERS_FUNCTION="scratchpad-security-headers"
 HEADERS_SOURCE="cloudfront/security-headers-function.js"
 HEADERS_COMMENT="Emit security/privacy headers for notes.vinny.dev"
