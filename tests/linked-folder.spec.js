@@ -255,6 +255,61 @@ test('a read leaves a note with a lone surrogate alone', async ({ page }) => {
   expect(result).toEqual({ changed: 0, code: 0xd83d });
 });
 
+// Text that a file round trip could quietly rewrite: astral characters, a
+// zero-width joiner sequence, Windows line endings, and a leading byte-order mark.
+const FRAGILE_BODIES = {
+  emoji: 'Coffee \u{1F600}\u{1F469}‍\u{1F4BB} flag \u{1F1FA}\u{1F1F8}',
+  'Windows line endings': 'line one\r\nline two\r\n\r\nline four',
+  'a byte-order mark': '﻿starts with a mark\nsecond',
+};
+
+async function linkProbeNote(page, body) {
+  await withPicker(page);
+  await seedRawNotes(page, [{ id: 'probe-note', title: 'Probe', body: 'seed' }]);
+  await link(page);
+  await page.evaluate(async (text) => {
+    await window.ScratchpadDB.put({ ...(await window.ScratchpadDB.get('probe-note')), body: text });
+    await window.ScratchpadLinkedFolder.writeAll();
+  }, body);
+}
+
+for (const [name, body] of Object.entries(FRAGILE_BODIES)) {
+  test(`a note with ${name} survives repeated reads unchanged`, async ({ page }) => {
+    await linkProbeNote(page, body);
+    const result = await page.evaluate(async () => {
+      const db = window.ScratchpadDB;
+      const before = JSON.stringify(await db.get('probe-note'));
+      const revisions = (await db.getRevisions('probe-note')).length;
+      const reads = [
+        await window.ScratchpadLinkedFolder.readAll(true),
+        await window.ScratchpadLinkedFolder.readAll(true),
+      ];
+      const after = await db.get('probe-note');
+      return {
+        reads,
+        body: after.body,
+        untouched: JSON.stringify(after) === before,
+        newRevisions: (await db.getRevisions('probe-note')).length - revisions,
+      };
+    });
+    expect(result).toEqual({ reads: [0, 0], body, untouched: true, newRevisions: 0 });
+  });
+
+  test(`an outside edit to a note with ${name} is read once`, async ({ page }) => {
+    await linkProbeNote(page, body);
+    const original = await opfs(page, 'read', 'probe.md');
+    await opfs(page, 'write', 'probe.md', `${original}\nOUTSIDE`);
+    const result = await page.evaluate(async () => {
+      const reads = [
+        await window.ScratchpadLinkedFolder.readAll(true),
+        await window.ScratchpadLinkedFolder.readAll(true),
+      ];
+      return { reads, hasEdit: (await window.ScratchpadDB.get('probe-note')).body.includes('OUTSIDE') };
+    });
+    expect(result).toEqual({ reads: [1, 0], hasEdit: true });
+  });
+}
+
 test('ticking a task keeps another tab save on a note with no updatedAt', async ({ page }) => {
   await withPicker(page);
   await seedRawNotes(page, [{ id: 'task-note', title: 'Task note', body: '- [ ] one' }]);
