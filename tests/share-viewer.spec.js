@@ -236,6 +236,37 @@ test.describe('share viewer', () => {
   });
 });
 
+/**
+ * WCAG contrast of each element's text against its nearest opaque backdrop.
+ * Runs in the page, so it can use nothing from this file.
+ * @param {Element[]} els
+ */
+function contrastRatios(els) {
+  /** @param {string} css */
+  const rgb = (css) => (css.match(/[\d.]+/g) || []).slice(0, 4).map(Number);
+  /** @param {number[]} color */
+  const luminance = (color) => {
+    const [r, g, b] = color.map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  /** @param {Element | null} el */
+  const backdrop = (el) => {
+    for (let node = el; node; node = node.parentElement) {
+      const bg = rgb(getComputedStyle(node).backgroundColor);
+      if (bg.length === 3 || bg[3] === 1) return bg.slice(0, 3);
+    }
+    return [255, 255, 255];
+  };
+  return els.map((el) => {
+    const fg = luminance(rgb(getComputedStyle(el).color).slice(0, 3));
+    const bg = luminance(backdrop(el));
+    return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+  });
+}
+
 test.describe('share page footer', () => {
   test('carries the site strip with root-absolute links', async ({ page }) => {
     await page.goto('/share.html');
@@ -257,5 +288,13 @@ test.describe('share page footer', () => {
     await page.goto('/share.html');
     const clipped = await page.locator('#theme-toggle').evaluate((el) => el.scrollHeight > el.clientHeight + 1);
     expect(clipped, 'theme toggle stacked into grid rows').toBe(false);
+  });
+
+  test('footer text meets AA contrast on the page background', async ({ page }) => {
+    await page.goto('/share.html');
+    await expect(page.locator('#shell-version')).toHaveText(/^\d+\.\d+\.\d+$/);
+    const ratios = await page.locator('.share-provenance, .shell-foot-meta > span').evaluateAll(contrastRatios);
+    expect(ratios.length).toBeGreaterThan(1);
+    expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5);
   });
 });
