@@ -3,7 +3,7 @@
 // you are. The current nav item and the open note share the selection tint,
 // today is an Indigo numeral, and folder glyphs take their chosen color.
 const { test, expect } = require('@playwright/test');
-const { enterBulkMode, seedRawNotes } = require('./helpers');
+const { enterBulkMode, seedFolders, seedRawNotes } = require('./helpers');
 
 test.use({ timezoneId: 'America/Chicago' });
 
@@ -157,4 +157,62 @@ test('today keeps an underline in forced colors', async ({ page, browserName }) 
   await page.emulateMedia({ forcedColors: 'active' });
   await openNote(page);
   expect((await dayStyle(page.locator(TODAY))).line).toBe('underline');
+});
+
+const FOLDERS = [
+  { id: 'work', name: 'Work', color: 'accent' },
+  { id: 'reading', name: 'Reading', color: 'olive' },
+  { id: 'travel', name: 'Travel', color: 'sky' },
+  { id: 'someday', name: 'Someday', color: 'gray' },
+  { id: 'ideas', name: 'Ideas' },
+];
+
+/** @param {import('@playwright/test').Page} page @param {string} id */
+const folder = (page, id) => page.locator(`.workspace-folder[data-folder-id="${id}"]`);
+
+/** @param {import('@playwright/test').Locator} button */
+const glyph = (button) =>
+  button.locator('svg').evaluate((svg) => {
+    const style = getComputedStyle(svg);
+    return { stroke: style.color, fill: style.fill };
+  });
+
+/** @param {import('@playwright/test').Page} page */
+async function seedColoredFolders(page) {
+  await seedFolders(page, FOLDERS);
+  await seedRawNotes(page, NOTES);
+}
+
+test('folder glyphs carry their chosen color, current or not', async ({ page }) => {
+  await seedColoredFolders(page);
+  await expect(folder(page, 'reading')).toHaveAttribute('data-color', 'olive');
+  await expect(folder(page, 'ideas')).not.toHaveAttribute('data-color');
+  expect((await glyph(folder(page, 'ideas'))).fill).toBe('none');
+  const resting = await glyph(folder(page, 'reading'));
+  expect(resting.fill).not.toBe('none');
+  await folder(page, 'reading').click();
+  await expect(folder(page, 'reading')).toHaveAttribute('aria-current', 'page');
+  expect(await glyph(folder(page, 'reading'))).toEqual(resting);
+});
+
+for (const scheme of /** @type {const} */ (['light', 'dark'])) {
+  test(`folder glyph strokes clear 3:1 in ${scheme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await seedColoredFolders(page);
+    for (const id of ['work', 'reading', 'travel', 'someday']) {
+      const ratio = await contrastOf(folder(page, id).locator('svg'));
+      expect(ratio, `${scheme} ${id} glyph = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(3);
+    }
+    await folder(page, 'reading').click();
+    await expect(folder(page, 'reading')).toHaveAttribute('aria-current', 'page');
+    const current = await contrastOf(folder(page, 'reading').locator('svg'));
+    expect(current, `${scheme} current reading glyph = ${current.toFixed(2)}`).toBeGreaterThanOrEqual(3);
+  });
+}
+
+test('folder glyphs drop their fill in forced colors', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Only Chromium can emulate forced colors.');
+  await page.emulateMedia({ forcedColors: 'active' });
+  await seedColoredFolders(page);
+  expect((await glyph(folder(page, 'reading'))).fill).toBe('none');
 });

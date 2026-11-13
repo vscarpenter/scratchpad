@@ -3,7 +3,7 @@
    modal dialog on phones. Moving it preserves IDs, listeners, and focus. */
 'use strict';
 {
-  /** @typedef {{ id: string, name: string }} Folder */
+  /** @typedef {{ id: string, name: string, color?: string | null }} Folder */
   /** @typedef {{ view: string, folderId: string | null, pinned: boolean, home: boolean, folders: Folder[] }} NavState */
   /** @typedef {{ navigate(action: string, folderId?: string): Promise<unknown>, read(): NavState }} NavApi */
   /** @type {NavApi} */
@@ -62,6 +62,7 @@
     button.className = 'workspace-item workspace-folder';
     button.dataset.folderId = folder.id;
     button.dataset.navAction = 'folder';
+    if (folder.color) button.dataset.color = folder.color;
     const icon = /** @type {HTMLTemplateElement} */ (document.getElementById('tpl-navigation-folder'));
     button.append(icon.content.cloneNode(true));
     const label = document.createElement('span');

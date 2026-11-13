@@ -8,7 +8,7 @@ screenshots ("Build it as shown"). Spec: `tasks/spec.md`. Branch:
 - [x] Cycle 1: selection tint on the current nav item and the open note, with
       AA text on tinted rows and the derived `--accent-text-secondary` token.
 - [x] Cycle 2: today as an Indigo numeral, underlined only in forced colors.
-- [ ] Cycle 3: folder glyphs take their chosen color in the navigation.
+- [x] Cycle 3: folder glyphs take their chosen color in the navigation.
 - [ ] Docs: DESIGN.md, CLAUDE.md, and the Open Canvas spec name the grammar.
 - [ ] Verify: `npm run verify`, Chromium and WebKit suites, and captures in
       both themes at desktop, tablet, and phone.
