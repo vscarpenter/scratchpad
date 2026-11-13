@@ -1,3 +1,18 @@
+# Colorize pass: Indigo marks where you are (2026-11-12)
+
+Tier: Non-trivial, because it changes a shared design token and revises three
+approved v6 details. Vinny approved the direction from before and proposed
+screenshots ("Build it as shown"). Spec: `tasks/spec.md`. Branch:
+`feat/colorize-wayfinding`.
+
+- [ ] Cycle 1: selection tint on the current nav item and the open note, with
+      AA text on tinted rows and the derived `--accent-text-secondary` token.
+- [ ] Cycle 2: today as an Indigo numeral, underlined only in forced colors.
+- [ ] Cycle 3: folder glyphs take their chosen color in the navigation.
+- [ ] Docs: DESIGN.md, CLAUDE.md, and the Open Canvas spec name the grammar.
+- [ ] Verify: `npm run verify`, Chromium and WebKit suites, and captures in
+      both themes at desktop, tablet, and phone.
+
 # Make the About headline breakpoint structural (2026-11-11)
 
 Tier: Trivial follow-up to PR #44, from its one review comment. Vinny chose
