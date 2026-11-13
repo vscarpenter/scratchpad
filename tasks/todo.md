@@ -10,8 +10,29 @@ screenshots ("Build it as shown"). Spec: `tasks/spec.md`. Branch:
 - [x] Cycle 2: today as an Indigo numeral, underlined only in forced colors.
 - [x] Cycle 3: folder glyphs take their chosen color in the navigation.
 - [x] Docs: DESIGN.md, CLAUDE.md, and the Open Canvas spec name the grammar.
-- [ ] Verify: `npm run verify`, Chromium and WebKit suites, and captures in
+- [x] Verify: `npm run verify`, Chromium and WebKit suites, and captures in
       both themes at desktop, tablet, and phone.
+
+## Resuming From Here
+
+- Done: the work landed in five commits (ee43520 to 27a4279), plus this
+  close-out. Not pushed, no PR, not deployed.
+- Verified: `npm run verify` passes. Chromium and WebKit ran 1,336 passed,
+  34 skipped, and 2 failed. Both failures are `backup-reminder.spec.js:26`,
+  and main fails it the same way. The test stores a backup 12 times 24 hours
+  back, which crossed the November 1 DST change at 11 p.m., so the chip read
+  "11 days ago". Firefox can't launch from the agent shell; CI covers it.
+- Captures: `.verify/colorize-after/` and the sheets in
+  `.verify/colorize-after-sheets/` cover desktop, tablet, phone, and the phone
+  navigation dialog in both themes.
+- Next: Vinny reviews the branch and decides on push and a PR.
+- Open, not fixed here: pin the clock and time zone in
+  `backup-reminder.spec.js` so the DST window can't fail it.
+- Assumptions:
+  - Today shares the selected day's weight (650), so the two differ by fill.
+  - Tag chips on the open note sit on `--paper` so they read as chips on the
+    tint.
+  - `tests/design-tokens.spec.js` stays untouched; see `tasks/lessons.md`.
 
 # Make the About headline breakpoint structural (2026-11-11)
 

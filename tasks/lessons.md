@@ -231,3 +231,14 @@
   `.env.local` and `.git/` on loopback. Point it at a
   `scripts/dev-server.mjs` URL instead, and run its scripts from the session
   scratchpad so `.taste-skill/` never lands in the repo.
+- `tests/design-tokens.spec.js` has never been formatted, and formatting it
+  pushes `assertContracts` past the 40-line ratchet. New color assertions go
+  in a new spec, which can also test the pair on the rendered surface.
+- A contrast ratio can't catch a missing derived color token. The invalid
+  `color` falls back to the inherited ink, which passes AA. Pin the computed
+  color to the resolved token as well.
+- commitlint reads a body line that starts with `word:` as a footer and
+  warns. Wrap the body so a colon-led word never starts a line.
+- Chromium's forced-colors emulation flips the media query but reports author
+  colors in computed style. A test can pin forced-colors rules, but not the
+  forced palette itself.
