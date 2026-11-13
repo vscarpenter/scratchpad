@@ -5,6 +5,8 @@
 const { test, expect } = require('@playwright/test');
 const { enterBulkMode, seedRawNotes } = require('./helpers');
 
+test.use({ timezoneId: 'America/Chicago' });
+
 const OPEN = '.note-row[data-id="open"]';
 const NOTES = [
   {
@@ -119,4 +121,40 @@ test('bulk mode keeps the open note neutral until it is checked', async ({ page 
     const ratio = await contrastOf(page.locator(`${OPEN} .note-row-${part}`));
     expect(ratio, `checked row ${part} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
   }
+});
+
+const TODAY = '#chronicle-days .chronicle-day.is-today';
+
+/** @param {import('@playwright/test').Locator} locator */
+const dayStyle = (locator) =>
+  locator.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { color: style.color, weight: Number(style.fontWeight), line: style.textDecorationLine };
+  });
+
+test('today is an Indigo numeral without an underline', async ({ page }) => {
+  await openNote(page);
+  const accentText = await resolve(page, '--accent-text');
+  const today = await dayStyle(page.locator(TODAY));
+  expect(today.color).toBe(accentText);
+  expect(today.weight).toBeGreaterThanOrEqual(600);
+  expect(today.line).toBe('none');
+  const plain = page.locator('#chronicle-days .chronicle-day:not(.is-today, .is-active, .is-outside)').first();
+  expect((await dayStyle(plain)).color).not.toBe(accentText);
+});
+
+test("today keeps Indigo among the next month's leading days", async ({ page }) => {
+  // Sunday, November 29, 2026 opens December's first row.
+  await page.clock.setFixedTime(new Date('2026-11-29T18:00:00Z'));
+  await openNote(page);
+  await page.locator('#calendar-next').click();
+  await expect(page.locator(TODAY)).toHaveClass(/is-outside/);
+  expect((await dayStyle(page.locator(TODAY))).color).toBe(await resolve(page, '--accent-text'));
+});
+
+test('today keeps an underline in forced colors', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Only Chromium can emulate forced colors.');
+  await page.emulateMedia({ forcedColors: 'active' });
+  await openNote(page);
+  expect((await dayStyle(page.locator(TODAY))).line).toBe('underline');
 });

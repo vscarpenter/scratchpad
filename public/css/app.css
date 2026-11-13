@@ -5381,7 +5381,8 @@ body:not(.page-privacy) {
 .chronicle-day:hover { color: var(--ink); background: var(--control-fill-hover); }
 .chronicle-day.is-outside { color: var(--text-muted); }
 .chronicle-day.is-active { color: var(--accent-text); background: var(--accent-soft); font-weight: 650; }
-.chronicle-day.is-today { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+/* An Indigo numeral marks today; an underline here collided with the note dot. */
+.chronicle-day.is-today { color: var(--accent-text); font-weight: 650; }
 .chronicle-day.has-note::after { content: ""; position: absolute; width: 3px; height: 3px; left: calc(50% - 1.5px); bottom: 2px; border-radius: var(--r-pill); background: var(--accent-text); }
 .list-header { min-height: 40px; padding: 6px 18px; border-bottom-color: var(--hairline-color); }
 .note-list { gap: 0; padding: 0 0 16px; }
@@ -6071,6 +6072,8 @@ dialog::backdrop { overflow: hidden; overscroll-behavior: contain; }
   /* A masked icon paints with background, which this mode replaces. */
   .note-section-head.is-pinned::before,
   .note-breadcrumb .crumb-sep { forced-color-adjust: none; background: CanvasText; }
+  /* Today's Indigo numeral doesn't survive this mode, so it gets its underline back. */
+  .chronicle-day.is-today { text-decoration: underline 2px; text-underline-offset: 5px; }
   /* Selection shown only by a tint needs a shape that survives. */
   .note-row.is-active:not(:focus-within),
   .chronicle-day.is-active:not(:focus-visible),
