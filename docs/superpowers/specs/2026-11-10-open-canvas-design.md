@@ -23,6 +23,20 @@ Supersedes the v5 shell, date spine, raised document, and prose typography.
 - Preserve Edit/Save, draft protection, history, folder management, search, backups, encryption, and sharing.
 - Quiet hover/focus feedback; no entrance or swipe animations.
 
+## Amendment, 2026-11-12: Indigo marks where you are
+
+Approved by Vinny from before and proposed screenshots.
+
+- The current navigation item and the open note's row use `--accent-soft`, the
+  tint the selected day, folder switcher, and command bar already use. Hover
+  stays gray. Bulk mode keeps the open note neutral until it's checked.
+- Text on the tint uses `--accent-text` and the derived
+  `--accent-text-secondary`, because `--text-muted` fails AA there.
+- Today is an `--accent-text` numeral at weight 650. The underline collided
+  with the has-note dot, so it returns only under forced colors.
+- Navigation folder glyphs take their chosen palette color: a soft fill and a
+  stroke mixed with ink to clear 3:1. Uncolored folders stay muted.
+
 ## Constraints and verification
 
 No runtime dependencies, remote assets, new network requests, database migration, release bump, or deployment.

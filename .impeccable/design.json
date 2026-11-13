@@ -241,9 +241,9 @@
       "name": "Note Row \u2014 Selected",
       "kind": "nav",
       "refersTo": "note-row-active",
-      "description": "Selected note row in the Indigo on Paper index. Warm paper, hairline border, compact title and metadata.",
+      "description": "The open note in the Open Canvas index. It takes the Indigo selection tint, and its time and excerpt use accent tones so they clear AA on the tint.",
       "html": "<button class=\"ds-note-row ds-is-active\"><span class=\"ds-note-title\">Weekly review</span><span class=\"ds-note-when\">2h ago</span><span class=\"ds-note-excerpt\">Three things that went well, one that didn't, and the one change worth making next week.</span></button>",
-      "css": ".ds-note-row { display: block; width: 100%; padding: 16px 20px; background: var(--control-fill); color: var(--ink); border: 0; border-bottom: 1px solid var(--hairline-color); border-radius: 0; box-shadow: none; text-align: left; font: 600 14px/1.4 var(--sans); } .ds-note-row:hover { background: var(--row-hover); } .ds-note-row:focus-visible { outline: 2px solid var(--accent-focus-ring); outline-offset: -2px; }"
+      "css": ".ds-note-row { display: block; width: 100%; padding: 16px 20px; background: var(--accent-soft); color: var(--ink); border: 0; border-bottom: 1px solid var(--hairline-color); border-radius: 0; box-shadow: none; text-align: left; font: 600 14px/1.4 var(--sans); } .ds-note-row .ds-note-when { color: var(--accent-text); } .ds-note-row .ds-note-excerpt { color: var(--accent-text-secondary); } .ds-note-row:focus-visible { outline: 2px solid var(--accent-focus-ring); outline-offset: -2px; }"
     },
     {
       "name": "Status Chip",

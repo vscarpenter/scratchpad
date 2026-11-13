@@ -76,6 +76,8 @@
   --accent-d: #414b91; /* hover/pressed */
   --on-accent: #ffffff; /* text/icon on accent fill */
   --accent-text: var(--accent); /* accent text/glyph ON an accent tint */
+  /* Secondary text ON an accent tint. Derived, so it follows the theme. */
+  --accent-text-secondary: color-mix(in srgb, var(--accent-text) 45%, var(--ink));
   --accent-soft: #e8e9f4; /* chip / soft tint bg */
   --accent-soft-2: #dbddf1; /* stronger current-state tint */
   --accent-grad: var(--accent);

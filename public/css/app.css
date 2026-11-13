@@ -5311,8 +5311,15 @@ body:not(.page-privacy) {
 .workspace-item svg { flex: none; color: var(--text-muted); }
 .workspace-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workspace-item:hover { color: var(--ink); background: var(--control-fill-hover); }
-.workspace-item[aria-current] { color: var(--ink); background: var(--control-fill); font-weight: 600; }
+.workspace-item[aria-current] { color: var(--ink); background: var(--accent-soft); font-weight: 600; }
 .workspace-item[aria-current] svg { color: var(--accent-text); }
+/* A folder's glyph takes the color picked in the folder dialog, as Home's dots
+   do, and keeps it when current. normalizeFolder limits data-color to these. */
+.workspace-folder[data-color="accent"] { --folder-color: var(--accent); }
+.workspace-folder[data-color="olive"] { --folder-color: var(--olive); }
+.workspace-folder[data-color="sky"] { --folder-color: var(--sky); }
+.workspace-folder[data-color="gray"] { --folder-color: var(--gray-500); }
+.workspace-folder[data-color] svg { color: color-mix(in srgb, var(--folder-color) 72%, var(--ink)); fill: color-mix(in srgb, var(--folder-color) 24%, transparent); }
 .workspace-item:focus-visible, .calendar-toggle:focus-visible, .calendar-today:focus-visible,
 .chronicle-day:focus-visible {
   outline: 2px solid var(--accent);
@@ -5381,19 +5388,28 @@ body:not(.page-privacy) {
 .chronicle-day:hover { color: var(--ink); background: var(--control-fill-hover); }
 .chronicle-day.is-outside { color: var(--text-muted); }
 .chronicle-day.is-active { color: var(--accent-text); background: var(--accent-soft); font-weight: 650; }
-.chronicle-day.is-today { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+/* An Indigo numeral marks today; an underline here collided with the note dot. */
+.chronicle-day.is-today { color: var(--accent-text); font-weight: 650; }
 .chronicle-day.has-note::after { content: ""; position: absolute; width: 3px; height: 3px; left: calc(50% - 1.5px); bottom: 2px; border-radius: var(--r-pill); background: var(--accent-text); }
 .list-header { min-height: 40px; padding: 6px 18px; border-bottom-color: var(--hairline-color); }
 .note-list { gap: 0; padding: 0 0 16px; }
 .note-section { gap: 0; padding-top: 0; }
 .note-section-head { margin: 0; padding: 12px 20px 6px; font: 500 12px/1.4 var(--sans); letter-spacing: 0; text-transform: none; }
 .note-row, .note-row.is-active { padding: 16px 20px; border: 0; border-bottom: 1px solid var(--hairline-color); border-radius: 0; box-shadow: none; }
+/* The open note takes the selection tint the calendar and folder switcher use.
+   Bulk mode keeps it neutral until it's checked, so it never reads as chosen. */
 .note-row.is-active { background: var(--control-fill); }
+.note-row.is-active:not(.is-bulk) { background: var(--accent-soft); }
 .note-row.is-active::before { content: none; }
 .note-row-title { font-size: 14px; font-weight: 600; }
 .note-row-excerpt { font-size: 12px; line-height: 1.5; }
 .note-row-when { font: 400 12px/1.4 var(--sans); font-variant-numeric: tabular-nums; }
 .note-row-tag { height: 18px; padding-inline: 6px; background: var(--control-fill); color: var(--text-secondary); font: 400 12px/1 var(--sans); }
+/* Muted text fails AA on the tint, so a tinted row's text takes the accent's
+   own tones, and the open note's tag chips sit on paper. */
+:is(.note-row.is-active:not(.is-bulk), .note-row.is-bulk.is-selected) .note-row-excerpt { color: var(--accent-text-secondary); }
+:is(.note-row.is-active:not(.is-bulk), .note-row.is-bulk.is-selected) :is(.note-row-when, .note-row-tag-more) { color: var(--accent-text); }
+.note-row.is-active:not(.is-bulk) .note-row-tag:not(:hover) { background: var(--paper); }
 .sidebar-foot { padding: 10px 18px 14px; }
 .status-chip { width: 100%; min-height: 32px; height: auto; justify-content: flex-start; border-radius: var(--r-sm); box-shadow: none; }
 .editor-view { display: grid; grid-template-rows: 64px minmax(0, 1fr); min-width: 0; padding: 0; }
@@ -6063,6 +6079,10 @@ dialog::backdrop { overflow: hidden; overscroll-behavior: contain; }
   /* A masked icon paints with background, which this mode replaces. */
   .note-section-head.is-pinned::before,
   .note-breadcrumb .crumb-sep { forced-color-adjust: none; background: CanvasText; }
+  /* Today's Indigo numeral doesn't survive this mode, so it gets its underline back. */
+  .chronicle-day.is-today { text-decoration: underline 2px; text-underline-offset: 5px; }
+  /* A forced fill would paint a colored folder solid, so it stays an outline. */
+  .workspace-folder[data-color] svg { fill: none; }
   /* Selection shown only by a tint needs a shape that survives. */
   .note-row.is-active:not(:focus-within),
   .chronicle-day.is-active:not(:focus-visible),

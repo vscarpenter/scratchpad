@@ -1,269 +1,133 @@
-# Spec: fix linked-folder findings F2 and F3
+# Spec: colorize pass, Indigo marks where you are
 
-Status: approved by Vinny on 2026-10-31. Implemented on
-`fix/linked-folder-races`, stacked on PR #40.
-
-Things that changed during implementation. The checker found overlapping
-write-backs leaving stale text in a file, so write-backs now run one at a time
-through a promise queue and read the stored note, not memory. Independent review
-found repeated losing reads flushing History, so a read checks the stored note
-before it writes a revision.
-A save that loses its race may not reach the conflict dialog on the next
-try: when the read has already refreshed memory, that save succeeds and the read's
-text stays in History.
+Status: direction approved by Vinny on 2026-11-12 from before and proposed
+screenshots in `.verify/colorize-compare/`. Branch `feat/colorize-wayfinding`.
 
 ## Goal
 
-No text is lost when a linked-folder read races a note save (F2), and a file
-edit landing just after the app writes that file still gets read (F3).
+A person can see where they are at a glance in both themes. The current
+navigation item, the open note, today's date, and each folder's identity use
+the one accent and the folder colors people already pick. No new hues.
+
+## What the audit found
+
+- Open Canvas v6 shows "current" two ways. The calendar's selected day, the
+  folder switcher's current row, the command bar's active item, and
+  bulk-selected rows use `--accent-soft`. The navigation's current item and
+  the open note's row use gray `--control-fill`, the same family as hover.
+- `--text-muted` fails AA on the Indigo tint: 3.90:1 in light and 3.83:1 in
+  dark. Bulk-selected rows already carry this failure.
+- Folder colors (accent, olive, sky, gray) appear as dots on Home, in the
+  folder switcher, and in the move dialog. The v6 navigation draws every
+  folder with the same gray glyph.
+- Today's 2px underline collides with the has-note dot under the same numeral.
 
 ## Inputs and outputs
 
-- `DB.putIfUnchanged(note, expectedUpdatedAt)` already exists and commits only
-  when the stored `updatedAt` still matches. `mutateNoteBody` uses it today.
-- `putNoteRecord(note, changeType, expectedUpdatedAt)` gains an optional third
-  argument. With it, the write is conditional and the function returns whether
-  it committed. Without it, callers behave as they do now.
-
-## Design
-
-F2 has two directions, so both writers become conditional.
-
-- A read calls `putNoteRecord` with the `updatedAt` it based its decision on.
-  If that write loses, `applyFile` leaves `record.written` alone, so the file
-  stays unread and the next read applies the conflict rule to the newer note.
-  A write-back that hits this skips that note's write for the round.
-- `saveCurrent` passes `latestRaw.updatedAt`. If that write loses, the editor
-  stays open with the user's text and the draft, and a toast asks them to save
-  again. That next save opens the existing conflict dialog, because the
-  `updatedAt` check already differs. When `latest` is missing, it writes
-  unconditionally as it does today.
-
-F3: `writeFile` compares the file's text with what it just wrote. If they differ,
-or the read fails because the file changed, it records a timestamp older than
-any real file instead of the file's own. Later reads then treat the file as
-unread. Attachments skip the comparison.
-
-## Constraints
-
-- The structure ratchet leaves no room: `app.js` and `linked-folder.js` must fit
-  their ceilings, and ceilings never rise. In `app.js`, `mutateNoteBody` switches
-  to the new `putNoteRecord` argument and its comment gets shorter. In
-  `linked-folder.js`, the `show` object in `render` collapses to one line.
-- No version bump. `npm run verify` and the three-browser suite must pass.
-
-## Edge cases
-
-- A legacy note with no finite `updatedAt`: normalizing gives memory a value the
-  database lacks, so a read's conditional write keeps losing. The text stays on
-  disk, nothing is lost, and the next save repairs the note.
-- A write-back must not retry on a timer after losing, or that legacy note would
-  loop every 800 ms. The save that won already scheduled its own write-back.
-- Reading text back on every write adds a small cost, once per note written.
-
-## Anti-goals
-
-- The remaining F1 window. The File System Access API has no conditional write.
-- Two-tab coordination in the checker, and files the app has never read.
-- New conflict UI. The existing dialog handles the retry.
-
-## Behavior changes
-
-- Task toggles and other `mutateNoteBody` writes now reach the linked folder,
-  because they go through `putNoteRecord`. Today they skip it, so the file stays
-  stale until the next save of that note.
-- A save can now stop with a toast in a race it used to win silently.
-
-## Acceptance criteria
-
-- `F2` and `F3` move from `findings` to `guards` in `scenarios.mjs`, and pass in
-  every order. `F1` is the only open finding left.
-- `npm run check:linked-folder` exits 0, with a variant removing each fix caught.
-- `scripts/verify-linked-folder/world.mjs` mirrors the new `saveCurrent` path.
-
-## Test stubs
-
-- Guard: a read overlapping a note save keeps both texts.
-- Guard: a file edit landing just after a write-back gets read back.
-- Variants: read writes unconditionally; save writes unconditionally; `writeFile`
-  trusts the timestamp.
-- `tests/linked-folder.spec.js`: slow the real `DB` seam so a read lands between
-  the save's read and write. Assert the editor stays open and both texts survive.
-- `tests/linked-folder.spec.js`: a task toggle updates the linked file.
-
-## Assumptions
-
-- The checker models the conflict dialog as the user keeping a separate note.
-- A second save after the toast is an acceptable cost, given how rare this race is.
-
-# Spec: open tasks on Home
-
-Vinny proposed this on 2026-10-08 and asked for the spec after the revision
-diff shipped in #30. Status: draft, awaiting approval. The design record
-`docs/superpowers/specs/2026-10-08-open-tasks-design.md` is written with the
-first implementation commit.
-
-Branch: a fresh branch from `main` once #30 merges. One draft PR.
-
-## Goal
-
-Home lists every unchecked `- [ ]` line across active notes, each row showing
-the task text and the note it lives in. Ticking a row rewrites that one
-character in the note the same way the rendered checkbox does, and the row
-leaves the list. Nothing is stored and nothing is uploaded; the list is
-recomputed from note bodies already in memory, the way backlinks and unlinked
-mentions are.
-
-## Inputs
-
-- `Markdown.findTaskMarkers(src)` in `public/js/markdown.js`: every GFM task
-  marker outside fenced code, as `{ offset, checked }` where `offset` indexes
-  the state character inside the brackets.
-- `mutateNoteBody(noteId, transform, { coalesceToggles: true })` in app.js:
-  re-reads the record from IndexedDB, retries on a cross-tab conflict,
-  snapshots at most one revision per note per five minutes, broadcasts, and
-  patches `state.notes`.
-- `DB.getAllDrafts()` for notes with an unsaved draft, as mentions uses it.
-- `HomeDesk.init(deps)` and `draw()` in `public/js/home-desk.js`, which
-  already receive `state`, `isArchived`, `isTrashed`, `deriveTitle`, and
-  `openNote` (`selectNote`).
-- The Home section pattern in `index.html` (`home-desk-section`, a titled
-  head with an inline SVG, a list) and the focus key scheme
-  `data-desk-focus`.
-
-## Outputs
-
-- `public/js/open-tasks.js` exporting the frozen `window.ScratchpadOpenTasks`
-  with `init(deps)`, `draw()`, and the pure `collect(notes, lookups)` that
-  returns rows of `{ noteId, offset, text, line }`.
-- `index.html`: a new `#home-desk-tasks` section between Recently edited and
-  Tags, with `#home-desk-task-list`, `#home-desk-task-count` in the head,
-  and `#home-desk-task-more` for the overflow line; hidden by default.
-- `home-desk.js`: `init` passes its deps through to
-  `ScratchpadOpenTasks.init`, and `draw` calls `ScratchpadOpenTasks.draw()`
-  after the view renders. `types/home-desk.d.ts` `DeskDeps` gains
-  `mutateNoteBody` and `getDrafts`.
-- app.js: the existing `HomeDesk.init({...})` call gains `mutateNoteBody`
-  and `getDrafts` on an existing line, so app.js nets zero lines and its
-  ceiling holds at 5,982.
-- CSS: `.home-desk-task-row`, `.home-desk-task-check`, `.home-desk-task-text`,
-  `.home-desk-task-note`, `.home-desk-task-more` in the Home block of
-  app.css, tokens only. The check reuses the `.task-checkbox` look.
-- Module wiring: `<script>` after `home-desk.js` and before app.js,
-  `APP_SHELL`, `jsconfig.json`, a row in `tests/README.md`, the guide's
-  Home section, and the coverage workflow visiting the section once.
-
-## Behavior
-
-- **Scope.** Active notes only: not archived, not trashed. Unchecked markers
-  only. Rows order by the note's `updatedAt`, newest first, then by document
-  order within a note. Fenced code is skipped by the scanner; indented code
-  is not, matching the rendered checkboxes today.
-- **Row.** A checkbox button (`role="checkbox"`, `aria-checked="false"`,
-  label "Mark done: <text>") and a note button (label "Open <title>"). The
-  text is the line after the marker with leading quote markers and list
-  markers removed, trimmed, and clipped to 140 characters with an ellipsis.
-  Markdown inside the line stays literal.
-- **Ticking.** The checkbox calls `mutateNoteBody` with a transform that
-  re-scans the latest body. It picks the marker at the recorded offset when
-  the line there still carries the recorded text; otherwise the first
-  unchecked marker whose line carries that text; otherwise it returns the
-  body unchanged and the row shows a toast, "That task moved. Open the note
-  to update it." A successful tick redraws the section, so the row leaves
-  the list and focus moves to the next row's checkbox, or to the section
-  heading when none remains.
-- **Drafts.** Rows for a note with an unsaved draft render with
-  `aria-disabled="true"` and the title "Finish the note's draft first", as
-  unlinked mentions do, because a tick would write under the draft.
-- **Counts.** The head shows the total, "Open tasks · 12". The list shows at
-  most 25 rows; beyond that a muted line reads "Showing 25 of 61. Open a
-  note to see the rest." With no open tasks the section hides.
-- **Cost.** Markers are memoized per note on `updatedAt`, so a Home redraw
-  rescans only notes that changed since the last draw.
-- **Phones.** Home is desktop and tablet only today; nothing changes there.
+- `workspace-navigation.js` `folderButton(folder, selected)` sets
+  `data-color` when `folder.color` is set. `app.js` already passes full folder
+  records, and `normalizeFolder` limits `color` to the four palette names or
+  null, so the module trusts the value.
+- `inkwell-tokens.css` gains one derived token, `--accent-text-secondary`, for
+  secondary text on an accent tint:
+  `color-mix(in srgb, var(--accent-text) 45%, var(--ink))`. It's declared once
+  in `:root` and resolves per theme, the way `--surface-rail` does.
+- `app.css` changes, all in the Open Canvas section:
+  1. `.workspace-item[aria-current]` uses `--accent-soft`. Text stays ink at
+     600, and the icon stays `--accent-text`. Hover on other items stays
+     `--control-fill-hover`.
+  2. `.note-row.is-active` outside bulk mode uses `--accent-soft`. In bulk mode
+     the open note stays `--control-fill` until it's checked, so it never reads
+     as selected.
+  3. On a tinted row (the open note, or a checked row in bulk mode), the
+     excerpt uses `--accent-text-secondary`, and the time and "+N" use
+     `--accent-text`. Tag chips on the open note sit on `--paper`.
+  4. `.chronicle-day.is-today` drops the underline and uses `--accent-text` at
+     weight 650. Under `forced-colors: active` the underline comes back,
+     because that mode discards author colors.
+  5. A colored folder's glyph strokes in
+     `color-mix(in srgb, <folder color> 72%, var(--ink))` and fills with
+     `color-mix(in srgb, <folder color> 24%, transparent)`. It keeps that color
+     when it's the current item. Uncolored folders keep the muted glyph. Under
+     forced colors the fill drops to none.
 
 ## Constraints
 
-- No network calls, no `innerHTML`, no inline scripts, no new tokens, no
-  dark-mode rules in app.css, no emoji in source. Every string lands through
-  `textContent`.
-- New module: `// @ts-check`, script-level `'use strict'`, block scope, JSDoc
-  types, under 400 lines, no function over 40 lines, nesting at most 3.
-  `home-desk.js` and `home-desk-view.js` stay under 400.
-- app.js nets zero or fewer lines. The test file stays under 400 lines.
-- The module never reads `state` directly; it gets `notes()`, `isArchived`,
-  `isTrashed`, `deriveTitle`, `openNote`, `mutateNoteBody`, `getDrafts`, and
-  `toast` through `init`.
-- Toggles reuse `coalesceToggles`, so ten ticks in five minutes on one note
-  store one revision, the same as ticking in the rendered note.
+- Tokens only in `app.css`, with no hex. `color-mix()` over tokens is fine.
+- Indigo stays the sole accent. Success, warning, and danger stay state-only.
+  The folder palette is user data that already ships.
+- The dark blocks stay byte-parallel. The new token is derived, so neither
+  dark block changes.
+- No `app.js` change, so its line ceiling holds.
+- The new spec file meets the v18 limits: 40 lines per function, nesting depth
+  three, and 400 lines per file.
+- No raw DOM writes. The module only assigns `dataset`.
 
 ## Edge cases
 
-- A line like `- [ ]` with no text after the marker shows as "(empty task)".
-- A marker inside a blockquote (`> - [ ] call`) lists with the quote marker
-  stripped and toggles in place.
-- The same task text twice in one note: the offset match wins; if the line
-  moved, the first unchecked line with that text is the one ticked.
-- A note changed in another tab between draw and tick: `mutateNoteBody`
-  re-reads the latest body, so the text match runs against current content.
-- A note whose body is at `NOTE_BODY_MAX`: scanning is linear and memoized,
-  so one large note costs one pass per edit.
-- Ticking while the same note is open in the editor cannot happen from
-  Home, because Home ends when a note is selected; the draft guard covers
-  the unsaved-edit case.
-- Daily notes list like any other note, with their date as the title. The
-  monthly review's Open loops heading stays empty; filling it is a later
-  idea.
+- Bulk mode: an unchecked open note stays neutral, and a checked note is
+  tinted whether or not it's open.
+- Today in the leading or trailing days of another month keeps Indigo over the
+  muted `is-outside` color.
+- Today and selected: tint plus the Indigo numeral. Selected only: tint. Today
+  only: the Indigo numeral with no fill.
+- Hovering the current nav item or the open row keeps the tint.
+- Archive and Trash tint the open row the same way. Trashed titles use
+  `--text-secondary`, which clears AA on the tint (6.61:1 light, 5.78:1 dark).
+- A stored folder color outside the palette never reaches the navigation,
+  because `normalizeFolder` replaces it with null.
+- Phones host the navigation in the native dialog, with the same rules.
+- Forced colors: the existing block already outlines tint-only selection.
+  Today gets its underline back, and folder fills drop.
 
 ## Anti-goals
 
-- No stored task index, no sync, no due dates, priorities, or sorting
-  controls.
-- No change to how checkboxes behave inside the open note, to
-  `findTaskMarkers`, or to `mutateNoteBody`.
-- No palette command and no stage of its own; the list lives on Home.
-- No inline editing of task text from Home.
+- No tinted tags, colored headings, or new hues.
+- No change to Home, prose, callouts, highlights, or the pin color.
+- No colored side stripes. The craft floor bans side borders over 1px on list
+  items.
+- No folder dots in the breadcrumb or the list header in this pass.
 
 ## Acceptance criteria
 
-1. With two active notes holding unchecked tasks, one archived note with a
-   task, one trashed note with a task, and one checked task, Home lists only
-   the unchecked tasks from the active notes, newest note first, each with
-   its note title.
-2. Ticking a row stores the note with that one `[ ]` turned to `[x]`, leaves
-   every other character unchanged, and removes the row.
-3. When the task line moved before the tick, the tick still finds it by
-   text; when it no longer exists, the body is unchanged and the toast shows.
-4. A task inside a fenced code block is not listed.
-5. Rows for a note with an unsaved draft are disabled and do not write.
-6. With 30 open tasks the list shows 25, the head shows 30, and the
-   overflow line names both numbers. With none, the section is hidden.
-7. The note button opens that note and ends Home.
-8. Three ticks on one note inside five minutes store one revision.
-9. Space on a focused checkbox ticks it, and focus lands on the next row.
-10. `npm run verify` passes and the Chromium suite passes apart from the
-    iPhone-emulation tests this container cannot launch.
+1. The current navigation item and the open note's row compute to
+   `--accent-soft`. A hovered nav item that isn't current doesn't.
+2. Title, excerpt, time, "+N", and tag text on the open note's row clear 4.5:1
+   against their composited backgrounds in light and dark.
+3. In bulk mode the open note computes to `--control-fill` until it's checked,
+   then to `--accent-soft`.
+4. Today's button computes to `--accent-text`, weight 600 or more, with no
+   underline. Under forced colors it shows an underline (Chromium only).
+5. A colored folder's glyph has a fill other than `none` and a stroke that
+   clears 3:1 against the navigation in light and dark. It keeps that stroke
+   when current. An uncolored folder's glyph has fill `none`.
+6. The open note's excerpt computes to the resolved `--accent-text-secondary`,
+   so a missing token fails instead of falling back to ink.
+7. `npm run verify` passes, and the Chromium and WebKit suites pass locally.
+   Firefox runs in CI.
+8. Desktop, tablet, and phone captures in both themes match the approved
+   comparison.
 
 ## Test stubs
 
-```js
-// tests/open-tasks.spec.js
-test('Home lists unchecked tasks from active notes, newest note first');
-test('ticking a row rewrites that one marker and removes the row');
-test('a moved task is found by its text and a vanished one shows a toast');
-test('fenced code, checked tasks, archived and trashed notes are excluded');
-test('rows for a note with an unsaved draft are disabled');
-test('the head counts every task, the list caps at 25, and empty hides');
-test('the note button opens the note');
-test('ticks within five minutes share one revision');
-test('Space ticks the focused row and focus moves to the next');
-```
+`tests/wayfinding-color.spec.js` (new):
+
+- `test('the current nav item and the open note share the selection tint')`
+- `test('text on the open note clears AA in light and dark')`
+- `test('bulk mode keeps the open note neutral until it is checked')`
+- `test('today is an Indigo numeral, underlined only in forced colors')`
+- `test('folder glyphs carry their chosen color, current or not')`
+
+`tests/design-tokens.spec.js` stays untouched. It has never been formatted, so
+editing it drags the whole file into the format sweep, and formatting pushes
+`assertContracts` past the 40-line ratchet. The rendered tests above check the
+same pairs on the real tint in both themes.
 
 ## Assumptions
 
-- Home ends on note selection, so the open-note editing path never overlaps
-  a Home tick; the draft check is the only guard needed.
-- 25 rows and 140 characters are the right caps; both are constants in the
-  module and easy to change.
-- The section sits between Recently edited and Tags. If you would rather it
-  lead, say so and it moves above Recently edited.
+- The 72% stroke mix and 24% fill match the approved mock. If a stroke misses
+  3:1 on the navigation, the mix moves toward ink.
+- Today uses the selected day's weight (650), so the two share one numeral
+  style and differ by fill.
+- `DESIGN.md`, `CLAUDE.md`, and the Open Canvas spec each get a short note on
+  this color grammar, because each lists what Indigo marks.

@@ -1,3 +1,39 @@
+# Colorize pass: Indigo marks where you are (2026-11-12)
+
+Tier: Non-trivial, because it changes a shared design token and revises three
+approved v6 details. Vinny approved the direction from before and proposed
+screenshots ("Build it as shown"). Spec: `tasks/spec.md`. Branch:
+`feat/colorize-wayfinding`.
+
+- [x] Cycle 1: selection tint on the current nav item and the open note, with
+      AA text on tinted rows and the derived `--accent-text-secondary` token.
+- [x] Cycle 2: today as an Indigo numeral, underlined only in forced colors.
+- [x] Cycle 3: folder glyphs take their chosen color in the navigation.
+- [x] Docs: DESIGN.md, CLAUDE.md, and the Open Canvas spec name the grammar.
+- [x] Verify: `npm run verify`, Chromium and WebKit suites, and captures in
+      both themes at desktop, tablet, and phone.
+
+## Resuming From Here
+
+- Done: the work landed in five commits (ee43520 to 27a4279), plus this
+  close-out. Not pushed, no PR, not deployed.
+- Verified: `npm run verify` passes. Chromium and WebKit ran 1,336 passed,
+  34 skipped, and 2 failed. Both failures are `backup-reminder.spec.js:26`,
+  and main fails it the same way. The test stores a backup 12 times 24 hours
+  back, which crossed the November 1 DST change at 11 p.m., so the chip read
+  "11 days ago". Firefox can't launch from the agent shell; CI covers it.
+- Captures: `.verify/colorize-after/` and the sheets in
+  `.verify/colorize-after-sheets/` cover desktop, tablet, phone, and the phone
+  navigation dialog in both themes.
+- Next: Vinny reviews the branch and decides on push and a PR.
+- Open, not fixed here: pin the clock and time zone in
+  `backup-reminder.spec.js` so the DST window can't fail it.
+- Assumptions:
+  - Today shares the selected day's weight (650), so the two differ by fill.
+  - Tag chips on the open note sit on `--paper` so they read as chips on the
+    tint.
+  - `tests/design-tokens.spec.js` stays untouched; see `tasks/lessons.md`.
+
 # Make the About headline breakpoint structural (2026-11-11)
 
 Tier: Trivial follow-up to PR #44, from its one review comment. Vinny chose
