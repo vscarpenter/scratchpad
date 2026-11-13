@@ -5,7 +5,7 @@ approved v6 details. Vinny approved the direction from before and proposed
 screenshots ("Build it as shown"). Spec: `tasks/spec.md`. Branch:
 `feat/colorize-wayfinding`.
 
-- [ ] Cycle 1: selection tint on the current nav item and the open note, with
+- [x] Cycle 1: selection tint on the current nav item and the open note, with
       AA text on tinted rows and the derived `--accent-text-secondary` token.
 - [ ] Cycle 2: today as an Indigo numeral, underlined only in forced colors.
 - [ ] Cycle 3: folder glyphs take their chosen color in the navigation.
