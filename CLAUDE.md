@@ -63,9 +63,14 @@ Key rules for anything in `public/css/app.css`:
   the application shell. Legacy glass tokens remain for dialogs, onboarding, and
   static pages until those surfaces are redesigned.
 - **One accent** — `--accent`. Indigo marks the selected day, primary actions,
-  links, calendar state, and focus. `--accent-text` is the
-  legibility sibling for accent text or glyphs sitting on a tint. Semantic
-  success, warning, and danger colors remain state-only.
+  links, calendar state, and focus. The current navigation item and the open
+  note share the selected day's `--accent-soft` tint, and today is an
+  `--accent-text` numeral. `--accent-text` is the
+  legibility sibling for accent text or glyphs sitting on a tint.
+  `--accent-text-secondary` carries secondary text there, because
+  `--text-muted` fails AA on the tint. Folder glyphs take the colors people
+  pick in the folder dialog. Semantic success, warning, and danger colors
+  remain state-only.
 - **Platform fonts only** — no `@font-face`, no Google Fonts. The editorial
   serif (`--serif`) carries document titles and prose, including the Markdown
   textarea. Chrome and rendered section headings use `--sans`. `--mono` is metadata only and never prose.

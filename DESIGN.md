@@ -33,7 +33,7 @@ Use platform serif for title and prose, system sans for navigation and section h
 
 ## Surfaces and interaction
 
-The document and stage share one warm near-white surface. The app shell uses flat rows and hairline column dividers. Indigo marks focus, links, and current state. All colors resolve through tokens; dark mode is driven by byte-parallel auto/manual token blocks. Existing dialog treatment stays scoped to dialogs.
+The document and stage share one warm near-white surface. The app shell uses flat rows and hairline column dividers. Indigo marks focus, links, and current state. The current navigation item, the open note, and the selected day share one tint, and today is an Indigo numeral. Folder glyphs take the colors people pick in the folder dialog. All colors resolve through tokens; dark mode is driven by byte-parallel auto/manual token blocks. Existing dialog treatment stays scoped to dialogs.
 
 Calendar dates use local numeric arithmetic at noon, expose today separately from selection, and offer arrows, week Home/End, and month Page Up/Down. Navigation and calendar actions retain draft confirmation and existing daily-note identity. Mobile navigation uses native modal focus and Escape handling; no decorative entrance motion.
 
